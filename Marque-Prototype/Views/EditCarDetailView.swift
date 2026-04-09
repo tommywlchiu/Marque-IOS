@@ -1,0 +1,146 @@
+import SwiftUI
+
+struct EditCarDetailView: View {
+    @Environment(\.dismiss) var dismiss
+    @Binding var car: Car
+
+    var onSave: (Car) -> Void
+
+    @State private var make: String = ""
+    @State private var model: String = ""
+    @State private var year: String = ""
+    @State private var licensePlate: String = ""
+    @State private var vinNumber: String = ""
+    @State private var color: String = ""
+    @State private var mileage: String = ""
+    @State private var fuelType: String = ""
+    @State private var transmission: String = ""
+    @State private var insuranceProvider: String = ""
+    @State private var insurancePolicyNumber: String = ""
+    @State private var notes: String = ""
+
+    var isFormValid: Bool {
+        !make.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !model.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !year.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Basic Information")) {
+                    TextField("Make (e.g. Toyota, BMW)", text: $make)
+                        .autocorrectionDisabled()
+
+                    TextField("Model (e.g. Camry, 3 Series)", text: $model)
+                        .autocorrectionDisabled()
+
+                    TextField("Year (e.g. 2024)", text: $year)
+                        .keyboardType(.numberPad)
+                }
+
+                Section(header: Text("Registration & Identification")) {
+                    TextField("License Plate Number", text: $licensePlate)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.characters)
+
+                    TextField("VIN Number", text: $vinNumber)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.characters)
+                }
+
+                Section(header: Text("Vehicle Details")) {
+                    TextField("Color (e.g. Silver, Black)", text: $color)
+
+                    TextField("Mileage (e.g. 25,000 mi)", text: $mileage)
+                        .keyboardType(.numberPad)
+
+                    Picker("Fuel Type", selection: $fuelType) {
+                        Text("Select").tag("")
+                        Text("Gasoline").tag("Gasoline")
+                        Text("Diesel").tag("Diesel")
+                        Text("Electric").tag("Electric")
+                        Text("Hybrid").tag("Hybrid")
+                        Text("Plug-in Hybrid").tag("Plug-in Hybrid")
+                        Text("Flex Fuel").tag("Flex Fuel")
+                    }
+
+                    Picker("Transmission", selection: $transmission) {
+                        Text("Select").tag("")
+                        Text("Automatic").tag("Automatic")
+                        Text("Manual").tag("Manual")
+                        Text("CVT").tag("CVT")
+                        Text("Dual-Clutch").tag("Dual-Clutch")
+                    }
+                }
+
+                Section(header: Text("Insurance Information")) {
+                    TextField("Insurance Provider", text: $insuranceProvider)
+
+                    TextField("Policy Number", text: $insurancePolicyNumber)
+                        .autocorrectionDisabled()
+                }
+
+                Section(header: Text("Notes")) {
+                    TextEditor(text: $notes)
+                        .frame(minHeight: 80)
+                }
+            }
+            .navigationTitle("Edit Car Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updatedCar = car
+                        updatedCar.make = make.trimmingCharacters(in: .whitespaces)
+                        updatedCar.model = model.trimmingCharacters(in: .whitespaces)
+                        updatedCar.year = year.trimmingCharacters(in: .whitespaces)
+                        updatedCar.licensePlate = licensePlate.trimmingCharacters(in: .whitespaces)
+                        updatedCar.vinNumber = vinNumber.trimmingCharacters(in: .whitespaces)
+                        updatedCar.color = color.trimmingCharacters(in: .whitespaces)
+                        updatedCar.mileage = mileage.trimmingCharacters(in: .whitespaces)
+                        updatedCar.fuelType = fuelType
+                        updatedCar.transmission = transmission
+                        updatedCar.insuranceProvider = insuranceProvider.trimmingCharacters(in: .whitespaces)
+                        updatedCar.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
+                        updatedCar.notes = notes.trimmingCharacters(in: .whitespaces)
+                        onSave(updatedCar)
+                        dismiss()
+                    }
+                    .disabled(!isFormValid)
+                    .fontWeight(.semibold)
+                }
+            }
+            .onAppear {
+                make = car.make
+                model = car.model
+                year = car.year
+                licensePlate = car.licensePlate
+                vinNumber = car.vinNumber
+                color = car.color
+                mileage = car.mileage
+                fuelType = car.fuelType
+                transmission = car.transmission
+                insuranceProvider = car.insuranceProvider
+                insurancePolicyNumber = car.insurancePolicyNumber
+                notes = car.notes
+            }
+        }
+    }
+}
+
+#Preview {
+    EditCarDetailView(
+        car: .constant(Car(
+            make: "Toyota",
+            model: "Camry",
+            year: "2024"
+        )),
+        onSave: { _ in }
+    )
+}
