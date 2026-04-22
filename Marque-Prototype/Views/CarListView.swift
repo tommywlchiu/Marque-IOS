@@ -13,7 +13,7 @@ struct CarListView: View {
                     carList
                 }
             }
-            .navigationTitle("My Cars")
+            .navigationTitle("My Garage")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -30,84 +30,164 @@ struct CarListView: View {
     }
 
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "car.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary.opacity(0.5))
+        VStack(spacing: 24) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color(.systemGray6))
+                    .frame(width: 120, height: 120)
 
-            Text("No Cars Added Yet")
-                .font(.title2)
-                .fontWeight(.semibold)
+                Image(systemName: "garage.open")
+                    .font(.system(size: 52))
+                    .foregroundStyle(.secondary.opacity(0.6))
+            }
 
-            Text("Tap the button below to add your first car and store its information.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            VStack(spacing: 8) {
+                Text("Your Garage is Empty")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                Text("Add your first car to start tracking\nyour vehicle information.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
 
             Button {
                 showingAddCar = true
             } label: {
                 Label("Add a Car", systemImage: "plus.circle.fill")
                     .font(.headline)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
             }
             .buttonStyle(.borderedProminent)
-            .padding(.top, 8)
+            .padding(.top, 4)
         }
+        .padding(.horizontal, 40)
     }
 
     private var carList: some View {
-        List {
-            ForEach(carStore.cars) { car in
-                NavigationLink(destination: CarDetailView(car: car)) {
-                    CarRowView(car: car)
+        ScrollView {
+            LazyVStack(spacing: 14) {
+                ForEach(carStore.cars) { car in
+                    NavigationLink(destination: CarDetailView(car: car)) {
+                        CarCardView(car: car)
+                    }
+                    .buttonStyle(.plain)
                 }
-            }
-            .onDelete(perform: carStore.deleteCar)
 
-            Section {
                 Button {
                     showingAddCar = true
                 } label: {
-                    Label("Add a Car", systemImage: "plus.circle.fill")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                        Text("Add a Car")
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.accentColor)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(Color.accentColor.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+                    )
                 }
+                .padding(.top, 4)
             }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 20)
         }
     }
 }
 
-struct CarRowView: View {
+struct CarCardView: View {
     let car: Car
 
-    var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "car.fill")
-                .font(.title2)
-                .foregroundColor(.accentColor)
-                .frame(width: 44, height: 44)
-                .background(Color.accentColor.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+    private var carColorDot: Color {
+        switch car.color.lowercased() {
+        case "black": return .black
+        case "white": return .white
+        case "silver", "gray", "grey": return .gray
+        case "red": return .red
+        case "blue": return .blue
+        case "green": return .green
+        case "yellow": return .yellow
+        case "orange": return .orange
+        case "brown": return .brown
+        case "purple": return .purple
+        default: return .accentColor
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 3) {
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.accentColor.opacity(0.1))
+                    .frame(width: 56, height: 56)
+
+                Image(systemName: "car.fill")
+                    .font(.title2)
+                    .foregroundColor(.accentColor)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
                 Text(car.displayName)
                     .font(.headline)
+                    .foregroundColor(.primary)
 
-                if !car.licensePlate.isEmpty {
-                    Text("Plate: \(car.licensePlate)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } else {
+                HStack(spacing: 8) {
+                    if !car.color.isEmpty {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(carColorDot)
+                                .frame(width: 8, height: 8)
+                                .overlay(
+                                    Circle().stroke(Color.secondary.opacity(0.3), lineWidth: 0.5)
+                                )
+                            Text(car.color)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    if !car.licensePlate.isEmpty {
+                        Text(car.licensePlate)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(.systemGray5))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                }
+
+                if car.color.isEmpty && car.licensePlate.isEmpty {
                     Text("Tap to add details")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.secondary.opacity(0.7))
                 }
             }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary.opacity(0.5))
         }
-        .padding(.vertical, 4)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(.systemGray5), lineWidth: 0.5)
+        )
     }
 }
 
