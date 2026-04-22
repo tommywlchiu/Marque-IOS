@@ -100,4 +100,63 @@ struct Car: Identifiable, Codable, Equatable {
         isInsuranceExpiringSoon || isInsuranceExpired ||
         isRegistrationExpiringSoon || isRegistrationExpired
     }
+
+    var totalExpenses: Double {
+        maintenanceRecords.compactMap { Double($0.cost) }.reduce(0, +)
+    }
+
+    func expenses(in period: ExpensePeriod) -> Double {
+        let now = Date()
+        let calendar = Calendar.current
+        let startDate: Date
+        switch period {
+        case .month:
+            startDate = calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        case .sixMonths:
+            startDate = calendar.date(byAdding: .month, value: -6, to: now) ?? now
+        case .year:
+            startDate = calendar.date(byAdding: .year, value: -1, to: now) ?? now
+        case .allTime:
+            return totalExpenses
+        }
+        return maintenanceRecords
+            .filter { $0.date >= startDate }
+            .compactMap { Double($0.cost) }
+            .reduce(0, +)
+    }
+
+    func expensesByCategory(in period: ExpensePeriod) -> [(category: String, amount: Double)] {
+        let now = Date()
+        let calendar = Calendar.current
+        let filtered: [MaintenanceRecord]
+        switch period {
+        case .month:
+            let start = calendar.date(byAdding: .month, value: -1, to: now) ?? now
+            filtered = maintenanceRecords.filter { $0.date >= start }
+        case .sixMonths:
+            let start = calendar.date(byAdding: .month, value: -6, to: now) ?? now
+            filtered = maintenanceRecords.filter { $0.date >= start }
+        case .year:
+            let start = calendar.date(byAdding: .year, value: -1, to: now) ?? now
+            filtered = maintenanceRecords.filter { $0.date >= start }
+        case .allTime:
+            filtered = maintenanceRecords
+        }
+
+        var grouped: [String: Double] = [:]
+        for record in filtered {
+            if let cost = Double(record.cost), cost > 0 {
+                grouped[record.serviceType, default: 0] += cost
+            }
+        }
+        return grouped.map { (category: $0.key, amount: $0.value) }
+            .sorted { $0.amount > $1.amount }
+    }
+}
+
+enum ExpensePeriod: String, CaseIterable {
+    case month = "30 Days"
+    case sixMonths = "6 Months"
+    case year = "1 Year"
+    case allTime = "All Time"
 }

@@ -19,6 +19,7 @@
 		A10010 /* ImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20010; };
 		A10011 /* AddMaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20011; };
 		A10012 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20012; };
+		A10013 /* ExpenseSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		A20010 /* ImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageManager.swift; sourceTree = "<group>"; };
 		A20011 /* AddMaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMaintenanceView.swift; sourceTree = "<group>"; };
 		A20012 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		A20013 /* ExpenseSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummaryView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque-Prototype.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Marque-Prototype.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -85,6 +87,7 @@
 				A20005 /* CarListView.swift */,
 				A20006 /* CarDetailView.swift */,
 				A20007 /* EditCarDetailView.swift */,
+				A20013 /* ExpenseSummaryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -187,6 +190,7 @@
 				A10010 /* ImageManager.swift in Sources */,
 				A10011 /* AddMaintenanceView.swift in Sources */,
 				A10012 /* NotificationManager.swift in Sources */,
+				A10013 /* ExpenseSummaryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
