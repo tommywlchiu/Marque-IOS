@@ -20,6 +20,7 @@
 		A10011 /* AddMaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20011; };
 		A10012 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20012; };
 		A10013 /* ExpenseSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013; };
+		A10014 /* CarData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		A20011 /* AddMaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMaintenanceView.swift; sourceTree = "<group>"; };
 		A20012 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		A20013 /* ExpenseSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummaryView.swift; sourceTree = "<group>"; };
+		A20014 /* CarData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarData.swift; sourceTree = "<group>"; };
 		A30001 /* Marque-Prototype.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Marque-Prototype.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -75,6 +77,7 @@
 			children = (
 				A20002 /* Car.swift */,
 				A20009 /* MaintenanceRecord.swift */,
+				A20014 /* CarData.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -191,6 +194,7 @@
 				A10011 /* AddMaintenanceView.swift in Sources */,
 				A10012 /* NotificationManager.swift in Sources */,
 				A10013 /* ExpenseSummaryView.swift in Sources */,
+				A10014 /* CarData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
