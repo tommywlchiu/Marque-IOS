@@ -157,7 +157,16 @@ struct CarCardView: View {
                     }
                 }
 
-                if !car.maintenanceRecords.isEmpty {
+                if car.hasExpiryWarning {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.caption2)
+                        Text(car.isInsuranceExpired || car.isRegistrationExpired ? "Action needed" : "Expiring soon")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(car.isInsuranceExpired || car.isRegistrationExpired ? .red : .orange)
+                } else if !car.maintenanceRecords.isEmpty {
                     Text("\(car.maintenanceRecords.count) service record\(car.maintenanceRecords.count == 1 ? "" : "s")")
                         .font(.caption2)
                         .foregroundColor(.accentColor.opacity(0.8))

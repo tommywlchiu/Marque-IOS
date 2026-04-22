@@ -15,6 +15,8 @@ struct Car: Identifiable, Codable {
     var transmission: String
     var insuranceProvider: String
     var insurancePolicyNumber: String
+    var insuranceExpiryDate: Date?
+    var registrationExpiryDate: Date?
     var notes: String
 
     var maintenanceRecords: [MaintenanceRecord]
@@ -33,6 +35,8 @@ struct Car: Identifiable, Codable {
         transmission: String = "",
         insuranceProvider: String = "",
         insurancePolicyNumber: String = "",
+        insuranceExpiryDate: Date? = nil,
+        registrationExpiryDate: Date? = nil,
         notes: String = "",
         maintenanceRecords: [MaintenanceRecord] = []
     ) {
@@ -49,6 +53,8 @@ struct Car: Identifiable, Codable {
         self.transmission = transmission
         self.insuranceProvider = insuranceProvider
         self.insurancePolicyNumber = insurancePolicyNumber
+        self.insuranceExpiryDate = insuranceExpiryDate
+        self.registrationExpiryDate = registrationExpiryDate
         self.notes = notes
         self.maintenanceRecords = maintenanceRecords
     }
@@ -66,5 +72,32 @@ struct Car: Identifiable, Codable {
 
     var sortedMaintenanceRecords: [MaintenanceRecord] {
         maintenanceRecords.sorted { $0.date > $1.date }
+    }
+
+    var isInsuranceExpiringSoon: Bool {
+        guard let date = insuranceExpiryDate else { return false }
+        let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        return daysUntil >= 0 && daysUntil <= 30
+    }
+
+    var isInsuranceExpired: Bool {
+        guard let date = insuranceExpiryDate else { return false }
+        return date < Date()
+    }
+
+    var isRegistrationExpiringSoon: Bool {
+        guard let date = registrationExpiryDate else { return false }
+        let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        return daysUntil >= 0 && daysUntil <= 30
+    }
+
+    var isRegistrationExpired: Bool {
+        guard let date = registrationExpiryDate else { return false }
+        return date < Date()
+    }
+
+    var hasExpiryWarning: Bool {
+        isInsuranceExpiringSoon || isInsuranceExpired ||
+        isRegistrationExpiringSoon || isRegistrationExpired
     }
 }
