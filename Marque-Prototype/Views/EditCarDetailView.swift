@@ -20,6 +20,11 @@ struct EditCarDetailView: View {
     @State private var insurancePolicyNumber: String = ""
     @State private var notes: String = ""
 
+    @State private var hasInsuranceExpiry = false
+    @State private var insuranceExpiryDate = Date()
+    @State private var hasRegistrationExpiry = false
+    @State private var registrationExpiryDate = Date()
+
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var carImage: UIImage?
     @State private var photoFileName: String?
@@ -54,6 +59,16 @@ struct EditCarDetailView: View {
                     TextField("VIN Number", text: $vinNumber)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.characters)
+
+                    Toggle("Registration Expiry Date", isOn: $hasRegistrationExpiry.animation())
+
+                    if hasRegistrationExpiry {
+                        DatePicker(
+                            "Expires",
+                            selection: $registrationExpiryDate,
+                            displayedComponents: .date
+                        )
+                    }
                 }
 
                 Section(header: Text("Vehicle Details")) {
@@ -86,6 +101,16 @@ struct EditCarDetailView: View {
 
                     TextField("Policy Number", text: $insurancePolicyNumber)
                         .autocorrectionDisabled()
+
+                    Toggle("Insurance Expiry Date", isOn: $hasInsuranceExpiry.animation())
+
+                    if hasInsuranceExpiry {
+                        DatePicker(
+                            "Expires",
+                            selection: $insuranceExpiryDate,
+                            displayedComponents: .date
+                        )
+                    }
                 }
 
                 Section(header: Text("Notes")) {
@@ -117,6 +142,8 @@ struct EditCarDetailView: View {
                         updatedCar.transmission = transmission
                         updatedCar.insuranceProvider = insuranceProvider.trimmingCharacters(in: .whitespaces)
                         updatedCar.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
+                        updatedCar.insuranceExpiryDate = hasInsuranceExpiry ? insuranceExpiryDate : nil
+                        updatedCar.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
                         updatedCar.notes = notes.trimmingCharacters(in: .whitespaces)
                         updatedCar.photoFileName = photoFileName
                         onSave(updatedCar)
@@ -148,6 +175,15 @@ struct EditCarDetailView: View {
                 insurancePolicyNumber = car.insurancePolicyNumber
                 notes = car.notes
                 photoFileName = car.photoFileName
+
+                if let date = car.insuranceExpiryDate {
+                    hasInsuranceExpiry = true
+                    insuranceExpiryDate = date
+                }
+                if let date = car.registrationExpiryDate {
+                    hasRegistrationExpiry = true
+                    registrationExpiryDate = date
+                }
 
                 if let fileName = car.photoFileName {
                     carImage = ImageManager.loadImage(fileName: fileName)

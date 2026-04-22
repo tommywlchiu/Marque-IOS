@@ -9,9 +9,19 @@ struct CarDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingAddMaintenance = false
 
+    private let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f
+    }()
+
     var body: some View {
         List {
             photoHeaderSection
+
+            if car.hasExpiryWarning {
+                expiryAlertBanner
+            }
 
             Section(header: Text("Basic Information")) {
                 DetailRow(label: "Make", value: car.make)
@@ -20,7 +30,7 @@ struct CarDetailView: View {
             }
 
             Section(header: Text("Registration & Identification")) {
-                if car.licensePlate.isEmpty && car.vinNumber.isEmpty {
+                if car.licensePlate.isEmpty && car.vinNumber.isEmpty && car.registrationExpiryDate == nil {
                     Button {
                         showingEditDetails = true
                     } label: {
@@ -30,6 +40,15 @@ struct CarDetailView: View {
                 } else {
                     DetailRow(label: "License Plate", value: car.licensePlate)
                     DetailRow(label: "VIN Number", value: car.vinNumber)
+
+                    if let regDate = car.registrationExpiryDate {
+                        ExpiryRow(
+                            label: "Registration Expires",
+                            date: regDate,
+                            isExpired: car.isRegistrationExpired,
+                            isExpiringSoon: car.isRegistrationExpiringSoon
+                        )
+                    }
                 }
             }
 
@@ -50,7 +69,7 @@ struct CarDetailView: View {
             }
 
             Section(header: Text("Insurance")) {
-                if car.insuranceProvider.isEmpty && car.insurancePolicyNumber.isEmpty {
+                if car.insuranceProvider.isEmpty && car.insurancePolicyNumber.isEmpty && car.insuranceExpiryDate == nil {
                     Button {
                         showingEditDetails = true
                     } label: {
@@ -60,6 +79,15 @@ struct CarDetailView: View {
                 } else {
                     DetailRow(label: "Provider", value: car.insuranceProvider)
                     DetailRow(label: "Policy Number", value: car.insurancePolicyNumber)
+
+                    if let insDate = car.insuranceExpiryDate {
+                        ExpiryRow(
+                            label: "Insurance Expires",
+                            date: insDate,
+                            isExpired: car.isInsuranceExpired,
+                            isExpiringSoon: car.isInsuranceExpiringSoon
+                        )
+                    }
                 }
             }
 
@@ -114,6 +142,25 @@ struct CarDetailView: View {
             }
         } message: {
             Text("Are you sure you want to delete \(car.displayName)? This action cannot be undone.")
+        }
+    }
+
+    private var expiryAlertBanner: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                if car.isRegistrationExpired {
+                    ExpiryBannerItem(icon: "exclamationmark.triangle.fill", text: "Registration has expired", color: .red)
+                } else if car.isRegistrationExpiringSoon {
+                    ExpiryBannerItem(icon: "clock.badge.exclamationmark", text: "Registration expiring soon", color: .orange)
+                }
+
+                if car.isInsuranceExpired {
+                    ExpiryBannerItem(icon: "exclamationmark.triangle.fill", text: "Insurance has expired", color: .red)
+                } else if car.isInsuranceExpiringSoon {
+                    ExpiryBannerItem(icon: "clock.badge.exclamationmark", text: "Insurance expiring soon", color: .orange)
+                }
+            }
+            .padding(.vertical, 4)
         }
     }
 
@@ -192,6 +239,63 @@ struct CarDetailView: View {
     }
 }
 
+struct ExpiryBannerItem: View {
+    let icon: String
+    let text: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .font(.subheadline)
+            Text(text)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(color)
+        }
+    }
+}
+
+struct ExpiryRow: View {
+    let label: String
+    let date: Date
+    let isExpired: Bool
+    let isExpiringSoon: Bool
+
+    private var statusColor: Color {
+        if isExpired { return .red }
+        if isExpiringSoon { return .orange }
+        return .primary
+    }
+
+    private var daysText: String {
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        if days < 0 { return "Expired" }
+        if days == 0 { return "Expires today" }
+        if days == 1 { return "Expires tomorrow" }
+        return "Expires in \(days) days"
+    }
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .foregroundColor(.secondary)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(date, style: .date)
+                    .foregroundColor(statusColor)
+                if isExpired || isExpiringSoon {
+                    Text(daysText)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(statusColor)
+                }
+            }
+        }
+    }
+}
+
 struct MaintenanceRowView: View {
     let record: MaintenanceRecord
 
@@ -264,6 +368,8 @@ struct DetailRow: View {
             year: "2024",
             licensePlate: "ABC 1234",
             vinNumber: "1HGBH41JXMN109186",
+            insuranceExpiryDate: Calendar.current.date(byAdding: .day, value: 15, to: Date()),
+            registrationExpiryDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()),
             maintenanceRecords: [
                 MaintenanceRecord(serviceType: "Oil Change", date: Date(), mileage: "25000", cost: "45", shop: "Jiffy Lube")
             ]
