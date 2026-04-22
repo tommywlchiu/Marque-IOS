@@ -15,6 +15,9 @@
 		A10006 /* CarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20006; };
 		A10007 /* EditCarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20007; };
 		A10008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20008; };
+		A10009 /* MaintenanceRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20009; };
+		A10010 /* ImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20010; };
+		A10011 /* AddMaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20011; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +29,9 @@
 		A20006 /* CarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarDetailView.swift; sourceTree = "<group>"; };
 		A20007 /* EditCarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCarDetailView.swift; sourceTree = "<group>"; };
 		A20008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20009 /* MaintenanceRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceRecord.swift; sourceTree = "<group>"; };
+		A20010 /* ImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageManager.swift; sourceTree = "<group>"; };
+		A20011 /* AddMaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMaintenanceView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque-Prototype.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Marque-Prototype.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -64,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				A20002 /* Car.swift */,
+				A20009 /* MaintenanceRecord.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -72,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				A20004 /* AddCarView.swift */,
+				A20011 /* AddMaintenanceView.swift */,
 				A20005 /* CarListView.swift */,
 				A20006 /* CarDetailView.swift */,
 				A20007 /* EditCarDetailView.swift */,
@@ -91,6 +99,7 @@
 			isa = PBXGroup;
 			children = (
 				A20003 /* CarStore.swift */,
+				A20010 /* ImageManager.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -171,6 +180,9 @@
 				A10005 /* CarListView.swift in Sources */,
 				A10006 /* CarDetailView.swift in Sources */,
 				A10007 /* EditCarDetailView.swift in Sources */,
+				A10009 /* MaintenanceRecord.swift in Sources */,
+				A10010 /* ImageManager.swift in Sources */,
+				A10011 /* AddMaintenanceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

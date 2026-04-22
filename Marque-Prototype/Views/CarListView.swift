@@ -123,15 +123,7 @@ struct CarCardView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.accentColor.opacity(0.1))
-                    .frame(width: 56, height: 56)
-
-                Image(systemName: "car.fill")
-                    .font(.title2)
-                    .foregroundColor(.accentColor)
-            }
+            carThumbnail
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(car.displayName)
@@ -165,7 +157,11 @@ struct CarCardView: View {
                     }
                 }
 
-                if car.color.isEmpty && car.licensePlate.isEmpty {
+                if !car.maintenanceRecords.isEmpty {
+                    Text("\(car.maintenanceRecords.count) service record\(car.maintenanceRecords.count == 1 ? "" : "s")")
+                        .font(.caption2)
+                        .foregroundColor(.accentColor.opacity(0.8))
+                } else if car.color.isEmpty && car.licensePlate.isEmpty {
                     Text("Tap to add details")
                         .font(.caption)
                         .foregroundColor(.secondary.opacity(0.7))
@@ -188,6 +184,28 @@ struct CarCardView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.systemGray5), lineWidth: 0.5)
         )
+    }
+
+    @ViewBuilder
+    private var carThumbnail: some View {
+        if let fileName = car.photoFileName,
+           let uiImage = ImageManager.loadImage(fileName: fileName) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.accentColor.opacity(0.1))
+                    .frame(width: 56, height: 56)
+
+                Image(systemName: "car.fill")
+                    .font(.title2)
+                    .foregroundColor(.accentColor)
+            }
+        }
     }
 }
 

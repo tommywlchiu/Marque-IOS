@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct EditCarDetailView: View {
     @Environment(\.dismiss) var dismiss
@@ -19,6 +20,10 @@ struct EditCarDetailView: View {
     @State private var insurancePolicyNumber: String = ""
     @State private var notes: String = ""
 
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var carImage: UIImage?
+    @State private var photoFileName: String?
+
     var isFormValid: Bool {
         !make.trimmingCharacters(in: .whitespaces).isEmpty &&
         !model.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -28,6 +33,8 @@ struct EditCarDetailView: View {
     var body: some View {
         NavigationStack {
             Form {
+                photoSection
+
                 Section(header: Text("Basic Information")) {
                     TextField("Make (e.g. Toyota, BMW)", text: $make)
                         .autocorrectionDisabled()
@@ -96,6 +103,8 @@ struct EditCarDetailView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        saveCarPhoto()
+
                         var updatedCar = car
                         updatedCar.make = make.trimmingCharacters(in: .whitespaces)
                         updatedCar.model = model.trimmingCharacters(in: .whitespaces)
@@ -109,11 +118,20 @@ struct EditCarDetailView: View {
                         updatedCar.insuranceProvider = insuranceProvider.trimmingCharacters(in: .whitespaces)
                         updatedCar.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
                         updatedCar.notes = notes.trimmingCharacters(in: .whitespaces)
+                        updatedCar.photoFileName = photoFileName
                         onSave(updatedCar)
                         dismiss()
                     }
                     .disabled(!isFormValid)
                     .fontWeight(.semibold)
+                }
+            }
+            .onChange(of: selectedPhoto) { _, newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        carImage = image
+                    }
                 }
             }
             .onAppear {
@@ -129,7 +147,71 @@ struct EditCarDetailView: View {
                 insuranceProvider = car.insuranceProvider
                 insurancePolicyNumber = car.insurancePolicyNumber
                 notes = car.notes
+                photoFileName = car.photoFileName
+
+                if let fileName = car.photoFileName {
+                    carImage = ImageManager.loadImage(fileName: fileName)
+                }
             }
+        }
+    }
+
+    private var photoSection: some View {
+        Section(header: Text("Car Photo")) {
+            VStack(spacing: 12) {
+                if let carImage {
+                    Image(uiImage: carImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 180)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+
+                HStack(spacing: 16) {
+                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        Label(carImage == nil ? "Add Photo" : "Change Photo", systemImage: "photo.on.rectangle.angled")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+
+                    if carImage != nil {
+                        Button(role: .destructive) {
+                            carImage = nil
+                            if let oldFile = photoFileName {
+                                ImageManager.deleteImage(fileName: oldFile)
+                            }
+                            photoFileName = nil
+                            selectedPhoto = nil
+                        } label: {
+                            Label("Remove", systemImage: "trash")
+                                .font(.subheadline)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func saveCarPhoto() {
+        guard let image = carImage else {
+            if photoFileName != nil && car.photoFileName != nil {
+                photoFileName = nil
+            }
+            return
+        }
+
+        if photoFileName == nil || photoFileName != car.photoFileName {
+            if let oldFile = car.photoFileName, oldFile != photoFileName {
+                ImageManager.deleteImage(fileName: oldFile)
+            }
+            let newFileName = ImageManager.generateFileName()
+            ImageManager.saveImage(image, fileName: newFileName)
+            photoFileName = newFileName
+        } else if let fileName = photoFileName {
+            ImageManager.saveImage(image, fileName: fileName)
         }
     }
 }
