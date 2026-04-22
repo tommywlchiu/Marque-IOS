@@ -9,7 +9,7 @@ struct AddCarView: View {
     @State private var year = ""
 
     var isFormValid: Bool {
-        !make.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !make.isEmpty &&
         !model.trimmingCharacters(in: .whitespaces).isEmpty &&
         !year.trimmingCharacters(in: .whitespaces).isEmpty
     }
@@ -18,8 +18,12 @@ struct AddCarView: View {
         NavigationStack {
             Form {
                 Section(header: Text("Car Information")) {
-                    TextField("Make (e.g. Toyota, BMW)", text: $make)
-                        .autocorrectionDisabled()
+                    Picker("Make", selection: $make) {
+                        Text("Select a make").tag("")
+                        ForEach(CarData.makes, id: \.self) { brand in
+                            Text(brand).tag(brand)
+                        }
+                    }
 
                     TextField("Model (e.g. Camry, 3 Series)", text: $model)
                         .autocorrectionDisabled()
@@ -45,7 +49,7 @@ struct AddCarView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         let car = Car(
-                            make: make.trimmingCharacters(in: .whitespaces),
+                            make: make,
                             model: model.trimmingCharacters(in: .whitespaces),
                             year: year.trimmingCharacters(in: .whitespaces)
                         )

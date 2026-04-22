@@ -99,6 +99,10 @@ struct CarDetailView: View {
                 }
             }
 
+            if car.totalExpenses > 0 {
+                expenseSummarySection
+            }
+
             maintenanceSection
 
             Section {
@@ -202,6 +206,37 @@ struct CarDetailView: View {
             .padding(.vertical, 8)
             .listRowBackground(Color.clear)
         }
+    }
+
+    private var expenseSummarySection: some View {
+        Section(header: Text("Expense Summary")) {
+            HStack {
+                Text("Total Spent")
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(formatCurrency(car.totalExpenses))
+                    .fontWeight(.semibold)
+            }
+
+            ForEach(car.expensesByCategory(in: .allTime).prefix(3), id: \.category) { item in
+                HStack {
+                    Text(item.category)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text(formatCurrency(item.amount))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    private func formatCurrency(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "USD"
+        return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 
     private var maintenanceSection: some View {

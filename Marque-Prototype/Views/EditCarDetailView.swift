@@ -41,8 +41,12 @@ struct EditCarDetailView: View {
                 photoSection
 
                 Section(header: Text("Basic Information")) {
-                    TextField("Make (e.g. Toyota, BMW)", text: $make)
-                        .autocorrectionDisabled()
+                    Picker("Make", selection: $make) {
+                        Text("Select a make").tag("")
+                        ForEach(CarData.makes, id: \.self) { brand in
+                            Text(brand).tag(brand)
+                        }
+                    }
 
                     TextField("Model (e.g. Camry, 3 Series)", text: $model)
                         .autocorrectionDisabled()
@@ -97,7 +101,12 @@ struct EditCarDetailView: View {
                 }
 
                 Section(header: Text("Insurance Information")) {
-                    TextField("Insurance Provider", text: $insuranceProvider)
+                    Picker("Insurance Provider", selection: $insuranceProvider) {
+                        Text("Select a provider").tag("")
+                        ForEach(CarData.insuranceProviders, id: \.self) { provider in
+                            Text(provider).tag(provider)
+                        }
+                    }
 
                     TextField("Policy Number", text: $insurancePolicyNumber)
                         .autocorrectionDisabled()
@@ -131,7 +140,7 @@ struct EditCarDetailView: View {
                         saveCarPhoto()
 
                         var updatedCar = car
-                        updatedCar.make = make.trimmingCharacters(in: .whitespaces)
+                        updatedCar.make = make
                         updatedCar.model = model.trimmingCharacters(in: .whitespaces)
                         updatedCar.year = year.trimmingCharacters(in: .whitespaces)
                         updatedCar.licensePlate = licensePlate.trimmingCharacters(in: .whitespaces)
@@ -140,7 +149,7 @@ struct EditCarDetailView: View {
                         updatedCar.mileage = mileage.trimmingCharacters(in: .whitespaces)
                         updatedCar.fuelType = fuelType
                         updatedCar.transmission = transmission
-                        updatedCar.insuranceProvider = insuranceProvider.trimmingCharacters(in: .whitespaces)
+                        updatedCar.insuranceProvider = insuranceProvider
                         updatedCar.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
                         updatedCar.insuranceExpiryDate = hasInsuranceExpiry ? insuranceExpiryDate : nil
                         updatedCar.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
