@@ -1,6 +1,6 @@
 import Foundation
 
-struct MaintenanceRecord: Identifiable, Codable {
+struct MaintenanceRecord: Identifiable, Codable, Equatable {
     var id: UUID
     var serviceType: String
     var date: Date
