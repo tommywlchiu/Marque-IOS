@@ -24,11 +24,31 @@ class CarStore: ObservableObject {
     }
 
     func deleteCar(at offsets: IndexSet) {
+        for index in offsets {
+            if let fileName = cars[index].photoFileName {
+                ImageManager.deleteImage(fileName: fileName)
+            }
+        }
         cars.remove(atOffsets: offsets)
     }
 
     func deleteCar(_ car: Car) {
+        if let fileName = car.photoFileName {
+            ImageManager.deleteImage(fileName: fileName)
+        }
         cars.removeAll { $0.id == car.id }
+    }
+
+    func addMaintenanceRecord(_ record: MaintenanceRecord, to car: Car) {
+        if let index = cars.firstIndex(where: { $0.id == car.id }) {
+            cars[index].maintenanceRecords.append(record)
+        }
+    }
+
+    func deleteMaintenanceRecord(_ record: MaintenanceRecord, from car: Car) {
+        if let index = cars.firstIndex(where: { $0.id == car.id }) {
+            cars[index].maintenanceRecords.removeAll { $0.id == record.id }
+        }
     }
 
     private func save() {

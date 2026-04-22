@@ -5,8 +5,8 @@ struct Car: Identifiable, Codable {
     var make: String
     var model: String
     var year: String
+    var photoFileName: String?
 
-    // Detailed info (added after initial creation)
     var licensePlate: String
     var vinNumber: String
     var color: String
@@ -17,11 +17,14 @@ struct Car: Identifiable, Codable {
     var insurancePolicyNumber: String
     var notes: String
 
+    var maintenanceRecords: [MaintenanceRecord]
+
     init(
         id: UUID = UUID(),
         make: String = "",
         model: String = "",
         year: String = "",
+        photoFileName: String? = nil,
         licensePlate: String = "",
         vinNumber: String = "",
         color: String = "",
@@ -30,12 +33,14 @@ struct Car: Identifiable, Codable {
         transmission: String = "",
         insuranceProvider: String = "",
         insurancePolicyNumber: String = "",
-        notes: String = ""
+        notes: String = "",
+        maintenanceRecords: [MaintenanceRecord] = []
     ) {
         self.id = id
         self.make = make
         self.model = model
         self.year = year
+        self.photoFileName = photoFileName
         self.licensePlate = licensePlate
         self.vinNumber = vinNumber
         self.color = color
@@ -45,6 +50,7 @@ struct Car: Identifiable, Codable {
         self.insuranceProvider = insuranceProvider
         self.insurancePolicyNumber = insurancePolicyNumber
         self.notes = notes
+        self.maintenanceRecords = maintenanceRecords
     }
 
     var displayName: String {
@@ -56,5 +62,9 @@ struct Car: Identifiable, Codable {
         !licensePlate.isEmpty || !vinNumber.isEmpty || !color.isEmpty ||
         !mileage.isEmpty || !fuelType.isEmpty || !transmission.isEmpty ||
         !insuranceProvider.isEmpty || !insurancePolicyNumber.isEmpty || !notes.isEmpty
+    }
+
+    var sortedMaintenanceRecords: [MaintenanceRecord] {
+        maintenanceRecords.sorted { $0.date > $1.date }
     }
 }
