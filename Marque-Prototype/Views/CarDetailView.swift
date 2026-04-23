@@ -218,7 +218,7 @@ struct CarDetailView: View {
                     .fontWeight(.semibold)
             }
 
-            ForEach(car.expensesByCategory(in: .allTime).prefix(3), id: \.category) { item in
+            ForEach(car.expensesByCategory(in: .allTime), id: \.category) { item in
                 HStack {
                     Text(item.category)
                         .font(.subheadline)
