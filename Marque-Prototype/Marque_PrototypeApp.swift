@@ -19,7 +19,6 @@ struct Marque_PrototypeApp: App {
             }
             .environmentObject(carStore)
             .onAppear {
-                NotificationManager.requestPermission()
                 NotificationManager.scheduleExpiryNotifications(for: carStore.cars)
             }
             .onChange(of: carStore.cars) { _, newCars in
