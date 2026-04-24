@@ -65,6 +65,9 @@ struct EditCarDetailView: View {
                         .textInputAutocapitalization(.characters)
 
                     Toggle("Registration Expiry Date", isOn: $hasRegistrationExpiry.animation())
+                        .onChange(of: hasRegistrationExpiry) { _, isOn in
+                            if isOn { NotificationManager.requestPermission() }
+                        }
 
                     if hasRegistrationExpiry {
                         DatePicker(
@@ -112,6 +115,9 @@ struct EditCarDetailView: View {
                         .autocorrectionDisabled()
 
                     Toggle("Insurance Expiry Date", isOn: $hasInsuranceExpiry.animation())
+                        .onChange(of: hasInsuranceExpiry) { _, isOn in
+                            if isOn { NotificationManager.requestPermission() }
+                        }
 
                     if hasInsuranceExpiry {
                         DatePicker(

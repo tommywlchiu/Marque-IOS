@@ -59,11 +59,8 @@ class CarStore: ObservableObject {
 
     private func load() {
         if let data = UserDefaults.standard.data(forKey: saveKey),
-           let decoded = try? JSONDecoder().decode([Car].self, from: data),
-           !decoded.isEmpty {
+           let decoded = try? JSONDecoder().decode([Car].self, from: data) {
             cars = decoded
-        } else {
-            cars = Self.sampleCars
         }
     }
 
