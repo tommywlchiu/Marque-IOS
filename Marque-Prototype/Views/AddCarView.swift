@@ -1,7 +1,7 @@
 import SwiftUI
 
 private enum AddMode: String, CaseIterable {
-    case vin = "VIN Decode"
+    case vin = "Search by VIN"
     case manual = "Manual"
 }
 
@@ -11,16 +11,20 @@ struct AddCarView: View {
 
     @State private var addMode: AddMode = .vin
 
-    // VIN decode state
+    // VIN search state
     @State private var vinInput = ""
-    @State private var isDecoding = false
-    @State private var decodeError: String?
-    @State private var vinDecoded = false
+    @State private var isSearching = false
+    @State private var searchError: String?
+    @State private var vinSearched = false
 
-    // Car fields (shared between modes, pre-filled by VIN decode)
+    // Car fields (shared between modes, pre-filled by VIN search)
     @State private var make = ""
     @State private var model = ""
     @State private var year = ""
+    @State private var trim = ""
+    @State private var bodyStyle = ""
+    @State private var driveType = ""
+    @State private var engine = ""
     @State private var fuelType = ""
     @State private var transmission = ""
 
@@ -31,7 +35,7 @@ struct AddCarView: View {
     }
 
     var canAdd: Bool {
-        isFormValid && (addMode == .manual || vinDecoded)
+        isFormValid && (addMode == .manual || vinSearched)
     }
 
     var body: some View {
@@ -55,8 +59,8 @@ struct AddCarView: View {
 
                 if addMode == .manual {
                     manualSection
-                } else if vinDecoded {
-                    decodedResultSection
+                } else if vinSearched {
+                    searchResultSection
                 }
             }
             .navigationTitle("Add a Car")
@@ -72,6 +76,10 @@ struct AddCarView: View {
                             model: model.trimmingCharacters(in: .whitespaces),
                             year: year.trimmingCharacters(in: .whitespaces),
                             vinNumber: addMode == .vin ? vinInput.uppercased().trimmingCharacters(in: .whitespaces) : "",
+                            trim: trim,
+                            bodyStyle: bodyStyle,
+                            driveType: driveType,
+                            engine: engine,
                             fuelType: fuelType,
                             transmission: transmission
                         )
@@ -86,28 +94,28 @@ struct AddCarView: View {
     }
 
     private var vinInputSection: some View {
-        Section(header: Text("Decode by VIN")) {
+        Section(header: Text("Search by VIN")) {
             HStack(spacing: 12) {
                 TextField("17-character VIN", text: $vinInput)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.characters)
                     .onChange(of: vinInput) { _, _ in
-                        decodeError = nil
-                        if vinDecoded { resetDecodedFields() }
+                        searchError = nil
+                        if vinSearched { resetSearchedFields() }
                     }
 
-                if isDecoding {
+                if isSearching {
                     ProgressView()
                 } else {
-                    Button("Decode") {
-                        Task { await decodeVIN() }
+                    Button("Search") {
+                        Task { await searchVIN() }
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(vinInput.trimmingCharacters(in: .whitespaces).count != 17)
                 }
             }
 
-            if let error = decodeError {
+            if let error = searchError {
                 Label(error, systemImage: "exclamationmark.circle")
                     .font(.footnote)
                     .foregroundColor(.red)
@@ -115,12 +123,12 @@ struct AddCarView: View {
         }
     }
 
-    private var decodedResultSection: some View {
+    private var searchResultSection: some View {
         Section {
             HStack {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
-                Text("Vehicle decoded — review and edit if needed.")
+                Text("Vehicle found — review and edit if needed.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -133,6 +141,34 @@ struct AddCarView: View {
 
             TextField("Year", text: $year)
                 .keyboardType(.numberPad)
+
+            TextField("Trim (e.g. EX-L, Sport, XLE)", text: $trim)
+                .autocorrectionDisabled()
+
+            Picker("Body Style", selection: $bodyStyle) {
+                Text("Select").tag("")
+                Text("Sedan").tag("Sedan")
+                Text("Coupe").tag("Coupe")
+                Text("Hatchback").tag("Hatchback")
+                Text("SUV").tag("SUV")
+                Text("Crossover").tag("Crossover")
+                Text("Pickup").tag("Pickup")
+                Text("Van").tag("Van")
+                Text("Minivan").tag("Minivan")
+                Text("Wagon").tag("Wagon")
+                Text("Convertible").tag("Convertible")
+            }
+
+            Picker("Drive Type", selection: $driveType) {
+                Text("Select").tag("")
+                Text("FWD").tag("FWD")
+                Text("RWD").tag("RWD")
+                Text("AWD").tag("AWD")
+                Text("4WD").tag("4WD")
+            }
+
+            TextField("Engine (e.g. 2.5L 4-Cylinder)", text: $engine)
+                .autocorrectionDisabled()
 
             Picker("Fuel Type", selection: $fuelType) {
                 Text("Select").tag("")
@@ -152,7 +188,7 @@ struct AddCarView: View {
                 Text("Dual-Clutch").tag("Dual-Clutch")
             }
         } header: {
-            Text("Decoded Vehicle")
+            Text("Search Results")
         } footer: {
             Text("You can add color, mileage, insurance, and other details after adding the car.")
         }
@@ -183,36 +219,44 @@ struct AddCarView: View {
         }
     }
 
-    private func decodeVIN() async {
-        isDecoding = true
-        decodeError = nil
+    private func searchVIN() async {
+        isSearching = true
+        searchError = nil
         do {
             let result = try await VINDecodeService.decode(vin: vinInput)
             make = result.make
             model = result.model
             year = result.year
+            trim = result.trim
+            bodyStyle = result.bodyStyle
+            driveType = result.driveType
+            engine = result.engine
             fuelType = result.fuelType
             transmission = result.transmission
-            vinDecoded = true
+            vinSearched = true
         } catch {
-            decodeError = error.localizedDescription
+            searchError = error.localizedDescription
         }
-        isDecoding = false
+        isSearching = false
     }
 
-    private func resetDecodedFields() {
-        vinDecoded = false
+    private func resetSearchedFields() {
+        vinSearched = false
         make = ""
         model = ""
         year = ""
+        trim = ""
+        bodyStyle = ""
+        driveType = ""
+        engine = ""
         fuelType = ""
         transmission = ""
     }
 
     private func resetFields() {
         vinInput = ""
-        decodeError = nil
-        resetDecodedFields()
+        searchError = nil
+        resetSearchedFields()
     }
 }
 

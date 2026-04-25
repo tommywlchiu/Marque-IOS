@@ -14,6 +14,10 @@ struct EditCarDetailView: View {
     @State private var vinNumber: String = ""
     @State private var color: String = ""
     @State private var mileage: String = ""
+    @State private var trim: String = ""
+    @State private var bodyStyle: String = ""
+    @State private var driveType: String = ""
+    @State private var engine: String = ""
     @State private var fuelType: String = ""
     @State private var transmission: String = ""
     @State private var insuranceProvider: String = ""
@@ -101,6 +105,34 @@ struct EditCarDetailView: View {
                         Text("CVT").tag("CVT")
                         Text("Dual-Clutch").tag("Dual-Clutch")
                     }
+
+                    TextField("Trim (e.g. EX-L, Sport, XLE)", text: $trim)
+                        .autocorrectionDisabled()
+
+                    Picker("Body Style", selection: $bodyStyle) {
+                        Text("Select").tag("")
+                        Text("Sedan").tag("Sedan")
+                        Text("Coupe").tag("Coupe")
+                        Text("Hatchback").tag("Hatchback")
+                        Text("SUV").tag("SUV")
+                        Text("Crossover").tag("Crossover")
+                        Text("Pickup").tag("Pickup")
+                        Text("Van").tag("Van")
+                        Text("Minivan").tag("Minivan")
+                        Text("Wagon").tag("Wagon")
+                        Text("Convertible").tag("Convertible")
+                    }
+
+                    Picker("Drive Type", selection: $driveType) {
+                        Text("Select").tag("")
+                        Text("FWD").tag("FWD")
+                        Text("RWD").tag("RWD")
+                        Text("AWD").tag("AWD")
+                        Text("4WD").tag("4WD")
+                    }
+
+                    TextField("Engine (e.g. 2.5L 4-Cylinder)", text: $engine)
+                        .autocorrectionDisabled()
                 }
 
                 Section(header: Text("Insurance Information")) {
@@ -153,6 +185,10 @@ struct EditCarDetailView: View {
                         updatedCar.vinNumber = vinNumber.trimmingCharacters(in: .whitespaces)
                         updatedCar.color = color.trimmingCharacters(in: .whitespaces)
                         updatedCar.mileage = mileage.trimmingCharacters(in: .whitespaces)
+                        updatedCar.trim = trim.trimmingCharacters(in: .whitespaces)
+                        updatedCar.bodyStyle = bodyStyle
+                        updatedCar.driveType = driveType
+                        updatedCar.engine = engine.trimmingCharacters(in: .whitespaces)
                         updatedCar.fuelType = fuelType
                         updatedCar.transmission = transmission
                         updatedCar.insuranceProvider = insuranceProvider
@@ -184,6 +220,10 @@ struct EditCarDetailView: View {
                 vinNumber = car.vinNumber
                 color = car.color
                 mileage = car.mileage
+                trim = car.trim
+                bodyStyle = car.bodyStyle
+                driveType = car.driveType
+                engine = car.engine
                 fuelType = car.fuelType
                 transmission = car.transmission
                 insuranceProvider = car.insuranceProvider
