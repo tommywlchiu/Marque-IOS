@@ -36,7 +36,7 @@ struct CarListView: View {
                     .fill(Color(.systemGray6))
                     .frame(width: 120, height: 120)
 
-                Image(systemName: "garage.open")
+                Image(systemName: "car.fill")
                     .font(.system(size: 52))
                     .foregroundStyle(.secondary.opacity(0.6))
             }
