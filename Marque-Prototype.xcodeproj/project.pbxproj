@@ -21,6 +21,7 @@
 		A10012 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20012 /* NotificationManager.swift */; };
 		A10013 /* ExpenseSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013 /* ExpenseSummaryView.swift */; };
 		A10014 /* CarData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014 /* CarData.swift */; };
+		A10015 /* VINDecodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20015 /* VINDecodeService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +39,7 @@
 		A20012 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		A20013 /* ExpenseSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummaryView.swift; sourceTree = "<group>"; };
 		A20014 /* CarData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarData.swift; sourceTree = "<group>"; };
+		A20015 /* VINDecodeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINDecodeService.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -109,6 +111,7 @@
 				A20003 /* CarStore.swift */,
 				A20010 /* ImageManager.swift */,
 				A20012 /* NotificationManager.swift */,
+				A20015 /* VINDecodeService.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -195,6 +198,7 @@
 				A10012 /* NotificationManager.swift in Sources */,
 				A10013 /* ExpenseSummaryView.swift in Sources */,
 				A10014 /* CarData.swift in Sources */,
+				A10015 /* VINDecodeService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
