@@ -212,6 +212,17 @@ struct EditCarDetailView: View {
                 }
             }
             .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhoto, matching: .images)
+            .confirmationDialog("Remove this photo?", isPresented: $showingRemovePhotoAlert, titleVisibility: .visible) {
+                Button("Remove Photo", role: .destructive) {
+                    carImage = nil
+                    if let oldFile = photoFileName {
+                        ImageManager.deleteImage(fileName: oldFile)
+                    }
+                    photoFileName = nil
+                    selectedPhoto = nil
+                    photoOffsetY = 0
+                }
+            }
             .onChange(of: selectedPhoto) { _, newItem in
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),
@@ -320,17 +331,6 @@ struct EditCarDetailView: View {
                         } label: {
                             Label("Remove", systemImage: "trash")
                                 .font(.subheadline)
-                        }
-                        .confirmationDialog("Remove this photo?", isPresented: $showingRemovePhotoAlert, titleVisibility: .visible) {
-                            Button("Remove Photo", role: .destructive) {
-                                carImage = nil
-                                if let oldFile = photoFileName {
-                                    ImageManager.deleteImage(fileName: oldFile)
-                                }
-                                photoFileName = nil
-                                selectedPhoto = nil
-                                photoOffsetY = 0
-                            }
                         }
                     }
                 }
