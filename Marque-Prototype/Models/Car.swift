@@ -11,6 +11,10 @@ struct Car: Identifiable, Codable, Equatable {
     var vinNumber: String
     var color: String
     var mileage: String
+    var trim: String
+    var bodyStyle: String
+    var driveType: String
+    var engine: String
     var fuelType: String
     var transmission: String
     var insuranceProvider: String
@@ -31,6 +35,10 @@ struct Car: Identifiable, Codable, Equatable {
         vinNumber: String = "",
         color: String = "",
         mileage: String = "",
+        trim: String = "",
+        bodyStyle: String = "",
+        driveType: String = "",
+        engine: String = "",
         fuelType: String = "",
         transmission: String = "",
         insuranceProvider: String = "",
@@ -49,6 +57,10 @@ struct Car: Identifiable, Codable, Equatable {
         self.vinNumber = vinNumber
         self.color = color
         self.mileage = mileage
+        self.trim = trim
+        self.bodyStyle = bodyStyle
+        self.driveType = driveType
+        self.engine = engine
         self.fuelType = fuelType
         self.transmission = transmission
         self.insuranceProvider = insuranceProvider
@@ -59,6 +71,32 @@ struct Car: Identifiable, Codable, Equatable {
         self.maintenanceRecords = maintenanceRecords
     }
 
+    // Custom decoder so existing saved data without the new fields still loads.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        make = try c.decode(String.self, forKey: .make)
+        model = try c.decode(String.self, forKey: .model)
+        year = try c.decode(String.self, forKey: .year)
+        photoFileName = try c.decodeIfPresent(String.self, forKey: .photoFileName)
+        licensePlate = try c.decode(String.self, forKey: .licensePlate)
+        vinNumber = try c.decode(String.self, forKey: .vinNumber)
+        color = try c.decode(String.self, forKey: .color)
+        mileage = try c.decode(String.self, forKey: .mileage)
+        trim = try c.decodeIfPresent(String.self, forKey: .trim) ?? ""
+        bodyStyle = try c.decodeIfPresent(String.self, forKey: .bodyStyle) ?? ""
+        driveType = try c.decodeIfPresent(String.self, forKey: .driveType) ?? ""
+        engine = try c.decodeIfPresent(String.self, forKey: .engine) ?? ""
+        fuelType = try c.decode(String.self, forKey: .fuelType)
+        transmission = try c.decode(String.self, forKey: .transmission)
+        insuranceProvider = try c.decode(String.self, forKey: .insuranceProvider)
+        insurancePolicyNumber = try c.decode(String.self, forKey: .insurancePolicyNumber)
+        insuranceExpiryDate = try c.decodeIfPresent(Date.self, forKey: .insuranceExpiryDate)
+        registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
+        notes = try c.decode(String.self, forKey: .notes)
+        maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
+    }
+
     var displayName: String {
         let parts = [year, make, model].filter { !$0.isEmpty }
         return parts.isEmpty ? "Unknown Car" : parts.joined(separator: " ")
@@ -66,8 +104,10 @@ struct Car: Identifiable, Codable, Equatable {
 
     var hasDetailedInfo: Bool {
         !licensePlate.isEmpty || !vinNumber.isEmpty || !color.isEmpty ||
-        !mileage.isEmpty || !fuelType.isEmpty || !transmission.isEmpty ||
-        !insuranceProvider.isEmpty || !insurancePolicyNumber.isEmpty || !notes.isEmpty
+        !mileage.isEmpty || !trim.isEmpty || !bodyStyle.isEmpty ||
+        !driveType.isEmpty || !engine.isEmpty || !fuelType.isEmpty ||
+        !transmission.isEmpty || !insuranceProvider.isEmpty ||
+        !insurancePolicyNumber.isEmpty || !notes.isEmpty
     }
 
     var sortedMaintenanceRecords: [MaintenanceRecord] {
