@@ -178,6 +178,7 @@ struct CarDetailView: View {
                         .scaledToFill()
                         .frame(maxWidth: .infinity)
                         .frame(height: 200)
+                        .offset(y: car.photoOffsetY)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     ZStack {
