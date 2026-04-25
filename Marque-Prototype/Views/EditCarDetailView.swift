@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import Photos
 
 struct EditCarDetailView: View {
     @Environment(\.dismiss) var dismiss
@@ -32,6 +33,11 @@ struct EditCarDetailView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var carImage: UIImage?
     @State private var photoFileName: String?
+    @State private var photoOffsetY: Double = 0
+    @State private var dragOffsetY: Double = 0
+    @State private var showingPhotoPicker = false
+    @State private var showingRemovePhotoAlert = false
+    @State private var showingPhotoPermissionDenied = false
 
     var isFormValid: Bool {
         !make.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -197,6 +203,7 @@ struct EditCarDetailView: View {
                         updatedCar.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
                         updatedCar.notes = notes.trimmingCharacters(in: .whitespaces)
                         updatedCar.photoFileName = photoFileName
+                        updatedCar.photoOffsetY = photoOffsetY
                         onSave(updatedCar)
                         dismiss()
                     }
@@ -204,13 +211,25 @@ struct EditCarDetailView: View {
                     .fontWeight(.semibold)
                 }
             }
+            .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhoto, matching: .images)
             .onChange(of: selectedPhoto) { _, newItem in
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
                         carImage = image
+                        photoOffsetY = 0
                     }
                 }
+            }
+            .alert("Photo Access Denied", isPresented: $showingPhotoPermissionDenied) {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("To add car photos, allow Marque to access your photo library in Settings.")
             }
             .onAppear {
                 make = car.make
@@ -230,6 +249,7 @@ struct EditCarDetailView: View {
                 insurancePolicyNumber = car.insurancePolicyNumber
                 notes = car.notes
                 photoFileName = car.photoFileName
+                photoOffsetY = car.photoOffsetY
 
                 if let date = car.insuranceExpiryDate {
                     hasInsuranceExpiry = true
@@ -251,16 +271,44 @@ struct EditCarDetailView: View {
         Section(header: Text("Car Photo")) {
             VStack(spacing: 12) {
                 if let carImage {
-                    Image(uiImage: carImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    GeometryReader { geo in
+                        let maxOff = maxPhotoOffset(image: carImage, width: geo.size.width, height: 180)
+                        let clampedOffset = min(maxOff, max(-maxOff, photoOffsetY + dragOffsetY))
+
+                        Image(uiImage: carImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: 180)
+                            .offset(y: clampedOffset)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        let proposed = photoOffsetY + value.translation.height
+                                        dragOffsetY = min(maxOff, max(-maxOff, proposed)) - photoOffsetY
+                                    }
+                                    .onEnded { value in
+                                        let proposed = photoOffsetY + value.translation.height
+                                        photoOffsetY = min(maxOff, max(-maxOff, proposed))
+                                        dragOffsetY = 0
+                                    }
+                            )
+                    }
+                    .frame(height: 180)
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.and.down")
+                            .font(.caption2)
+                        Text("Drag to reposition")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.secondary)
                 }
 
                 HStack(spacing: 16) {
-                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    Button {
+                        requestPhotoAccess()
+                    } label: {
                         Label(carImage == nil ? "Add Photo" : "Change Photo", systemImage: "photo.on.rectangle.angled")
                             .font(.subheadline)
                             .fontWeight(.medium)
@@ -268,15 +316,21 @@ struct EditCarDetailView: View {
 
                     if carImage != nil {
                         Button(role: .destructive) {
-                            carImage = nil
-                            if let oldFile = photoFileName {
-                                ImageManager.deleteImage(fileName: oldFile)
-                            }
-                            photoFileName = nil
-                            selectedPhoto = nil
+                            showingRemovePhotoAlert = true
                         } label: {
                             Label("Remove", systemImage: "trash")
                                 .font(.subheadline)
+                        }
+                        .confirmationDialog("Remove this photo?", isPresented: $showingRemovePhotoAlert, titleVisibility: .visible) {
+                            Button("Remove Photo", role: .destructive) {
+                                carImage = nil
+                                if let oldFile = photoFileName {
+                                    ImageManager.deleteImage(fileName: oldFile)
+                                }
+                                photoFileName = nil
+                                selectedPhoto = nil
+                                photoOffsetY = 0
+                            }
                         }
                     }
                 }
@@ -284,6 +338,32 @@ struct EditCarDetailView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
         }
+    }
+
+    private func requestPhotoAccess() {
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        switch status {
+        case .authorized, .limited:
+            showingPhotoPicker = true
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: .readWrite) { newStatus in
+                DispatchQueue.main.async {
+                    if newStatus == .authorized || newStatus == .limited {
+                        showingPhotoPicker = true
+                    } else {
+                        showingPhotoPermissionDenied = true
+                    }
+                }
+            }
+        default:
+            showingPhotoPermissionDenied = true
+        }
+    }
+
+    private func maxPhotoOffset(image: UIImage, width: CGFloat, height: CGFloat) -> Double {
+        let imageAspect = image.size.width / image.size.height
+        let displayedHeight = width / imageAspect
+        return max(0, (displayedHeight - height) / 2)
     }
 
     private func saveCarPhoto() {

@@ -6,6 +6,7 @@ struct Car: Identifiable, Codable, Equatable {
     var model: String
     var year: String
     var photoFileName: String?
+    var photoOffsetY: Double
 
     var licensePlate: String
     var vinNumber: String
@@ -31,6 +32,7 @@ struct Car: Identifiable, Codable, Equatable {
         model: String = "",
         year: String = "",
         photoFileName: String? = nil,
+        photoOffsetY: Double = 0,
         licensePlate: String = "",
         vinNumber: String = "",
         color: String = "",
@@ -53,6 +55,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.model = model
         self.year = year
         self.photoFileName = photoFileName
+        self.photoOffsetY = photoOffsetY
         self.licensePlate = licensePlate
         self.vinNumber = vinNumber
         self.color = color
@@ -79,6 +82,7 @@ struct Car: Identifiable, Codable, Equatable {
         model = try c.decode(String.self, forKey: .model)
         year = try c.decode(String.self, forKey: .year)
         photoFileName = try c.decodeIfPresent(String.self, forKey: .photoFileName)
+        photoOffsetY = try c.decodeIfPresent(Double.self, forKey: .photoOffsetY) ?? 0
         licensePlate = try c.decode(String.self, forKey: .licensePlate)
         vinNumber = try c.decode(String.self, forKey: .vinNumber)
         color = try c.decode(String.self, forKey: .color)
