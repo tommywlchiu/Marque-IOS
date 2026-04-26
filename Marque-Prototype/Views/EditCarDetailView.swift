@@ -258,11 +258,14 @@ struct EditCarDetailView: View {
                             titleVisibility: .visible
                         ) {
                             Button("Remove Photo", role: .destructive) {
+                                if let old = car.photoFileName {
+                                    ImageManager.deleteImage(fileName: old)
+                                }
                                 photoState = .removed
                                 photoOffsetY = 0
                             }
                         } message: {
-                            Text("The photo will be deleted when you save.")
+                            Text("This will permanently remove the photo.")
                         }
                     }
                 }
@@ -341,17 +344,14 @@ struct EditCarDetailView: View {
 
     // MARK: - Save
 
-    /// Applies photo changes to disk and returns the new filename (or nil if removed).
-    /// Called only when the user taps Save — never earlier.
+    /// Persists any pending photo change and returns the new filename (or nil if removed).
     private func commitPhotoChanges() -> String? {
         switch photoState {
         case .unchanged:
             return car.photoFileName
 
         case .removed:
-            if let old = car.photoFileName {
-                ImageManager.deleteImage(fileName: old)
-            }
+            // File was already deleted when the user confirmed the removal dialog.
             return nil
 
         case .selected(let image):
