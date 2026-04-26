@@ -215,9 +215,6 @@ struct EditCarDetailView: View {
             .confirmationDialog("Remove this photo?", isPresented: $showingRemovePhotoAlert, titleVisibility: .visible) {
                 Button("Remove Photo", role: .destructive) {
                     carImage = nil
-                    if let oldFile = photoFileName {
-                        ImageManager.deleteImage(fileName: oldFile)
-                    }
                     photoFileName = nil
                     selectedPhoto = nil
                     photoOffsetY = 0
@@ -368,9 +365,10 @@ struct EditCarDetailView: View {
 
     private func saveCarPhoto() {
         guard let image = carImage else {
-            if photoFileName != nil && car.photoFileName != nil {
-                photoFileName = nil
+            if let oldFile = car.photoFileName {
+                ImageManager.deleteImage(fileName: oldFile)
             }
+            photoFileName = nil
             return
         }
 
