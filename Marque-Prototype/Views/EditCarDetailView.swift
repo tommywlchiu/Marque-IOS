@@ -2,6 +2,12 @@ import SwiftUI
 import PhotosUI
 import Photos
 
+private enum PhotoEditState {
+    case unchanged
+    case changed(UIImage)
+    case removed
+}
+
 struct EditCarDetailView: View {
     @Environment(\.dismiss) var dismiss
     @Binding var car: Car
@@ -30,14 +36,22 @@ struct EditCarDetailView: View {
     @State private var hasRegistrationExpiry = false
     @State private var registrationExpiryDate = Date()
 
+    @State private var photoState: PhotoEditState = .unchanged
+    @State private var loadedImage: UIImage?
     @State private var selectedPhoto: PhotosPickerItem?
-    @State private var carImage: UIImage?
-    @State private var photoFileName: String?
     @State private var photoOffsetY: Double = 0
     @State private var dragOffsetY: Double = 0
     @State private var showingPhotoPicker = false
-    @State private var showingRemovePhotoAlert = false
+    @State private var showingRemoveConfirmation = false
     @State private var showingPhotoPermissionDenied = false
+
+    private var displayImage: UIImage? {
+        switch photoState {
+        case .unchanged: return loadedImage
+        case .changed(let image): return image
+        case .removed: return nil
+        }
+    }
 
     var isFormValid: Bool {
         !make.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -181,50 +195,18 @@ struct EditCarDetailView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        saveCarPhoto()
-
-                        var updatedCar = car
-                        updatedCar.make = make
-                        updatedCar.model = model.trimmingCharacters(in: .whitespaces)
-                        updatedCar.year = year.trimmingCharacters(in: .whitespaces)
-                        updatedCar.licensePlate = licensePlate.trimmingCharacters(in: .whitespaces)
-                        updatedCar.vinNumber = vinNumber.trimmingCharacters(in: .whitespaces)
-                        updatedCar.color = color.trimmingCharacters(in: .whitespaces)
-                        updatedCar.mileage = mileage.trimmingCharacters(in: .whitespaces)
-                        updatedCar.trim = trim.trimmingCharacters(in: .whitespaces)
-                        updatedCar.bodyStyle = bodyStyle
-                        updatedCar.driveType = driveType
-                        updatedCar.engine = engine.trimmingCharacters(in: .whitespaces)
-                        updatedCar.fuelType = fuelType
-                        updatedCar.transmission = transmission
-                        updatedCar.insuranceProvider = insuranceProvider
-                        updatedCar.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
-                        updatedCar.insuranceExpiryDate = hasInsuranceExpiry ? insuranceExpiryDate : nil
-                        updatedCar.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
-                        updatedCar.notes = notes.trimmingCharacters(in: .whitespaces)
-                        updatedCar.photoFileName = photoFileName
-                        updatedCar.photoOffsetY = photoOffsetY
-                        onSave(updatedCar)
-                        dismiss()
+                        saveCar()
                     }
                     .disabled(!isFormValid)
                     .fontWeight(.semibold)
                 }
             }
-            .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhoto, matching: .images)
-            .confirmationDialog("Remove this photo?", isPresented: $showingRemovePhotoAlert, titleVisibility: .visible) {
-                Button("Remove Photo", role: .destructive) {
-                    carImage = nil
-                    photoFileName = nil
-                    selectedPhoto = nil
-                    photoOffsetY = 0
-                }
-            }
             .onChange(of: selectedPhoto) { _, newItem in
                 Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self),
+                    guard let newItem else { return }
+                    if let data = try? await newItem.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
-                        carImage = image
+                        photoState = .changed(image)
                         photoOffsetY = 0
                     }
                 }
@@ -256,7 +238,6 @@ struct EditCarDetailView: View {
                 insuranceProvider = car.insuranceProvider
                 insurancePolicyNumber = car.insurancePolicyNumber
                 notes = car.notes
-                photoFileName = car.photoFileName
                 photoOffsetY = car.photoOffsetY
 
                 if let date = car.insuranceExpiryDate {
@@ -269,7 +250,7 @@ struct EditCarDetailView: View {
                 }
 
                 if let fileName = car.photoFileName {
-                    carImage = ImageManager.loadImage(fileName: fileName)
+                    loadedImage = ImageManager.loadImage(fileName: fileName)
                 }
             }
         }
@@ -278,12 +259,12 @@ struct EditCarDetailView: View {
     private var photoSection: some View {
         Section(header: Text("Car Photo")) {
             VStack(spacing: 12) {
-                if let carImage {
+                if let image = displayImage {
                     GeometryReader { geo in
-                        let maxOff = maxPhotoOffset(image: carImage, width: geo.size.width, height: 180)
+                        let maxOff = maxPhotoOffset(image: image, width: geo.size.width, height: 180)
                         let clampedOffset = min(maxOff, max(-maxOff, photoOffsetY + dragOffsetY))
 
-                        Image(uiImage: carImage)
+                        Image(uiImage: image)
                             .resizable()
                             .scaledToFill()
                             .frame(width: geo.size.width, height: 180)
@@ -317,17 +298,30 @@ struct EditCarDetailView: View {
                     Button {
                         requestPhotoAccess()
                     } label: {
-                        Label(carImage == nil ? "Add Photo" : "Change Photo", systemImage: "photo.on.rectangle.angled")
+                        Label(displayImage == nil ? "Add Photo" : "Change Photo", systemImage: "photo.on.rectangle.angled")
                             .font(.subheadline)
                             .fontWeight(.medium)
                     }
+                    .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhoto, matching: .images)
 
-                    if carImage != nil {
+                    if displayImage != nil {
                         Button(role: .destructive) {
-                            showingRemovePhotoAlert = true
+                            showingRemoveConfirmation = true
                         } label: {
                             Label("Remove", systemImage: "trash")
                                 .font(.subheadline)
+                        }
+                        .confirmationDialog(
+                            "Remove Photo",
+                            isPresented: $showingRemoveConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Remove Photo", role: .destructive) {
+                                photoState = .removed
+                                photoOffsetY = 0
+                            }
+                        } message: {
+                            Text("The photo will be removed when you save.")
                         }
                     }
                 }
@@ -363,25 +357,53 @@ struct EditCarDetailView: View {
         return max(0, (displayedHeight - height) / 2)
     }
 
-    private func saveCarPhoto() {
-        guard let image = carImage else {
+    private func commitPhotoChanges() -> String? {
+        switch photoState {
+        case .unchanged:
+            return car.photoFileName
+
+        case .removed:
             if let oldFile = car.photoFileName {
                 ImageManager.deleteImage(fileName: oldFile)
             }
-            photoFileName = nil
-            return
-        }
+            return nil
 
-        if photoFileName == nil || photoFileName != car.photoFileName {
-            if let oldFile = car.photoFileName, oldFile != photoFileName {
+        case .changed(let image):
+            if let oldFile = car.photoFileName {
                 ImageManager.deleteImage(fileName: oldFile)
             }
             let newFileName = ImageManager.generateFileName()
             ImageManager.saveImage(image, fileName: newFileName)
-            photoFileName = newFileName
-        } else if let fileName = photoFileName {
-            ImageManager.saveImage(image, fileName: fileName)
+            return newFileName
         }
+    }
+
+    private func saveCar() {
+        let newPhotoFileName = commitPhotoChanges()
+
+        var updatedCar = car
+        updatedCar.make = make
+        updatedCar.model = model.trimmingCharacters(in: .whitespaces)
+        updatedCar.year = year.trimmingCharacters(in: .whitespaces)
+        updatedCar.licensePlate = licensePlate.trimmingCharacters(in: .whitespaces)
+        updatedCar.vinNumber = vinNumber.trimmingCharacters(in: .whitespaces)
+        updatedCar.color = color.trimmingCharacters(in: .whitespaces)
+        updatedCar.mileage = mileage.trimmingCharacters(in: .whitespaces)
+        updatedCar.trim = trim.trimmingCharacters(in: .whitespaces)
+        updatedCar.bodyStyle = bodyStyle
+        updatedCar.driveType = driveType
+        updatedCar.engine = engine.trimmingCharacters(in: .whitespaces)
+        updatedCar.fuelType = fuelType
+        updatedCar.transmission = transmission
+        updatedCar.insuranceProvider = insuranceProvider
+        updatedCar.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
+        updatedCar.insuranceExpiryDate = hasInsuranceExpiry ? insuranceExpiryDate : nil
+        updatedCar.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
+        updatedCar.notes = notes.trimmingCharacters(in: .whitespaces)
+        updatedCar.photoFileName = newPhotoFileName
+        updatedCar.photoOffsetY = photoOffsetY
+        onSave(updatedCar)
+        dismiss()
     }
 }
 
