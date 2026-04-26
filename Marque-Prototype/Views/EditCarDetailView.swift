@@ -2,10 +2,12 @@ import SwiftUI
 import PhotosUI
 import Photos
 
+// Tracks what the user has done to the photo during this edit session.
+// File I/O only happens when the user taps Save.
 private enum PhotoEditState {
-    case unchanged
-    case changed(UIImage)
-    case removed
+    case unchanged          // no change — persist car.photoFileName as-is
+    case selected(UIImage)  // new image picked — save to disk on commit
+    case removed            // user confirmed removal — delete from disk on commit
 }
 
 struct EditCarDetailView: View {
@@ -13,6 +15,8 @@ struct EditCarDetailView: View {
     @Binding var car: Car
 
     var onSave: (Car) -> Void
+
+    // MARK: - Form fields
 
     @State private var make: String = ""
     @State private var model: String = ""
@@ -36,20 +40,24 @@ struct EditCarDetailView: View {
     @State private var hasRegistrationExpiry = false
     @State private var registrationExpiryDate = Date()
 
+    // MARK: - Photo state
+
     @State private var photoState: PhotoEditState = .unchanged
-    @State private var loadedImage: UIImage?
-    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var loadedImage: UIImage?        // image read from disk on appear
+    @State private var selectedItem: PhotosPickerItem?
     @State private var photoOffsetY: Double = 0
     @State private var dragOffsetY: Double = 0
-    @State private var showingPhotoPicker = false
+    @State private var showingPicker = false
     @State private var showingRemoveConfirmation = false
-    @State private var showingPhotoPermissionDenied = false
+    @State private var showingPermissionDenied = false
+
+    // MARK: - Derived
 
     private var displayImage: UIImage? {
         switch photoState {
-        case .unchanged: return loadedImage
-        case .changed(let image): return image
-        case .removed: return nil
+        case .unchanged:         return loadedImage
+        case .selected(let img): return img
+        case .removed:           return nil
         }
     }
 
@@ -59,6 +67,8 @@ struct EditCarDetailView: View {
         !year.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             Form {
@@ -67,14 +77,10 @@ struct EditCarDetailView: View {
                 Section(header: Text("Basic Information")) {
                     Picker("Make", selection: $make) {
                         Text("Select a make").tag("")
-                        ForEach(CarData.makes, id: \.self) { brand in
-                            Text(brand).tag(brand)
-                        }
+                        ForEach(CarData.makes, id: \.self) { Text($0).tag($0) }
                     }
-
                     TextField("Model (e.g. Camry, 3 Series)", text: $model)
                         .autocorrectionDisabled()
-
                     TextField("Year (e.g. 2024)", text: $year)
                         .keyboardType(.numberPad)
                 }
@@ -83,7 +89,6 @@ struct EditCarDetailView: View {
                     TextField("License Plate Number", text: $licensePlate)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.characters)
-
                     TextField("VIN Number", text: $vinNumber)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.characters)
@@ -92,19 +97,13 @@ struct EditCarDetailView: View {
                         .onChange(of: hasRegistrationExpiry) { _, isOn in
                             if isOn { NotificationManager.requestPermission() }
                         }
-
                     if hasRegistrationExpiry {
-                        DatePicker(
-                            "Expires",
-                            selection: $registrationExpiryDate,
-                            displayedComponents: .date
-                        )
+                        DatePicker("Expires", selection: $registrationExpiryDate, displayedComponents: .date)
                     }
                 }
 
                 Section(header: Text("Vehicle Details")) {
                     TextField("Color (e.g. Silver, Black)", text: $color)
-
                     TextField("Mileage (e.g. 25,000 mi)", text: $mileage)
                         .keyboardType(.numberPad)
 
@@ -158,11 +157,8 @@ struct EditCarDetailView: View {
                 Section(header: Text("Insurance Information")) {
                     Picker("Insurance Provider", selection: $insuranceProvider) {
                         Text("Select a provider").tag("")
-                        ForEach(CarData.insuranceProviders, id: \.self) { provider in
-                            Text(provider).tag(provider)
-                        }
+                        ForEach(CarData.insuranceProviders, id: \.self) { Text($0).tag($0) }
                     }
-
                     TextField("Policy Number", text: $insurancePolicyNumber)
                         .autocorrectionDisabled()
 
@@ -170,13 +166,8 @@ struct EditCarDetailView: View {
                         .onChange(of: hasInsuranceExpiry) { _, isOn in
                             if isOn { NotificationManager.requestPermission() }
                         }
-
                     if hasInsuranceExpiry {
-                        DatePicker(
-                            "Expires",
-                            selection: $insuranceExpiryDate,
-                            displayedComponents: .date
-                        )
+                        DatePicker("Expires", selection: $insuranceExpiryDate, displayedComponents: .date)
                     }
                 }
 
@@ -189,29 +180,17 @@ struct EditCarDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveCar()
-                    }
-                    .disabled(!isFormValid)
-                    .fontWeight(.semibold)
+                    Button("Save") { saveCar() }
+                        .disabled(!isFormValid)
+                        .fontWeight(.semibold)
                 }
             }
-            .onChange(of: selectedPhoto) { _, newItem in
-                Task {
-                    guard let newItem else { return }
-                    if let data = try? await newItem.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        photoState = .changed(image)
-                        photoOffsetY = 0
-                    }
-                }
-            }
-            .alert("Photo Access Denied", isPresented: $showingPhotoPermissionDenied) {
+            // Permission-denied alert lives here alone — no other presentation modifiers
+            // on NavigationStack to avoid SwiftUI presentation conflicts.
+            .alert("Photo Access Required", isPresented: $showingPermissionDenied) {
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
@@ -219,91 +198,53 @@ struct EditCarDetailView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("To add car photos, allow Marque to access your photo library in Settings.")
+                Text("To add a car photo, allow Marque to access your photo library in Settings > Privacy > Photos.")
+            }
+            .onChange(of: selectedItem) { _, newItem in
+                Task {
+                    guard let newItem,
+                          let data = try? await newItem.loadTransferable(type: Data.self),
+                          let image = UIImage(data: data) else { return }
+                    photoState = .selected(image)
+                    photoOffsetY = 0
+                }
             }
             .onAppear {
-                make = car.make
-                model = car.model
-                year = car.year
-                licensePlate = car.licensePlate
-                vinNumber = car.vinNumber
-                color = car.color
-                mileage = car.mileage
-                trim = car.trim
-                bodyStyle = car.bodyStyle
-                driveType = car.driveType
-                engine = car.engine
-                fuelType = car.fuelType
-                transmission = car.transmission
-                insuranceProvider = car.insuranceProvider
-                insurancePolicyNumber = car.insurancePolicyNumber
-                notes = car.notes
-                photoOffsetY = car.photoOffsetY
-
-                if let date = car.insuranceExpiryDate {
-                    hasInsuranceExpiry = true
-                    insuranceExpiryDate = date
-                }
-                if let date = car.registrationExpiryDate {
-                    hasRegistrationExpiry = true
-                    registrationExpiryDate = date
-                }
-
-                if let fileName = car.photoFileName {
-                    loadedImage = ImageManager.loadImage(fileName: fileName)
-                }
+                populateFields()
             }
         }
     }
+
+    // MARK: - Photo section
 
     private var photoSection: some View {
         Section(header: Text("Car Photo")) {
             VStack(spacing: 12) {
                 if let image = displayImage {
-                    GeometryReader { geo in
-                        let maxOff = maxPhotoOffset(image: image, width: geo.size.width, height: 180)
-                        let clampedOffset = min(maxOff, max(-maxOff, photoOffsetY + dragOffsetY))
-
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: 180)
-                            .offset(y: clampedOffset)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .gesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        let proposed = photoOffsetY + value.translation.height
-                                        dragOffsetY = min(maxOff, max(-maxOff, proposed)) - photoOffsetY
-                                    }
-                                    .onEnded { value in
-                                        let proposed = photoOffsetY + value.translation.height
-                                        photoOffsetY = min(maxOff, max(-maxOff, proposed))
-                                        dragOffsetY = 0
-                                    }
-                            )
-                    }
-                    .frame(height: 180)
-
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.and.down")
-                            .font(.caption2)
-                        Text("Drag to reposition")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.secondary)
+                    photoPreview(image: image)
                 }
 
                 HStack(spacing: 16) {
+                    // Add / Change — .photosPicker is scoped to this button only.
                     Button {
-                        requestPhotoAccess()
+                        requestPhotoPermission()
                     } label: {
-                        Label(displayImage == nil ? "Add Photo" : "Change Photo", systemImage: "photo.on.rectangle.angled")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                        Label(
+                            displayImage == nil ? "Add Photo" : "Change Photo",
+                            systemImage: "photo.on.rectangle.angled"
+                        )
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                     }
-                    .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhoto, matching: .images)
+                    .photosPicker(
+                        isPresented: $showingPicker,
+                        selection: $selectedItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    )
 
+                    // Remove — .confirmationDialog is scoped to this button only,
+                    // keeping it isolated from the picker above.
                     if displayImage != nil {
                         Button(role: .destructive) {
                             showingRemoveConfirmation = true
@@ -321,7 +262,7 @@ struct EditCarDetailView: View {
                                 photoOffsetY = 0
                             }
                         } message: {
-                            Text("The photo will be removed when you save.")
+                            Text("The photo will be deleted when you save.")
                         }
                     }
                 }
@@ -331,89 +272,163 @@ struct EditCarDetailView: View {
         }
     }
 
-    private func requestPhotoAccess() {
-        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        switch status {
+    @ViewBuilder
+    private func photoPreview(image: UIImage) -> some View {
+        GeometryReader { geo in
+            let maxOffset = clampedMaxOffset(image: image, width: geo.size.width, height: 180)
+            let offset = min(maxOffset, max(-maxOffset, photoOffsetY + dragOffsetY))
+
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: geo.size.width, height: 180)
+                .offset(y: offset)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            let proposed = photoOffsetY + value.translation.height
+                            dragOffsetY = min(maxOffset, max(-maxOffset, proposed)) - photoOffsetY
+                        }
+                        .onEnded { value in
+                            let proposed = photoOffsetY + value.translation.height
+                            photoOffsetY = min(maxOffset, max(-maxOffset, proposed))
+                            dragOffsetY = 0
+                        }
+                )
+        }
+        .frame(height: 180)
+
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.up.and.down")
+                .font(.caption2)
+            Text("Drag to reposition")
+                .font(.caption)
+        }
+        .foregroundStyle(.secondary)
+    }
+
+    // MARK: - Permission
+
+    private func requestPhotoPermission() {
+        switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
         case .authorized, .limited:
-            showingPhotoPicker = true
+            showingPicker = true
+
         case .notDetermined:
-            PHPhotoLibrary.requestAuthorization(for: .readWrite) { newStatus in
+            PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
                 DispatchQueue.main.async {
-                    if newStatus == .authorized || newStatus == .limited {
-                        showingPhotoPicker = true
-                    } else {
-                        showingPhotoPermissionDenied = true
+                    switch status {
+                    case .authorized, .limited:
+                        showingPicker = true
+                    default:
+                        showingPermissionDenied = true
                     }
                 }
             }
+
         default:
-            showingPhotoPermissionDenied = true
+            showingPermissionDenied = true
         }
     }
 
-    private func maxPhotoOffset(image: UIImage, width: CGFloat, height: CGFloat) -> Double {
-        let imageAspect = image.size.width / image.size.height
-        let displayedHeight = width / imageAspect
+    // MARK: - Helpers
+
+    private func clampedMaxOffset(image: UIImage, width: CGFloat, height: CGFloat) -> Double {
+        let displayedHeight = width / (image.size.width / image.size.height)
         return max(0, (displayedHeight - height) / 2)
     }
 
+    // MARK: - Save
+
+    /// Applies photo changes to disk and returns the new filename (or nil if removed).
+    /// Called only when the user taps Save — never earlier.
     private func commitPhotoChanges() -> String? {
         switch photoState {
         case .unchanged:
             return car.photoFileName
 
         case .removed:
-            if let oldFile = car.photoFileName {
-                ImageManager.deleteImage(fileName: oldFile)
+            if let old = car.photoFileName {
+                ImageManager.deleteImage(fileName: old)
             }
             return nil
 
-        case .changed(let image):
-            if let oldFile = car.photoFileName {
-                ImageManager.deleteImage(fileName: oldFile)
+        case .selected(let image):
+            if let old = car.photoFileName {
+                ImageManager.deleteImage(fileName: old)
             }
-            let newFileName = ImageManager.generateFileName()
-            ImageManager.saveImage(image, fileName: newFileName)
-            return newFileName
+            let fileName = ImageManager.generateFileName()
+            ImageManager.saveImage(image, fileName: fileName)
+            return fileName
         }
     }
 
     private func saveCar() {
         let newPhotoFileName = commitPhotoChanges()
 
-        var updatedCar = car
-        updatedCar.make = make
-        updatedCar.model = model.trimmingCharacters(in: .whitespaces)
-        updatedCar.year = year.trimmingCharacters(in: .whitespaces)
-        updatedCar.licensePlate = licensePlate.trimmingCharacters(in: .whitespaces)
-        updatedCar.vinNumber = vinNumber.trimmingCharacters(in: .whitespaces)
-        updatedCar.color = color.trimmingCharacters(in: .whitespaces)
-        updatedCar.mileage = mileage.trimmingCharacters(in: .whitespaces)
-        updatedCar.trim = trim.trimmingCharacters(in: .whitespaces)
-        updatedCar.bodyStyle = bodyStyle
-        updatedCar.driveType = driveType
-        updatedCar.engine = engine.trimmingCharacters(in: .whitespaces)
-        updatedCar.fuelType = fuelType
-        updatedCar.transmission = transmission
-        updatedCar.insuranceProvider = insuranceProvider
-        updatedCar.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
-        updatedCar.insuranceExpiryDate = hasInsuranceExpiry ? insuranceExpiryDate : nil
-        updatedCar.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
-        updatedCar.notes = notes.trimmingCharacters(in: .whitespaces)
-        updatedCar.photoFileName = newPhotoFileName
-        updatedCar.photoOffsetY = photoOffsetY
-        onSave(updatedCar)
+        var updated = car
+        updated.make = make
+        updated.model = model.trimmingCharacters(in: .whitespaces)
+        updated.year = year.trimmingCharacters(in: .whitespaces)
+        updated.licensePlate = licensePlate.trimmingCharacters(in: .whitespaces)
+        updated.vinNumber = vinNumber.trimmingCharacters(in: .whitespaces)
+        updated.color = color.trimmingCharacters(in: .whitespaces)
+        updated.mileage = mileage.trimmingCharacters(in: .whitespaces)
+        updated.trim = trim.trimmingCharacters(in: .whitespaces)
+        updated.bodyStyle = bodyStyle
+        updated.driveType = driveType
+        updated.engine = engine.trimmingCharacters(in: .whitespaces)
+        updated.fuelType = fuelType
+        updated.transmission = transmission
+        updated.insuranceProvider = insuranceProvider
+        updated.insurancePolicyNumber = insurancePolicyNumber.trimmingCharacters(in: .whitespaces)
+        updated.insuranceExpiryDate = hasInsuranceExpiry ? insuranceExpiryDate : nil
+        updated.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
+        updated.notes = notes.trimmingCharacters(in: .whitespaces)
+        updated.photoFileName = newPhotoFileName
+        updated.photoOffsetY = photoOffsetY
+
+        onSave(updated)
         dismiss()
+    }
+
+    private func populateFields() {
+        make = car.make
+        model = car.model
+        year = car.year
+        licensePlate = car.licensePlate
+        vinNumber = car.vinNumber
+        color = car.color
+        mileage = car.mileage
+        trim = car.trim
+        bodyStyle = car.bodyStyle
+        driveType = car.driveType
+        engine = car.engine
+        fuelType = car.fuelType
+        transmission = car.transmission
+        insuranceProvider = car.insuranceProvider
+        insurancePolicyNumber = car.insurancePolicyNumber
+        notes = car.notes
+        photoOffsetY = car.photoOffsetY
+
+        if let date = car.insuranceExpiryDate {
+            hasInsuranceExpiry = true
+            insuranceExpiryDate = date
+        }
+        if let date = car.registrationExpiryDate {
+            hasRegistrationExpiry = true
+            registrationExpiryDate = date
+        }
+        if let fileName = car.photoFileName {
+            loadedImage = ImageManager.loadImage(fileName: fileName)
+        }
     }
 }
 
 #Preview {
     EditCarDetailView(
-        car: .constant(Car(
-            make: "Toyota",
-            model: "Camry",
-            year: "2024"
-        )),
+        car: .constant(Car(make: "Toyota", model: "Camry", year: "2024")),
         onSave: { _ in }
     )
 }
