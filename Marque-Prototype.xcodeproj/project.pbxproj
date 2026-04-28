@@ -22,6 +22,22 @@
 		A10013 /* ExpenseSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013 /* ExpenseSummaryView.swift */; };
 		A10014 /* CarData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014 /* CarData.swift */; };
 		A10015 /* VINDecodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20015 /* VINDecodeService.swift */; };
+		A10016 /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20016 /* AppUser.swift */; };
+		A10017 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20017 /* AuthService.swift */; };
+		A10018 /* MarqueComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20018 /* MarqueComponents.swift */; };
+		A10019 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20019 /* OnboardingView.swift */; };
+		A10020 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20020 /* LoginView.swift */; };
+		A10021 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20021 /* SignUpView.swift */; };
+		A10022 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20022 /* ForgotPasswordView.swift */; };
+		A10023 /* MyProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20023 /* MyProfileView.swift */; };
+		A10024 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20024 /* EditProfileView.swift */; };
+		A10025 /* PublicProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20025 /* PublicProfileView.swift */; };
+		A10026 /* FollowListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20026 /* FollowListView.swift */; };
+		A10027 /* ExploreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20027 /* ExploreView.swift */; };
+		A10028 /* SearchResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20028 /* SearchResultsView.swift */; };
+		A10029 /* PublicCarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20029 /* PublicCarDetailView.swift */; };
+		A10030 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20030 /* SettingsView.swift */; };
+		A10031 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20031 /* ProUpgradeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +56,22 @@
 		A20013 /* ExpenseSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummaryView.swift; sourceTree = "<group>"; };
 		A20014 /* CarData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarData.swift; sourceTree = "<group>"; };
 		A20015 /* VINDecodeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINDecodeService.swift; sourceTree = "<group>"; };
+		A20016 /* AppUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUser.swift; sourceTree = "<group>"; };
+		A20017 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		A20018 /* MarqueComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueComponents.swift; sourceTree = "<group>"; };
+		A20019 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A20020 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		A20021 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
+		A20022 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
+		A20023 /* MyProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProfileView.swift; sourceTree = "<group>"; };
+		A20024 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
+		A20025 /* PublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicProfileView.swift; sourceTree = "<group>"; };
+		A20026 /* FollowListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowListView.swift; sourceTree = "<group>"; };
+		A20027 /* ExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreView.swift; sourceTree = "<group>"; };
+		A20028 /* SearchResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsView.swift; sourceTree = "<group>"; };
+		A20029 /* PublicCarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicCarDetailView.swift; sourceTree = "<group>"; };
+		A20030 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A20031 /* ProUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProUpgradeView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,6 +100,8 @@
 				A20001 /* Marque_PrototypeApp.swift */,
 				A50003 /* Models */,
 				A50006 /* Stores */,
+				A50007 /* Components */,
+				A50008 /* Features */,
 				A50004 /* Views */,
 				A20008 /* Assets.xcassets */,
 			);
@@ -80,6 +114,7 @@
 				A20002 /* Car.swift */,
 				A20009 /* MaintenanceRecord.swift */,
 				A20014 /* CarData.swift */,
+				A20016 /* AppUser.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -112,8 +147,77 @@
 				A20010 /* ImageManager.swift */,
 				A20012 /* NotificationManager.swift */,
 				A20015 /* VINDecodeService.swift */,
+				A20017 /* AuthService.swift */,
 			);
 			path = Stores;
+			sourceTree = "<group>";
+		};
+		A50007 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				A20018 /* MarqueComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A50008 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				A50009 /* Onboarding */,
+				A50010 /* Auth */,
+				A50011 /* Profile */,
+				A50012 /* Explore */,
+				A50013 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A50009 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A20019 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		A50010 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A20020 /* LoginView.swift */,
+				A20021 /* SignUpView.swift */,
+				A20022 /* ForgotPasswordView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		A50011 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				A20023 /* MyProfileView.swift */,
+				A20024 /* EditProfileView.swift */,
+				A20025 /* PublicProfileView.swift */,
+				A20026 /* FollowListView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		A50012 /* Explore */ = {
+			isa = PBXGroup;
+			children = (
+				A20027 /* ExploreView.swift */,
+				A20028 /* SearchResultsView.swift */,
+				A20029 /* PublicCarDetailView.swift */,
+			);
+			path = Explore;
+			sourceTree = "<group>";
+		};
+		A50013 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A20030 /* SettingsView.swift */,
+				A20031 /* ProUpgradeView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -199,6 +303,22 @@
 				A10013 /* ExpenseSummaryView.swift in Sources */,
 				A10014 /* CarData.swift in Sources */,
 				A10015 /* VINDecodeService.swift in Sources */,
+				A10016 /* AppUser.swift in Sources */,
+				A10017 /* AuthService.swift in Sources */,
+				A10018 /* MarqueComponents.swift in Sources */,
+				A10019 /* OnboardingView.swift in Sources */,
+				A10020 /* LoginView.swift in Sources */,
+				A10021 /* SignUpView.swift in Sources */,
+				A10022 /* ForgotPasswordView.swift in Sources */,
+				A10023 /* MyProfileView.swift in Sources */,
+				A10024 /* EditProfileView.swift in Sources */,
+				A10025 /* PublicProfileView.swift in Sources */,
+				A10026 /* FollowListView.swift in Sources */,
+				A10027 /* ExploreView.swift in Sources */,
+				A10028 /* SearchResultsView.swift in Sources */,
+				A10029 /* PublicCarDetailView.swift in Sources */,
+				A10030 /* SettingsView.swift in Sources */,
+				A10031 /* ProUpgradeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
