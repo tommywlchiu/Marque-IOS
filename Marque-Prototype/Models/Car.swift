@@ -25,6 +25,7 @@ struct Car: Identifiable, Codable, Equatable {
     var notes: String
 
     var maintenanceRecords: [MaintenanceRecord]
+    var serviceReminders: [ServiceReminder]
 
     init(
         id: UUID = UUID(),
@@ -48,7 +49,8 @@ struct Car: Identifiable, Codable, Equatable {
         insuranceExpiryDate: Date? = nil,
         registrationExpiryDate: Date? = nil,
         notes: String = "",
-        maintenanceRecords: [MaintenanceRecord] = []
+        maintenanceRecords: [MaintenanceRecord] = [],
+        serviceReminders: [ServiceReminder] = []
     ) {
         self.id = id
         self.make = make
@@ -72,6 +74,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.registrationExpiryDate = registrationExpiryDate
         self.notes = notes
         self.maintenanceRecords = maintenanceRecords
+        self.serviceReminders = serviceReminders
     }
 
     // Custom decoder so existing saved data without the new fields still loads.
@@ -99,6 +102,7 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
         notes = try c.decode(String.self, forKey: .notes)
         maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
+        serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
     }
 
     var displayName: String {

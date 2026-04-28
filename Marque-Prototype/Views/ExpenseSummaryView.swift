@@ -51,6 +51,15 @@ struct ExpenseSummaryView: View {
                     .listRowBackground(Color.clear)
                 }
 
+                if totalAcrossAllCars > 0 {
+                    Section {
+                        NavigationLink(destination: ExpenseChartsView()) {
+                            Label("View Charts & Insights", systemImage: "chart.xyaxis.line")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                }
+
                 if !carsWithExpenses.isEmpty {
                     Section(header: Text("By Vehicle")) {
                         ForEach(carsWithExpenses) { car in

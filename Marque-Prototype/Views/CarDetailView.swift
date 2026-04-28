@@ -103,6 +103,8 @@ struct CarDetailView: View {
                 expenseSummarySection
             }
 
+            remindersSection
+
             maintenanceSection
 
             Section {
@@ -238,6 +240,28 @@ struct CarDetailView: View {
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
         return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
+    }
+
+    private var remindersSection: some View {
+        Section(header: Text("Service Reminders")) {
+            let upcoming = car.serviceReminders.filter { !$0.isCompleted }
+            let currentMileage = ServiceReminderEngine.mileage(from: car.mileage)
+            let overdueCount = upcoming.filter { $0.status(currentMileage: currentMileage) == .overdue }.count
+
+            NavigationLink(destination: ServiceRemindersView(carID: car.id)) {
+                HStack {
+                    Image(systemName: overdueCount > 0 ? "exclamationmark.circle.fill" : "wrench.and.screwdriver")
+                        .foregroundColor(overdueCount > 0 ? .red : .accentColor)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(upcoming.isEmpty ? "Add Reminders" : "\(upcoming.count) Upcoming")
+                            .font(.subheadline)
+                        if overdueCount > 0 {
+                            Text("\(overdueCount) overdue").font(.caption).foregroundColor(.red)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private var maintenanceSection: some View {

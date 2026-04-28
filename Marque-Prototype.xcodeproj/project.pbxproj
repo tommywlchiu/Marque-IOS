@@ -38,6 +38,11 @@
 		A10029 /* PublicCarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20029 /* PublicCarDetailView.swift */; };
 		A10030 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20030 /* SettingsView.swift */; };
 		A10031 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20031 /* ProUpgradeView.swift */; };
+		A10032 /* ServiceReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20032 /* ServiceReminder.swift */; };
+		A10033 /* ServiceReminderEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20033 /* ServiceReminderEngine.swift */; };
+		A10034 /* ServiceRemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20034 /* ServiceRemindersView.swift */; };
+		A10035 /* AddReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20035 /* AddReminderView.swift */; };
+		A10036 /* ExpenseChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20036 /* ExpenseChartsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +77,11 @@
 		A20029 /* PublicCarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicCarDetailView.swift; sourceTree = "<group>"; };
 		A20030 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A20031 /* ProUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProUpgradeView.swift; sourceTree = "<group>"; };
+		A20032 /* ServiceReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceReminder.swift; sourceTree = "<group>"; };
+		A20033 /* ServiceReminderEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceReminderEngine.swift; sourceTree = "<group>"; };
+		A20034 /* ServiceRemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceRemindersView.swift; sourceTree = "<group>"; };
+		A20035 /* AddReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderView.swift; sourceTree = "<group>"; };
+		A20036 /* ExpenseChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseChartsView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -115,6 +125,7 @@
 				A20009 /* MaintenanceRecord.swift */,
 				A20014 /* CarData.swift */,
 				A20016 /* AppUser.swift */,
+				A20032 /* ServiceReminder.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -148,6 +159,7 @@
 				A20012 /* NotificationManager.swift */,
 				A20015 /* VINDecodeService.swift */,
 				A20017 /* AuthService.swift */,
+				A20033 /* ServiceReminderEngine.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -168,8 +180,27 @@
 				A50011 /* Profile */,
 				A50012 /* Explore */,
 				A50013 /* Settings */,
+				A50014 /* Garage */,
+				A50015 /* Expenses */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		A50014 /* Garage */ = {
+			isa = PBXGroup;
+			children = (
+				A20034 /* ServiceRemindersView.swift */,
+				A20035 /* AddReminderView.swift */,
+			);
+			path = Garage;
+			sourceTree = "<group>";
+		};
+		A50015 /* Expenses */ = {
+			isa = PBXGroup;
+			children = (
+				A20036 /* ExpenseChartsView.swift */,
+			);
+			path = Expenses;
 			sourceTree = "<group>";
 		};
 		A50009 /* Onboarding */ = {
@@ -319,6 +350,11 @@
 				A10029 /* PublicCarDetailView.swift in Sources */,
 				A10030 /* SettingsView.swift in Sources */,
 				A10031 /* ProUpgradeView.swift in Sources */,
+				A10032 /* ServiceReminder.swift in Sources */,
+				A10033 /* ServiceReminderEngine.swift in Sources */,
+				A10034 /* ServiceRemindersView.swift in Sources */,
+				A10035 /* AddReminderView.swift in Sources */,
+				A10036 /* ExpenseChartsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
