@@ -197,7 +197,7 @@ struct CarCardView: View {
 
     @ViewBuilder
     private var carThumbnail: some View {
-        if let fileName = car.photoFileName,
+        if let fileName = car.primaryPhotoFileName,
            let uiImage = ImageManager.loadImage(fileName: fileName) {
             Image(uiImage: uiImage)
                 .resizable()

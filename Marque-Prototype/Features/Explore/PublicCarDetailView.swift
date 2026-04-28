@@ -44,7 +44,7 @@ struct PublicCarDetailView: View {
     private var photoHeader: some View {
         ZStack {
             Color.accentColor.opacity(0.08)
-            if let fileName = car.photoFileName,
+            if let fileName = car.primaryPhotoFileName,
                let uiImage = ImageManager.loadImage(fileName: fileName) {
                 Image(uiImage: uiImage)
                     .resizable()

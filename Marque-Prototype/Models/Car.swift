@@ -5,7 +5,10 @@ struct Car: Identifiable, Codable, Equatable {
     var make: String
     var model: String
     var year: String
-    var photoFileName: String?
+
+    // Ordered list of photo filenames stored in the app's Documents/CarPhotos
+    // directory. The first entry is treated as the primary (cover) photo.
+    var photoFileNames: [String]
     var photoOffsetY: Double
 
     var licensePlate: String
@@ -32,7 +35,7 @@ struct Car: Identifiable, Codable, Equatable {
         make: String = "",
         model: String = "",
         year: String = "",
-        photoFileName: String? = nil,
+        photoFileNames: [String] = [],
         photoOffsetY: Double = 0,
         licensePlate: String = "",
         vinNumber: String = "",
@@ -56,7 +59,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.make = make
         self.model = model
         self.year = year
-        self.photoFileName = photoFileName
+        self.photoFileNames = photoFileNames
         self.photoOffsetY = photoOffsetY
         self.licensePlate = licensePlate
         self.vinNumber = vinNumber
@@ -77,14 +80,36 @@ struct Car: Identifiable, Codable, Equatable {
         self.serviceReminders = serviceReminders
     }
 
-    // Custom decoder so existing saved data without the new fields still loads.
+    // Includes a legacy `photoFileName` key so previously-saved single-photo
+    // data continues to load after the multi-photo migration.
+    private enum CodingKeys: String, CodingKey {
+        case id, make, model, year
+        case photoFileNames
+        case legacyPhotoFileName = "photoFileName"
+        case photoOffsetY
+        case licensePlate, vinNumber, color, mileage, trim, bodyStyle, driveType, engine
+        case fuelType, transmission
+        case insuranceProvider, insurancePolicyNumber
+        case insuranceExpiryDate, registrationExpiryDate
+        case notes
+        case maintenanceRecords, serviceReminders
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(UUID.self, forKey: .id)
         make = try c.decode(String.self, forKey: .make)
         model = try c.decode(String.self, forKey: .model)
         year = try c.decode(String.self, forKey: .year)
-        photoFileName = try c.decodeIfPresent(String.self, forKey: .photoFileName)
+
+        if let names = try c.decodeIfPresent([String].self, forKey: .photoFileNames), !names.isEmpty {
+            photoFileNames = names
+        } else if let legacy = try c.decodeIfPresent(String.self, forKey: .legacyPhotoFileName) {
+            photoFileNames = [legacy]
+        } else {
+            photoFileNames = []
+        }
+
         photoOffsetY = try c.decodeIfPresent(Double.self, forKey: .photoOffsetY) ?? 0
         licensePlate = try c.decode(String.self, forKey: .licensePlate)
         vinNumber = try c.decode(String.self, forKey: .vinNumber)
@@ -103,6 +128,42 @@ struct Car: Identifiable, Codable, Equatable {
         notes = try c.decode(String.self, forKey: .notes)
         maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
+    }
+
+    // Skip writing the legacy key — new data is written under photoFileNames.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(make, forKey: .make)
+        try c.encode(model, forKey: .model)
+        try c.encode(year, forKey: .year)
+        try c.encode(photoFileNames, forKey: .photoFileNames)
+        try c.encode(photoOffsetY, forKey: .photoOffsetY)
+        try c.encode(licensePlate, forKey: .licensePlate)
+        try c.encode(vinNumber, forKey: .vinNumber)
+        try c.encode(color, forKey: .color)
+        try c.encode(mileage, forKey: .mileage)
+        try c.encode(trim, forKey: .trim)
+        try c.encode(bodyStyle, forKey: .bodyStyle)
+        try c.encode(driveType, forKey: .driveType)
+        try c.encode(engine, forKey: .engine)
+        try c.encode(fuelType, forKey: .fuelType)
+        try c.encode(transmission, forKey: .transmission)
+        try c.encode(insuranceProvider, forKey: .insuranceProvider)
+        try c.encode(insurancePolicyNumber, forKey: .insurancePolicyNumber)
+        try c.encodeIfPresent(insuranceExpiryDate, forKey: .insuranceExpiryDate)
+        try c.encodeIfPresent(registrationExpiryDate, forKey: .registrationExpiryDate)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(maintenanceRecords, forKey: .maintenanceRecords)
+        try c.encode(serviceReminders, forKey: .serviceReminders)
+    }
+
+    var primaryPhotoFileName: String? {
+        photoFileNames.first
+    }
+
+    var hasMultiplePhotos: Bool {
+        photoFileNames.count > 1
     }
 
     var displayName: String {

@@ -2,12 +2,23 @@ import SwiftUI
 import PhotosUI
 import Photos
 
-// Tracks what the user has done to the photo during this edit session.
-// File I/O only happens when the user taps Save.
-private enum PhotoEditState {
-    case unchanged          // no change — persist car.photoFileName as-is
-    case selected(UIImage)  // new image picked — save to disk on commit
-    case removed            // user confirmed removal — delete from disk on commit
+// One photo in the editor's working list. Either it's already on disk
+// (`.existing`) or the user just picked it and we haven't saved it yet
+// (`.pending`). All disk I/O is deferred to commit time.
+private enum PhotoSlot: Identifiable, Equatable {
+    case existing(String)
+    case pending(UIImage, UUID)
+
+    var id: String {
+        switch self {
+        case .existing(let name): return name
+        case .pending(_, let id): return id.uuidString
+        }
+    }
+
+    static func == (lhs: PhotoSlot, rhs: PhotoSlot) -> Bool {
+        lhs.id == rhs.id
+    }
 }
 
 struct EditCarDetailView: View {
@@ -42,24 +53,15 @@ struct EditCarDetailView: View {
 
     // MARK: - Photo state
 
-    @State private var photoState: PhotoEditState = .unchanged
-    @State private var loadedImage: UIImage?        // image read from disk on appear
-    @State private var selectedItem: PhotosPickerItem?
+    @State private var photoSlots: [PhotoSlot] = []
+    @State private var fileNamesToDelete: Set<String> = []   // existing files removed by the user
+    @State private var primaryImage: UIImage?                 // resolved image for the first slot, used for reposition preview
+    @State private var selectedItems: [PhotosPickerItem] = []
     @State private var photoOffsetY: Double = 0
     @State private var dragOffsetY: Double = 0
     @State private var showingPicker = false
-    @State private var showingRemoveConfirmation = false
+    @State private var slotPendingRemoval: PhotoSlot?
     @State private var showingPermissionDenied = false
-
-    // MARK: - Derived
-
-    private var displayImage: UIImage? {
-        switch photoState {
-        case .unchanged:         return loadedImage
-        case .selected(let img): return img
-        case .removed:           return nil
-        }
-    }
 
     var isFormValid: Bool {
         !make.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -188,8 +190,6 @@ struct EditCarDetailView: View {
                         .fontWeight(.semibold)
                 }
             }
-            // Permission-denied alert lives here alone — no other presentation modifiers
-            // on NavigationStack to avoid SwiftUI presentation conflicts.
             .alert("Photo Access Required", isPresented: $showingPermissionDenied) {
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -198,76 +198,59 @@ struct EditCarDetailView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("To add a car photo, allow Marque to access your photo library in Settings > Privacy > Photos.")
+                Text("To add car photos, allow Marque to access your photo library in Settings > Privacy > Photos.")
             }
-            .onChange(of: selectedItem) { _, newItem in
-                Task {
-                    guard let newItem,
-                          let data = try? await newItem.loadTransferable(type: Data.self),
-                          let image = UIImage(data: data) else { return }
-                    photoState = .selected(image)
-                    photoOffsetY = 0
-                }
+            .photosPicker(
+                isPresented: $showingPicker,
+                selection: $selectedItems,
+                maxSelectionCount: 10,
+                matching: .images,
+                photoLibrary: .shared()
+            )
+            .onChange(of: selectedItems) { _, items in
+                guard !items.isEmpty else { return }
+                Task { await loadPickedPhotos(items) }
             }
-            .onAppear {
-                populateFields()
+            .confirmationDialog(
+                "Remove Photo",
+                isPresented: Binding(
+                    get: { slotPendingRemoval != nil },
+                    set: { if !$0 { slotPendingRemoval = nil } }
+                ),
+                titleVisibility: .visible,
+                presenting: slotPendingRemoval
+            ) { slot in
+                Button("Remove Photo", role: .destructive) { remove(slot: slot) }
+                Button("Cancel", role: .cancel) {}
+            } message: { _ in
+                Text("This will permanently remove the photo when you save.")
             }
+            .onAppear { populateFields() }
         }
     }
 
     // MARK: - Photo section
 
     private var photoSection: some View {
-        Section(header: Text("Car Photo")) {
+        Section(header: Text("Car Photos")) {
             VStack(spacing: 12) {
-                if let image = displayImage {
-                    photoPreview(image: image)
+                if let primaryImage {
+                    photoPreview(image: primaryImage)
                 }
 
-                HStack(spacing: 16) {
-                    // Add / Change — .photosPicker is scoped to this button only.
-                    Button {
-                        requestPhotoPermission()
-                    } label: {
-                        Label(
-                            displayImage == nil ? "Add Photo" : "Change Photo",
-                            systemImage: "photo.on.rectangle.angled"
-                        )
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    }
-                    .photosPicker(
-                        isPresented: $showingPicker,
-                        selection: $selectedItem,
-                        matching: .images,
-                        photoLibrary: .shared()
-                    )
+                if photoSlots.count > 1 {
+                    thumbnailStrip
+                }
 
-                    // Remove — .confirmationDialog is scoped to this button only,
-                    // keeping it isolated from the picker above.
-                    if displayImage != nil {
-                        Button(role: .destructive) {
-                            showingRemoveConfirmation = true
-                        } label: {
-                            Label("Remove", systemImage: "trash")
-                                .font(.subheadline)
-                        }
-                        .confirmationDialog(
-                            "Remove Photo",
-                            isPresented: $showingRemoveConfirmation,
-                            titleVisibility: .visible
-                        ) {
-                            Button("Remove Photo", role: .destructive) {
-                                if let old = car.photoFileName {
-                                    ImageManager.deleteImage(fileName: old)
-                                }
-                                photoState = .removed
-                                photoOffsetY = 0
-                            }
-                        } message: {
-                            Text("This will permanently remove the photo.")
-                        }
-                    }
+                Button {
+                    requestPhotoPermission()
+                } label: {
+                    Label(
+                        photoSlots.isEmpty ? "Add Photo" : "Add More Photos",
+                        systemImage: "photo.on.rectangle.angled"
+                    )
+                    .font(.subheadline)
+                    .fontWeight(.medium)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -305,13 +288,146 @@ struct EditCarDetailView: View {
         HStack(spacing: 4) {
             Image(systemName: "arrow.up.and.down")
                 .font(.caption2)
-            Text("Drag to reposition")
+            Text("Drag to reposition cover photo")
                 .font(.caption)
         }
         .foregroundStyle(.secondary)
     }
 
-    // MARK: - Permission
+    private var thumbnailStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(Array(photoSlots.enumerated()), id: \.element.id) { index, slot in
+                    thumbnailView(for: slot, index: index)
+                }
+            }
+            .padding(.horizontal, 2)
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
+    private func thumbnailView(for slot: PhotoSlot, index: Int) -> some View {
+        let image = thumbnailImage(for: slot)
+        let isPrimary = index == 0
+
+        ZStack(alignment: .topTrailing) {
+            ZStack(alignment: .bottomLeading) {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 64, height: 64)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                } else {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(.systemGray5))
+                        .frame(width: 64, height: 64)
+                        .overlay(ProgressView().scaleEffect(0.7))
+                }
+
+                if isPrimary {
+                    Text("Cover")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor)
+                        .clipShape(Capsule())
+                        .padding(4)
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isPrimary ? Color.accentColor : Color.clear, lineWidth: 2)
+            )
+            .contextMenu {
+                if !isPrimary {
+                    Button {
+                        makePrimary(slot: slot)
+                    } label: {
+                        Label("Set as Cover", systemImage: "star")
+                    }
+                }
+                Button(role: .destructive) {
+                    slotPendingRemoval = slot
+                } label: {
+                    Label("Remove", systemImage: "trash")
+                }
+            }
+
+            Button {
+                slotPendingRemoval = slot
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.white, .black.opacity(0.6))
+            }
+            .offset(x: 6, y: -6)
+        }
+    }
+
+    // MARK: - Slot operations
+
+    private func add(image: UIImage) {
+        photoSlots.append(.pending(image, UUID()))
+        if photoSlots.count == 1 {
+            primaryImage = image
+            photoOffsetY = 0
+        }
+    }
+
+    private func remove(slot: PhotoSlot) {
+        guard let index = photoSlots.firstIndex(of: slot) else { return }
+        if case .existing(let fileName) = slot {
+            fileNamesToDelete.insert(fileName)
+        }
+        let wasPrimary = index == 0
+        photoSlots.remove(at: index)
+        if wasPrimary {
+            photoOffsetY = 0
+            refreshPrimaryImage()
+        }
+    }
+
+    private func makePrimary(slot: PhotoSlot) {
+        guard let index = photoSlots.firstIndex(of: slot), index != 0 else { return }
+        photoSlots.remove(at: index)
+        photoSlots.insert(slot, at: 0)
+        photoOffsetY = 0
+        refreshPrimaryImage()
+    }
+
+    private func refreshPrimaryImage() {
+        guard let first = photoSlots.first else {
+            primaryImage = nil
+            return
+        }
+        primaryImage = thumbnailImage(for: first)
+    }
+
+    private func thumbnailImage(for slot: PhotoSlot) -> UIImage? {
+        switch slot {
+        case .existing(let fileName): return ImageManager.loadImage(fileName: fileName)
+        case .pending(let image, _):  return image
+        }
+    }
+
+    // MARK: - Picker
+
+    private func loadPickedPhotos(_ items: [PhotosPickerItem]) async {
+        var loadedImages: [UIImage] = []
+        for item in items {
+            if let data = try? await item.loadTransferable(type: Data.self),
+               let image = UIImage(data: data) {
+                loadedImages.append(image)
+            }
+        }
+        await MainActor.run {
+            for image in loadedImages { add(image: image) }
+            selectedItems = []
+        }
+    }
 
     private func requestPhotoPermission() {
         switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
@@ -344,28 +460,28 @@ struct EditCarDetailView: View {
 
     // MARK: - Save
 
-    /// Persists any pending photo change and returns the new filename (or nil if removed).
-    private func commitPhotoChanges() -> String? {
-        switch photoState {
-        case .unchanged:
-            return car.photoFileName
-
-        case .removed:
-            // File was already deleted when the user confirmed the removal dialog.
-            return nil
-
-        case .selected(let image):
-            if let old = car.photoFileName {
-                ImageManager.deleteImage(fileName: old)
+    // Persists pending images to disk, deletes any removed files, and returns
+    // the final ordered list of filenames for `car.photoFileNames`.
+    private func commitPhotoChanges() -> [String] {
+        var result: [String] = []
+        for slot in photoSlots {
+            switch slot {
+            case .existing(let name):
+                result.append(name)
+            case .pending(let image, _):
+                let name = ImageManager.generateFileName()
+                ImageManager.saveImage(image, fileName: name)
+                result.append(name)
             }
-            let fileName = ImageManager.generateFileName()
-            ImageManager.saveImage(image, fileName: fileName)
-            return fileName
         }
+        for name in fileNamesToDelete {
+            ImageManager.deleteImage(fileName: name)
+        }
+        return result
     }
 
     private func saveCar() {
-        let newPhotoFileName = commitPhotoChanges()
+        let newFileNames = commitPhotoChanges()
 
         var updated = car
         updated.make = make
@@ -386,7 +502,7 @@ struct EditCarDetailView: View {
         updated.insuranceExpiryDate = hasInsuranceExpiry ? insuranceExpiryDate : nil
         updated.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
         updated.notes = notes.trimmingCharacters(in: .whitespaces)
-        updated.photoFileName = newPhotoFileName
+        updated.photoFileNames = newFileNames
         updated.photoOffsetY = photoOffsetY
 
         onSave(updated)
@@ -420,8 +536,10 @@ struct EditCarDetailView: View {
             hasRegistrationExpiry = true
             registrationExpiryDate = date
         }
-        if let fileName = car.photoFileName {
-            loadedImage = ImageManager.loadImage(fileName: fileName)
+
+        photoSlots = car.photoFileNames.map { .existing($0) }
+        if let firstName = car.photoFileNames.first {
+            primaryImage = ImageManager.loadImage(fileName: firstName)
         }
     }
 }

@@ -25,7 +25,7 @@ class CarStore: ObservableObject {
 
     func deleteCar(at offsets: IndexSet) {
         for index in offsets {
-            if let fileName = cars[index].photoFileName {
+            for fileName in cars[index].photoFileNames {
                 ImageManager.deleteImage(fileName: fileName)
             }
         }
@@ -33,7 +33,7 @@ class CarStore: ObservableObject {
     }
 
     func deleteCar(_ car: Car) {
-        if let fileName = car.photoFileName {
+        for fileName in car.photoFileNames {
             ImageManager.deleteImage(fileName: fileName)
         }
         cars.removeAll { $0.id == car.id }

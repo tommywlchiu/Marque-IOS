@@ -8,6 +8,7 @@ struct CarDetailView: View {
     @State private var showingEditDetails = false
     @State private var showingDeleteConfirmation = false
     @State private var showingAddMaintenance = false
+    @State private var galleryStartIndex: Int?
 
     private let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -140,6 +141,12 @@ struct CarDetailView: View {
                 carStore.updateCar(car)
             }
         }
+        .fullScreenCover(item: Binding(
+            get: { galleryStartIndex.map(GalleryStart.init) },
+            set: { galleryStartIndex = $0?.index }
+        )) { start in
+            PhotoGalleryView(photoFileNames: car.photoFileNames, initialIndex: start.index)
+        }
         .alert("Delete Car", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
@@ -173,15 +180,39 @@ struct CarDetailView: View {
     private var photoHeaderSection: some View {
         Section {
             VStack(spacing: 12) {
-                if let fileName = car.photoFileName,
+                if let fileName = car.primaryPhotoFileName,
                    let uiImage = ImageManager.loadImage(fileName: fileName) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 200)
-                        .offset(y: car.photoOffsetY)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    ZStack(alignment: .bottomTrailing) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 200)
+                            .offset(y: car.photoOffsetY)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .contentShape(RoundedRectangle(cornerRadius: 12))
+                            .onTapGesture { galleryStartIndex = 0 }
+
+                        if car.hasMultiplePhotos {
+                            HStack(spacing: 4) {
+                                Image(systemName: "photo.stack")
+                                    .font(.caption2)
+                                Text("\(car.photoFileNames.count)")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.55))
+                            .clipShape(Capsule())
+                            .padding(10)
+                        }
+                    }
+
+                    if car.hasMultiplePhotos {
+                        photoThumbnailStrip
+                    }
                 } else {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
@@ -208,6 +239,33 @@ struct CarDetailView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
             .listRowBackground(Color.clear)
+        }
+    }
+
+    private var photoThumbnailStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(car.photoFileNames.enumerated()), id: \.offset) { index, fileName in
+                    Button {
+                        galleryStartIndex = index
+                    } label: {
+                        if let img = ImageManager.loadImage(fileName: fileName) {
+                            Image(uiImage: img)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 56, height: 56)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        } else {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray5))
+                                .frame(width: 56, height: 56)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 2)
+            .padding(.top, 4)
         }
     }
 
@@ -297,6 +355,13 @@ struct CarDetailView: View {
             }
         }
     }
+}
+
+// Wraps an index so it can drive `.fullScreenCover(item:)` without
+// reaching for a separate Bool + index state pair.
+private struct GalleryStart: Identifiable {
+    let index: Int
+    var id: Int { index }
 }
 
 struct ExpiryBannerItem: View {

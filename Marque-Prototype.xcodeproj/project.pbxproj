@@ -43,6 +43,7 @@
 		A10034 /* ServiceRemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20034 /* ServiceRemindersView.swift */; };
 		A10035 /* AddReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20035 /* AddReminderView.swift */; };
 		A10036 /* ExpenseChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20036 /* ExpenseChartsView.swift */; };
+		A10037 /* PhotoGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20037 /* PhotoGalleryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -82,6 +83,7 @@
 		A20034 /* ServiceRemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceRemindersView.swift; sourceTree = "<group>"; };
 		A20035 /* AddReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderView.swift; sourceTree = "<group>"; };
 		A20036 /* ExpenseChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseChartsView.swift; sourceTree = "<group>"; };
+		A20037 /* PhotoGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGalleryView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -191,6 +193,7 @@
 			children = (
 				A20034 /* ServiceRemindersView.swift */,
 				A20035 /* AddReminderView.swift */,
+				A20037 /* PhotoGalleryView.swift */,
 			);
 			path = Garage;
 			sourceTree = "<group>";
@@ -355,6 +358,7 @@
 				A10034 /* ServiceRemindersView.swift in Sources */,
 				A10035 /* AddReminderView.swift in Sources */,
 				A10036 /* ExpenseChartsView.swift in Sources */,
+				A10037 /* PhotoGalleryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

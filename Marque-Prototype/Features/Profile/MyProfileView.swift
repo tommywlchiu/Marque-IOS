@@ -150,7 +150,7 @@ private struct ProfileCarCell: View {
                     .fill(Color.accentColor.opacity(0.08))
                     .aspectRatio(1.4, contentMode: .fit)
 
-                if let fileName = car.photoFileName,
+                if let fileName = car.primaryPhotoFileName,
                    let uiImage = ImageManager.loadImage(fileName: fileName) {
                     Image(uiImage: uiImage)
                         .resizable()
