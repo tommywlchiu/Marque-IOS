@@ -216,13 +216,21 @@ struct FollowButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(isFollowing ? "Following" : "Follow")
-                .font(.subheadline).fontWeight(.semibold)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 8)
+        if isFollowing {
+            Button(action: action) { label }
+                .buttonStyle(.bordered)
+                .tint(.secondary)
+        } else {
+            Button(action: action) { label }
+                .buttonStyle(.borderedProminent)
+                .tint(.accentColor)
         }
-        .buttonStyle(isFollowing ? .bordered : .borderedProminent)
-        .tint(isFollowing ? .secondary : .accentColor)
+    }
+
+    private var label: some View {
+        Text(isFollowing ? "Following" : "Follow")
+            .font(.subheadline).fontWeight(.semibold)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 8)
     }
 }
