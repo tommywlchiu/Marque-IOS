@@ -1,0 +1,183 @@
+import SwiftUI
+
+struct SettingsView: View {
+    @EnvironmentObject var authService: AuthService
+    @State private var showingProUpgrade = false
+    @State private var showingDeleteAccountAlert = false
+    @State private var showingSignOutAlert = false
+    @State private var notificationsEnabled = true
+    @State private var useMiles = true
+
+    private var user: AppUser { authService.currentUser ?? .preview }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                accountSection
+                subscriptionSection
+                preferencesSection
+                supportSection
+                dangerSection
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.large)
+            .sheet(isPresented: $showingProUpgrade) {
+                ProUpgradeView()
+            }
+            .alert("Sign Out", isPresented: $showingSignOutAlert) {
+                Button("Sign Out", role: .destructive) { authService.signOut() }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Are you sure you want to sign out?")
+            }
+            .alert("Delete Account", isPresented: $showingDeleteAccountAlert) {
+                Button("Delete Account", role: .destructive) { /* call delete API */ }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will permanently delete your account and all your data. This cannot be undone.")
+            }
+        }
+    }
+
+    // MARK: - Sections
+
+    private var accountSection: some View {
+        Section(header: Text("Account")) {
+            HStack(spacing: 12) {
+                UserAvatar(user: user, size: 48)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(user.displayName).font(.headline)
+                    Text("@\(user.username)").font(.caption).foregroundColor(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+
+            NavigationLink(destination: EditProfileView()) {
+                Label("Edit Profile", systemImage: "person.crop.circle")
+            }
+
+            Label("Change Password", systemImage: "key.fill")
+                .foregroundColor(.primary)
+
+            Label("Linked Accounts", systemImage: "link")
+                .foregroundColor(.primary)
+        }
+    }
+
+    private var subscriptionSection: some View {
+        Section(header: Text("Subscription")) {
+            if user.isProMember {
+                HStack {
+                    Label("Marque Pro", systemImage: "star.fill")
+                        .foregroundColor(.accentColor)
+                    Spacer()
+                    ProBadge()
+                }
+                Label("Manage Subscription", systemImage: "creditcard")
+                    .foregroundColor(.primary)
+            } else {
+                Button {
+                    showingProUpgrade = true
+                } label: {
+                    HStack {
+                        Label("Upgrade to Pro", systemImage: "star.fill")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .foregroundColor(.accentColor)
+            }
+        }
+    }
+
+    private var preferencesSection: some View {
+        Section(header: Text("Preferences")) {
+            Toggle(isOn: $notificationsEnabled) {
+                Label("Expiry Notifications", systemImage: "bell.fill")
+            }
+
+            Picker(selection: $useMiles) {
+                Text("Miles").tag(true)
+                Text("Kilometers").tag(false)
+            } label: {
+                Label("Distance Unit", systemImage: "gauge.medium")
+            }
+
+            NavigationLink(destination: NotificationsSettingsView()) {
+                Label("Notification Settings", systemImage: "bell.badge")
+            }
+        }
+    }
+
+    private var supportSection: some View {
+        Section(header: Text("Support")) {
+            Link(destination: URL(string: "https://marqueapp.com/help")!) {
+                Label("Help & FAQ", systemImage: "questionmark.circle")
+                    .foregroundColor(.primary)
+            }
+
+            Label("Send Feedback", systemImage: "envelope")
+                .foregroundColor(.primary)
+
+            Label("Rate Marque", systemImage: "star")
+                .foregroundColor(.primary)
+
+            HStack {
+                Label("Version", systemImage: "info.circle")
+                Spacer()
+                Text("1.0.0 (1)")
+                    .foregroundColor(.secondary)
+                    .font(.subheadline)
+            }
+        }
+    }
+
+    private var dangerSection: some View {
+        Section {
+            Button {
+                showingSignOutAlert = true
+            } label: {
+                Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                    .foregroundColor(.red)
+            }
+
+            Button {
+                showingDeleteAccountAlert = true
+            } label: {
+                Label("Delete Account", systemImage: "trash")
+                    .foregroundColor(.red)
+            }
+        }
+    }
+}
+
+// MARK: - Notifications Settings (stub)
+
+private struct NotificationsSettingsView: View {
+    @State private var insuranceAlerts = true
+    @State private var registrationAlerts = true
+    @State private var maintenanceReminders = false
+    @State private var socialActivity = true
+
+    var body: some View {
+        Form {
+            Section(header: Text("Vehicle Alerts")) {
+                Toggle("Insurance Expiry", isOn: $insuranceAlerts)
+                Toggle("Registration Expiry", isOn: $registrationAlerts)
+                Toggle("Maintenance Reminders", isOn: $maintenanceReminders)
+            }
+            Section(header: Text("Social")) {
+                Toggle("Likes & Comments", isOn: $socialActivity)
+            }
+        }
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+#Preview {
+    SettingsView()
+        .environmentObject(AuthService())
+}

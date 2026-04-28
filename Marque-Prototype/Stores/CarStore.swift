@@ -64,6 +64,8 @@ class CarStore: ObservableObject {
         }
     }
 
+    static var previewCars: [Car] { sampleCars }
+
     private static var sampleCars: [Car] {
         let calendar = Calendar.current
         let now = Date()
