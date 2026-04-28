@@ -81,7 +81,7 @@ struct SearchResultsView: View {
     private var carResults: some View {
         Group {
             if filteredCars.isEmpty {
-                emptyResults(for: "No cars matching "\(query)"")
+                emptyResults(for: "No cars matching \"\(query)\"")
             } else {
                 List(filteredCars) { car in
                     NavigationLink(destination: PublicCarDetailView(car: car, owner: .preview)) {
@@ -96,7 +96,7 @@ struct SearchResultsView: View {
     private var peopleResults: some View {
         Group {
             if filteredPeople.isEmpty {
-                emptyResults(for: "No people matching "\(query)"")
+                emptyResults(for: "No people matching \"\(query)\"")
             } else {
                 List(filteredPeople) { user in
                     NavigationLink(destination: PublicProfileView(user: user)) {

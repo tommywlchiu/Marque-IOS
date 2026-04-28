@@ -36,7 +36,7 @@ struct MyProfileView: View {
                 FollowListView(title: "Followers", users: AppUser.previewFollowers)
             }
             .sheet(isPresented: $showingFollowing) {
-                FollowListView(title: "Following", users: AppUser.previewFollowers.reversed())
+                FollowListView(title: "Following", users: Array(AppUser.previewFollowers.reversed()))
             }
         }
     }
