@@ -1,10 +1,15 @@
 import SwiftUI
+import FirebaseCore
 
 @main
 struct Marque_PrototypeApp: App {
     @StateObject private var carStore = CarStore()
     @StateObject private var authService = AuthService()
     @StateObject private var socialStore = SocialStore()
+
+    init() {
+        FirebaseApp.configure()
+    }
 
     var body: some Scene {
         WindowGroup {

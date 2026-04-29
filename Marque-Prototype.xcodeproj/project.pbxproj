@@ -50,6 +50,7 @@
 		A10041 /* SocialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20041 /* SocialStore.swift */; };
 		A10042 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20042 /* CommentsView.swift */; };
 		A10043 /* NotificationsInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20043 /* NotificationsInboxView.swift */; };
+		A10044 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A20044 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +97,7 @@
 		A20041 /* SocialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialStore.swift; sourceTree = "<group>"; };
 		A20042 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
 		A20043 /* NotificationsInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsInboxView.swift; sourceTree = "<group>"; };
+		A20044 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -128,6 +130,7 @@
 				A50008 /* Features */,
 				A50004 /* Views */,
 				A20008 /* Assets.xcassets */,
+				A20044 /* GoogleService-Info.plist */,
 			);
 			path = "Marque-Prototype";
 			sourceTree = "<group>";
@@ -339,6 +342,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10008 /* Assets.xcassets in Resources */,
+				A10044 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
