@@ -208,33 +208,6 @@
 			path = Features;
 			sourceTree = "<group>";
 		};
-		A50016 /* Social */ = {
-			isa = PBXGroup;
-			children = (
-				A20042 /* CommentsView.swift */,
-				A20043 /* NotificationsInboxView.swift */,
-			);
-			path = Social;
-			sourceTree = "<group>";
-		};
-		A50014 /* Garage */ = {
-			isa = PBXGroup;
-			children = (
-				A20034 /* ServiceRemindersView.swift */,
-				A20035 /* AddReminderView.swift */,
-				A20037 /* PhotoGalleryView.swift */,
-			);
-			path = Garage;
-			sourceTree = "<group>";
-		};
-		A50015 /* Expenses */ = {
-			isa = PBXGroup;
-			children = (
-				A20036 /* ExpenseChartsView.swift */,
-			);
-			path = Expenses;
-			sourceTree = "<group>";
-		};
 		A50009 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -283,6 +256,33 @@
 			path = Settings;
 			sourceTree = "<group>";
 		};
+		A50014 /* Garage */ = {
+			isa = PBXGroup;
+			children = (
+				A20034 /* ServiceRemindersView.swift */,
+				A20035 /* AddReminderView.swift */,
+				A20037 /* PhotoGalleryView.swift */,
+			);
+			path = Garage;
+			sourceTree = "<group>";
+		};
+		A50015 /* Expenses */ = {
+			isa = PBXGroup;
+			children = (
+				A20036 /* ExpenseChartsView.swift */,
+			);
+			path = Expenses;
+			sourceTree = "<group>";
+		};
+		A50016 /* Social */ = {
+			isa = PBXGroup;
+			children = (
+				A20042 /* CommentsView.swift */,
+				A20043 /* NotificationsInboxView.swift */,
+			);
+			path = Social;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -327,6 +327,9 @@
 				Base,
 			);
 			mainGroup = A50001;
+			packageReferences = (
+				F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			productRefGroup = A50005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -606,6 +609,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = A90001 /* Project object */;
 }
