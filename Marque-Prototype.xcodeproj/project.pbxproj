@@ -44,6 +44,12 @@
 		A10035 /* AddReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20035 /* AddReminderView.swift */; };
 		A10036 /* ExpenseChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20036 /* ExpenseChartsView.swift */; };
 		A10037 /* PhotoGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20037 /* PhotoGalleryView.swift */; };
+		A10038 /* Post.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20038 /* Post.swift */; };
+		A10039 /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20039 /* Comment.swift */; };
+		A10040 /* AppNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20040 /* AppNotification.swift */; };
+		A10041 /* SocialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20041 /* SocialStore.swift */; };
+		A10042 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20042 /* CommentsView.swift */; };
+		A10043 /* NotificationsInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20043 /* NotificationsInboxView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,6 +90,12 @@
 		A20035 /* AddReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderView.swift; sourceTree = "<group>"; };
 		A20036 /* ExpenseChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseChartsView.swift; sourceTree = "<group>"; };
 		A20037 /* PhotoGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGalleryView.swift; sourceTree = "<group>"; };
+		A20038 /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
+		A20039 /* Comment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Comment.swift; sourceTree = "<group>"; };
+		A20040 /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
+		A20041 /* SocialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialStore.swift; sourceTree = "<group>"; };
+		A20042 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
+		A20043 /* NotificationsInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsInboxView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -128,6 +140,9 @@
 				A20014 /* CarData.swift */,
 				A20016 /* AppUser.swift */,
 				A20032 /* ServiceReminder.swift */,
+				A20038 /* Post.swift */,
+				A20039 /* Comment.swift */,
+				A20040 /* AppNotification.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -162,6 +177,7 @@
 				A20015 /* VINDecodeService.swift */,
 				A20017 /* AuthService.swift */,
 				A20033 /* ServiceReminderEngine.swift */,
+				A20041 /* SocialStore.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -184,8 +200,18 @@
 				A50013 /* Settings */,
 				A50014 /* Garage */,
 				A50015 /* Expenses */,
+				A50016 /* Social */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		A50016 /* Social */ = {
+			isa = PBXGroup;
+			children = (
+				A20042 /* CommentsView.swift */,
+				A20043 /* NotificationsInboxView.swift */,
+			);
+			path = Social;
 			sourceTree = "<group>";
 		};
 		A50014 /* Garage */ = {
@@ -359,6 +385,12 @@
 				A10035 /* AddReminderView.swift in Sources */,
 				A10036 /* ExpenseChartsView.swift in Sources */,
 				A10037 /* PhotoGalleryView.swift in Sources */,
+				A10038 /* Post.swift in Sources */,
+				A10039 /* Comment.swift in Sources */,
+				A10040 /* AppNotification.swift in Sources */,
+				A10041 /* SocialStore.swift in Sources */,
+				A10042 /* CommentsView.swift in Sources */,
+				A10043 /* NotificationsInboxView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

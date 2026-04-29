@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct ExploreView: View {
-    @State private var searchText = ""
-    @State private var showingSearch = false
+    @EnvironmentObject var socialStore: SocialStore
+
     @State private var selectedCategory: ExploreCategory = .all
+    @State private var commentPost: Post?
 
     var body: some View {
         NavigationStack {
@@ -19,6 +20,10 @@ struct ExploreView: View {
             }
             .navigationTitle("Explore")
             .navigationBarTitleDisplayMode(.large)
+            .sheet(item: $commentPost) { post in
+                CommentsView(post: post)
+                    .environmentObject(socialStore)
+            }
         }
     }
 
@@ -64,8 +69,8 @@ struct ExploreView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
-                    ForEach(ExplorePost.preview) { post in
-                        NavigationLink(destination: PublicCarDetailView(car: post.car, owner: post.user)) {
+                    ForEach(socialStore.posts) { post in
+                        NavigationLink(destination: PublicCarDetailView(post: post)) {
                             FeaturedPostCard(post: post)
                         }
                         .buttonStyle(.plain)
@@ -82,14 +87,23 @@ struct ExploreView: View {
                 .padding(.horizontal, 16)
 
             LazyVStack(spacing: 14) {
-                ForEach(ExplorePost.preview.reversed()) { post in
-                    NavigationLink(destination: PublicCarDetailView(car: post.car, owner: post.user)) {
-                        ExplorePostCard(post: post)
+                ForEach(socialStore.posts.reversed()) { post in
+                    // Buttons inside a NavigationLink label receive their own taps first;
+                    // only taps on non-interactive areas trigger navigation.
+                    NavigationLink {
+                        PublicCarDetailView(post: post)
+                            .environmentObject(socialStore)
+                    } label: {
+                        ExplorePostCard(
+                            post: post,
+                            onLike: { socialStore.toggleLike(postID: post.id) },
+                            onComment: { commentPost = post }
+                        )
+                        .padding(.horizontal, 16)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
         }
     }
 }
@@ -127,7 +141,7 @@ private struct CategoryChip: View {
 // MARK: - Featured Post Card
 
 private struct FeaturedPostCard: View {
-    let post: ExplorePost
+    let post: Post
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -173,8 +187,10 @@ private struct FeaturedPostCard: View {
 
 // MARK: - Post Feed Card
 
-private struct ExplorePostCard: View {
-    let post: ExplorePost
+struct ExplorePostCard: View {
+    let post: Post
+    let onLike: () -> Void
+    let onComment: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -215,13 +231,20 @@ private struct ExplorePostCard: View {
                 }
             }
 
-            // Actions
+            // Action bar
             HStack(spacing: 20) {
-                Label("\(post.likeCount)", systemImage: post.isLiked ? "heart.fill" : "heart")
-                    .foregroundColor(post.isLiked ? .red : .secondary)
-                Label("\(post.commentCount)", systemImage: "bubble.right")
-                    .foregroundColor(.secondary)
+                Button(action: onLike) {
+                    Label("\(post.likeCount)", systemImage: post.isLiked ? "heart.fill" : "heart")
+                        .foregroundColor(post.isLiked ? .red : .secondary)
+                }
+
+                Button(action: onComment) {
+                    Label("\(post.commentCount)", systemImage: "bubble.right")
+                        .foregroundColor(.secondary)
+                }
+
                 Spacer()
+
                 Button { } label: {
                     Image(systemName: "square.and.arrow.up")
                         .foregroundColor(.secondary)
@@ -236,30 +259,8 @@ private struct ExplorePostCard: View {
     }
 }
 
-// MARK: - Mock Data
-
-struct ExplorePost: Identifiable {
-    let id: String
-    let user: AppUser
-    let car: Car
-    let caption: String
-    let likeCount: Int
-    let commentCount: Int
-    let isLiked: Bool
-    let createdAt: Date
-
-    static let preview: [ExplorePost] = {
-        let cars = CarStore.previewCars
-        let users = AppUser.previewFollowers
-        return [
-            ExplorePost(id: "p1", user: users[0], car: cars[0], caption: "Just got the tires rotated. Running smooth!", likeCount: 48, commentCount: 6, isLiked: false, createdAt: Calendar.current.date(byAdding: .hour, value: -2, to: Date()) ?? Date()),
-            ExplorePost(id: "p2", user: users[1], car: cars[1], caption: "Track day prep complete 🔧", likeCount: 122, commentCount: 18, isLiked: true, createdAt: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()),
-            ExplorePost(id: "p3", user: users[2], car: cars[2], caption: "Weekend wash day vibes.", likeCount: 77, commentCount: 9, isLiked: false, createdAt: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date()),
-        ]
-    }()
-}
-
 #Preview {
     ExploreView()
         .environmentObject(AuthService())
+        .environmentObject(SocialStore())
 }

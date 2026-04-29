@@ -4,12 +4,14 @@ import SwiftUI
 struct Marque_PrototypeApp: App {
     @StateObject private var carStore = CarStore()
     @StateObject private var authService = AuthService()
+    @StateObject private var socialStore = SocialStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(carStore)
                 .environmentObject(authService)
+                .environmentObject(socialStore)
         }
     }
 }
@@ -42,6 +44,7 @@ private struct RootView: View {
 
 private struct MainTabView: View {
     @EnvironmentObject var carStore: CarStore
+    @EnvironmentObject var socialStore: SocialStore
 
     var body: some View {
         TabView {
@@ -50,6 +53,10 @@ private struct MainTabView: View {
 
             ExploreView()
                 .tabItem { Label("Explore", systemImage: "globe") }
+
+            NotificationsInboxView()
+                .tabItem { Label("Notifications", systemImage: "bell.fill") }
+                .badge(socialStore.unreadCount > 0 ? "\(socialStore.unreadCount)" : nil)
 
             MyProfileView()
                 .tabItem { Label("Profile", systemImage: "person.fill") }

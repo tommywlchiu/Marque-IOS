@@ -1,13 +1,40 @@
 import SwiftUI
 
-// Read-only car detail for another user's car.
+// Read-only car detail for another user's car, reached from ExploreView.
 struct PublicCarDetailView: View {
-    let car: Car
-    let owner: AppUser
+    let post: Post
 
-    @State private var isLiked = false
-    @State private var likeCount = Int.random(in: 20...150)
+    @EnvironmentObject var socialStore: SocialStore
+
     @State private var showingOwnerProfile = false
+    @State private var showingComments = false
+
+    private var car: Car { post.car }
+    private var owner: AppUser { post.user }
+
+    // Convenience init for call sites that have a Car + AppUser but no Post
+    // (e.g. SearchResultsView). Creates a synthetic post that is not tracked in SocialStore.
+    init(car: Car, owner: AppUser) {
+        self.post = Post(
+            id: "search-\(car.id.uuidString)",
+            user: owner,
+            car: car,
+            caption: "",
+            likeCount: 0,
+            commentCount: 0,
+            isLiked: false,
+            createdAt: Date()
+        )
+    }
+
+    init(post: Post) {
+        self.post = post
+    }
+
+    // Live like state comes from SocialStore so taps from Explore and this view stay in sync.
+    private var livePost: Post {
+        socialStore.posts.first(where: { $0.id == post.id }) ?? post
+    }
 
     var body: some View {
         ScrollView {
@@ -25,17 +52,29 @@ struct PublicCarDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    isLiked.toggle()
-                    likeCount += isLiked ? 1 : -1
-                } label: {
-                    Label("\(likeCount)", systemImage: isLiked ? "heart.fill" : "heart")
-                        .foregroundColor(isLiked ? .red : .primary)
+                HStack(spacing: 16) {
+                    Button {
+                        showingComments = true
+                    } label: {
+                        Label("\(livePost.commentCount)", systemImage: "bubble.right")
+                            .foregroundColor(.primary)
+                    }
+
+                    Button {
+                        socialStore.toggleLike(postID: post.id)
+                    } label: {
+                        Label("\(livePost.likeCount)", systemImage: livePost.isLiked ? "heart.fill" : "heart")
+                            .foregroundColor(livePost.isLiked ? .red : .primary)
+                    }
                 }
             }
         }
         .sheet(isPresented: $showingOwnerProfile) {
             NavigationStack { PublicProfileView(user: owner) }
+        }
+        .sheet(isPresented: $showingComments) {
+            CommentsView(post: livePost)
+                .environmentObject(socialStore)
         }
     }
 
@@ -175,7 +214,9 @@ struct PublicCarDetailView: View {
 }
 
 #Preview {
-    NavigationStack {
-        PublicCarDetailView(car: CarStore.previewCars[0], owner: .preview)
+    let store = SocialStore()
+    return NavigationStack {
+        PublicCarDetailView(post: store.posts[0])
     }
+    .environmentObject(store)
 }
