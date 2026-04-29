@@ -65,10 +65,11 @@ private struct MainTabView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .onAppear {
-            NotificationManager.scheduleExpiryNotifications(for: carStore.cars)
+            NotificationManager.requestPermission()
+            NotificationManager.scheduleAll(for: carStore.cars)
         }
         .onChange(of: carStore.cars) { _, newCars in
-            NotificationManager.scheduleExpiryNotifications(for: newCars)
+            NotificationManager.scheduleAll(for: newCars)
         }
     }
 }

@@ -51,6 +51,15 @@ struct AddReminderView: View {
                     }
                 }
 
+                if !useDateTrigger && !useMileageTrigger {
+                    Section {
+                        Label("Enable at least one trigger to save this reminder.", systemImage: "info.circle")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .listRowBackground(Color.clear)
+                    }
+                }
+
                 Section("Notes") {
                     TextField("Optional notes", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
