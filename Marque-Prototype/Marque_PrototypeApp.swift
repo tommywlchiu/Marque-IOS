@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(FirebaseCore)
 import FirebaseCore
+#endif
 
 @main
 struct Marque_PrototypeApp: App {
@@ -8,7 +10,9 @@ struct Marque_PrototypeApp: App {
     @StateObject private var socialStore = SocialStore()
 
     init() {
+        #if canImport(FirebaseCore)
         FirebaseApp.configure()
+        #endif
     }
 
     var body: some Scene {

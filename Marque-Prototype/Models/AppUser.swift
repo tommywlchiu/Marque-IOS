@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(FirebaseAuth)
 import FirebaseAuth
+#endif
 
 struct AppUser: Identifiable, Codable, Equatable {
     var id: String
@@ -32,6 +34,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         joinedDate: Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
     )
 
+#if canImport(FirebaseAuth)
     // Maps a live Firebase user + locally stored extras into an AppUser.
     // Fields not tracked by Firebase (bio, location, followerCount, etc.) come
     // from LocalProfile stored in UserDefaults; move them to Firestore in production.
@@ -51,6 +54,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         isProMember = false
         joinedDate = firebaseUser.metadata.creationDate ?? Date()
     }
+#endif
 
     static let previewFollowers: [AppUser] = [
         AppUser(id: "u2", displayName: "Maria Lopez", username: "mariadrives", bio: "JDM forever", avatarURL: nil, location: "LA, CA", followerCount: 512, followingCount: 200, isFollowing: true, isVerified: false, isProMember: false, joinedDate: Date()),
