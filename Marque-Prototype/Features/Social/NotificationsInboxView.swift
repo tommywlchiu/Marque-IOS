@@ -131,7 +131,7 @@ private struct NotificationRow: View {
         switch notification.type {
         case .like:    return ("heart.fill", .red)
         case .comment: return ("bubble.right.fill", .accentColor)
-        case .follow:  return ("person.fill.badge.plus", .green)
+        case .follow:  return ("person.badge.plus", .green)
         case .mention: return ("at", .orange)
         }
     }

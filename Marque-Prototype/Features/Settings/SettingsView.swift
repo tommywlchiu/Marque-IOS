@@ -56,11 +56,15 @@ struct SettingsView: View {
                 Label("Edit Profile", systemImage: "person.crop.circle")
             }
 
-            Label("Change Password", systemImage: "key.fill")
-                .foregroundColor(.primary)
+            Button { } label: {
+                Label("Change Password", systemImage: "key.fill")
+                    .foregroundColor(.primary)
+            }
 
-            Label("Linked Accounts", systemImage: "link")
-                .foregroundColor(.primary)
+            Button { } label: {
+                Label("Linked Accounts", systemImage: "link")
+                    .foregroundColor(.primary)
+            }
         }
     }
 
@@ -73,8 +77,10 @@ struct SettingsView: View {
                     Spacer()
                     ProBadge()
                 }
-                Label("Manage Subscription", systemImage: "creditcard")
-                    .foregroundColor(.primary)
+                Button { } label: {
+                    Label("Manage Subscription", systemImage: "creditcard")
+                        .foregroundColor(.primary)
+                }
             } else {
                 Button {
                     showingProUpgrade = true
@@ -118,11 +124,15 @@ struct SettingsView: View {
                     .foregroundColor(.primary)
             }
 
-            Label("Send Feedback", systemImage: "envelope")
-                .foregroundColor(.primary)
+            Button { } label: {
+                Label("Send Feedback", systemImage: "envelope")
+                    .foregroundColor(.primary)
+            }
 
-            Label("Rate Marque", systemImage: "star")
-                .foregroundColor(.primary)
+            Button { } label: {
+                Label("Rate Marque", systemImage: "star")
+                    .foregroundColor(.primary)
+            }
 
             HStack {
                 Label("Version", systemImage: "info.circle")

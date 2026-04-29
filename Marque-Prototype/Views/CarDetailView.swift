@@ -300,10 +300,14 @@ struct CarDetailView: View {
         return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 
+    private var liveCar: Car {
+        carStore.cars.first(where: { $0.id == car.id }) ?? car
+    }
+
     private var remindersSection: some View {
         Section(header: Text("Service Reminders")) {
-            let upcoming = car.serviceReminders.filter { !$0.isCompleted }
-            let currentMileage = ServiceReminderEngine.mileage(from: car.mileage)
+            let upcoming = liveCar.serviceReminders.filter { !$0.isCompleted }
+            let currentMileage = ServiceReminderEngine.mileage(from: liveCar.mileage)
             let overdueCount = upcoming.filter { $0.status(currentMileage: currentMileage) == .overdue }.count
 
             NavigationLink(destination: ServiceRemindersView(carID: car.id)) {
