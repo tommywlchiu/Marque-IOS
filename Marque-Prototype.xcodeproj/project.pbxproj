@@ -51,6 +51,8 @@
 		A10042 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20042 /* CommentsView.swift */; };
 		A10043 /* NotificationsInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20043 /* NotificationsInboxView.swift */; };
 		A10044 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A20044 /* GoogleService-Info.plist */; };
+		C3000001C3000001C3000001 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = C1000001C1000001C1000001 /* FirebaseCore */; };
+		C4000001C4000001C4000001 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C2000001C2000001C2000001 /* FirebaseAuth */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -107,6 +109,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C3000001C3000001C3000001 /* FirebaseCore in Frameworks */,
+				C4000001C4000001C4000001 /* FirebaseAuth in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +305,10 @@
 			dependencies = (
 			);
 			name = "Marque-Prototype";
+			packageProductDependencies = (
+				C1000001C1000001C1000001 /* FirebaseCore */,
+				C2000001C2000001C2000001 /* FirebaseAuth */,
+			);
 			productName = "Marque-Prototype";
 			productReference = A30001 /* Marque.app */;
 			productType = "com.apple.product-type.application";
@@ -624,6 +632,19 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C1000001C1000001C1000001 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		C2000001C2000001C2000001 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A90001 /* Project object */;
 }

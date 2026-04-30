@@ -5,7 +5,6 @@ enum AuthState: Equatable {
     case authenticated(AppUser)
 }
 
-#if canImport(FirebaseAuth)
 import FirebaseAuth
 import AuthenticationServices
 import CryptoKit
