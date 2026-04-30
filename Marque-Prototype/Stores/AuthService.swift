@@ -9,6 +9,7 @@ enum AuthState: Equatable {
 import FirebaseAuth
 import AuthenticationServices
 import CryptoKit
+import UIKit
 
 @MainActor
 class AuthService: NSObject, ObservableObject {
@@ -21,6 +22,7 @@ class AuthService: NSObject, ObservableObject {
     private var stateListener: AuthStateDidChangeListenerHandle?
     private var currentNonce: String?
     private var appleCompletion: CheckedContinuation<Void, Error>?
+    private var appleSignInController: ASAuthorizationController?
 
     override init() {
         hasSeenOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
@@ -119,6 +121,8 @@ class AuthService: NSObject, ObservableObject {
             self.appleCompletion = continuation
             let controller = ASAuthorizationController(authorizationRequests: [request])
             controller.delegate = self
+            controller.presentationContextProvider = self
+            self.appleSignInController = controller
             controller.performRequests()
         }
     }
@@ -231,9 +235,15 @@ extension AuthService: ASAuthorizationControllerDelegate {
                     fullName: credential.fullName
                 )
                 try await Auth.auth().signIn(with: firebaseCredential)
-                await MainActor.run { self.appleCompletion?.resume() }
+                await MainActor.run {
+                    self.appleSignInController = nil
+                    self.appleCompletion?.resume()
+                }
             } catch {
-                await MainActor.run { self.appleCompletion?.resume(throwing: error) }
+                await MainActor.run {
+                    self.appleSignInController = nil
+                    self.appleCompletion?.resume(throwing: error)
+                }
             }
         }
     }
@@ -242,7 +252,21 @@ extension AuthService: ASAuthorizationControllerDelegate {
         controller: ASAuthorizationController,
         didCompleteWithError error: Error
     ) {
-        Task { @MainActor in self.appleCompletion?.resume(throwing: error) }
+        Task { @MainActor in
+            self.appleSignInController = nil
+            self.appleCompletion?.resume(throwing: error)
+        }
+    }
+}
+
+// MARK: - ASAuthorizationControllerPresentationContextProviding
+
+extension AuthService: ASAuthorizationControllerPresentationContextProviding {
+    nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            .flatMap { $0.keyWindow } ?? UIWindow()
     }
 }
 
