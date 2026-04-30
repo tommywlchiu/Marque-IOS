@@ -1,12 +1,14 @@
 import Foundation
-import FirebaseAuth
-import AuthenticationServices
-import CryptoKit
 
 enum AuthState: Equatable {
     case unauthenticated
     case authenticated(AppUser)
 }
+
+#if canImport(FirebaseAuth)
+import FirebaseAuth
+import AuthenticationServices
+import CryptoKit
 
 @MainActor
 class AuthService: NSObject, ObservableObject {
@@ -64,7 +66,6 @@ class AuthService: NSObject, ObservableObject {
         defer { isLoading = false }
         do {
             try await Auth.auth().signIn(withEmail: email, password: password)
-            // authState updated by the state listener
         } catch {
             errorMessage = authErrorMessage(from: error)
         }
@@ -123,17 +124,9 @@ class AuthService: NSObject, ObservableObject {
     }
 
     // MARK: - Google Sign In
-    // TODO: Integrate GoogleSignIn SDK to enable this:
-    // 1. Add via Xcode → File → Add Package Dependencies
-    //    URL: https://github.com/google/GoogleSignIn-iOS
-    //    Product: GoogleSignIn
-    // 2. Add your REVERSED_CLIENT_ID as a URL scheme in the app target's Info tab.
-    // 3. Replace the error below with:
-    //    let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootVC)
-    //    let credential = GoogleAuthProvider.credential(
-    //        withIDToken: result.user.idToken!.tokenString,
-    //        accessToken: result.user.accessToken.tokenString)
-    //    try await Auth.auth().signIn(with: credential)
+    // TODO: Add GoogleSignIn SDK via Xcode → File → Add Package Dependencies
+    // URL: https://github.com/google/GoogleSignIn-iOS  Product: GoogleSignIn
+    // Then replace this stub — see inline comments for the implementation.
 
     func signInWithGoogle() async {
         errorMessage = "Google Sign In setup required — see AuthService.swift TODO."
@@ -176,7 +169,6 @@ class AuthService: NSObject, ObservableObject {
 
     func signOut() {
         try? Auth.auth().signOut()
-        // authState reset by the state listener
     }
 
     // MARK: - Helpers
@@ -279,3 +271,101 @@ private struct LocalProfile: Codable {
         }
     }
 }
+
+#else
+
+// MARK: - Mock AuthService (Firebase SDK not yet installed)
+
+@MainActor
+class AuthService: ObservableObject {
+    @Published var authState: AuthState = .unauthenticated
+    @Published var hasSeenOnboarding: Bool
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    private let onboardingKey = "marque_has_seen_onboarding"
+
+    init() {
+        hasSeenOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
+    }
+
+    var currentUser: AppUser? {
+        guard case .authenticated(let user) = authState else { return nil }
+        return user
+    }
+
+    var isAuthenticated: Bool {
+        if case .authenticated = authState { return true }
+        return false
+    }
+
+    func completeOnboarding() {
+        UserDefaults.standard.set(true, forKey: onboardingKey)
+        hasSeenOnboarding = true
+    }
+
+    func signIn(email: String, password: String) async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 900_000_000)
+        guard !email.isEmpty, !password.isEmpty else {
+            errorMessage = "Please enter your email and password."
+            return
+        }
+        authState = .authenticated(.preview)
+    }
+
+    func signInWithApple() async {
+        isLoading = true
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        authState = .authenticated(.preview)
+    }
+
+    func signInWithGoogle() async {
+        isLoading = true
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        authState = .authenticated(.preview)
+    }
+
+    func signUp(displayName: String, username: String, email: String, password: String) async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        guard !displayName.isEmpty, !email.isEmpty, !password.isEmpty else {
+            errorMessage = "Please fill out all required fields."
+            return
+        }
+        var user = AppUser.preview
+        user.displayName = displayName
+        user.username = username.isEmpty
+            ? displayName.lowercased().replacingOccurrences(of: " ", with: "")
+            : username
+        authState = .authenticated(user)
+    }
+
+    func resetPassword(email: String) async -> Bool {
+        isLoading = true
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 800_000_000)
+        return !email.isEmpty
+    }
+
+    func updateProfile(displayName: String, username: String, bio: String, location: String) {
+        guard case .authenticated(var user) = authState else { return }
+        user.displayName = displayName
+        user.username = username
+        user.bio = bio
+        user.location = location
+        authState = .authenticated(user)
+    }
+
+    func signOut() {
+        authState = .unauthenticated
+    }
+}
+
+#endif
