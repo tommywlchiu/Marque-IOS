@@ -9,6 +9,10 @@ enum AuthState: Equatable {
 import FirebaseAuth
 import AuthenticationServices
 import CryptoKit
+#if canImport(GoogleSignIn)
+import GoogleSignIn
+import FirebaseCore
+#endif
 
 @MainActor
 class AuthService: NSObject, ObservableObject {
@@ -30,8 +34,13 @@ class AuthService: NSObject, ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if let fu = firebaseUser {
-                    let profile = LocalProfile.load(uid: fu.uid)
-                    self.authState = .authenticated(AppUser(firebaseUser: fu, profile: profile))
+                    let p = LocalProfile.load(uid: fu.uid)
+                    self.authState = .authenticated(AppUser(firebaseUser: fu, profile: (
+                        username: p.username,
+                        bio: p.bio,
+                        location: p.location,
+                        avatarFileName: p.avatarFileName
+                    )))
                 } else {
                     self.authState = .unauthenticated
                 }
@@ -124,12 +133,51 @@ class AuthService: NSObject, ObservableObject {
     }
 
     // MARK: - Google Sign In
-    // TODO: Add GoogleSignIn SDK via Xcode → File → Add Package Dependencies
+    // To activate: Xcode → File → Add Package Dependencies
     // URL: https://github.com/google/GoogleSignIn-iOS  Product: GoogleSignIn
-    // Then replace this stub — see inline comments for the implementation.
+    // Also add REVERSED_CLIENT_ID as a URL scheme in the app target's Info tab.
 
     func signInWithGoogle() async {
-        errorMessage = "Google Sign In setup required — see AuthService.swift TODO."
+        #if canImport(GoogleSignIn)
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            errorMessage = "Firebase not configured."
+            return
+        }
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+
+        guard
+            let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+            let rootVC = windowScene.windows.first?.rootViewController
+        else {
+            errorMessage = "Unable to present Google Sign In."
+            return
+        }
+
+        do {
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootVC)
+            guard let idToken = result.user.idToken?.tokenString else {
+                errorMessage = "Failed to get ID token from Google."
+                return
+            }
+            let credential = GoogleAuthProvider.credential(
+                withIDToken: idToken,
+                accessToken: result.user.accessToken.tokenString
+            )
+            try await Auth.auth().signIn(with: credential)
+        } catch {
+            let nsError = error as NSError
+            // -5 is GIDSignInError.canceled — don't surface that to the user
+            if !(nsError.domain == "com.google.GIDSignIn" && nsError.code == -5) {
+                errorMessage = error.localizedDescription
+            }
+        }
+        #else
+        errorMessage = "Google Sign In requires the GoogleSignIn SDK. Add it via Xcode → File → Add Package Dependencies: https://github.com/google/GoogleSignIn-iOS"
+        #endif
     }
 
     // MARK: - Password Reset
@@ -148,7 +196,7 @@ class AuthService: NSObject, ObservableObject {
 
     // MARK: - Profile Update
 
-    func updateProfile(displayName: String, username: String, bio: String, location: String) {
+    func updateProfile(displayName: String, username: String, bio: String, location: String, avatarFileName: String? = nil) {
         guard case .authenticated(var user) = authState,
               let firebaseUser = Auth.auth().currentUser else { return }
 
@@ -156,12 +204,18 @@ class AuthService: NSObject, ObservableObject {
         changeRequest.displayName = displayName
         changeRequest.commitChanges(completion: nil)
 
-        LocalProfile(username: username, bio: bio, location: location).save(uid: firebaseUser.uid)
+        var profile = LocalProfile.load(uid: firebaseUser.uid)
+        profile.username = username
+        profile.bio = bio
+        profile.location = location
+        if let fileName = avatarFileName { profile.avatarFileName = fileName }
+        profile.save(uid: firebaseUser.uid)
 
         user.displayName = displayName
         user.username = username
         user.bio = bio
         user.location = location
+        if let fileName = avatarFileName { user.avatarURL = fileName }
         authState = .authenticated(user)
     }
 
@@ -254,13 +308,14 @@ private struct LocalProfile: Codable {
     var username: String
     var bio: String
     var location: String
+    var avatarFileName: String?
 
     static func load(uid: String) -> LocalProfile {
         guard
             let data = UserDefaults.standard.data(forKey: "marque_profile_\(uid)"),
             let profile = try? JSONDecoder().decode(LocalProfile.self, from: data)
         else {
-            return LocalProfile(username: "", bio: "", location: "")
+            return LocalProfile(username: "", bio: "", location: "", avatarFileName: nil)
         }
         return profile
     }
@@ -354,12 +409,13 @@ class AuthService: ObservableObject {
         return !email.isEmpty
     }
 
-    func updateProfile(displayName: String, username: String, bio: String, location: String) {
+    func updateProfile(displayName: String, username: String, bio: String, location: String, avatarFileName: String? = nil) {
         guard case .authenticated(var user) = authState else { return }
         user.displayName = displayName
         user.username = username
         user.bio = bio
         user.location = location
+        if let fileName = avatarFileName { user.avatarURL = fileName }
         authState = .authenticated(user)
     }
 

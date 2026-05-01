@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct EditProfileView: View {
     @EnvironmentObject var authService: AuthService
@@ -8,10 +9,13 @@ struct EditProfileView: View {
     @State private var username = ""
     @State private var bio = ""
     @State private var location = ""
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var avatarImage: UIImage?
 
     private var hasChanges: Bool {
         let user = authService.currentUser ?? .preview
-        return displayName != user.displayName ||
+        return avatarImage != nil ||
+               displayName != user.displayName ||
                username != user.username ||
                bio != user.bio ||
                location != user.location
@@ -37,6 +41,14 @@ struct EditProfileView: View {
                 }
             }
             .onAppear { populateFields() }
+            .onChange(of: selectedItem) { _, item in
+                Task {
+                    if let data = try? await item?.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        avatarImage = image
+                    }
+                }
+            }
         }
     }
 
@@ -47,16 +59,30 @@ struct EditProfileView: View {
             HStack {
                 Spacer()
                 VStack(spacing: 12) {
-                    if let user = authService.currentUser {
-                        UserAvatar(user: user, size: 80)
+                    avatarPreview
+                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                        Text("Change Photo")
+                            .font(.subheadline)
+                            .foregroundColor(.accentColor)
                     }
-                    Button("Change Photo") { /* photo picker — wire up PhotosPicker */ }
-                        .font(.subheadline)
                 }
                 Spacer()
             }
             .listRowBackground(Color.clear)
             .padding(.vertical, 8)
+        }
+    }
+
+    @ViewBuilder
+    private var avatarPreview: some View {
+        if let image = avatarImage {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 80, height: 80)
+                .clipShape(Circle())
+        } else if let user = authService.currentUser {
+            UserAvatar(user: user, size: 80)
         }
     }
 
@@ -107,11 +133,18 @@ struct EditProfileView: View {
     }
 
     private func save() {
+        var avatarFileName: String? = nil
+        if let image = avatarImage, let uid = authService.currentUser?.id {
+            let fileName = "avatar-\(uid).jpg"
+            ImageManager.saveImage(image, fileName: fileName)
+            avatarFileName = fileName
+        }
         authService.updateProfile(
             displayName: displayName.trimmingCharacters(in: .whitespaces),
             username: username.trimmingCharacters(in: .whitespaces),
             bio: bio.trimmingCharacters(in: .whitespacesAndNewlines),
-            location: location.trimmingCharacters(in: .whitespaces)
+            location: location.trimmingCharacters(in: .whitespaces),
+            avatarFileName: avatarFileName
         )
         dismiss()
     }
