@@ -46,14 +46,14 @@ extension AppUser {
     // Maps a live Firebase user + locally stored extras into an AppUser.
     // Fields not tracked by Firebase (bio, location, followerCount, etc.) come
     // from LocalProfile stored in UserDefaults; move them to Firestore in production.
-    init(firebaseUser: FirebaseAuth.User, profile: (username: String, bio: String, location: String)) {
+    init(firebaseUser: FirebaseAuth.User, profile: (username: String, bio: String, location: String, avatarFileName: String?)) {
         id = firebaseUser.uid
         displayName = firebaseUser.displayName
             ?? firebaseUser.email?.components(separatedBy: "@").first
             ?? "User"
         username = profile.username
         bio = profile.bio
-        avatarURL = firebaseUser.photoURL?.absoluteString
+        avatarURL = profile.avatarFileName ?? firebaseUser.photoURL?.absoluteString
         location = profile.location
         followerCount = 0
         followingCount = 0

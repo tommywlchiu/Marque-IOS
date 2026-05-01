@@ -171,10 +171,39 @@ struct UserAvatar: View {
                 .fill(Color.accentColor.opacity(0.15))
                 .frame(width: size, height: size)
 
-            Text(user.displayName.prefix(1).uppercased())
-                .font(.system(size: size * 0.4, weight: .semibold))
-                .foregroundColor(.accentColor)
+            avatarContent
         }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+    }
+
+    @ViewBuilder
+    private var avatarContent: some View {
+        if let avatarURL = user.avatarURL, !avatarURL.isEmpty {
+            if let localImage = ImageManager.loadImage(fileName: avatarURL) {
+                Image(uiImage: localImage)
+                    .resizable()
+                    .scaledToFill()
+            } else if let url = URL(string: avatarURL) {
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        initialsView
+                    }
+                }
+            } else {
+                initialsView
+            }
+        } else {
+            initialsView
+        }
+    }
+
+    private var initialsView: some View {
+        Text(user.displayName.prefix(1).uppercased())
+            .font(.system(size: size * 0.4, weight: .semibold))
+            .foregroundColor(.accentColor)
     }
 }
 
