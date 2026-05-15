@@ -1,37 +1,88 @@
 import SwiftUI
 
 struct PublicProfileView: View {
-    let user: AppUser
+    let ownerUID: String
+    let ownerUsername: String
 
-    @State private var isFollowing: Bool
-    @State private var followerCount: Int
-    @State private var selectedTab: ProfileTab = .cars
+    @EnvironmentObject var exploreStore: ExploreStore
+    @EnvironmentObject var followStore: FollowStore
+    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var blockStore: BlockStore
 
-    private enum ProfileTab: String, CaseIterable {
-        case cars = "Cars"
-        case about = "About"
-    }
+    @State private var profile: PublicUserProfile?
+    @State private var showingUnfollowAlert = false
+    @State private var showingBlockAlert = false
+    @State private var showingReport = false
 
-    // Preview cars for this user
-    private let previewCars: [Car] = Array(CarStore.previewCars.prefix(2))
-
-    init(user: AppUser) {
-        self.user = user
-        _isFollowing = State(initialValue: user.isFollowing)
-        _followerCount = State(initialValue: user.followerCount)
-    }
+    private var cars: [PublicCar] { exploreStore.cars(for: ownerUID) }
+    private var isOwnProfile: Bool { authService.currentUser?.id == ownerUID }
+    private var isFollowing: Bool { followStore.isFollowing(ownerUID) }
+    private var isBlocked: Bool { blockStore.isBlocked(ownerUID) }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                profileHeader
-                Divider()
-                tabPicker
-                tabContent
+        Group {
+            if isBlocked {
+                MarqueEmptyState(
+                    icon: "person.crop.circle.badge.minus",
+                    title: "User Blocked",
+                    subtitle: "You've blocked this user. Unblock them from the menu to see their profile."
+                )
+            } else {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        profileHeader
+                        Divider().padding(.vertical, 8)
+                        carsGrid
+                    }
+                }
             }
         }
-        .navigationTitle(user.username.isEmpty ? user.displayName : "@\(user.username)")
+        .navigationTitle("@\(ownerUsername)")
         .navigationBarTitleDisplayMode(.inline)
+        .task { profile = await exploreStore.fetchUserProfile(uid: ownerUID) }
+        .toolbar {
+            if !isOwnProfile {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(role: .destructive) { showingBlockAlert = true } label: {
+                            Label(isBlocked ? "Unblock @\(ownerUsername)" : "Block @\(ownerUsername)",
+                                  systemImage: isBlocked ? "person.crop.circle.badge.checkmark" : "person.crop.circle.badge.minus")
+                        }
+                        Button(role: .destructive) { showingReport = true } label: {
+                            Label("Report @\(ownerUsername)", systemImage: "flag")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
+        .alert(
+            isBlocked ? "Unblock @\(ownerUsername)?" : "Block @\(ownerUsername)?",
+            isPresented: $showingBlockAlert
+        ) {
+            Button(isBlocked ? "Unblock" : "Block", role: .destructive) {
+                Task {
+                    if isBlocked { await blockStore.unblock(uid: ownerUID) }
+                    else { await blockStore.block(uid: ownerUID) }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            if !isBlocked {
+                Text("@\(ownerUsername) won't be able to see your profile or cars.")
+            }
+        }
+        .alert("Unfollow @\(ownerUsername)?", isPresented: $showingUnfollowAlert) {
+            Button("Unfollow", role: .destructive) {
+                Task { await followStore.unfollow(uid: ownerUID) }
+            }
+            Button("Cancel", role: .cancel) { }
+        }
+        .sheet(isPresented: $showingReport) {
+            ReportView(title: "Report User", reportedUID: ownerUID)
+                .environmentObject(blockStore)
+        }
     }
 
     // MARK: - Header
@@ -39,50 +90,45 @@ struct PublicProfileView: View {
     private var profileHeader: some View {
         VStack(spacing: 14) {
             HStack(alignment: .top, spacing: 16) {
-                UserAvatar(user: user, size: 72)
+                avatarView
+                    .frame(width: 72, height: 72)
+                    .clipShape(Circle())
 
                 VStack(alignment: .leading, spacing: 5) {
-                    HStack(spacing: 6) {
-                        Text(user.displayName)
-                            .font(.headline)
-                        if user.isVerified {
-                            Image(systemName: "checkmark.seal.fill")
-                                .foregroundColor(.blue)
-                                .font(.subheadline)
-                        }
-                        if user.isProMember {
-                            ProBadge()
-                        }
-                    }
-
-                    Text("@\(user.username)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-
-                    if !user.location.isEmpty {
-                        Label(user.location, systemImage: "mappin.circle")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    Text(profile?.displayName ?? ownerUsername)
+                        .font(.headline)
+                    Text("@\(ownerUsername)")
+                        .font(.subheadline).foregroundColor(.secondary)
                 }
 
                 Spacer()
 
-                FollowButton(isFollowing: isFollowing) { toggleFollow() }
+                if !isOwnProfile {
+                    FollowButton(isFollowing: isFollowing) {
+                        if isFollowing {
+                            showingUnfollowAlert = true
+                        } else {
+                            Task {
+                                await followStore.follow(
+                                    uid: ownerUID,
+                                    actorDisplayName: authService.currentUser?.displayName ?? "",
+                                    actorUsername: authService.currentUser?.username ?? "",
+                                    actorAvatarURL: authService.currentUser?.avatarURL
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
-            if !user.bio.isEmpty {
-                Text(user.bio)
+            if let bio = profile?.bio, !bio.isEmpty {
+                Text(bio)
                     .font(.subheadline)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             HStack(spacing: 0) {
-                StatChip(value: "\(previewCars.count)", label: "Cars")
-                Divider().frame(height: 30).padding(.horizontal, 16)
-                StatChip(value: "\(followerCount)", label: "Followers")
-                Divider().frame(height: 30).padding(.horizontal, 16)
-                StatChip(value: "\(user.followingCount)", label: "Following")
+                StatChip(value: "\(cars.count)", label: "Cars")
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -92,123 +138,60 @@ struct PublicProfileView: View {
         .padding(16)
     }
 
-    // MARK: - Tabs
-
-    private var tabPicker: some View {
-        Picker("", selection: $selectedTab) {
-            ForEach(ProfileTab.allCases, id: \.self) { tab in
-                Text(tab.rawValue).tag(tab)
-            }
-        }
-        .pickerStyle(.segmented)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-    }
-
     @ViewBuilder
-    private var tabContent: some View {
-        switch selectedTab {
-        case .cars: carsTab
-        case .about: aboutTab
+    private var avatarView: some View {
+        if let urlString = profile?.avatarURL,
+           !urlString.isEmpty,
+           let url = URL(string: urlString) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img): img.resizable().scaledToFill()
+                default: initialsCircle
+                }
+            }
+        } else {
+            initialsCircle
         }
     }
 
-    private var carsTab: some View {
-        Group {
-            if previewCars.isEmpty {
+    private var initialsCircle: some View {
+        Circle()
+            .fill(Color.accentColor.opacity(0.15))
+            .overlay(
+                Text(ownerUsername.prefix(1).uppercased())
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(.accentColor)
+            )
+    }
+
+    // MARK: - Cars Grid
+
+    private var carsGrid: some View {
+        VStack(spacing: 0) {
+            MarqueSectionHeader(title: "Cars")
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+            if cars.isEmpty {
                 MarqueEmptyState(
                     icon: "car.fill",
                     title: "No Public Cars",
-                    subtitle: "\(user.displayName) hasn't shared any cars yet."
+                    subtitle: "This user hasn't shared any cars yet."
                 )
                 .padding(.vertical, 40)
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(previewCars) { car in
-                        NavigationLink(destination: PublicCarDetailView(car: car, owner: user)) {
-                            PublicCarCell(car: car)
+                    ForEach(cars) { car in
+                        NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                            .environmentObject(exploreStore)) {
+                            ExploreCarCell(car: car)
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(16)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 20)
             }
         }
     }
-
-    private var aboutTab: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if !user.bio.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Bio").font(.caption).foregroundColor(.secondary)
-                    Text(user.bio).font(.subheadline)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Member Since").font(.caption).foregroundColor(.secondary)
-                Text(user.joinedDate, style: .date).font(.subheadline)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-    }
-
-    // MARK: - Actions
-
-    private func toggleFollow() {
-        isFollowing.toggle()
-        followerCount += isFollowing ? 1 : -1
-    }
-}
-
-// MARK: - Public Car Cell
-
-struct PublicCarCell: View {
-    let car: Car
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.accentColor.opacity(0.08))
-                    .aspectRatio(1.4, contentMode: .fit)
-
-                if let fileName = car.primaryPhotoFileName,
-                   let uiImage = ImageManager.loadImage(fileName: fileName) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                } else {
-                    Image(systemName: "car.fill")
-                        .font(.largeTitle)
-                        .foregroundColor(.accentColor.opacity(0.5))
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(car.displayName)
-                    .font(.caption).fontWeight(.semibold)
-                    .lineLimit(1)
-                if !car.color.isEmpty {
-                    Text(car.color)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding(.horizontal, 4)
-            .padding(.bottom, 4)
-        }
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
-    }
-}
-
-#Preview {
-    NavigationStack {
-        PublicProfileView(user: .preview)
-    }
-    .environmentObject(AuthService())
 }

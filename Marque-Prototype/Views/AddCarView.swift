@@ -259,8 +259,3 @@ struct AddCarView: View {
         resetSearchedFields()
     }
 }
-
-#Preview {
-    AddCarView()
-        .environmentObject(CarStore())
-}

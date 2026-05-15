@@ -128,8 +128,3 @@ struct LoginView: View {
         .font(.subheadline)
     }
 }
-
-#Preview {
-    LoginView()
-        .environmentObject(AuthService())
-}

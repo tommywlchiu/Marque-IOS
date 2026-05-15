@@ -4,6 +4,7 @@ struct CommentsView: View {
     let post: Post
 
     @EnvironmentObject var socialStore: SocialStore
+    @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) private var dismiss
 
     @State private var commentText = ""
@@ -111,7 +112,7 @@ struct CommentsView: View {
 
     private var inputBar: some View {
         HStack(spacing: 10) {
-            UserAvatar(user: AppUser.preview, size: 32)
+            UserAvatar(user: authService.currentUser ?? .preview, size: 32)
 
             TextField("Add a comment…", text: $commentText, axis: .vertical)
                 .font(.subheadline)
@@ -197,10 +198,4 @@ private struct CommentRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
     }
-}
-
-#Preview {
-    let store = SocialStore()
-    return CommentsView(post: store.posts[1])
-        .environmentObject(store)
 }

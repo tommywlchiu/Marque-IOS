@@ -1,14 +1,13 @@
 import SwiftUI
+import StoreKit
 
 struct ProUpgradeView: View {
     @Environment(\.dismiss) var dismiss
-    @State private var selectedPlan: Plan = .annual
-    @State private var isPurchasing = false
+    @EnvironmentObject var subscriptionStore: SubscriptionStore
 
-    private enum Plan: String, CaseIterable {
-        case monthly = "Monthly"
-        case annual = "Annual"
-    }
+    @State private var selectedPlan: PlanOption = .annual
+
+    private enum PlanOption { case monthly, annual }
 
     var body: some View {
         NavigationStack {
@@ -32,6 +31,10 @@ struct ProUpgradeView: View {
                     Button("Not Now") { dismiss() }
                         .foregroundColor(.secondary)
                 }
+            }
+            .task { await subscriptionStore.load() }
+            .onChange(of: subscriptionStore.isPro) { _, isPro in
+                if isPro { dismiss() }
             }
         }
     }
@@ -62,29 +65,28 @@ struct ProUpgradeView: View {
 
     private var planPicker: some View {
         Picker("Plan", selection: $selectedPlan.animation()) {
-            ForEach(Plan.allCases, id: \.self) { plan in
-                Text(plan.rawValue).tag(plan)
-            }
+            Text("Annual").tag(PlanOption.annual)
+            Text("Monthly").tag(PlanOption.monthly)
         }
         .pickerStyle(.segmented)
     }
 
     private var selectedPlanCard: some View {
-        VStack(spacing: 8) {
+        Group {
             switch selectedPlan {
-            case .monthly:
-                PlanCard(
-                    price: "$2.99",
-                    period: "/ month",
-                    badge: nil,
-                    detail: "Billed monthly. Cancel anytime."
-                )
             case .annual:
                 PlanCard(
-                    price: "$24.99",
+                    price: subscriptionStore.annualProduct?.displayPrice ?? "$24.99",
                     period: "/ year",
                     badge: "Save 30%",
                     detail: "That's just $2.08 / month. Cancel anytime."
+                )
+            case .monthly:
+                PlanCard(
+                    price: subscriptionStore.monthlyProduct?.displayPrice ?? "$2.99",
+                    period: "/ month",
+                    badge: nil,
+                    detail: "Billed monthly. Cancel anytime."
                 )
             }
         }
@@ -96,11 +98,11 @@ struct ProUpgradeView: View {
                 .font(.headline)
 
             let features: [(icon: String, title: String, subtitle: String)] = [
-                ("infinity", "Unlimited Cars", "Free plan is limited to 3 vehicles"),
-                ("bell.badge.fill", "Smart Alerts", "Customizable expiry & maintenance reminders"),
-                ("chart.bar.fill", "Expense Analytics", "Full breakdown by category and time period"),
-                ("person.2.fill", "Social Profile", "Share your garage and follow other enthusiasts"),
-                ("sparkles", "Early Access", "Be first to try new features"),
+                ("infinity",         "Unlimited Cars",     "Free plan is limited to 3 vehicles"),
+                ("bell.badge.fill",  "Smart Alerts",       "Customizable expiry & maintenance reminders"),
+                ("chart.bar.fill",   "Expense Analytics",  "Full breakdown by category and time period"),
+                ("person.2.fill",    "Social Profile",     "Share your garage and follow other enthusiasts"),
+                ("sparkles",         "Early Access",       "Be first to try new features"),
             ]
 
             ForEach(features, id: \.title) { feat in
@@ -122,40 +124,49 @@ struct ProUpgradeView: View {
     }
 
     private var ctaButton: some View {
-        MarquePrimaryButton(
-            selectedPlan == .annual ? "Start Free Trial — $24.99 / yr" : "Start Free Trial — $2.99 / mo",
-            isLoading: isPurchasing
-        ) {
-            purchase()
+        VStack(spacing: 10) {
+            if let error = subscriptionStore.purchaseError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
+
+            let product = selectedPlan == .annual
+                ? subscriptionStore.annualProduct
+                : subscriptionStore.monthlyProduct
+
+            MarquePrimaryButton(
+                product != nil
+                    ? "Subscribe — \(product!.displayPrice) \(selectedPlan == .annual ? "/ yr" : "/ mo")"
+                    : "Subscribe",
+                isLoading: false
+            ) {
+                guard let product else { return }
+                Task { await subscriptionStore.purchase(product) }
+            }
+            .disabled(product == nil)
         }
     }
 
     private var legalFooter: some View {
         VStack(spacing: 6) {
-            Text("7-day free trial, then charged automatically. Cancel anytime in Settings > Subscriptions.")
+            Text("Subscription renews automatically. Cancel anytime in Settings > Subscriptions.")
                 .font(.caption2)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 16) {
-                Button("Restore Purchases") { /* StoreKit restore */ }
-                Button("Privacy Policy") { }
-                Button("Terms") { }
+                Button("Restore Purchases") {
+                    Task { await subscriptionStore.restore() }
+                }
+                .disabled(subscriptionStore.isRestoring)
+
+                Link("Privacy Policy", destination: AppLinks.privacyPolicy)
+                Link("Terms", destination: AppLinks.termsOfService)
             }
             .font(.caption2)
             .foregroundColor(.accentColor)
-        }
-    }
-
-    // MARK: - Actions
-
-    private func purchase() {
-        isPurchasing = true
-        // Wire up StoreKit purchase here
-        Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            isPurchasing = false
-            dismiss()
         }
     }
 }
@@ -172,15 +183,10 @@ private struct PlanCard: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(price)
-                        .font(.title).fontWeight(.bold)
-                    Text(period)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    Text(price).font(.title).fontWeight(.bold)
+                    Text(period).font(.subheadline).foregroundColor(.secondary)
                 }
-                Text(detail)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text(detail).font(.caption).foregroundColor(.secondary)
             }
 
             Spacer()
@@ -189,22 +195,14 @@ private struct PlanCard: View {
                 Text(badge)
                     .font(.caption).fontWeight(.bold)
                     .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(Color.green)
                     .clipShape(Capsule())
             }
         }
         .padding(16)
         .background(Color.accentColor.opacity(0.08))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.accentColor, lineWidth: 1.5)
-        )
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.accentColor, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
-}
-
-#Preview {
-    ProUpgradeView()
 }

@@ -263,3 +263,104 @@ struct FollowButton: View {
             .padding(.vertical, 8)
     }
 }
+
+// MARK: - Cached Remote Image
+
+/// Drop-in replacement for AsyncImage that caches via NSCache.
+/// Shows a neutral grey background while loading — never the caller's placeholder —
+/// so callers only show their placeholder when url is genuinely nil.
+struct CachedRemoteImage: View {
+    let url: URL?
+
+    @StateObject private var loader = RemoteImageLoader()
+
+    var body: some View {
+        Group {
+            if let img = loader.image {
+                Image(uiImage: img).resizable().scaledToFill()
+            } else {
+                Color(.systemGray5)
+            }
+        }
+        .task(id: url?.absoluteString) {
+            guard let url else { return }
+            loader.load(from: url)
+        }
+    }
+}
+
+// MARK: - Image Cache
+
+/// Shared in-memory cache for remote images. Bypasses Firebase Storage's
+/// `Cache-Control: private, max-age=0` headers that prevent URLCache from working.
+final class MarqueImageCache {
+    static let shared = MarqueImageCache()
+    private let cache = NSCache<NSString, UIImage>()
+
+    func get(_ url: URL) -> UIImage? {
+        cache.object(forKey: url.absoluteString as NSString)
+    }
+
+    func set(_ image: UIImage, for url: URL) {
+        cache.setObject(image, forKey: url.absoluteString as NSString)
+    }
+}
+
+@MainActor
+private final class RemoteImageLoader: ObservableObject {
+    @Published var image: UIImage?
+
+    func load(from url: URL) {
+        if let cached = MarqueImageCache.shared.get(url) {
+            image = cached
+            return
+        }
+        Task {
+            guard let (data, _) = try? await URLSession.shared.data(from: url),
+                  let loaded = UIImage(data: data) else { return }
+            MarqueImageCache.shared.set(loaded, for: url)
+            image = loaded
+        }
+    }
+}
+
+// MARK: - Owner Avatar
+
+/// Lightweight avatar used wherever only a URL + username are available.
+/// Uses NSCache so the image is returned instantly on subsequent renders,
+/// preventing the flicker that AsyncImage causes on every view rebuild.
+struct OwnerAvatar: View {
+    let avatarURL: String?
+    let username: String
+    let size: CGFloat
+
+    @StateObject private var loader = RemoteImageLoader()
+
+    var body: some View {
+        Group {
+            if let img = loader.image {
+                Image(uiImage: img).resizable().scaledToFill()
+            } else {
+                initialsView
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .task(id: avatarURL) {
+            guard let urlString = avatarURL,
+                  !urlString.isEmpty,
+                  let url = URL(string: urlString) else { return }
+            loader.load(from: url)
+        }
+    }
+
+    private var initialsView: some View {
+        Circle()
+            .fill(Color.accentColor.opacity(0.15))
+            .overlay(
+                Text(username.prefix(1).uppercased())
+                    .font(.system(size: size * 0.42, weight: .semibold))
+                    .foregroundColor(.accentColor)
+            )
+    }
+}

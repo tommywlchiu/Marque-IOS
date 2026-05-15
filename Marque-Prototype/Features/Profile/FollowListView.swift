@@ -1,17 +1,30 @@
 import SwiftUI
 
 struct FollowListView: View {
+    enum Mode { case following, followers }
+
+    let mode: Mode
+    let currentUserUID: String
+
+    @EnvironmentObject var exploreStore: ExploreStore
+    @EnvironmentObject var followStore: FollowStore
+    @EnvironmentObject var blockStore: BlockStore
     @Environment(\.dismiss) var dismiss
 
-    let title: String
-    let users: [AppUser]
-
+    @State private var profiles: [PublicUserProfile] = []
+    @State private var isLoading = true
     @State private var searchText = ""
 
-    private var filtered: [AppUser] {
-        guard !searchText.isEmpty else { return users }
+    private var title: String { mode == .following ? "Following" : "Followers" }
+
+    private var uidsToLoad: Set<String> {
+        mode == .following ? followStore.followingUIDs : followStore.followerUIDs
+    }
+
+    private var filtered: [PublicUserProfile] {
+        guard !searchText.isEmpty else { return profiles }
         let q = searchText.lowercased()
-        return users.filter {
+        return profiles.filter {
             $0.displayName.lowercased().contains(q) ||
             $0.username.lowercased().contains(q)
         }
@@ -20,16 +33,29 @@ struct FollowListView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if users.isEmpty {
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if profiles.isEmpty {
                     MarqueEmptyState(
                         icon: "person.2",
                         title: "No \(title) Yet",
-                        subtitle: "When people follow this account, they'll show up here."
+                        subtitle: mode == .following
+                            ? "Follow people to see them here."
+                            : "When people follow you, they'll show up here."
                     )
                 } else {
-                    List(filtered) { user in
-                        NavigationLink(destination: PublicProfileView(user: user)) {
-                            UserRow(user: user)
+                    List(filtered, id: \.uid) { profile in
+                        NavigationLink(
+                            destination: PublicProfileView(
+                                ownerUID: profile.uid ?? "",
+                                ownerUsername: profile.username
+                            )
+                            .environmentObject(exploreStore)
+                            .environmentObject(followStore)
+                            .environmentObject(blockStore)
+                        ) {
+                            FollowUserRow(profile: profile, currentUserUID: currentUserUID)
                         }
                     }
                     .searchable(text: $searchText, prompt: "Search \(title.lowercased())")
@@ -43,50 +69,102 @@ struct FollowListView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .task(id: uidsToLoad) { await load() }
         }
+    }
+
+    private func load() async {
+        isLoading = true
+        var loaded: [PublicUserProfile] = []
+        await withTaskGroup(of: PublicUserProfile?.self) { group in
+            for uid in uidsToLoad {
+                group.addTask { await exploreStore.fetchUserProfile(uid: uid) }
+            }
+            for await profile in group {
+                if let profile { loaded.append(profile) }
+            }
+        }
+        profiles = loaded.sorted { $0.username < $1.username }
+        isLoading = false
     }
 }
 
-// MARK: - User Row
+// MARK: - Row
 
-private struct UserRow: View {
-    let user: AppUser
-    @State private var isFollowing: Bool
+private struct FollowUserRow: View {
+    let profile: PublicUserProfile
+    let currentUserUID: String
 
-    init(user: AppUser) {
-        self.user = user
-        _isFollowing = State(initialValue: user.isFollowing)
-    }
+    @EnvironmentObject var followStore: FollowStore
+    @EnvironmentObject var authService: AuthService
+    @State private var showingUnfollowAlert = false
+
+    private var uid: String { profile.uid ?? "" }
+    private var isFollowing: Bool { followStore.isFollowing(uid) }
+    private var isOwnProfile: Bool { uid == currentUserUID }
 
     var body: some View {
         HStack(spacing: 12) {
-            UserAvatar(user: user, size: 44)
+            avatarView
+                .frame(width: 44, height: 44)
+                .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(user.displayName)
-                        .font(.subheadline).fontWeight(.semibold)
-                    if user.isVerified {
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(.blue)
-                            .font(.caption)
-                    }
-                }
-                Text("@\(user.username)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text(profile.displayName)
+                    .font(.subheadline).fontWeight(.semibold)
+                Text("@\(profile.username)")
+                    .font(.caption).foregroundColor(.secondary)
             }
 
             Spacer()
 
-            FollowButton(isFollowing: isFollowing) {
-                isFollowing.toggle()
+            if !isOwnProfile {
+                FollowButton(isFollowing: isFollowing) {
+                    if isFollowing { showingUnfollowAlert = true }
+                    else {
+                        Task {
+                            await followStore.follow(
+                                uid: uid,
+                                actorDisplayName: authService.currentUser?.displayName ?? "",
+                                actorUsername: authService.currentUser?.username ?? "",
+                                actorAvatarURL: authService.currentUser?.avatarURL
+                            )
+                        }
+                    }
+                }
             }
         }
         .padding(.vertical, 4)
+        .alert("Unfollow @\(profile.username)?", isPresented: $showingUnfollowAlert) {
+            Button("Unfollow", role: .destructive) {
+                Task { await followStore.unfollow(uid: uid) }
+            }
+            Button("Cancel", role: .cancel) { }
+        }
     }
-}
 
-#Preview {
-    FollowListView(title: "Followers", users: AppUser.previewFollowers)
+    @ViewBuilder
+    private var avatarView: some View {
+        if let urlString = profile.avatarURL.isEmpty ? nil : profile.avatarURL,
+           let url = URL(string: urlString) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img): img.resizable().scaledToFill()
+                default: initialsCircle
+                }
+            }
+        } else {
+            initialsCircle
+        }
+    }
+
+    private var initialsCircle: some View {
+        Circle()
+            .fill(Color.accentColor.opacity(0.15))
+            .overlay(
+                Text(profile.username.prefix(1).uppercased())
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.accentColor)
+            )
+    }
 }

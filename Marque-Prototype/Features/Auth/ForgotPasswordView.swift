@@ -102,8 +102,3 @@ struct ForgotPasswordView: View {
         }
     }
 }
-
-#Preview {
-    ForgotPasswordView()
-        .environmentObject(AuthService())
-}

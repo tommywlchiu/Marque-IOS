@@ -1,27 +1,46 @@
 import Foundation
+import FirebaseAuth
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseStorage
+import GoogleSignIn
+import AuthenticationServices
+import CryptoKit
+import UIKit
 
 enum AuthState: Equatable {
     case unauthenticated
     case authenticated(AppUser)
 }
 
-import FirebaseAuth
-import AuthenticationServices
-import CryptoKit
-import UIKit
-
 @MainActor
 class AuthService: NSObject, ObservableObject {
     @Published var authState: AuthState = .unauthenticated
     @Published var hasSeenOnboarding: Bool
+    @Published var hasCompletedProfileSetup: Bool = false
     @Published var isLoading = false
     @Published var errorMessage: String?
 
     private let onboardingKey = "marque_has_seen_onboarding"
+    private let db = Firestore.firestore()
     private var stateListener: AuthStateDidChangeListenerHandle?
     private var currentNonce: String?
     private var appleCompletion: CheckedContinuation<Void, Error>?
     private var appleSignInController: ASAuthorizationController?
+    private var isReauthenticating = false
+
+    /// The Firebase provider ID for the current user's primary sign-in method.
+    var signInProvider: String {
+        Auth.auth().currentUser?.providerData.first?.providerID ?? "password"
+    }
+
+    private func userDocument(uid: String) -> DocumentReference {
+        db.collection("users").document(uid)
+    }
+
+    private func usernameDocument(_ username: String) -> DocumentReference {
+        db.collection("usernames").document(username.lowercased())
+    }
 
     override init() {
         hasSeenOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
@@ -32,8 +51,16 @@ class AuthService: NSObject, ObservableObject {
                 guard let self else { return }
                 if let fu = firebaseUser {
                     let p = LocalProfile.load(uid: fu.uid)
-                    self.authState = .authenticated(AppUser(firebaseUser: fu, profile: (username: p.username, bio: p.bio, location: p.location)))
+                    self.hasCompletedProfileSetup = p.hasCompletedProfileSetup
+                    self.authState = .authenticated(AppUser(firebaseUser: fu, profile: (
+                        username: p.username,
+                        bio: p.bio,
+                        location: p.location,
+                        avatarFileName: p.avatarFileName,
+                        avatarStorageURL: p.avatarStorageURL
+                    )))
                 } else {
+                    self.hasCompletedProfileSetup = false
                     self.authState = .unauthenticated
                 }
             }
@@ -82,10 +109,10 @@ class AuthService: NSObject, ObservableObject {
             changeRequest.displayName = displayName.trimmingCharacters(in: .whitespaces)
             try await changeRequest.commitChanges()
 
-            let resolved = username.trimmingCharacters(in: .whitespaces).isEmpty
-                ? (email.components(separatedBy: "@").first ?? "")
-                : username.trimmingCharacters(in: .whitespaces)
-            LocalProfile(username: resolved, bio: "", location: "").save(uid: result.user.uid)
+            let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
+            let trimmedName = displayName.trimmingCharacters(in: .whitespaces)
+            let resolved = !trimmedUsername.isEmpty ? trimmedUsername : trimmedName
+            LocalProfile(username: resolved, bio: "", location: "", avatarFileName: nil).save(uid: result.user.uid)
         } catch {
             errorMessage = authErrorMessage(from: error)
         }
@@ -127,12 +154,43 @@ class AuthService: NSObject, ObservableObject {
     }
 
     // MARK: - Google Sign In
-    // TODO: Add GoogleSignIn SDK via Xcode → File → Add Package Dependencies
-    // URL: https://github.com/google/GoogleSignIn-iOS  Product: GoogleSignIn
-    // Then replace this stub — see inline comments for the implementation.
 
     func signInWithGoogle() async {
-        errorMessage = "Google Sign In setup required — see AuthService.swift TODO."
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            errorMessage = "Firebase configuration error."
+            return
+        }
+
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let rootVC = windowScene.keyWindow?.rootViewController else {
+            errorMessage = "Unable to present sign-in."
+            return
+        }
+
+        do {
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootVC)
+            guard let idToken = result.user.idToken?.tokenString else {
+                errorMessage = "Google Sign In failed: missing ID token."
+                return
+            }
+            let credential = GoogleAuthProvider.credential(
+                withIDToken: idToken,
+                accessToken: result.user.accessToken.tokenString
+            )
+            try await Auth.auth().signIn(with: credential)
+        } catch {
+            let nsError = error as NSError
+            if nsError.domain != kGIDSignInErrorDomain || nsError.code != GIDSignInError.canceled.rawValue {
+                errorMessage = error.localizedDescription
+            }
+        }
     }
 
     // MARK: - Password Reset
@@ -151,7 +209,7 @@ class AuthService: NSObject, ObservableObject {
 
     // MARK: - Profile Update
 
-    func updateProfile(displayName: String, username: String, bio: String, location: String) {
+    func updateProfile(displayName: String, username: String, bio: String, location: String, avatarFileName: String? = nil) {
         guard case .authenticated(var user) = authState,
               let firebaseUser = Auth.auth().currentUser else { return }
 
@@ -159,7 +217,22 @@ class AuthService: NSObject, ObservableObject {
         changeRequest.displayName = displayName
         changeRequest.commitChanges(completion: nil)
 
-        LocalProfile(username: username, bio: bio, location: location).save(uid: firebaseUser.uid)
+        var profile = LocalProfile.load(uid: firebaseUser.uid)
+        profile.username = username
+        profile.bio = bio
+        profile.location = location
+        if let avatarFileName { profile.avatarFileName = avatarFileName }
+        profile.save(uid: firebaseUser.uid)
+
+        // Sync to Firestore so public profile reads return current data.
+        // Note: we intentionally do NOT touch `username` or `isPro` here — username
+        // changes require the atomic claim flow in completeProfileSetup, and isPro
+        // is owned by SubscriptionStore.
+        userDocument(uid: firebaseUser.uid).setData([
+            "displayName": displayName,
+            "bio": bio,
+            "avatarURL": profile.avatarStorageURL ?? firebaseUser.photoURL?.absoluteString ?? ""
+        ], merge: true)
 
         user.displayName = displayName
         user.username = username
@@ -168,10 +241,238 @@ class AuthService: NSObject, ObservableObject {
         authState = .authenticated(user)
     }
 
+    // MARK: - Profile Setup
+
+    func checkUsernameAvailability(_ username: String) async -> Bool {
+        do {
+            let doc = try await usernameDocument(username).getDocument()
+            if let uid = doc.data()?["uid"] as? String { return uid == currentUser?.id }
+            return !doc.exists
+        } catch {
+            // Optimistically allow — server-side check in completeProfileSetup is the real guard.
+            return true
+        }
+    }
+
+    func completeProfileSetup(displayName: String, username: String, bio: String, avatarImage: UIImage?) async throws {
+        guard let firebaseUser = Auth.auth().currentUser else { return }
+        let uid = firebaseUser.uid
+
+        // Check username availability BEFORE uploading anything to avoid orphaned Storage files.
+        let usernameRef = usernameDocument(username)
+        let existing = try await usernameRef.getDocument()
+        if let existingUID = existing.data()?["uid"] as? String, existingUID != uid {
+            throw ProfileSetupError.usernameTaken
+        }
+
+        var avatarStorageURL: String? = nil
+        let changeRequest = firebaseUser.createProfileChangeRequest()
+        if !displayName.isEmpty { changeRequest.displayName = displayName }
+
+        if let image = avatarImage, let data = image.jpegData(compressionQuality: 0.8) {
+            let ref = Storage.storage().reference().child("users/\(uid)/avatar.jpg")
+            _ = try await ref.putDataAsync(data)
+            let url = try await ref.downloadURL()
+            avatarStorageURL = url.absoluteString
+            changeRequest.photoURL = url
+        }
+        try await changeRequest.commitChanges()
+
+        let resolvedDisplayName = displayName.isEmpty ? (firebaseUser.displayName ?? "User") : displayName
+
+        let batch = db.batch()
+        batch.setData(["uid": uid], forDocument: usernameRef)
+        batch.setData([
+            "username": username.lowercased(),
+            "displayName": resolvedDisplayName,
+            "bio": bio,
+            "avatarURL": avatarStorageURL ?? firebaseUser.photoURL?.absoluteString ?? "",
+            "createdAt": FieldValue.serverTimestamp()
+        ], forDocument: userDocument(uid: uid))
+        try await batch.commit()
+
+        var profile = LocalProfile.load(uid: uid)
+        profile.username = username
+        profile.bio = bio
+        profile.avatarStorageURL = avatarStorageURL
+        profile.hasCompletedProfileSetup = true
+        profile.save(uid: uid)
+
+        hasCompletedProfileSetup = true
+        if case .authenticated(var user) = authState {
+            user.displayName = resolvedDisplayName
+            user.username = username
+            user.bio = bio
+            if let avatarStorageURL { user.avatarURL = avatarStorageURL }
+            authState = .authenticated(user)
+        }
+    }
+
+    // MARK: - Username Change
+
+    func changeUsername(to newUsername: String) async throws {
+        guard let firebaseUser = Auth.auth().currentUser,
+              case .authenticated(var user) = authState else { return }
+
+        let uid = firebaseUser.uid
+        let trimmed = newUsername.trimmingCharacters(in: .whitespaces).lowercased()
+        let currentUsername = user.username.lowercased()
+        guard trimmed != currentUsername else { return }
+
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
+        guard trimmed.count >= 3, trimmed.count <= 30,
+              trimmed.unicodeScalars.allSatisfy({ allowed.contains($0) }) else {
+            throw ProfileSetupError.invalidUsername
+        }
+
+        let newRef = usernameDocument(trimmed)
+        let existing = try await newRef.getDocument()
+        if let existingUID = existing.data()?["uid"] as? String, existingUID != uid {
+            throw ProfileSetupError.usernameTaken
+        }
+
+        // Atomic: claim new username, release old, update user doc
+        let batch = db.batch()
+        batch.setData(["uid": uid], forDocument: newRef)
+        if !currentUsername.isEmpty {
+            batch.deleteDocument(usernameDocument(currentUsername))
+        }
+        batch.setData(["username": trimmed], forDocument: userDocument(uid: uid), merge: true)
+        try await batch.commit()
+
+        // Update local profile
+        var profile = LocalProfile.load(uid: uid)
+        profile.username = trimmed
+        profile.save(uid: uid)
+
+        user.username = trimmed
+        authState = .authenticated(user)
+
+        // Backfill ownerUsername in all public cars (eventually consistent — separate batch)
+        if let snapshot = try? await db.collection("publicCars")
+            .whereField("ownerUID", isEqualTo: uid)
+            .getDocuments(), !snapshot.documents.isEmpty {
+            let publicBatch = db.batch()
+            for doc in snapshot.documents {
+                publicBatch.updateData(["ownerUsername": trimmed], forDocument: doc.reference)
+            }
+            try? await publicBatch.commit()
+        }
+    }
+
+    // MARK: - Pro Status
+
+    // Pro state is owned by StoreKit on each device. Firestore `users/{uid}.isPro`
+    // is server-controlled (Cloud Function via App Store Server Notifications) — the
+    // client must NOT write it directly, as the security rules now reject any such
+    // write to prevent paywall bypass. Until Cloud Functions are wired up, cross-device
+    // unlock relies on the user tapping "Restore Purchases" on each device.
+    func setProStatus(_ isPro: Bool) {
+        if case .authenticated(var user) = authState {
+            user.isProMember = isPro
+            authState = .authenticated(user)
+        }
+    }
+
     // MARK: - Sign Out
 
     func signOut() {
         try? Auth.auth().signOut()
+    }
+
+    // MARK: - Re-authentication
+
+    func reauthenticate(password: String) async throws {
+        guard let firebaseUser = Auth.auth().currentUser,
+              let email = firebaseUser.email else { return }
+        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+        try await firebaseUser.reauthenticate(with: credential)
+    }
+
+    func reauthenticateWithApple() async throws {
+        isReauthenticating = true
+        defer { isReauthenticating = false }
+        try await performAppleSignIn()
+    }
+
+    func reauthenticateWithGoogle() async throws {
+        guard let clientID = FirebaseApp.app()?.options.clientID else { return }
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let rootVC = windowScene.keyWindow?.rootViewController else { return }
+
+        let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootVC)
+        guard let idToken = result.user.idToken?.tokenString else {
+            throw NSError(domain: "AuthService", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "Google re-auth failed: missing ID token."])
+        }
+        let credential = GoogleAuthProvider.credential(
+            withIDToken: idToken,
+            accessToken: result.user.accessToken.tokenString
+        )
+        guard let firebaseUser = Auth.auth().currentUser else { return }
+        try await firebaseUser.reauthenticate(with: credential)
+    }
+
+    // MARK: - Delete Account
+
+    func deleteAccount() async throws {
+        guard let firebaseUser = Auth.auth().currentUser else { return }
+        let uid = firebaseUser.uid
+        let storage = Storage.storage().reference()
+
+        // Collect car documents before deletion — needed to clean up Storage paths.
+        let carsSnapshot = try? await db.collection("users").document(uid)
+            .collection("cars").getDocuments()
+
+        // 1. Remove this user's entries from the public Explore feed.
+        if let snapshot = try? await db.collection("publicCars")
+            .whereField("ownerUID", isEqualTo: uid).getDocuments(),
+           !snapshot.documents.isEmpty {
+            let batch = db.batch()
+            snapshot.documents.prefix(500).forEach { batch.deleteDocument($0.reference) }
+            try? await batch.commit()
+        }
+
+        // 2. Release the username so another user can claim it.
+        if let username = currentUser?.username.lowercased(), !username.isEmpty {
+            try? await db.collection("usernames").document(username).delete()
+        }
+
+        // 3. Delete every subcollection under users/{uid}.
+        for sub in ["cars", "following", "followers", "blocked", "notifications"] {
+            if let snapshot = try? await db.collection("users").document(uid)
+                .collection(sub).getDocuments(), !snapshot.documents.isEmpty {
+                let batch = db.batch()
+                snapshot.documents.prefix(500).forEach { batch.deleteDocument($0.reference) }
+                try? await batch.commit()
+            }
+        }
+
+        // 4. Delete the user profile document.
+        try? await db.collection("users").document(uid).delete()
+
+        // 5. Delete Storage files (best-effort — failures don't block account deletion).
+        storage.child("users/\(uid)/avatar.jpg").delete(completion: nil)
+        for doc in carsSnapshot?.documents ?? [] {
+            let carId = doc.documentID
+            let fileNames = (doc.data()["photoFileNames"] as? [String]) ?? []
+            for fileName in fileNames {
+                storage.child("users/\(uid)/cars/\(carId)/\(fileName)").delete(completion: nil)
+            }
+        }
+
+        // 6. Delete the Firebase Auth account.
+        //    Throws AuthErrorCode.requiresRecentLogin if the credential is stale.
+        try await firebaseUser.delete()
+
+        // 7. Clear local caches (auth state listener fires automatically after step 6,
+        //    transitioning the app to .unauthenticated — these are belt-and-suspenders).
+        UserDefaults.standard.removeObject(forKey: "marque_profile_\(uid)")
+        UserDefaults.standard.removeObject(forKey: "marque_saved_cars_\(uid)")
+        UserDefaults.standard.removeObject(forKey: "marque_pending_uploads_\(uid)")
     }
 
     // MARK: - Helpers
@@ -233,7 +534,11 @@ extension AuthService: ASAuthorizationControllerDelegate {
                     rawNonce: await self.currentNonce,
                     fullName: credential.fullName
                 )
-                try await Auth.auth().signIn(with: firebaseCredential)
+                if await self.isReauthenticating {
+                    try await Auth.auth().currentUser?.reauthenticate(with: firebaseCredential)
+                } else {
+                    try await Auth.auth().signIn(with: firebaseCredential)
+                }
                 await MainActor.run {
                     self.appleSignInController = nil
                     self.appleCompletion?.resume()
@@ -262,35 +567,60 @@ extension AuthService: ASAuthorizationControllerDelegate {
 
 extension AuthService: ASAuthorizationControllerPresentationContextProviding {
     nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first { $0.activationState == .foregroundActive }
-            .flatMap { $0.keyWindow } ?? UIWindow()
+        MainActor.assumeIsolated {
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first { $0.activationState == .foregroundActive }
+                .flatMap { $0.keyWindow } ?? UIWindow()
+        }
     }
 }
 
 // MARK: - LocalProfile
-// Stores fields Firebase Auth doesn't natively carry (username, bio, location).
-// Replace with a Firestore document in production.
+// Local cache for fields Firestore owns. Written on profile setup and profile edits.
 
 private struct LocalProfile: Codable {
     var username: String
     var bio: String
     var location: String
+    var avatarFileName: String?
+    var avatarStorageURL: String?
+    var hasCompletedProfileSetup: Bool
+
+    init(username: String = "", bio: String = "", location: String = "",
+         avatarFileName: String? = nil, avatarStorageURL: String? = nil,
+         hasCompletedProfileSetup: Bool = false) {
+        self.username = username
+        self.bio = bio
+        self.location = location
+        self.avatarFileName = avatarFileName
+        self.avatarStorageURL = avatarStorageURL
+        self.hasCompletedProfileSetup = hasCompletedProfileSetup
+    }
 
     static func load(uid: String) -> LocalProfile {
         guard
             let data = UserDefaults.standard.data(forKey: "marque_profile_\(uid)"),
             let profile = try? JSONDecoder().decode(LocalProfile.self, from: data)
-        else {
-            return LocalProfile(username: "", bio: "", location: "")
-        }
+        else { return LocalProfile() }
         return profile
     }
 
     func save(uid: String) {
         if let data = try? JSONEncoder().encode(self) {
             UserDefaults.standard.set(data, forKey: "marque_profile_\(uid)")
+        }
+    }
+}
+
+enum ProfileSetupError: LocalizedError {
+    case usernameTaken
+    case invalidUsername
+
+    var errorDescription: String? {
+        switch self {
+        case .usernameTaken:    return "That username is already taken. Please choose another."
+        case .invalidUsername:  return "Username must be 3–30 characters, letters, numbers and underscores only."
         }
     }
 }

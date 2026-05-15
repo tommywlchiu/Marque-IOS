@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CarDetailView: View {
     @EnvironmentObject var carStore: CarStore
+    @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) var dismiss
 
     @State var car: Car
@@ -23,6 +24,8 @@ struct CarDetailView: View {
             if car.hasExpiryWarning {
                 expiryAlertBanner
             }
+
+            visibilitySection
 
             Section(header: Text("Basic Information")) {
                 DetailRow(label: "Make", value: car.make)
@@ -145,7 +148,7 @@ struct CarDetailView: View {
             get: { galleryStartIndex.map(GalleryStart.init) },
             set: { galleryStartIndex = $0?.index }
         )) { start in
-            PhotoGalleryView(photoFileNames: car.photoFileNames, initialIndex: start.index)
+            PhotoGalleryView(photoFileNames: liveCar.photoFileNames, photoStorageURLs: liveCar.photoStorageURLs, initialIndex: start.index)
         }
         .alert("Delete Car", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
@@ -180,24 +183,21 @@ struct CarDetailView: View {
     private var photoHeaderSection: some View {
         Section {
             VStack(spacing: 12) {
-                if let fileName = car.primaryPhotoFileName,
-                   let uiImage = ImageManager.loadImage(fileName: fileName) {
+                if let fileName = liveCar.primaryPhotoFileName {
                     ZStack(alignment: .bottomTrailing) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
+                        CarPhotoImage(fileName: fileName, storageURL: liveCar.primaryPhotoStorageURL)
                             .frame(maxWidth: .infinity)
                             .frame(height: 200)
-                            .offset(y: car.photoOffsetY)
+                            .offset(y: liveCar.photoOffsetY)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .contentShape(RoundedRectangle(cornerRadius: 12))
                             .onTapGesture { galleryStartIndex = 0 }
 
-                        if car.hasMultiplePhotos {
+                        if liveCar.hasMultiplePhotos {
                             HStack(spacing: 4) {
                                 Image(systemName: "photo.stack")
                                     .font(.caption2)
-                                Text("\(car.photoFileNames.count)")
+                                Text("\(liveCar.photoFileNames.count)")
                                     .font(.caption)
                                     .fontWeight(.semibold)
                             }
@@ -210,7 +210,7 @@ struct CarDetailView: View {
                         }
                     }
 
-                    if car.hasMultiplePhotos {
+                    if liveCar.hasMultiplePhotos {
                         photoThumbnailStrip
                     }
                 } else {
@@ -245,21 +245,13 @@ struct CarDetailView: View {
     private var photoThumbnailStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Array(car.photoFileNames.enumerated()), id: \.offset) { index, fileName in
+                ForEach(Array(liveCar.photoFileNames.enumerated()), id: \.offset) { index, fileName in
                     Button {
                         galleryStartIndex = index
                     } label: {
-                        if let img = ImageManager.loadImage(fileName: fileName) {
-                            Image(uiImage: img)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 56, height: 56)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.systemGray5))
-                                .frame(width: 56, height: 56)
-                        }
+                        CarPhotoImage(fileName: fileName, storageURL: liveCar.storageURL(at: index))
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     .buttonStyle(.plain)
                 }
@@ -304,6 +296,34 @@ struct CarDetailView: View {
         carStore.cars.first(where: { $0.id == car.id }) ?? car
     }
 
+    private var visibilitySection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { liveCar.isPublic },
+                set: { isPublic in
+                    let username = authService.currentUser?.username ?? ""
+                    let avatarURL = authService.currentUser?.avatarURL
+                    carStore.setVisibility(isPublic, for: liveCar, ownerUsername: username, ownerAvatarURL: avatarURL)
+                }
+            )) {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Public")
+                            .font(.body)
+                        Text(liveCar.isPublic
+                            ? "Visible in Explore and your public profile"
+                            : "Only visible to you")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: liveCar.isPublic ? "eye.fill" : "eye.slash.fill")
+                        .foregroundColor(liveCar.isPublic ? .accentColor : .secondary)
+                }
+            }
+        }
+    }
+
     private var remindersSection: some View {
         Section(header: Text("Service Reminders")) {
             let upcoming = liveCar.serviceReminders.filter { !$0.isCompleted }
@@ -337,7 +357,7 @@ struct CarDetailView: View {
                     .font(.subheadline)
             }
         }) {
-            if car.sortedMaintenanceRecords.isEmpty {
+            if liveCar.sortedMaintenanceRecords.isEmpty {
                 Button {
                     showingAddMaintenance = true
                 } label: {
@@ -345,16 +365,14 @@ struct CarDetailView: View {
                         .foregroundColor(.accentColor)
                 }
             } else {
-                ForEach(car.sortedMaintenanceRecords) { record in
+                ForEach(liveCar.sortedMaintenanceRecords) { record in
                     MaintenanceRowView(record: record)
                 }
                 .onDelete { offsets in
-                    let sorted = car.sortedMaintenanceRecords
-                    for index in offsets {
-                        let record = sorted[index]
-                        car.maintenanceRecords.removeAll { $0.id == record.id }
+                    let sorted = liveCar.sortedMaintenanceRecords
+                    for index in offsets where index < sorted.count {
+                        carStore.deleteMaintenanceRecord(sorted[index], from: liveCar)
                     }
-                    carStore.updateCar(car)
                 }
             }
         }
@@ -486,23 +504,5 @@ struct DetailRow: View {
             Text(value.isEmpty ? "—" : value)
                 .foregroundColor(value.isEmpty ? .secondary.opacity(0.5) : .primary)
         }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        CarDetailView(car: Car(
-            make: "Toyota",
-            model: "Camry",
-            year: "2024",
-            licensePlate: "ABC 1234",
-            vinNumber: "1HGBH41JXMN109186",
-            insuranceExpiryDate: Calendar.current.date(byAdding: .day, value: 15, to: Date()),
-            registrationExpiryDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()),
-            maintenanceRecords: [
-                MaintenanceRecord(serviceType: "Oil Change", date: Date(), mileage: "25000", cost: "45", shop: "Jiffy Lube")
-            ]
-        ))
-        .environmentObject(CarStore())
     }
 }

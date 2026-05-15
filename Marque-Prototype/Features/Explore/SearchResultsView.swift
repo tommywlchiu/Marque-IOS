@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SearchResultsView: View {
+    @EnvironmentObject var exploreStore: ExploreStore
     @State private var query = ""
     @State private var selectedScope: SearchScope = .cars
     @FocusState private var isSearchFocused: Bool
@@ -10,23 +11,26 @@ struct SearchResultsView: View {
         case people = "People"
     }
 
-    // Filtered mock results
-    private var filteredCars: [Car] {
-        guard !query.isEmpty else { return CarStore.previewCars }
-        let q = query.lowercased()
-        return CarStore.previewCars.filter {
-            $0.make.lowercased().contains(q) ||
-            $0.model.lowercased().contains(q) ||
-            $0.year.contains(q)
-        }
+    private var allResults: [PublicCar] { exploreStore.results(matching: query) }
+
+    private var filteredCars: [PublicCar] {
+        guard !query.isEmpty else { return exploreStore.cars }
+        return allResults
     }
 
-    private var filteredPeople: [AppUser] {
-        guard !query.isEmpty else { return AppUser.previewFollowers }
+    private var filteredPeople: [PublicCar] {
+        guard !query.isEmpty else { return [] }
         let q = query.lowercased()
-        return AppUser.previewFollowers.filter {
-            $0.displayName.lowercased().contains(q) ||
-            $0.username.lowercased().contains(q)
+        return exploreStore.cars.filter { $0.ownerUsername.lowercased().contains(q) }
+    }
+
+    // Deduplicated owners for the People tab
+    private var uniqueOwners: [(uid: String, username: String)] {
+        var seen = Set<String>()
+        return filteredPeople.compactMap { car in
+            guard !seen.contains(car.ownerUID) else { return nil }
+            seen.insert(car.ownerUID)
+            return (uid: car.ownerUID, username: car.ownerUsername)
         }
     }
 
@@ -81,11 +85,12 @@ struct SearchResultsView: View {
     private var carResults: some View {
         Group {
             if filteredCars.isEmpty {
-                emptyResults(for: "No cars matching \"\(query)\"")
+                emptyResults(for: query.isEmpty ? "No public cars yet" : "No cars matching \"\(query)\"")
             } else {
                 List(filteredCars) { car in
-                    NavigationLink(destination: PublicCarDetailView(car: car, owner: .preview)) {
-                        CarSearchRow(car: car)
+                    NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                        .environmentObject(exploreStore)) {
+                        PublicCarSearchRow(car: car)
                     }
                 }
                 .listStyle(.plain)
@@ -95,12 +100,13 @@ struct SearchResultsView: View {
 
     private var peopleResults: some View {
         Group {
-            if filteredPeople.isEmpty {
-                emptyResults(for: "No people matching \"\(query)\"")
+            if uniqueOwners.isEmpty {
+                emptyResults(for: query.isEmpty ? "Search for a username" : "No people matching \"\(query)\"")
             } else {
-                List(filteredPeople) { user in
-                    NavigationLink(destination: PublicProfileView(user: user)) {
-                        PeopleSearchRow(user: user)
+                List(uniqueOwners, id: \.uid) { owner in
+                    NavigationLink(destination: PublicProfileView(ownerUID: owner.uid, ownerUsername: owner.username)
+                        .environmentObject(exploreStore)) {
+                        OwnerSearchRow(username: owner.username)
                     }
                 }
                 .listStyle(.plain)
@@ -122,61 +128,63 @@ struct SearchResultsView: View {
     }
 }
 
-// MARK: - Car Search Row
+// MARK: - Search Rows
 
-private struct CarSearchRow: View {
-    let car: Car
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.accentColor.opacity(0.1))
-                    .frame(width: 48, height: 48)
-                Image(systemName: "car.fill")
-                    .foregroundColor(.accentColor)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(car.displayName)
-                    .font(.subheadline).fontWeight(.semibold)
-                HStack(spacing: 8) {
-                    if !car.color.isEmpty { Text(car.color).font(.caption).foregroundColor(.secondary) }
-                    if !car.fuelType.isEmpty { Text(car.fuelType).font(.caption).foregroundColor(.secondary) }
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - People Search Row
-
-private struct PeopleSearchRow: View {
-    let user: AppUser
+private struct PublicCarSearchRow: View {
+    let car: PublicCar
 
     var body: some View {
         HStack(spacing: 12) {
-            UserAvatar(user: user, size: 44)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(user.displayName)
-                        .font(.subheadline).fontWeight(.semibold)
-                    if user.isVerified {
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(.blue).font(.caption)
+            Group {
+                if let url = car.primaryPhotoURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let img): img.resizable().scaledToFill()
+                        default: placeholder
+                        }
                     }
+                } else {
+                    placeholder
                 }
-                Text("@\(user.username)")
-                    .font(.caption).foregroundColor(.secondary)
+            }
+            .frame(width: 48, height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(car.displayName).font(.subheadline).fontWeight(.semibold)
+                HStack(spacing: 8) {
+                    if !car.color.isEmpty {
+                        Text(car.color).font(.caption).foregroundColor(.secondary)
+                    }
+                    Text("@\(car.ownerUsername)").font(.caption).foregroundColor(.secondary)
+                }
             }
         }
         .padding(.vertical, 4)
     }
+
+    private var placeholder: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(Color.accentColor.opacity(0.1))
+            .overlay(Image(systemName: "car.fill").foregroundColor(.accentColor))
+    }
 }
 
-#Preview {
-    NavigationStack {
-        SearchResultsView()
+private struct OwnerSearchRow: View {
+    let username: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color.accentColor.opacity(0.12))
+                .frame(width: 44, height: 44)
+                .overlay(
+                    Text(username.prefix(1).uppercased())
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.accentColor)
+                )
+            Text("@\(username)").font(.subheadline).fontWeight(.semibold)
+        }
+        .padding(.vertical, 4)
     }
 }

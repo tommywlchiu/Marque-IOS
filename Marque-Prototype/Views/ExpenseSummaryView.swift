@@ -148,8 +148,3 @@ struct ExpenseSummaryView: View {
         return formatter.string(from: NSNumber(value: value)) ?? "$0.00"
     }
 }
-
-#Preview {
-    ExpenseSummaryView()
-        .environmentObject(CarStore())
-}

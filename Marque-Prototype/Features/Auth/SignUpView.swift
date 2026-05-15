@@ -125,11 +125,23 @@ struct SignUpView: View {
     }
 
     private var termsFooter: some View {
-        Text("By creating an account you agree to our **Terms of Service** and **Privacy Policy**.")
+        Text(legalText)
             .font(.caption)
             .foregroundColor(.secondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 40)
+    }
+
+    private var legalText: AttributedString {
+        var str = AttributedString("By creating an account you agree to our ")
+        var tos = AttributedString("Terms of Service")
+        tos.link = AppLinks.termsOfService
+        tos.foregroundColor = .accentColor
+        var mid = AttributedString(" and ")
+        var pp = AttributedString("Privacy Policy")
+        pp.link = AppLinks.privacyPolicy
+        pp.foregroundColor = .accentColor
+        return str + tos + mid + pp + AttributedString(".")
     }
 
     private func signUp() {
@@ -143,9 +155,4 @@ struct SignUpView: View {
             if authService.isAuthenticated { dismiss() }
         }
     }
-}
-
-#Preview {
-    SignUpView()
-        .environmentObject(AuthService())
 }

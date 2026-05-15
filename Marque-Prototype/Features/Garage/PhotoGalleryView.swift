@@ -4,13 +4,15 @@ import SwiftUI
 // Read-only — editing (reorder, delete, set primary) lives in EditCarDetailView.
 struct PhotoGalleryView: View {
     let photoFileNames: [String]
+    let photoStorageURLs: [String]
     let initialIndex: Int
 
     @Environment(\.dismiss) private var dismiss
     @State private var currentIndex: Int
 
-    init(photoFileNames: [String], initialIndex: Int = 0) {
+    init(photoFileNames: [String], photoStorageURLs: [String] = [], initialIndex: Int = 0) {
         self.photoFileNames = photoFileNames
+        self.photoStorageURLs = photoStorageURLs
         self.initialIndex = initialIndex
         _currentIndex = State(initialValue: max(0, min(initialIndex, photoFileNames.count - 1)))
     }
@@ -24,7 +26,9 @@ struct PhotoGalleryView: View {
             } else {
                 TabView(selection: $currentIndex) {
                     ForEach(Array(photoFileNames.enumerated()), id: \.offset) { index, fileName in
-                        ZoomablePhotoView(fileName: fileName)
+                        let urlStr = index < photoStorageURLs.count ? photoStorageURLs[index] : ""
+                        let storageURL = urlStr.isEmpty ? nil : URL(string: urlStr)
+                        ZoomablePhotoView(fileName: fileName, storageURL: storageURL)
                             .tag(index)
                     }
                 }
@@ -84,6 +88,7 @@ struct PhotoGalleryView: View {
 // One page of the gallery. Loads from disk and supports pinch-to-zoom and pan.
 private struct ZoomablePhotoView: View {
     let fileName: String
+    let storageURL: URL?
 
     @State private var image: UIImage?
     @State private var scale: CGFloat = 1.0
@@ -122,7 +127,15 @@ private struct ZoomablePhotoView: View {
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
-        .onAppear { image = ImageManager.loadImage(fileName: fileName) }
+        .onAppear {
+            image = ImageManager.loadImage(fileName: fileName)
+            if image == nil, let url = storageURL {
+                Task {
+                    let (data, _) = try await (URLSession.shared.data(from: url))
+                    await MainActor.run { image = UIImage(data: data) }
+                }
+            }
+        }
     }
 
     private var zoomGesture: some Gesture {
@@ -153,8 +166,4 @@ private struct ZoomablePhotoView: View {
                 lastOffset = offset
             }
     }
-}
-
-#Preview {
-    PhotoGalleryView(photoFileNames: [], initialIndex: 0)
 }

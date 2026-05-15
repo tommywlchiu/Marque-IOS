@@ -9,6 +9,9 @@ struct Car: Identifiable, Codable, Equatable {
     // Ordered list of photo filenames stored in the app's Documents/CarPhotos
     // directory. The first entry is treated as the primary (cover) photo.
     var photoFileNames: [String]
+    // Firebase Storage download URLs, parallel to photoFileNames. Empty string
+    // means the photo hasn't been uploaded to Storage yet.
+    var photoStorageURLs: [String]
     var photoOffsetY: Double
 
     var licensePlate: String
@@ -26,6 +29,7 @@ struct Car: Identifiable, Codable, Equatable {
     var insuranceExpiryDate: Date?
     var registrationExpiryDate: Date?
     var notes: String
+    var isPublic: Bool
 
     var maintenanceRecords: [MaintenanceRecord]
     var serviceReminders: [ServiceReminder]
@@ -36,6 +40,7 @@ struct Car: Identifiable, Codable, Equatable {
         model: String = "",
         year: String = "",
         photoFileNames: [String] = [],
+        photoStorageURLs: [String] = [],
         photoOffsetY: Double = 0,
         licensePlate: String = "",
         vinNumber: String = "",
@@ -52,6 +57,7 @@ struct Car: Identifiable, Codable, Equatable {
         insuranceExpiryDate: Date? = nil,
         registrationExpiryDate: Date? = nil,
         notes: String = "",
+        isPublic: Bool = false,
         maintenanceRecords: [MaintenanceRecord] = [],
         serviceReminders: [ServiceReminder] = []
     ) {
@@ -60,6 +66,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.model = model
         self.year = year
         self.photoFileNames = photoFileNames
+        self.photoStorageURLs = photoStorageURLs
         self.photoOffsetY = photoOffsetY
         self.licensePlate = licensePlate
         self.vinNumber = vinNumber
@@ -76,6 +83,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.insuranceExpiryDate = insuranceExpiryDate
         self.registrationExpiryDate = registrationExpiryDate
         self.notes = notes
+        self.isPublic = isPublic
         self.maintenanceRecords = maintenanceRecords
         self.serviceReminders = serviceReminders
     }
@@ -86,12 +94,13 @@ struct Car: Identifiable, Codable, Equatable {
         case id, make, model, year
         case photoFileNames
         case legacyPhotoFileName = "photoFileName"
+        case photoStorageURLs
         case photoOffsetY
         case licensePlate, vinNumber, color, mileage, trim, bodyStyle, driveType, engine
         case fuelType, transmission
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
-        case notes
+        case notes, isPublic
         case maintenanceRecords, serviceReminders
     }
 
@@ -110,6 +119,7 @@ struct Car: Identifiable, Codable, Equatable {
             photoFileNames = []
         }
 
+        photoStorageURLs = try c.decodeIfPresent([String].self, forKey: .photoStorageURLs) ?? []
         photoOffsetY = try c.decodeIfPresent(Double.self, forKey: .photoOffsetY) ?? 0
         licensePlate = try c.decode(String.self, forKey: .licensePlate)
         vinNumber = try c.decode(String.self, forKey: .vinNumber)
@@ -126,6 +136,7 @@ struct Car: Identifiable, Codable, Equatable {
         insuranceExpiryDate = try c.decodeIfPresent(Date.self, forKey: .insuranceExpiryDate)
         registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
         notes = try c.decode(String.self, forKey: .notes)
+        isPublic = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
         maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
     }
@@ -138,6 +149,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(model, forKey: .model)
         try c.encode(year, forKey: .year)
         try c.encode(photoFileNames, forKey: .photoFileNames)
+        try c.encode(photoStorageURLs, forKey: .photoStorageURLs)
         try c.encode(photoOffsetY, forKey: .photoOffsetY)
         try c.encode(licensePlate, forKey: .licensePlate)
         try c.encode(vinNumber, forKey: .vinNumber)
@@ -154,12 +166,24 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encodeIfPresent(insuranceExpiryDate, forKey: .insuranceExpiryDate)
         try c.encodeIfPresent(registrationExpiryDate, forKey: .registrationExpiryDate)
         try c.encode(notes, forKey: .notes)
+        try c.encode(isPublic, forKey: .isPublic)
         try c.encode(maintenanceRecords, forKey: .maintenanceRecords)
         try c.encode(serviceReminders, forKey: .serviceReminders)
     }
 
     var primaryPhotoFileName: String? {
         photoFileNames.first
+    }
+
+    var primaryPhotoStorageURL: URL? {
+        guard let str = photoStorageURLs.first, !str.isEmpty else { return nil }
+        return URL(string: str)
+    }
+
+    func storageURL(at index: Int) -> URL? {
+        guard index < photoStorageURLs.count else { return nil }
+        let str = photoStorageURLs[index]
+        return str.isEmpty ? nil : URL(string: str)
     }
 
     var hasMultiplePhotos: Bool {

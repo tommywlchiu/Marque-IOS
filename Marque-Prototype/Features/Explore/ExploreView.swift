@@ -1,41 +1,70 @@
 import SwiftUI
 
 struct ExploreView: View {
-    @EnvironmentObject var socialStore: SocialStore
+    @EnvironmentObject var exploreStore: ExploreStore
+    @EnvironmentObject var followStore: FollowStore
+    @EnvironmentObject var blockStore: BlockStore
 
     @State private var selectedCategory: ExploreCategory = .all
-    @State private var commentPost: Post?
+
+    private var visibleCars: [PublicCar] {
+        blockStore.filter(exploreStore.cars, ownerUID: \.ownerUID)
+    }
+
+    private var filteredCars: [PublicCar] {
+        if selectedCategory == .following {
+            return followStore.followingFeed(from: visibleCars)
+        }
+        return selectedCategory.filter(visibleCars)
+    }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    searchBar
-                    categoryPicker
-                    featuredSection
-                    postsSection
+            Group {
+                if exploreStore.isLoading && exploreStore.cars.isEmpty {
+                    ProgressView("Loading…")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if exploreStore.cars.isEmpty {
+                    MarqueEmptyState(
+                        icon: "globe",
+                        title: "Nothing Here Yet",
+                        subtitle: "Make a car public from its detail screen to share it with the community."
+                    )
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            searchBar
+                            categoryPicker
+                            if selectedCategory == .all && !visibleCars.isEmpty {
+                                featuredSection
+                            }
+                            if selectedCategory == .following && filteredCars.isEmpty {
+                                MarqueEmptyState(
+                                    icon: "person.2",
+                                    title: "No Cars Yet",
+                                    subtitle: "Follow people to see their public cars here."
+                                )
+                                .padding(.vertical, 40)
+                            }
+                            gridSection
+                        }
+                        .padding(.top, 8)
+                        .padding(.bottom, 24)
+                    }
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 24)
             }
             .navigationTitle("Explore")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(item: $commentPost) { post in
-                CommentsView(post: post)
-                    .environmentObject(socialStore)
-            }
         }
     }
 
-    // MARK: - Subviews
+    // MARK: - Search Bar
 
     private var searchBar: some View {
-        NavigationLink(destination: SearchResultsView()) {
+        NavigationLink(destination: SearchResultsView().environmentObject(exploreStore)) {
             HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                Text("Search cars, makes, or people…")
-                    .foregroundColor(.secondary)
+                Image(systemName: "magnifyingglass").foregroundColor(.secondary)
+                Text("Search cars, makes, or people…").foregroundColor(.secondary)
                 Spacer()
             }
             .padding(.horizontal, 14)
@@ -47,14 +76,14 @@ struct ExploreView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Category Picker
+
     private var categoryPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
                 ForEach(ExploreCategory.allCases, id: \.self) { cat in
                     CategoryChip(category: cat, isSelected: selectedCategory == cat) {
-                        withAnimation(.spring(duration: 0.25)) {
-                            selectedCategory = cat
-                        }
+                        withAnimation(.spring(duration: 0.25)) { selectedCategory = cat }
                     }
                 }
             }
@@ -62,16 +91,18 @@ struct ExploreView: View {
         }
     }
 
+    // MARK: - Featured
+
     private var featuredSection: some View {
         VStack(spacing: 12) {
-            MarqueSectionHeader(title: "Trending This Week", actionTitle: "See All") { }
-                .padding(.horizontal, 16)
-
+            MarqueSectionHeader(title: "Recently Added").padding(.horizontal, 16)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
-                    ForEach(socialStore.posts) { post in
-                        NavigationLink(destination: PublicCarDetailView(post: post)) {
-                            FeaturedPostCard(post: post)
+                    ForEach(visibleCars.prefix(10)) { car in
+                        NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                            .environmentObject(exploreStore)
+                            .environmentObject(blockStore)) {
+                            FeaturedCarCard(car: car)
                         }
                         .buttonStyle(.plain)
                     }
@@ -81,28 +112,37 @@ struct ExploreView: View {
         }
     }
 
-    private var postsSection: some View {
-        VStack(spacing: 12) {
-            MarqueSectionHeader(title: "Recent Posts")
-                .padding(.horizontal, 16)
+    // MARK: - Grid
 
-            LazyVStack(spacing: 14) {
-                ForEach(socialStore.posts.reversed()) { post in
-                    // Buttons inside a NavigationLink label receive their own taps first;
-                    // only taps on non-interactive areas trigger navigation.
-                    NavigationLink {
-                        PublicCarDetailView(post: post)
-                            .environmentObject(socialStore)
-                    } label: {
-                        ExplorePostCard(
-                            post: post,
-                            onLike: { socialStore.toggleLike(postID: post.id) },
-                            onComment: { commentPost = post }
-                        )
-                        .padding(.horizontal, 16)
+    private var gridSection: some View {
+        VStack(spacing: 12) {
+            MarqueSectionHeader(
+                title: selectedCategory == .all ? "All Cars" : selectedCategory.rawValue
+            )
+            .padding(.horizontal, 16)
+
+            if filteredCars.isEmpty {
+                MarqueEmptyState(
+                    icon: "car.fill",
+                    title: "No \(selectedCategory.rawValue) Cars",
+                    subtitle: "No public cars in this category yet."
+                )
+                .padding(.vertical, 20)
+            } else {
+                LazyVGrid(
+                    columns: [GridItem(.flexible()), GridItem(.flexible())],
+                    spacing: 14
+                ) {
+                    ForEach(filteredCars) { car in
+                        NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                            .environmentObject(exploreStore)
+                            .environmentObject(blockStore)) {
+                            ExploreCarCell(car: car)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 16)
             }
         }
     }
@@ -110,15 +150,37 @@ struct ExploreView: View {
 
 // MARK: - Category
 
-private enum ExploreCategory: String, CaseIterable {
+enum ExploreCategory: String, CaseIterable {
+    case following = "Following"
     case all = "All"
     case jdm = "JDM"
     case european = "European"
     case american = "American"
     case electric = "Electric"
     case classic = "Classic"
-    case modified = "Modified"
+
+    func filter(_ cars: [PublicCar]) -> [PublicCar] {
+        switch self {
+        case .following: return cars // handled in ExploreView directly via followStore
+        case .all: return cars
+        case .electric:
+            return cars.filter { $0.fuelType.lowercased().contains("electric") }
+        case .jdm:
+            let makes = ["toyota","honda","nissan","mazda","subaru","mitsubishi","lexus","acura","infiniti","suzuki","isuzu","daihatsu"]
+            return cars.filter { makes.contains($0.make.lowercased()) }
+        case .european:
+            let makes = ["bmw","mercedes","audi","volkswagen","porsche","ferrari","lamborghini","maserati","fiat","alfa romeo","volvo","peugeot","renault","citroen","mini","bentley","rolls-royce","bugatti"]
+            return cars.filter { makes.contains($0.make.lowercased()) }
+        case .american:
+            let makes = ["ford","chevrolet","dodge","jeep","cadillac","gmc","lincoln","chrysler","ram","buick","tesla"]
+            return cars.filter { makes.contains($0.make.lowercased()) }
+        case .classic:
+            return cars.filter { (Int($0.year) ?? 2000) < 1990 }
+        }
+    }
 }
+
+// MARK: - Category Chip
 
 private struct CategoryChip: View {
     let category: ExploreCategory
@@ -129,8 +191,7 @@ private struct CategoryChip: View {
         Button(action: action) {
             Text(category.rawValue)
                 .font(.subheadline).fontWeight(isSelected ? .semibold : .regular)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 14).padding(.vertical, 8)
                 .background(isSelected ? Color.accentColor : Color(.systemGray6))
                 .foregroundColor(isSelected ? .white : .primary)
                 .clipShape(Capsule())
@@ -138,129 +199,86 @@ private struct CategoryChip: View {
     }
 }
 
-// MARK: - Featured Post Card
+// MARK: - Featured Card
 
-private struct FeaturedPostCard: View {
-    let post: Post
+private struct FeaturedCarCard: View {
+    let car: PublicCar
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack(alignment: .bottomLeading) {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.accentColor.opacity(0.12))
-                    .frame(width: 220, height: 160)
+                Group {
+                    if car.primaryPhotoURL != nil {
+                        CachedRemoteImage(url: car.primaryPhotoURL)
+                    } else {
+                        noPhotoPlaceholder
+                    }
+                }
+                .frame(width: 200, height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                Image(systemName: "car.fill")
-                    .font(.system(size: 52))
-                    .foregroundColor(.accentColor.opacity(0.3))
-                    .frame(width: 220, height: 160)
+                LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.5)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(post.car.displayName)
-                        .font(.caption).fontWeight(.semibold)
-                        .foregroundColor(.white)
-                    Text("@\(post.user.username)")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.8))
+                HStack(spacing: 6) {
+                    OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 20)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(car.displayName)
+                            .font(.caption).fontWeight(.semibold).foregroundColor(.white)
+                        Text("@\(car.ownerUsername)")
+                            .font(.caption2).foregroundColor(.white.opacity(0.8))
+                    }
                 }
                 .padding(10)
             }
-
-            HStack(spacing: 12) {
-                Label("\(post.likeCount)", systemImage: "heart")
-                Label("\(post.commentCount)", systemImage: "bubble.right")
-            }
-            .font(.caption)
-            .foregroundColor(.secondary)
-            .padding(.horizontal, 4)
+            .frame(width: 200, height: 150)
         }
-        .frame(width: 220)
+    }
+
+    private var noPhotoPlaceholder: some View {
+        Rectangle()
+            .fill(Color.accentColor.opacity(0.1))
+            .overlay(Image(systemName: "car.fill").font(.system(size: 40)).foregroundColor(.accentColor.opacity(0.3)))
     }
 }
 
-// MARK: - Post Feed Card
+// MARK: - Grid Cell
 
-struct ExplorePostCard: View {
-    let post: Post
-    let onLike: () -> Void
-    let onComment: () -> Void
+struct ExploreCarCell: View {
+    let car: PublicCar
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Author row
-            HStack(spacing: 10) {
-                UserAvatar(user: post.user, size: 36)
+        VStack(alignment: .leading, spacing: 8) {
+            Group {
+                if car.primaryPhotoURL != nil {
+                    CachedRemoteImage(url: car.primaryPhotoURL)
+                } else {
+                    noPhotoPlaceholder
+                }
+            }
+            .aspectRatio(1.4, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            HStack(spacing: 6) {
+                OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 18)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(post.user.displayName)
-                        .font(.subheadline).fontWeight(.semibold)
-                    Text("@\(post.user.username)")
-                        .font(.caption).foregroundColor(.secondary)
-                }
-                Spacer()
-                Text(post.createdAt, style: .relative)
-                    .font(.caption2).foregroundColor(.secondary)
-            }
-
-            // Car photo placeholder
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.accentColor.opacity(0.08))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 200)
-                Image(systemName: "car.fill")
-                    .font(.system(size: 52))
-                    .foregroundColor(.accentColor.opacity(0.3))
-            }
-
-            // Caption
-            if !post.caption.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(post.car.displayName)
-                        .font(.subheadline).fontWeight(.semibold)
-                    Text(post.caption)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
+                    Text(car.displayName)
+                        .font(.caption).fontWeight(.semibold).lineLimit(1)
+                    Text("@\(car.ownerUsername)")
+                        .font(.caption2).foregroundColor(.secondary)
                 }
             }
-
-            // Action bar
-            HStack(spacing: 20) {
-                Button(action: onLike) {
-                    Label("\(post.likeCount)", systemImage: post.isLiked ? "heart.fill" : "heart")
-                        .foregroundColor(post.isLiked ? .red : .secondary)
-                }
-
-                Button(action: onComment) {
-                    Label("\(post.commentCount)", systemImage: "bubble.right")
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-
-                Button { } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(.secondary)
-                }
-            }
-            .font(.subheadline)
+            .padding(.horizontal, 4)
+            .padding(.bottom, 4)
         }
-        .padding(14)
         .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
     }
-}
 
-#Preview {
-    ExploreView()
-        .environmentObject(AuthService())
-        .environmentObject(SocialStore())
+    private var noPhotoPlaceholder: some View {
+        Rectangle()
+            .fill(Color.accentColor.opacity(0.08))
+            .overlay(Image(systemName: "car.fill").font(.largeTitle).foregroundColor(.accentColor.opacity(0.4)))
+    }
 }

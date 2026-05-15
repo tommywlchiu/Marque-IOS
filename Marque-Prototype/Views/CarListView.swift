@@ -2,7 +2,13 @@ import SwiftUI
 
 struct CarListView: View {
     @EnvironmentObject var carStore: CarStore
+    @EnvironmentObject var subscriptionStore: SubscriptionStore
     @State private var showingAddCar = false
+    @State private var showingPaywall = false
+
+    private var atCarLimit: Bool {
+        carStore.cars.count >= 3 && !subscriptionStore.isPro
+    }
 
     var body: some View {
         NavigationStack {
@@ -17,7 +23,11 @@ struct CarListView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        showingAddCar = true
+                        if atCarLimit {
+                            showingPaywall = true
+                        } else {
+                            showingAddCar = true
+                        }
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -25,6 +35,10 @@ struct CarListView: View {
             }
             .sheet(isPresented: $showingAddCar) {
                 AddCarView()
+            }
+            .sheet(isPresented: $showingPaywall) {
+                ProUpgradeView()
+                    .environmentObject(subscriptionStore)
             }
         }
     }
@@ -53,7 +67,7 @@ struct CarListView: View {
             }
 
             Button {
-                showingAddCar = true
+                if atCarLimit { showingPaywall = true } else { showingAddCar = true }
             } label: {
                 Label("Add a Car", systemImage: "plus.circle.fill")
                     .font(.headline)
@@ -197,11 +211,8 @@ struct CarCardView: View {
 
     @ViewBuilder
     private var carThumbnail: some View {
-        if let fileName = car.primaryPhotoFileName,
-           let uiImage = ImageManager.loadImage(fileName: fileName) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
+        if let fileName = car.primaryPhotoFileName {
+            CarPhotoImage(fileName: fileName, storageURL: car.primaryPhotoStorageURL)
                 .frame(width: 56, height: 56)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
         } else {
@@ -216,9 +227,4 @@ struct CarCardView: View {
             }
         }
     }
-}
-
-#Preview {
-    CarListView()
-        .environmentObject(CarStore())
 }

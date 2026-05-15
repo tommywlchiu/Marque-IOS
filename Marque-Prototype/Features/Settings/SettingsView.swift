@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct SettingsView: View {
     @EnvironmentObject var authService: AuthService
@@ -7,6 +8,7 @@ struct SettingsView: View {
     @State private var showingSignOutAlert = false
     @State private var notificationsEnabled = true
     @State private var useMiles = true
+    @State private var showingDeleteAccountSheet = false
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
@@ -17,12 +19,16 @@ struct SettingsView: View {
                 subscriptionSection
                 preferencesSection
                 supportSection
+                legalSection
                 dangerSection
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showingProUpgrade) {
                 ProUpgradeView()
+            }
+            .sheet(isPresented: $showingDeleteAccountSheet) {
+                DeleteAccountView()
             }
             .alert("Sign Out", isPresented: $showingSignOutAlert) {
                 Button("Sign Out", role: .destructive) { authService.signOut() }
@@ -31,7 +37,9 @@ struct SettingsView: View {
                 Text("Are you sure you want to sign out?")
             }
             .alert("Delete Account", isPresented: $showingDeleteAccountAlert) {
-                Button("Delete Account", role: .destructive) { /* call delete API */ }
+                Button("Delete Account", role: .destructive) {
+                    showingDeleteAccountSheet = true
+                }
                 Button("Cancel", role: .cancel) { }
             } message: {
                 Text("This will permanently delete your account and all your data. This cannot be undone.")
@@ -119,7 +127,7 @@ struct SettingsView: View {
 
     private var supportSection: some View {
         Section(header: Text("Support")) {
-            Link(destination: URL(string: "https://marqueapp.com/help")!) {
+            Link(destination: AppLinks.support) {
                 Label("Help & FAQ", systemImage: "questionmark.circle")
                     .foregroundColor(.primary)
             }
@@ -140,6 +148,19 @@ struct SettingsView: View {
                 Text("1.0.0 (1)")
                     .foregroundColor(.secondary)
                     .font(.subheadline)
+            }
+        }
+    }
+
+    private var legalSection: some View {
+        Section(header: Text("Legal")) {
+            Link(destination: AppLinks.privacyPolicy) {
+                Label("Privacy Policy", systemImage: "hand.raised")
+                    .foregroundColor(.primary)
+            }
+            Link(destination: AppLinks.termsOfService) {
+                Label("Terms of Service", systemImage: "doc.text")
+                    .foregroundColor(.primary)
             }
         }
     }
@@ -185,9 +206,4 @@ private struct NotificationsSettingsView: View {
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
     }
-}
-
-#Preview {
-    SettingsView()
-        .environmentObject(AuthService())
 }

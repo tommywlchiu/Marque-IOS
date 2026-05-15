@@ -1,22 +1,12 @@
 import SwiftUI
 
 struct NotificationsInboxView: View {
-    @EnvironmentObject var socialStore: SocialStore
-
-    private var todayNotifications: [AppNotification] {
-        let cal = Calendar.current
-        return socialStore.notifications.filter { cal.isDateInToday($0.createdAt) }
-    }
-
-    private var earlierNotifications: [AppNotification] {
-        let cal = Calendar.current
-        return socialStore.notifications.filter { !cal.isDateInToday($0.createdAt) }
-    }
+    @EnvironmentObject var notificationStore: NotificationStore
 
     var body: some View {
         NavigationStack {
             Group {
-                if socialStore.notifications.isEmpty {
+                if notificationStore.notifications.isEmpty {
                     emptyState
                 } else {
                     notificationList
@@ -24,10 +14,10 @@ struct NotificationsInboxView: View {
             }
             .navigationTitle("Notifications")
             .toolbar {
-                if socialStore.unreadCount > 0 {
+                if notificationStore.unreadCount > 0 {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Mark All Read") {
-                            withAnimation { socialStore.markAllRead() }
+                            withAnimation { notificationStore.markAllRead() }
                         }
                         .font(.subheadline)
                     }
@@ -40,22 +30,25 @@ struct NotificationsInboxView: View {
 
     private var notificationList: some View {
         List {
-            if !todayNotifications.isEmpty {
+            let today = notificationStore.notifications.filter { Calendar.current.isDateInToday($0.createdAt) }
+            let earlier = notificationStore.notifications.filter { !Calendar.current.isDateInToday($0.createdAt) }
+
+            if !today.isEmpty {
                 Section("Today") {
-                    ForEach(todayNotifications) { note in
+                    ForEach(today) { note in
                         NotificationRow(notification: note)
                             .listRowBackground(note.isRead ? Color.clear : Color.accentColor.opacity(0.06))
-                            .onTapGesture { socialStore.markRead(note) }
+                            .onTapGesture { notificationStore.markRead(note) }
                     }
                 }
             }
 
-            if !earlierNotifications.isEmpty {
+            if !earlier.isEmpty {
                 Section("Earlier") {
-                    ForEach(earlierNotifications) { note in
+                    ForEach(earlier) { note in
                         NotificationRow(notification: note)
                             .listRowBackground(note.isRead ? Color.clear : Color.accentColor.opacity(0.06))
-                            .onTapGesture { socialStore.markRead(note) }
+                            .onTapGesture { notificationStore.markRead(note) }
                     }
                 }
             }
@@ -69,7 +62,7 @@ struct NotificationsInboxView: View {
         MarqueEmptyState(
             icon: "bell.slash",
             title: "No Notifications",
-            subtitle: "When someone likes, comments, or follows you, it will appear here."
+            subtitle: "When someone follows you, it will appear here."
         )
     }
 }
@@ -82,14 +75,17 @@ private struct NotificationRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack(alignment: .bottomTrailing) {
-                UserAvatar(user: notification.actor, size: 44)
-                typeIcon
-                    .offset(x: 2, y: 2)
+                OwnerAvatar(
+                    avatarURL: notification.actorAvatarURL,
+                    username: notification.actorUsername,
+                    size: 44
+                )
+                typeIcon.offset(x: 2, y: 2)
             }
 
             VStack(alignment: .leading, spacing: 3) {
                 Group {
-                    Text(notification.actor.displayName).fontWeight(.semibold) +
+                    Text(notification.actorDisplayName).fontWeight(.semibold) +
                     Text(" ") +
                     Text(notification.body)
                 }
@@ -135,9 +131,4 @@ private struct NotificationRow: View {
         case .mention: return ("at", .orange)
         }
     }
-}
-
-#Preview {
-    NotificationsInboxView()
-        .environmentObject(SocialStore())
 }

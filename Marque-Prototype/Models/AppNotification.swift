@@ -1,18 +1,20 @@
 import Foundation
+import FirebaseFirestore
 
-struct AppNotification: Identifiable, Equatable {
-    let id: String
-    let actor: AppUser
-    let type: NotificationType
-    let postID: String?
-    let createdAt: Date
+struct AppNotification: Identifiable, Codable, Equatable {
+    @DocumentID var id: String?
+    var type: AppNotificationType
+    var actorUID: String
+    var actorDisplayName: String
+    var actorUsername: String
+    var actorAvatarURL: String?
+    var caption: String?
+    var postID: String?
     var isRead: Bool
+    var createdAt: Date
 
-    enum NotificationType {
-        case like(postCaption: String)
-        case comment(text: String)
-        case follow
-        case mention(postCaption: String)
+    enum AppNotificationType: String, Codable {
+        case follow, like, comment, mention
     }
 
     static func == (lhs: AppNotification, rhs: AppNotification) -> Bool {
@@ -21,14 +23,14 @@ struct AppNotification: Identifiable, Equatable {
 
     var body: String {
         switch type {
-        case .like(let caption):
-            return "liked your post\(caption.isEmpty ? "." : ": \"\(caption)\"")"
-        case .comment(let text):
-            return "commented: \"\(text)\""
         case .follow:
             return "started following you."
-        case .mention(let caption):
-            return "mentioned you in a post\(caption.isEmpty ? "." : ": \"\(caption)\"")"
+        case .like:
+            return "liked your car" + (caption.map { ": \"\($0)\"" } ?? ".")
+        case .comment:
+            return "commented" + (caption.map { ": \"\($0)\"" } ?? ".")
+        case .mention:
+            return "mentioned you" + (caption.map { " in: \"\($0)\"" } ?? ".")
         }
     }
 }

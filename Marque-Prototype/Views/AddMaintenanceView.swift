@@ -77,7 +77,3 @@ struct AddMaintenanceView: View {
         }
     }
 }
-
-#Preview {
-    AddMaintenanceView(onSave: { _ in })
-}

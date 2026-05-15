@@ -302,14 +302,3 @@ private struct SuggestedRemindersSheet: View {
         dismiss()
     }
 }
-
-#Preview {
-    NavigationStack {
-        ServiceRemindersView(carID: CarStore.previewCars[0].id)
-    }
-    .environmentObject({
-        let store = CarStore()
-        store.cars = CarStore.previewCars
-        return store
-    }())
-}

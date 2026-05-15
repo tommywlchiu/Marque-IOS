@@ -23,6 +23,7 @@ private enum PhotoSlot: Identifiable, Equatable {
 
 struct EditCarDetailView: View {
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var carStore: CarStore
     @Binding var car: Car
 
     var onSave: (Car) -> Void
@@ -460,28 +461,30 @@ struct EditCarDetailView: View {
 
     // MARK: - Save
 
-    // Persists pending images to disk, deletes any removed files, and returns
-    // the final ordered list of filenames for `car.photoFileNames`.
-    private func commitPhotoChanges() -> [String] {
-        var result: [String] = []
+    // Persists pending images to disk, deletes removed files, and returns the
+    // final filenames plus any newly-written (fileName, UIImage) pairs for upload.
+    private func commitPhotoChanges() -> (fileNames: [String], newPhotos: [(fileName: String, image: UIImage)]) {
+        var fileNames: [String] = []
+        var newPhotos: [(fileName: String, image: UIImage)] = []
         for slot in photoSlots {
             switch slot {
             case .existing(let name):
-                result.append(name)
+                fileNames.append(name)
             case .pending(let image, _):
                 let name = ImageManager.generateFileName()
                 ImageManager.saveImage(image, fileName: name)
-                result.append(name)
+                fileNames.append(name)
+                newPhotos.append((fileName: name, image: image))
             }
         }
         for name in fileNamesToDelete {
             ImageManager.deleteImage(fileName: name)
         }
-        return result
+        return (fileNames: fileNames, newPhotos: newPhotos)
     }
 
     private func saveCar() {
-        let newFileNames = commitPhotoChanges()
+        let (newFileNames, newPhotos) = commitPhotoChanges()
 
         var updated = car
         updated.make = make
@@ -506,6 +509,11 @@ struct EditCarDetailView: View {
         updated.photoOffsetY = photoOffsetY
 
         onSave(updated)
+
+        if !newPhotos.isEmpty || !fileNamesToDelete.isEmpty {
+            carStore.uploadPhotos(newPhotos, removingFileNames: fileNamesToDelete, for: updated)
+        }
+
         dismiss()
     }
 
@@ -542,11 +550,4 @@ struct EditCarDetailView: View {
             primaryImage = ImageManager.loadImage(fileName: firstName)
         }
     }
-}
-
-#Preview {
-    EditCarDetailView(
-        car: .constant(Car(make: "Toyota", model: "Camry", year: "2024")),
-        onSave: { _ in }
-    )
 }

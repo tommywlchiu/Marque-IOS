@@ -11,6 +11,8 @@ struct EditProfileView: View {
     @State private var location = ""
     @State private var selectedItem: PhotosPickerItem?
     @State private var avatarImage: UIImage?
+    @State private var isSaving = false
+    @State private var errorMessage: String?
 
     private var hasChanges: Bool {
         let user = authService.currentUser ?? .preview
@@ -24,6 +26,13 @@ struct EditProfileView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let error = errorMessage {
+                    Section {
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                    }
+                }
                 avatarSection
                 infoSection
                 bioSection
@@ -33,11 +42,18 @@ struct EditProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .fontWeight(.semibold)
-                        .disabled(!hasChanges)
+                    Group {
+                        if isSaving {
+                            ProgressView().scaleEffect(0.8)
+                        } else {
+                            Button("Save") { Task { await save() } }
+                                .fontWeight(.semibold)
+                                .disabled(!hasChanges)
+                        }
+                    }
                 }
             }
             .onAppear { populateFields() }
@@ -132,7 +148,23 @@ struct EditProfileView: View {
         location = user.location
     }
 
-    private func save() {
+    private func save() async {
+        isSaving = true
+        errorMessage = nil
+        defer { isSaving = false }
+
+        let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
+        let currentUsername = authService.currentUser?.username ?? ""
+
+        if trimmedUsername != currentUsername {
+            do {
+                try await authService.changeUsername(to: trimmedUsername)
+            } catch {
+                errorMessage = error.localizedDescription
+                return
+            }
+        }
+
         var avatarFileName: String? = nil
         if let image = avatarImage, let uid = authService.currentUser?.id {
             let fileName = "avatar-\(uid).jpg"
@@ -141,16 +173,11 @@ struct EditProfileView: View {
         }
         authService.updateProfile(
             displayName: displayName.trimmingCharacters(in: .whitespaces),
-            username: username.trimmingCharacters(in: .whitespaces),
+            username: authService.currentUser?.username ?? trimmedUsername,
             bio: bio.trimmingCharacters(in: .whitespacesAndNewlines),
             location: location.trimmingCharacters(in: .whitespaces),
             avatarFileName: avatarFileName
         )
         dismiss()
     }
-}
-
-#Preview {
-    EditProfileView()
-        .environmentObject(AuthService())
 }

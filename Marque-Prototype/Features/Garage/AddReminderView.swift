@@ -95,8 +95,3 @@ struct AddReminderView: View {
         dismiss()
     }
 }
-
-#Preview {
-    AddReminderView(carID: UUID())
-        .environmentObject(CarStore())
-}

@@ -131,8 +131,3 @@ private struct OnboardingPageView: View {
         .padding(.horizontal, 32)
     }
 }
-
-#Preview {
-    OnboardingView()
-        .environmentObject(AuthService())
-}

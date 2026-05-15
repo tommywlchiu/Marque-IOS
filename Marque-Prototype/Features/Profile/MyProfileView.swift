@@ -3,6 +3,7 @@ import SwiftUI
 struct MyProfileView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var carStore: CarStore
+    @EnvironmentObject var followStore: FollowStore
     @State private var showingEditProfile = false
     @State private var showingFollowers = false
     @State private var showingFollowing = false
@@ -33,10 +34,10 @@ struct MyProfileView: View {
                 EditProfileView()
             }
             .sheet(isPresented: $showingFollowers) {
-                FollowListView(title: "Followers", users: AppUser.previewFollowers)
+                FollowListView(mode: .followers, currentUserUID: user.id)
             }
             .sheet(isPresented: $showingFollowing) {
-                FollowListView(title: "Following", users: Array(AppUser.previewFollowers.reversed()))
+                FollowListView(mode: .following, currentUserUID: user.id)
             }
         }
     }
@@ -96,11 +97,11 @@ struct MyProfileView: View {
         HStack(spacing: 0) {
             StatChip(value: "\(carStore.cars.count)", label: "Cars")
             Divider().frame(height: 30).padding(.horizontal, 16)
-            StatChip(value: "\(user.followerCount)", label: "Followers") {
+            StatChip(value: "\(followStore.followerCount)", label: "Followers") {
                 showingFollowers = true
             }
             Divider().frame(height: 30).padding(.horizontal, 16)
-            StatChip(value: "\(user.followingCount)", label: "Following") {
+            StatChip(value: "\(followStore.followingCount)", label: "Following") {
                 showingFollowing = true
             }
         }
@@ -180,10 +181,4 @@ private struct ProfileCarCell: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
     }
-}
-
-#Preview {
-    MyProfileView()
-        .environmentObject(AuthService())
-        .environmentObject(CarStore())
 }

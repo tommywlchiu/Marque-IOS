@@ -219,14 +219,3 @@ struct ExpenseChartsView: View {
         return f.string(from: NSNumber(value: value)) ?? "$0"
     }
 }
-
-#Preview {
-    NavigationStack {
-        ExpenseChartsView()
-    }
-    .environmentObject({
-        let store = CarStore()
-        store.cars = CarStore.previewCars
-        return store
-    }())
-}
