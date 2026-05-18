@@ -2,9 +2,17 @@ import SwiftUI
 
 struct CarListView: View {
     @EnvironmentObject var carStore: CarStore
+    @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var followStore: FollowStore
     @EnvironmentObject var subscriptionStore: SubscriptionStore
+
     @State private var showingAddCar = false
     @State private var showingPaywall = false
+    @State private var showingEditProfile = false
+    @State private var showingFollowers = false
+    @State private var showingFollowing = false
+
+    private var user: AppUser { authService.currentUser ?? .preview }
 
     private var atCarLimit: Bool {
         carStore.cars.count >= 3 && !subscriptionStore.isPro
@@ -12,24 +20,20 @@ struct CarListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if carStore.cars.isEmpty {
-                    emptyStateView
-                } else {
-                    carList
+            ScrollView {
+                VStack(spacing: 0) {
+                    profileHeader
+                    Divider().padding(.vertical, 8)
+                    carsSection
                 }
+                .padding(.bottom, 24)
             }
-            .navigationTitle("My Garage")
+            .navigationTitle("Garage")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        if atCarLimit {
-                            showingPaywall = true
-                        } else {
-                            showingAddCar = true
-                        }
-                    } label: {
-                        Image(systemName: "plus")
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape")
                     }
                 }
             }
@@ -40,26 +44,108 @@ struct CarListView: View {
                 ProUpgradeView()
                     .environmentObject(subscriptionStore)
             }
+            .sheet(isPresented: $showingEditProfile) {
+                EditProfileView()
+            }
+            .sheet(isPresented: $showingFollowers) {
+                FollowListView(mode: .followers, currentUserUID: user.id)
+            }
+            .sheet(isPresented: $showingFollowing) {
+                FollowListView(mode: .following, currentUserUID: user.id)
+            }
         }
     }
 
-    private var emptyStateView: some View {
-        VStack(spacing: 24) {
+    // MARK: - Profile Header
+
+    private var profileHeader: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 16) {
+                UserAvatar(user: user, size: 76)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(user.displayName)
+                            .font(.headline)
+                        if user.isVerified {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundColor(.blue).font(.subheadline)
+                        }
+                        if user.isProMember {
+                            ProBadge()
+                        }
+                    }
+                    Text("@\(user.username)")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    if !user.location.isEmpty {
+                        Label(user.location, systemImage: "mappin.circle")
+                            .font(.caption).foregroundColor(.secondary)
+                    }
+                }
+
+                Spacer()
+            }
+
+            if !user.bio.isEmpty {
+                Text(user.bio)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            statsRow
+
+            Button("Edit Profile") { showingEditProfile = true }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: .infinity)
+                .controlSize(.regular)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    private var statsRow: some View {
+        HStack(spacing: 0) {
+            StatChip(value: "\(carStore.cars.count)", label: "Cars")
+            Divider().frame(height: 30).padding(.horizontal, 16)
+            StatChip(value: "\(followStore.followerCount)", label: "Followers") {
+                showingFollowers = true
+            }
+            Divider().frame(height: 30).padding(.horizontal, 16)
+            StatChip(value: "\(followStore.followingCount)", label: "Following") {
+                showingFollowing = true
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Cars Section
+
+    @ViewBuilder
+    private var carsSection: some View {
+        if carStore.cars.isEmpty {
+            emptyCarsState
+        } else {
+            carList
+        }
+    }
+
+    private var emptyCarsState: some View {
+        VStack(spacing: 20) {
             ZStack {
                 RoundedRectangle(cornerRadius: 24)
                     .fill(Color(.systemGray6))
-                    .frame(width: 120, height: 120)
-
+                    .frame(width: 100, height: 100)
                 Image(systemName: "car.fill")
-                    .font(.system(size: 52))
+                    .font(.system(size: 44))
                     .foregroundStyle(.secondary.opacity(0.6))
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Your Garage is Empty")
-                    .font(.title2)
-                    .fontWeight(.bold)
-
+                    .font(.title3).fontWeight(.bold)
                 Text("Add your first car to start tracking\nyour vehicle information.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -71,48 +157,49 @@ struct CarListView: View {
             } label: {
                 Label("Add a Car", systemImage: "plus.circle.fill")
                     .font(.headline)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 14)
+                    .padding(.horizontal, 28).padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
-            .padding(.top, 4)
         }
-        .padding(.horizontal, 40)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .padding(.horizontal, 24)
     }
 
     private var carList: some View {
-        ScrollView {
-            LazyVStack(spacing: 14) {
-                ForEach(carStore.cars) { car in
-                    NavigationLink(destination: CarDetailView(car: car)) {
-                        CarCardView(car: car)
-                    }
-                    .buttonStyle(.plain)
-                }
+        LazyVStack(spacing: 14) {
+            MarqueSectionHeader(title: "My Cars")
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button {
-                    showingAddCar = true
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                        Text("Add a Car")
-                            .fontWeight(.medium)
-                    }
-                    .foregroundColor(.accentColor)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(Color.accentColor.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
-                    )
+            ForEach(carStore.cars) { car in
+                NavigationLink(destination: CarDetailView(car: car)) {
+                    CarCardView(car: car)
                 }
-                .padding(.top, 4)
+                .buttonStyle(.plain)
             }
-            .padding(.horizontal)
-            .padding(.top, 8)
-            .padding(.bottom, 20)
+
+            Button {
+                if atCarLimit { showingPaywall = true } else { showingAddCar = true }
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill").font(.title3)
+                    Text("Add a Car").fontWeight(.medium)
+                }
+                .foregroundColor(.accentColor)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.accentColor.opacity(0.3),
+                                      style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+                )
+            }
+            .padding(.top, 4)
         }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
     }
 }
 

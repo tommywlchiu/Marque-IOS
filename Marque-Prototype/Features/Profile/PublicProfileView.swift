@@ -182,7 +182,7 @@ struct PublicProfileView: View {
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(cars) { car in
-                        NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                        NavigationLink(destination: CarDetailView(publicCar: car)
                             .environmentObject(exploreStore)) {
                             ExploreCarCell(car: car)
                         }

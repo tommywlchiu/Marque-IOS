@@ -44,17 +44,26 @@ struct CommentsView: View {
 
     private var postSummaryHeader: some View {
         HStack(spacing: 10) {
-            UserAvatar(user: post.user, size: 36)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(post.user.displayName)
-                    .font(.subheadline).fontWeight(.semibold)
-                if !post.caption.isEmpty {
-                    Text(post.caption)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
+            NavigationLink(destination: PublicProfileView(
+                ownerUID: post.user.id,
+                ownerUsername: post.user.username
+            )) {
+                HStack(spacing: 10) {
+                    UserAvatar(user: post.user, size: 36)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(post.user.displayName)
+                            .font(.subheadline).fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        if !post.caption.isEmpty {
+                            Text(post.caption)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
                 }
             }
+            .buttonStyle(.plain)
             Spacer()
             Text(post.car.displayName)
                 .font(.caption2)
@@ -165,12 +174,25 @@ private struct CommentRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            UserAvatar(user: comment.author, size: 36)
+            NavigationLink(destination: PublicProfileView(
+                ownerUID: comment.author.id,
+                ownerUsername: comment.author.username
+            )) {
+                UserAvatar(user: comment.author, size: 36)
+            }
+            .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(comment.author.displayName)
-                        .font(.subheadline).fontWeight(.semibold)
+                    NavigationLink(destination: PublicProfileView(
+                        ownerUID: comment.author.id,
+                        ownerUsername: comment.author.username
+                    )) {
+                        Text(comment.author.displayName)
+                            .font(.subheadline).fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                    }
+                    .buttonStyle(.plain)
                     Text(comment.createdAt, style: .relative)
                         .font(.caption2)
                         .foregroundColor(.secondary)

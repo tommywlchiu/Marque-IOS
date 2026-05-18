@@ -9,15 +9,6 @@
 /* Begin PBXBuildFile section */
 		A10001 /* Marque_PrototypeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque_PrototypeApp.swift */; };
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
-		A10057 /* PublicCar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20057 /* PublicCar.swift */; };
-		A10063 /* AppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20063 /* AppLinks.swift */; };
-		A10058 /* ExploreStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20058 /* ExploreStore.swift */; };
-		A10059 /* FollowStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20059 /* FollowStore.swift */; };
-		A10060 /* SubscriptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20060 /* SubscriptionStore.swift */; };
-		A10065 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20065 /* DeleteAccountView.swift */; };
-		A10061 /* BlockStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20061 /* BlockStore.swift */; };
-		A10064 /* NotificationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20064 /* NotificationStore.swift */; };
-		A10062 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20062 /* ReportView.swift */; };
 		A10003 /* CarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* CarStore.swift */; };
 		A10004 /* AddCarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* AddCarView.swift */; };
 		A10005 /* CarListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20005 /* CarListView.swift */; };
@@ -34,19 +25,15 @@
 		A10016 /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20016 /* AppUser.swift */; };
 		A10017 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20017 /* AuthService.swift */; };
 		A10018 /* MarqueComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20018 /* MarqueComponents.swift */; };
-		A10055 /* CarPhotoImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20055 /* CarPhotoImage.swift */; };
 		A10019 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20019 /* OnboardingView.swift */; };
 		A10020 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20020 /* LoginView.swift */; };
-		A10056 /* ProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20056 /* ProfileSetupView.swift */; };
 		A10021 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20021 /* SignUpView.swift */; };
 		A10022 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20022 /* ForgotPasswordView.swift */; };
-		A10023 /* MyProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20023 /* MyProfileView.swift */; };
 		A10024 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20024 /* EditProfileView.swift */; };
 		A10025 /* PublicProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20025 /* PublicProfileView.swift */; };
 		A10026 /* FollowListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20026 /* FollowListView.swift */; };
 		A10027 /* ExploreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20027 /* ExploreView.swift */; };
 		A10028 /* SearchResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20028 /* SearchResultsView.swift */; };
-		A10029 /* PublicCarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20029 /* PublicCarDetailView.swift */; };
 		A10030 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20030 /* SettingsView.swift */; };
 		A10031 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20031 /* ProUpgradeView.swift */; };
 		A10032 /* ServiceReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20032 /* ServiceReminder.swift */; };
@@ -62,6 +49,17 @@
 		A10042 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20042 /* CommentsView.swift */; };
 		A10043 /* NotificationsInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20043 /* NotificationsInboxView.swift */; };
 		A10044 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A20044 /* GoogleService-Info.plist */; };
+		A10055 /* CarPhotoImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20055 /* CarPhotoImage.swift */; };
+		A10056 /* ProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20056 /* ProfileSetupView.swift */; };
+		A10057 /* PublicCar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20057 /* PublicCar.swift */; };
+		A10058 /* ExploreStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20058 /* ExploreStore.swift */; };
+		A10059 /* FollowStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20059 /* FollowStore.swift */; };
+		A10060 /* SubscriptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20060 /* SubscriptionStore.swift */; };
+		A10061 /* BlockStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20061 /* BlockStore.swift */; };
+		A10062 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20062 /* ReportView.swift */; };
+		A10063 /* AppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20063 /* AppLinks.swift */; };
+		A10064 /* NotificationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20064 /* NotificationStore.swift */; };
+		A10065 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20065 /* DeleteAccountView.swift */; };
 		C3000001C3000001C3000001 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = C1000001C1000001C1000001 /* FirebaseCore */; };
 		C4000001C4000001C4000001 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C2000001C2000001C2000001 /* FirebaseAuth */; };
 		C5000001C5000001C5000001 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C5000002C5000002C5000002 /* FirebaseFirestore */; };
@@ -73,15 +71,6 @@
 /* Begin PBXFileReference section */
 		A20001 /* Marque_PrototypeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque_PrototypeApp.swift; sourceTree = "<group>"; };
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
-		A20057 /* PublicCar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicCar.swift; sourceTree = "<group>"; };
-		A20063 /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
-		A20058 /* ExploreStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreStore.swift; sourceTree = "<group>"; };
-		A20059 /* FollowStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowStore.swift; sourceTree = "<group>"; };
-		A20060 /* SubscriptionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionStore.swift; sourceTree = "<group>"; };
-		A20065 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
-		A20061 /* BlockStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockStore.swift; sourceTree = "<group>"; };
-		A20064 /* NotificationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStore.swift; sourceTree = "<group>"; };
-		A20062 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
 		A20003 /* CarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarStore.swift; sourceTree = "<group>"; };
 		A20004 /* AddCarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCarView.swift; sourceTree = "<group>"; };
 		A20005 /* CarListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarListView.swift; sourceTree = "<group>"; };
@@ -98,19 +87,15 @@
 		A20016 /* AppUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUser.swift; sourceTree = "<group>"; };
 		A20017 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		A20018 /* MarqueComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueComponents.swift; sourceTree = "<group>"; };
-		A20055 /* CarPhotoImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPhotoImage.swift; sourceTree = "<group>"; };
 		A20019 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		A20020 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		A20056 /* ProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupView.swift; sourceTree = "<group>"; };
 		A20021 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
 		A20022 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
-		A20023 /* MyProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProfileView.swift; sourceTree = "<group>"; };
 		A20024 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
 		A20025 /* PublicProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicProfileView.swift; sourceTree = "<group>"; };
 		A20026 /* FollowListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowListView.swift; sourceTree = "<group>"; };
 		A20027 /* ExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreView.swift; sourceTree = "<group>"; };
 		A20028 /* SearchResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsView.swift; sourceTree = "<group>"; };
-		A20029 /* PublicCarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicCarDetailView.swift; sourceTree = "<group>"; };
 		A20030 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A20031 /* ProUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProUpgradeView.swift; sourceTree = "<group>"; };
 		A20032 /* ServiceReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceReminder.swift; sourceTree = "<group>"; };
@@ -127,6 +112,17 @@
 		A20043 /* NotificationsInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsInboxView.swift; sourceTree = "<group>"; };
 		A20044 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A20045 /* Marque-Prototype.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Marque-Prototype.entitlements"; sourceTree = "<group>"; };
+		A20055 /* CarPhotoImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPhotoImage.swift; sourceTree = "<group>"; };
+		A20056 /* ProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupView.swift; sourceTree = "<group>"; };
+		A20057 /* PublicCar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicCar.swift; sourceTree = "<group>"; };
+		A20058 /* ExploreStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreStore.swift; sourceTree = "<group>"; };
+		A20059 /* FollowStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowStore.swift; sourceTree = "<group>"; };
+		A20060 /* SubscriptionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionStore.swift; sourceTree = "<group>"; };
+		A20061 /* BlockStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockStore.swift; sourceTree = "<group>"; };
+		A20062 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
+		A20063 /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
+		A20064 /* NotificationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStore.swift; sourceTree = "<group>"; };
+		A20065 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F421FDE72FA465A7000DBF3C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -276,7 +272,6 @@
 		A50011 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
-				A20023 /* MyProfileView.swift */,
 				A20024 /* EditProfileView.swift */,
 				A20025 /* PublicProfileView.swift */,
 				A20026 /* FollowListView.swift */,
@@ -290,7 +285,6 @@
 			children = (
 				A20027 /* ExploreView.swift */,
 				A20028 /* SearchResultsView.swift */,
-				A20029 /* PublicCarDetailView.swift */,
 			);
 			path = Explore;
 			sourceTree = "<group>";
@@ -368,7 +362,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					A60001 = {
 						CreatedOnToolsVersion = 15.0;
@@ -446,13 +440,11 @@
 				A10056 /* ProfileSetupView.swift in Sources */,
 				A10021 /* SignUpView.swift in Sources */,
 				A10022 /* ForgotPasswordView.swift in Sources */,
-				A10023 /* MyProfileView.swift in Sources */,
 				A10024 /* EditProfileView.swift in Sources */,
 				A10025 /* PublicProfileView.swift in Sources */,
 				A10026 /* FollowListView.swift in Sources */,
 				A10027 /* ExploreView.swift in Sources */,
 				A10028 /* SearchResultsView.swift in Sources */,
-				A10029 /* PublicCarDetailView.swift in Sources */,
 				A10030 /* SettingsView.swift in Sources */,
 				A10031 /* ProUpgradeView.swift in Sources */,
 				A10032 /* ServiceReminder.swift in Sources */,
@@ -508,6 +500,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -531,6 +524,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -571,6 +565,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -587,6 +582,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -602,7 +598,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Marque-Prototype/Info.plist";
@@ -631,7 +626,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Marque-Prototype/Info.plist";

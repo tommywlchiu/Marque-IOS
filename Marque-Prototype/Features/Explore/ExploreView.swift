@@ -4,8 +4,16 @@ struct ExploreView: View {
     @EnvironmentObject var exploreStore: ExploreStore
     @EnvironmentObject var followStore: FollowStore
     @EnvironmentObject var blockStore: BlockStore
+    @EnvironmentObject var notificationStore: NotificationStore
 
     @State private var selectedCategory: ExploreCategory = .all
+    @State private var profileTarget: ProfileTarget?
+
+    private struct ProfileTarget: Identifiable {
+        let uid: String
+        let username: String
+        var id: String { uid }
+    }
 
     private var visibleCars: [PublicCar] {
         blockStore.filter(exploreStore.cars, ownerUID: \.ownerUID)
@@ -55,6 +63,27 @@ struct ExploreView: View {
             }
             .navigationTitle("Explore")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink(destination: NotificationsInboxView()) {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: notificationStore.unreadCount > 0 ? "bell.badge.fill" : "bell")
+                                .foregroundColor(notificationStore.unreadCount > 0 ? .accentColor : .primary)
+                            if notificationStore.unreadCount > 0 {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 4, y: -2)
+                            }
+                        }
+                    }
+                }
+            }
+            .sheet(item: $profileTarget) { target in
+                NavigationStack {
+                    PublicProfileView(ownerUID: target.uid, ownerUsername: target.username)
+                }
+            }
         }
     }
 
@@ -99,10 +128,12 @@ struct ExploreView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(visibleCars.prefix(10)) { car in
-                        NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                        NavigationLink(destination: CarDetailView(publicCar: car)
                             .environmentObject(exploreStore)
                             .environmentObject(blockStore)) {
-                            FeaturedCarCard(car: car)
+                            FeaturedCarCard(car: car) {
+                                profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
+                            }
                         }
                         .buttonStyle(.plain)
                     }
@@ -134,10 +165,12 @@ struct ExploreView: View {
                     spacing: 14
                 ) {
                     ForEach(filteredCars) { car in
-                        NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                        NavigationLink(destination: CarDetailView(publicCar: car)
                             .environmentObject(exploreStore)
                             .environmentObject(blockStore)) {
-                            ExploreCarCell(car: car)
+                            ExploreCarCell(car: car) {
+                                profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
+                            }
                         }
                         .buttonStyle(.plain)
                     }
@@ -203,6 +236,7 @@ private struct CategoryChip: View {
 
 private struct FeaturedCarCard: View {
     let car: PublicCar
+    var onOwnerTap: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -220,18 +254,31 @@ private struct FeaturedCarCard: View {
                 LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                HStack(spacing: 6) {
-                    OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 20)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(car.displayName)
-                            .font(.caption).fontWeight(.semibold).foregroundColor(.white)
-                        Text("@\(car.ownerUsername)")
-                            .font(.caption2).foregroundColor(.white.opacity(0.8))
-                    }
-                }
-                .padding(10)
+                ownerRow.padding(10)
             }
             .frame(width: 200, height: 150)
+        }
+    }
+
+    @ViewBuilder
+    private var ownerRow: some View {
+        if let onOwnerTap {
+            Button(action: onOwnerTap) { ownerRowContent }
+                .buttonStyle(.plain)
+        } else {
+            ownerRowContent
+        }
+    }
+
+    private var ownerRowContent: some View {
+        HStack(spacing: 6) {
+            OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 20)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(car.displayName)
+                    .font(.caption).fontWeight(.semibold).foregroundColor(.white)
+                Text("@\(car.ownerUsername)")
+                    .font(.caption2).foregroundColor(.white.opacity(0.8))
+            }
         }
     }
 
@@ -246,6 +293,7 @@ private struct FeaturedCarCard: View {
 
 struct ExploreCarCell: View {
     let car: PublicCar
+    var onOwnerTap: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -259,17 +307,9 @@ struct ExploreCarCell: View {
             .aspectRatio(1.4, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            HStack(spacing: 6) {
-                OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 18)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(car.displayName)
-                        .font(.caption).fontWeight(.semibold).lineLimit(1)
-                    Text("@\(car.ownerUsername)")
-                        .font(.caption2).foregroundColor(.secondary)
-                }
-            }
-            .padding(.horizontal, 4)
-            .padding(.bottom, 4)
+            ownerRow
+                .padding(.horizontal, 4)
+                .padding(.bottom, 4)
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -280,5 +320,29 @@ struct ExploreCarCell: View {
         Rectangle()
             .fill(Color.accentColor.opacity(0.08))
             .overlay(Image(systemName: "car.fill").font(.largeTitle).foregroundColor(.accentColor.opacity(0.4)))
+    }
+
+    @ViewBuilder
+    private var ownerRow: some View {
+        if let onOwnerTap {
+            Button(action: onOwnerTap) { ownerRowContent }
+                .buttonStyle(.plain)
+        } else {
+            ownerRowContent
+        }
+    }
+
+    private var ownerRowContent: some View {
+        HStack(spacing: 6) {
+            OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 18)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(car.displayName)
+                    .font(.caption).fontWeight(.semibold).lineLimit(1)
+                    .foregroundColor(.primary)
+                Text("@\(car.ownerUsername)")
+                    .font(.caption2).foregroundColor(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
     }
 }

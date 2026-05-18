@@ -1,5 +1,6 @@
 import SwiftUI
 import AuthenticationServices
+import FirebaseAuth
 
 struct DeleteAccountView: View {
     @EnvironmentObject var authService: AuthService
@@ -37,6 +38,11 @@ struct DeleteAccountView: View {
                     Button("Cancel") { dismiss() }
                         .disabled(isProcessing)
                 }
+            }
+            // Belt-and-suspenders: dismiss the sheet the moment the auth state
+            // transitions to unauthenticated, regardless of async task timing.
+            .onChange(of: authService.authState) { _, newState in
+                if case .unauthenticated = newState { dismiss() }
             }
         }
     }
@@ -131,19 +137,19 @@ struct DeleteAccountView: View {
     private func deleteWithEmail() async {
         guard !password.isEmpty else { return }
         isProcessing = true
+        defer { isProcessing = false }
         errorMessage = nil
         do {
             try await authService.reauthenticate(password: password)
             try await authService.deleteAccount()
-            // Auth state listener fires → app navigates to LoginView automatically.
         } catch {
             errorMessage = friendlyError(error)
-            isProcessing = false
         }
     }
 
     private func deleteWithProvider() async {
         isProcessing = true
+        defer { isProcessing = false }
         errorMessage = nil
         do {
             if provider == "apple.com" {
@@ -155,11 +161,9 @@ struct DeleteAccountView: View {
         } catch let error as NSError
             where error.domain == ASAuthorizationError.errorDomain
                && error.code == ASAuthorizationError.canceled.rawValue {
-            // User cancelled the Apple sheet — don't show an error.
-            isProcessing = false
+            // User cancelled the Apple sheet — no error shown.
         } catch {
             errorMessage = friendlyError(error)
-            isProcessing = false
         }
     }
 

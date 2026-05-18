@@ -88,7 +88,7 @@ struct SearchResultsView: View {
                 emptyResults(for: query.isEmpty ? "No public cars yet" : "No cars matching \"\(query)\"")
             } else {
                 List(filteredCars) { car in
-                    NavigationLink(destination: PublicCarDetailView(publicCar: car)
+                    NavigationLink(destination: CarDetailView(publicCar: car)
                         .environmentObject(exploreStore)) {
                         PublicCarSearchRow(car: car)
                     }

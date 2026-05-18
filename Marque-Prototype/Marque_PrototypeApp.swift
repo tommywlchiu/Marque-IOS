@@ -93,8 +93,33 @@ private struct RootView: View {
 
 private struct MainTabView: View {
     @EnvironmentObject var carStore: CarStore
-    @EnvironmentObject var socialStore: SocialStore
-    @EnvironmentObject var notificationStore: NotificationStore
+    @EnvironmentObject var subscriptionStore: SubscriptionStore
+
+    @State private var selectedTab: Tab = .garage
+    @State private var showingAddCar = false
+    @State private var showingPaywall = false
+
+    private enum Tab: Hashable { case garage, add, explore }
+
+    private var atCarLimit: Bool {
+        carStore.cars.count >= 3 && !subscriptionStore.isPro
+    }
+
+    // Intercept selection of the center "+" tab — trigger the add-car flow
+    // instead of switching tabs.
+    private var tabBinding: Binding<Tab> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                if newValue == .add {
+                    if atCarLimit { showingPaywall = true }
+                    else { showingAddCar = true }
+                } else {
+                    selectedTab = newValue
+                }
+            }
+        )
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -103,22 +128,20 @@ private struct MainTabView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
-            TabView {
+            TabView(selection: tabBinding) {
                 CarListView()
                     .tabItem { Label("Garage", systemImage: "car.fill") }
+                    .tag(Tab.garage)
+
+                // Placeholder content — this tab is never actually selected.
+                // The selection binding intercepts taps and opens AddCarView.
+                Color.clear
+                    .tabItem { Image(systemName: "plus.circle.fill") }
+                    .tag(Tab.add)
 
                 ExploreView()
                     .tabItem { Label("Explore", systemImage: "globe") }
-
-                NotificationsInboxView()
-                    .tabItem { Label("Notifications", systemImage: "bell.fill") }
-                    .badge(notificationStore.unreadCount > 0 ? "\(notificationStore.unreadCount)" : nil)
-
-                MyProfileView()
-                    .tabItem { Label("Profile", systemImage: "person.fill") }
-
-                SettingsView()
-                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                    .tag(Tab.explore)
             }
             .onAppear {
                 NotificationManager.requestPermission()
@@ -130,6 +153,12 @@ private struct MainTabView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: carStore.isOffline)
         .ignoresSafeArea(edges: .bottom)
+        .sheet(isPresented: $showingAddCar) {
+            AddCarView()
+        }
+        .sheet(isPresented: $showingPaywall) {
+            ProUpgradeView()
+        }
     }
 
     private var offlineBanner: some View {

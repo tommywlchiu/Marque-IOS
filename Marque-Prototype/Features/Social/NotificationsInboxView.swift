@@ -74,14 +74,20 @@ private struct NotificationRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            ZStack(alignment: .bottomTrailing) {
-                OwnerAvatar(
-                    avatarURL: notification.actorAvatarURL,
-                    username: notification.actorUsername,
-                    size: 44
-                )
-                typeIcon.offset(x: 2, y: 2)
+            NavigationLink(destination: PublicProfileView(
+                ownerUID: notification.actorUID,
+                ownerUsername: notification.actorUsername
+            )) {
+                ZStack(alignment: .bottomTrailing) {
+                    OwnerAvatar(
+                        avatarURL: notification.actorAvatarURL,
+                        username: notification.actorUsername,
+                        size: 44
+                    )
+                    typeIcon.offset(x: 2, y: 2)
+                }
             }
+            .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 3) {
                 Group {
@@ -92,7 +98,7 @@ private struct NotificationRow: View {
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
 
-                Text(notification.createdAt, style: .relative)
+                Text(relativeLabel(for: notification.createdAt))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -120,6 +126,21 @@ private struct NotificationRow: View {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.white)
+        }
+    }
+
+    private func relativeLabel(for date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        switch seconds {
+        case ..<60:        return "\(seconds)s"
+        case ..<3600:      return "\(seconds / 60)m"
+        case ..<86400:     return "\(seconds / 3600)h"
+        case ..<604800:    return "\(seconds / 86400)d"
+        default:
+            let f = DateFormatter()
+            f.dateStyle = .medium
+            f.timeStyle = .none
+            return f.string(from: date)
         }
     }
 
