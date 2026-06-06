@@ -17,6 +17,12 @@ struct AppUser: Identifiable, Codable, Equatable {
     var isProMember: Bool
     var joinedDate: Date
 
+    // Driver License — private to this user, never exposed publicly. Stored
+    // for personal reference (same role as VIN/insurance policy on the car).
+    var driverLicenseNumber: String = ""
+    var driverLicenseState: String = ""
+    var driverLicenseExpiryDate: Date? = nil
+
     // MARK: - Preview / Mock Data
 
     static let preview = AppUser(
@@ -46,7 +52,16 @@ extension AppUser {
     // Maps a live Firebase user + locally stored extras into an AppUser.
     // Fields not tracked by Firebase (bio, location, followerCount, etc.) come
     // from LocalProfile stored in UserDefaults; move them to Firestore in production.
-    init(firebaseUser: FirebaseAuth.User, profile: (username: String, bio: String, location: String, avatarFileName: String?, avatarStorageURL: String?)) {
+    init(firebaseUser: FirebaseAuth.User, profile: (
+        username: String,
+        bio: String,
+        location: String,
+        avatarFileName: String?,
+        avatarStorageURL: String?,
+        driverLicenseNumber: String,
+        driverLicenseState: String,
+        driverLicenseExpiryDate: Date?
+    )) {
         id = firebaseUser.uid
         displayName = firebaseUser.displayName ?? "User"
         username = profile.username
@@ -59,6 +74,9 @@ extension AppUser {
         isVerified = false
         isProMember = false
         joinedDate = firebaseUser.metadata.creationDate ?? Date()
+        driverLicenseNumber = profile.driverLicenseNumber
+        driverLicenseState = profile.driverLicenseState
+        driverLicenseExpiryDate = profile.driverLicenseExpiryDate
     }
 }
 #endif

@@ -1,5 +1,7 @@
 import Foundation
 import StoreKit
+import FirebaseAuth
+import FirebaseFirestore
 
 @MainActor
 class SubscriptionStore: ObservableObject {
@@ -56,6 +58,7 @@ class SubscriptionStore: ObservableObject {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
                 await refreshProStatus()
+                await writeTransactionMapping(transaction)
                 await transaction.finish()
             case .userCancelled:
                 break
@@ -107,10 +110,22 @@ class SubscriptionStore: ObservableObject {
             for await result in Transaction.updates {
                 if case .verified(let transaction) = result {
                     await self?.refreshProStatus()
+                    await self?.writeTransactionMapping(transaction)
                     await transaction.finish()
                 }
             }
         }
+    }
+
+    // Writes purchases/{originalTransactionId} → { uid } so the Cloud Function
+    // can map an App Store Server Notification back to the right Firebase user.
+    private func writeTransactionMapping(_ transaction: StoreKit.Transaction) async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let docID = String(transaction.originalID)
+        try? await Firestore.firestore()
+            .collection("purchases")
+            .document(docID)
+            .setData(["uid": uid, "productId": transaction.productID], merge: true)
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {

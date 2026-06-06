@@ -242,6 +242,7 @@ struct ProBadge: View {
 
 struct FollowButton: View {
     let isFollowing: Bool
+    var notFollowingLabel: String = "Follow"
     let action: () -> Void
 
     var body: some View {
@@ -257,7 +258,7 @@ struct FollowButton: View {
     }
 
     private var label: some View {
-        Text(isFollowing ? "Following" : "Follow")
+        Text(isFollowing ? "Following" : notFollowingLabel)
             .font(.subheadline).fontWeight(.semibold)
             .padding(.horizontal, 18)
             .padding(.vertical, 8)

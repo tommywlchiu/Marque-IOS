@@ -57,8 +57,15 @@ class AuthService: NSObject, ObservableObject {
                         bio: p.bio,
                         location: p.location,
                         avatarFileName: p.avatarFileName,
-                        avatarStorageURL: p.avatarStorageURL
+                        avatarStorageURL: p.avatarStorageURL,
+                        driverLicenseNumber: p.driverLicenseNumber,
+                        driverLicenseState: p.driverLicenseState,
+                        driverLicenseExpiryDate: p.driverLicenseExpiryDate
                     )))
+                    // Hydrate isPro from Firestore so cross-device Pro unlocks
+                    // without requiring "Restore Purchases". The Cloud Function
+                    // keeps this field authoritative via App Store Server Notifications.
+                    Task { await self.syncProStatusFromFirestore(uid: fu.uid) }
                 } else {
                     self.hasCompletedProfileSetup = false
                     self.authState = .unauthenticated
@@ -208,6 +215,29 @@ class AuthService: NSObject, ObservableObject {
     }
 
     // MARK: - Profile Update
+
+    // Driver license is stored separately from the public profile fields.
+    // It lives only in LocalProfile (UserDefaults) for now — kept off Firestore
+    // to avoid syncing personal ID numbers to the cloud until we have a
+    // compelling reason to (e.g., cross-device retrieval).
+    func updateDriverLicense(number: String, state: String, expiryDate: Date?) {
+        guard case .authenticated(var user) = authState,
+              let firebaseUser = Auth.auth().currentUser else { return }
+
+        let trimmedNumber = number.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedState = state.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+
+        var profile = LocalProfile.load(uid: firebaseUser.uid)
+        profile.driverLicenseNumber = trimmedNumber
+        profile.driverLicenseState = trimmedState
+        profile.driverLicenseExpiryDate = expiryDate
+        profile.save(uid: firebaseUser.uid)
+
+        user.driverLicenseNumber = trimmedNumber
+        user.driverLicenseState = trimmedState
+        user.driverLicenseExpiryDate = expiryDate
+        authState = .authenticated(user)
+    }
 
     func updateProfile(displayName: String, username: String, bio: String, location: String, avatarFileName: String? = nil) {
         guard case .authenticated(var user) = authState,
@@ -374,6 +404,17 @@ class AuthService: NSObject, ObservableObject {
         }
     }
 
+    // Reads isPro from Firestore and promotes the user to Pro if the field is
+    // true. Only promotes — never demotes — so StoreKit remains the authority
+    // for the current device's active entitlement while Firestore provides the
+    // cross-device unlock written by the Cloud Function.
+    private func syncProStatusFromFirestore(uid: String) async {
+        guard let data = try? await userDocument(uid: uid).getDocument().data(),
+              let isPro = data["isPro"] as? Bool,
+              isPro else { return }
+        setProStatus(true)
+    }
+
     // MARK: - Sign Out
 
     func signOut() {
@@ -441,7 +482,45 @@ class AuthService: NSObject, ObservableObject {
             try? await db.collection("usernames").document(username).delete()
         }
 
-        // 3. Delete every subcollection under users/{uid}.
+        // 3. Fan-out relationship cleanup: remove ghost references in other users'
+        //    subcollections before deleting the user's own data.
+        //
+        //    Problem: step 4 (below) deletes users/{uid}/following and users/{uid}/followers,
+        //    but it doesn't touch the reverse pointers that live under OTHER users' documents.
+        //    Without this cleanup, deleted accounts leave permanent ghost entries that inflate
+        //    follower/following counts for everyone this user ever interacted with.
+
+        // 3a. Remove this user from the followers subcollection of every user they follow.
+        //     e.g. users/{followedUID}/followers/{uid}
+        if let followingSnap = try? await db.collection("users").document(uid)
+            .collection("following").getDocuments(),
+           !followingSnap.documents.isEmpty {
+            let batch = db.batch()
+            for doc in followingSnap.documents.prefix(500) {
+                batch.deleteDocument(
+                    db.collection("users").document(doc.documentID)
+                        .collection("followers").document(uid)
+                )
+            }
+            try? await batch.commit()
+        }
+
+        // 3b. Remove this user from the following subcollection of every user who follows them.
+        //     e.g. users/{followerUID}/following/{uid}
+        if let followerSnap = try? await db.collection("users").document(uid)
+            .collection("followers").getDocuments(),
+           !followerSnap.documents.isEmpty {
+            let batch = db.batch()
+            for doc in followerSnap.documents.prefix(500) {
+                batch.deleteDocument(
+                    db.collection("users").document(doc.documentID)
+                        .collection("following").document(uid)
+                )
+            }
+            try? await batch.commit()
+        }
+
+        // 4. Delete every subcollection under users/{uid}.
         for sub in ["cars", "following", "followers", "blocked", "notifications"] {
             if let snapshot = try? await db.collection("users").document(uid)
                 .collection(sub).getDocuments(), !snapshot.documents.isEmpty {
@@ -451,10 +530,10 @@ class AuthService: NSObject, ObservableObject {
             }
         }
 
-        // 4. Delete the user profile document.
+        // 5. Delete the user profile document.
         try? await db.collection("users").document(uid).delete()
 
-        // 5. Delete Storage files (best-effort — failures don't block account deletion).
+        // 6. Delete Storage files (best-effort — failures don't block account deletion).
         storage.child("users/\(uid)/avatar.jpg").delete(completion: nil)
         for doc in carsSnapshot?.documents ?? [] {
             let carId = doc.documentID
@@ -464,11 +543,11 @@ class AuthService: NSObject, ObservableObject {
             }
         }
 
-        // 6. Delete the Firebase Auth account.
+        // 7. Delete the Firebase Auth account.
         //    Throws AuthErrorCode.requiresRecentLogin if the credential is stale.
         try await firebaseUser.delete()
 
-        // 7. Clear local caches (auth state listener fires automatically after step 6,
+        // 8. Clear local caches (auth state listener fires automatically after step 7,
         //    transitioning the app to .unauthenticated — these are belt-and-suspenders).
         UserDefaults.standard.removeObject(forKey: "marque_profile_\(uid)")
         UserDefaults.standard.removeObject(forKey: "marque_saved_cars_\(uid)")
@@ -586,16 +665,46 @@ private struct LocalProfile: Codable {
     var avatarFileName: String?
     var avatarStorageURL: String?
     var hasCompletedProfileSetup: Bool
+    var driverLicenseNumber: String
+    var driverLicenseState: String
+    var driverLicenseExpiryDate: Date?
 
     init(username: String = "", bio: String = "", location: String = "",
          avatarFileName: String? = nil, avatarStorageURL: String? = nil,
-         hasCompletedProfileSetup: Bool = false) {
+         hasCompletedProfileSetup: Bool = false,
+         driverLicenseNumber: String = "",
+         driverLicenseState: String = "",
+         driverLicenseExpiryDate: Date? = nil) {
         self.username = username
         self.bio = bio
         self.location = location
         self.avatarFileName = avatarFileName
         self.avatarStorageURL = avatarStorageURL
         self.hasCompletedProfileSetup = hasCompletedProfileSetup
+        self.driverLicenseNumber = driverLicenseNumber
+        self.driverLicenseState = driverLicenseState
+        self.driverLicenseExpiryDate = driverLicenseExpiryDate
+    }
+
+    // Backward-compatible decode — older records without the license fields
+    // still decode cleanly.
+    private enum CodingKeys: String, CodingKey {
+        case username, bio, location, avatarFileName, avatarStorageURL
+        case hasCompletedProfileSetup
+        case driverLicenseNumber, driverLicenseState, driverLicenseExpiryDate
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        username = try c.decodeIfPresent(String.self, forKey: .username) ?? ""
+        bio = try c.decodeIfPresent(String.self, forKey: .bio) ?? ""
+        location = try c.decodeIfPresent(String.self, forKey: .location) ?? ""
+        avatarFileName = try c.decodeIfPresent(String.self, forKey: .avatarFileName)
+        avatarStorageURL = try c.decodeIfPresent(String.self, forKey: .avatarStorageURL)
+        hasCompletedProfileSetup = try c.decodeIfPresent(Bool.self, forKey: .hasCompletedProfileSetup) ?? false
+        driverLicenseNumber = try c.decodeIfPresent(String.self, forKey: .driverLicenseNumber) ?? ""
+        driverLicenseState = try c.decodeIfPresent(String.self, forKey: .driverLicenseState) ?? ""
+        driverLicenseExpiryDate = try c.decodeIfPresent(Date.self, forKey: .driverLicenseExpiryDate)
     }
 
     static func load(uid: String) -> LocalProfile {

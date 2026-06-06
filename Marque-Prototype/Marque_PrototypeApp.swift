@@ -4,6 +4,8 @@ import FirebaseFirestore
 
 @main
 struct Marque_PrototypeApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @StateObject private var carStore = CarStore()
     @StateObject private var authService = AuthService()
     @StateObject private var socialStore = SocialStore()
@@ -12,6 +14,7 @@ struct Marque_PrototypeApp: App {
     @StateObject private var subscriptionStore = SubscriptionStore()
     @StateObject private var blockStore = BlockStore()
     @StateObject private var notificationStore = NotificationStore()
+    @StateObject private var smartcarStore = SmartcarStore()
 
     init() {
         FirebaseApp.configure()
@@ -32,6 +35,13 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(subscriptionStore)
                 .environmentObject(blockStore)
                 .environmentObject(notificationStore)
+                .environmentObject(smartcarStore)
+                .environmentObject(appDelegate)
+                .onOpenURL { url in
+                    // Smartcar Connect redirects back to marque://smartcar-callback.
+                    // Phase 2 will fill in handleCallback; for now this just ignores.
+                    _ = smartcarStore.handleCallback(url)
+                }
                 .onChange(of: authService.authState) { _, newState in
                     if case .authenticated(let user) = newState {
                         carStore.startListening(userId: user.id)
@@ -94,6 +104,8 @@ private struct RootView: View {
 private struct MainTabView: View {
     @EnvironmentObject var carStore: CarStore
     @EnvironmentObject var subscriptionStore: SubscriptionStore
+    @EnvironmentObject var appDelegate: AppDelegate
+    @EnvironmentObject var authService: AuthService
 
     @State private var selectedTab: Tab = .garage
     @State private var showingAddCar = false
@@ -145,14 +157,29 @@ private struct MainTabView: View {
             }
             .onAppear {
                 NotificationManager.requestPermission()
-                NotificationManager.scheduleAll(for: carStore.cars)
+                NotificationManager.scheduleAll(
+                    for: carStore.cars,
+                    licenseExpiry: authService.currentUser?.driverLicenseExpiryDate
+                )
             }
             .onChange(of: carStore.cars) { _, newCars in
-                NotificationManager.scheduleAll(for: newCars)
+                NotificationManager.scheduleAll(
+                    for: newCars,
+                    licenseExpiry: authService.currentUser?.driverLicenseExpiryDate
+                )
+            }
+            .onChange(of: authService.currentUser?.driverLicenseExpiryDate) { _, _ in
+                NotificationManager.scheduleAll(
+                    for: carStore.cars,
+                    licenseExpiry: authService.currentUser?.driverLicenseExpiryDate
+                )
             }
         }
         .animation(.easeInOut(duration: 0.3), value: carStore.isOffline)
         .ignoresSafeArea(edges: .bottom)
+        .onChange(of: appDelegate.pendingCarID) { _, carID in
+            if carID != nil { selectedTab = .garage }
+        }
         .sheet(isPresented: $showingAddCar) {
             AddCarView()
         }

@@ -5,7 +5,10 @@ struct CarListView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var followStore: FollowStore
     @EnvironmentObject var subscriptionStore: SubscriptionStore
+    @EnvironmentObject var appDelegate: AppDelegate
 
+    @State private var navigationPath: [UUID] = []
+    @State private var showingSettings = false
     @State private var showingAddCar = false
     @State private var showingPaywall = false
     @State private var showingEditProfile = false
@@ -19,7 +22,7 @@ struct CarListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ScrollView {
                 VStack(spacing: 0) {
                     profileHeader
@@ -32,9 +35,17 @@ struct CarListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    NavigationLink(destination: SettingsView()) {
+                    Button { showingSettings = true } label: {
                         Image(systemName: "gearshape")
                     }
+                }
+            }
+            .navigationDestination(isPresented: $showingSettings) {
+                SettingsView()
+            }
+            .navigationDestination(for: UUID.self) { carId in
+                if let car = carStore.cars.first(where: { $0.id == carId }) {
+                    CarDetailView(car: car)
                 }
             }
             .sheet(isPresented: $showingAddCar) {
@@ -53,7 +64,19 @@ struct CarListView: View {
             .sheet(isPresented: $showingFollowing) {
                 FollowListView(mode: .following, currentUserUID: user.id)
             }
+            .onChange(of: appDelegate.pendingCarID) { _, _ in tryDeepLinkNavigation() }
+            .onChange(of: carStore.cars) { _, _ in tryDeepLinkNavigation() }
         }
+    }
+
+    // Navigate to the pending car ID, if it's already in the local store.
+    // Called on both pendingCarID and cars changes so a late Firestore snapshot
+    // still resolves correctly when the app was cold-launched via a notification.
+    private func tryDeepLinkNavigation() {
+        guard let carID = appDelegate.pendingCarID,
+              carStore.cars.contains(where: { $0.id == carID }) else { return }
+        navigationPath = [carID]
+        appDelegate.pendingCarID = nil
     }
 
     // MARK: - Profile Header
@@ -174,7 +197,7 @@ struct CarListView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             ForEach(carStore.cars) { car in
-                NavigationLink(destination: CarDetailView(car: car)) {
+                NavigationLink(value: car.id) {
                     CarCardView(car: car)
                 }
                 .buttonStyle(.plain)

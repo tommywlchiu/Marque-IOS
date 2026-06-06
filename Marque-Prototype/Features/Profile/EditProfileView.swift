@@ -14,13 +14,24 @@ struct EditProfileView: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
 
+    @State private var licenseNumber = ""
+    @State private var licenseState = ""
+    @State private var licenseExpiryDate: Date = Date()
+    @State private var hasLicenseExpiryDate = false
+    @State private var showLicenseNumber = false
+
     private var hasChanges: Bool {
         let user = authService.currentUser ?? .preview
+        let currentExpiry = user.driverLicenseExpiryDate
+        let newExpiry: Date? = hasLicenseExpiryDate ? licenseExpiryDate : nil
         return avatarImage != nil ||
                displayName != user.displayName ||
                username != user.username ||
                bio != user.bio ||
-               location != user.location
+               location != user.location ||
+               licenseNumber != user.driverLicenseNumber ||
+               licenseState != user.driverLicenseState ||
+               newExpiry != currentExpiry
     }
 
     var body: some View {
@@ -36,6 +47,7 @@ struct EditProfileView: View {
                 avatarSection
                 infoSection
                 bioSection
+                driverLicenseSection
             }
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
@@ -138,6 +150,58 @@ struct EditProfileView: View {
         }
     }
 
+    private var driverLicenseSection: some View {
+        Section(
+            header: Text("Driver License"),
+            footer: Text("Stored only on this device for your reference. Never visible to other users.")
+        ) {
+            LabeledContent("Number") {
+                HStack(spacing: 8) {
+                    Group {
+                        if showLicenseNumber {
+                            TextField("D1234567", text: $licenseNumber)
+                        } else {
+                            SecureField("D1234567", text: $licenseNumber)
+                        }
+                    }
+                    .multilineTextAlignment(.trailing)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.characters)
+
+                    Button {
+                        showLicenseNumber.toggle()
+                    } label: {
+                        Image(systemName: showLicenseNumber ? "eye.slash" : "eye")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(showLicenseNumber ? "Hide license number" : "Show license number")
+                }
+            }
+
+            LabeledContent("State") {
+                TextField("CA", text: $licenseState)
+                    .multilineTextAlignment(.trailing)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.characters)
+                    .onChange(of: licenseState) { _, new in
+                        // Cap at two characters and uppercase — state abbreviation.
+                        if new.count > 2 { licenseState = String(new.prefix(2)).uppercased() }
+                        else if new != new.uppercased() { licenseState = new.uppercased() }
+                    }
+            }
+
+            Toggle("Track Expiration", isOn: $hasLicenseExpiryDate.animation())
+            if hasLicenseExpiryDate {
+                DatePicker(
+                    "Expires",
+                    selection: $licenseExpiryDate,
+                    displayedComponents: .date
+                )
+            }
+        }
+    }
+
     // MARK: - Actions
 
     private func populateFields() {
@@ -146,6 +210,17 @@ struct EditProfileView: View {
         username = user.username
         bio = user.bio
         location = user.location
+        licenseNumber = user.driverLicenseNumber
+        licenseState = user.driverLicenseState
+        if let expiry = user.driverLicenseExpiryDate {
+            licenseExpiryDate = expiry
+            hasLicenseExpiryDate = true
+        } else {
+            // Default to one year from now to give a reasonable starting point
+            // when the user toggles the date on for the first time.
+            licenseExpiryDate = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
+            hasLicenseExpiryDate = false
+        }
     }
 
     private func save() async {
@@ -177,6 +252,11 @@ struct EditProfileView: View {
             bio: bio.trimmingCharacters(in: .whitespacesAndNewlines),
             location: location.trimmingCharacters(in: .whitespaces),
             avatarFileName: avatarFileName
+        )
+        authService.updateDriverLicense(
+            number: licenseNumber,
+            state: licenseState,
+            expiryDate: hasLicenseExpiryDate ? licenseExpiryDate : nil
         )
         dismiss()
     }

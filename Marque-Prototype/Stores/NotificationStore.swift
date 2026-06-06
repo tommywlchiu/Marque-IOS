@@ -5,6 +5,12 @@ import FirebaseFirestore
 class NotificationStore: ObservableObject {
     @Published var notifications: [AppNotification] = []
 
+    // badgeCount drives the bell icon in the Explore toolbar.
+    // It only increases when new unread notifications arrive and is only
+    // zeroed by clearBadge() (called on inbox open) or markAllRead().
+    // This lets the bell stay clear while the user is actively reading.
+    @Published var badgeCount: Int = 0
+
     var unreadCount: Int { notifications.filter { !$0.isRead }.count }
 
     private var listener: ListenerRegistration?
@@ -27,7 +33,7 @@ class NotificationStore: ObservableObject {
                     return
                 }
                 guard let snapshot else { return }
-                self.notifications = snapshot.documents
+                let fresh = snapshot.documents
                     .compactMap { doc -> AppNotification? in
                         do {
                             return try doc.data(as: AppNotification.self)
@@ -37,6 +43,13 @@ class NotificationStore: ObservableObject {
                         }
                     }
                     .sorted { $0.createdAt > $1.createdAt }
+                // Only bump the badge — never shrink it from the listener.
+                // The badge is zeroed only by clearBadge() or markAllRead().
+                let freshUnread = fresh.filter { !$0.isRead }.count
+                if freshUnread > self.badgeCount {
+                    self.badgeCount = freshUnread
+                }
+                self.notifications = fresh
             }
     }
 
@@ -45,6 +58,11 @@ class NotificationStore: ObservableObject {
         listener = nil
         currentUID = nil
         notifications = []
+        badgeCount = 0
+    }
+
+    func clearBadge() {
+        badgeCount = 0
     }
 
     func markRead(_ notification: AppNotification) {
@@ -74,6 +92,43 @@ class NotificationStore: ObservableObject {
         batch.commit()
         for i in notifications.indices where !notifications[i].isRead {
             notifications[i].isRead = true
+        }
+        badgeCount = 0
+    }
+
+    // MARK: - Delete
+
+    // Optimistic removal: drops the row locally first so the swipe animation is
+    // immediate, then deletes the Firestore document. Reverts on failure.
+    func delete(_ notification: AppNotification) async {
+        guard let uid = currentUID, let id = notification.id else { return }
+
+        let backup = notifications
+        notifications.removeAll(where: { $0.id == id })
+
+        do {
+            try await db.collection("users").document(uid)
+                .collection("notifications").document(id).delete()
+        } catch {
+            notifications = backup
+            print("[NotificationStore] Delete error: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Pull to refresh
+
+    // Forces a server round-trip so the user sees the pull-to-refresh spinner
+    // resolve against the network, not just the local cache. The live listener
+    // picks up any deltas through its normal snapshot pipeline.
+    func refresh() async {
+        guard let uid = currentUID else { return }
+        do {
+            _ = try await db.collection("users").document(uid)
+                .collection("notifications")
+                .limit(to: 50)
+                .getDocuments(source: .server)
+        } catch {
+            print("[NotificationStore] Refresh error: \(error.localizedDescription)")
         }
     }
 

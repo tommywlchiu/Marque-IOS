@@ -156,6 +156,7 @@ Organized by priority tier:
 | **Offline Mode** | Full read/write access with auto-sync when connection restores | P0 |
 | **User Profile** | Username, display name, profile photo, bio, public stats | P0 |
 | **Profile Setup** | Post-signup onboarding: username, photo, bio | P0 |
+| **Driver License Storage** | Optional private storage of license number, state, and expiry date for personal reference | P2 |
 | **Local Data Import** | Migrate existing prototype data to cloud on first login | P1 |
 | **Pro Tier** | Unlimited cars, PDF export, Pro badge via monthly/annual subscription | P1 |
 
@@ -212,6 +213,14 @@ Organized by priority tier:
 |---|---|---|
 | US-19 | As a user with 4+ cars, I want to upgrade to Pro to add more | Paywall shown on 4th car add; purchase unlocks immediately |
 | US-20 | As a Pro user, I want my subscription restored on a new device | Restore purchase link on paywall; Firestore updated on restore |
+
+### Driver License
+
+| ID | Story | Acceptance Criteria |
+|---|---|---|
+| US-21 | As a car owner, I want to store my driver's license number so I can retrieve it when filling out forms or at the DMV | Number, state, and expiry date are editable from Edit Profile; data is stored only on this device by default |
+| US-22 | As a user, I want my license number hidden by default so a glance at my screen doesn't expose it | Number rendered via `SecureField` with a reveal toggle, matching the iOS Settings password-reveal pattern |
+| US-23 | As a user, I want a reminder before my driver's license expires | If expiry is set, schedule local notifications at 30 days, 7 days, and on the day of expiry, reusing the existing notification engine |
 
 ---
 
@@ -288,6 +297,16 @@ Organized by priority tier:
 - **FR-08.4** When a subscription lapses, existing cars must remain readable; only new car additions are blocked
 - **FR-08.5** "Restore purchase" must be visible on the upgrade screen without scrolling
 - **FR-08.6** The app must handle App Store server-to-server notifications for subscription events (renewal, cancellation, billing failure) via Firebase Cloud Functions
+
+## FR-09: Driver License Storage
+
+- **FR-09.1** Users may optionally store a driver license number, state, and expiry date from the Edit Profile screen
+- **FR-09.2** The license number must be rendered via `SecureField` by default, with an eye-icon toggle that flips it to visible plaintext
+- **FR-09.3** The license state field must be capped at two characters and auto-uppercased
+- **FR-09.4** License fields persist locally only (UserDefaults under `marque_profile_{uid}`) — they must NOT be written to Firestore in v1.0 to avoid syncing high-sensitivity PII across devices
+- **FR-09.5** License fields must never appear on any public profile, in Explore results, or in any other user's view
+- **FR-09.6** If a license expiry date is set, the app must schedule local notifications at 30 days, 7 days, and on the day of expiry, using the same reschedule-on-change pattern as registration/insurance
+- **FR-09.7** Account deletion must clear license fields from local storage (already covered by the existing `marque_profile_{uid}` cleanup in `deleteAccount`)
 
 ---
 

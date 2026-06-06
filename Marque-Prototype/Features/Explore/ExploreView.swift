@@ -67,9 +67,9 @@ struct ExploreView: View {
                 ToolbarItem(placement: .primaryAction) {
                     NavigationLink(destination: NotificationsInboxView()) {
                         ZStack(alignment: .topTrailing) {
-                            Image(systemName: notificationStore.unreadCount > 0 ? "bell.badge.fill" : "bell")
-                                .foregroundColor(notificationStore.unreadCount > 0 ? .accentColor : .primary)
-                            if notificationStore.unreadCount > 0 {
+                            Image(systemName: notificationStore.badgeCount > 0 ? "bell.badge.fill" : "bell")
+                                .foregroundColor(notificationStore.badgeCount > 0 ? .accentColor : .primary)
+                            if notificationStore.badgeCount > 0 {
                                 Circle()
                                     .fill(Color.red)
                                     .frame(width: 8, height: 8)
