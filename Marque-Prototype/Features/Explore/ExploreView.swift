@@ -84,6 +84,11 @@ struct ExploreView: View {
                     PublicProfileView(ownerUID: target.uid, ownerUsername: target.username)
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                AskMarqueButton()
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
+            }
         }
     }
 

@@ -15,6 +15,8 @@ struct Marque_PrototypeApp: App {
     @StateObject private var blockStore = BlockStore()
     @StateObject private var notificationStore = NotificationStore()
     @StateObject private var smartcarStore = SmartcarStore()
+    @StateObject private var chatStore = ChatStore()
+    @StateObject private var featureFlagsStore = FeatureFlagsStore()
 
     init() {
         FirebaseApp.configure()
@@ -36,6 +38,8 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(blockStore)
                 .environmentObject(notificationStore)
                 .environmentObject(smartcarStore)
+                .environmentObject(chatStore)
+                .environmentObject(featureFlagsStore)
                 .environmentObject(appDelegate)
                 .onOpenURL { url in
                     // Smartcar Connect redirects back to marque://smartcar-callback.
@@ -49,6 +53,7 @@ struct Marque_PrototypeApp: App {
                         followStore.startListening(uid: user.id)
                         blockStore.startListening(uid: user.id)
                         notificationStore.startListening(uid: user.id)
+                        chatStore.startListening(uid: user.id)
                         Task { await subscriptionStore.load() }
                     } else {
                         carStore.stopListening()
@@ -56,6 +61,7 @@ struct Marque_PrototypeApp: App {
                         followStore.stopListening()
                         blockStore.stopListening()
                         notificationStore.stopListening()
+                        chatStore.stopListening()
                         subscriptionStore.reset()
                     }
                 }
@@ -85,6 +91,9 @@ private struct RootView: View {
             } else if !authService.isAuthenticated {
                 LoginView()
                     .transition(.opacity)
+            } else if !authService.isEmailVerified {
+                VerifyEmailView()
+                    .transition(.opacity)
             } else if !authService.hasCompletedProfileSetup {
                 ProfileSetupView()
                     .transition(.opacity)
@@ -95,6 +104,7 @@ private struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: authService.hasSeenOnboarding)
         .animation(.easeInOut(duration: 0.25), value: authService.isAuthenticated)
+        .animation(.easeInOut(duration: 0.25), value: authService.isEmailVerified)
         .animation(.easeInOut(duration: 0.25), value: authService.hasCompletedProfileSetup)
     }
 }

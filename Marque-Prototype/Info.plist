@@ -39,6 +39,8 @@
 	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Marque uses your camera to scan documents like your driver's license.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Marque uses your photo library to add photos of your cars.</string>
 	<key>UIApplicationSceneManifest</key>

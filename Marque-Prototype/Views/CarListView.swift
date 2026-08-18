@@ -59,13 +59,18 @@ struct CarListView: View {
                 EditProfileView()
             }
             .sheet(isPresented: $showingFollowers) {
-                FollowListView(mode: .followers, currentUserUID: user.id)
+                FollowListView(mode: .followers, uids: followStore.followerUIDs, currentUserUID: user.id)
             }
             .sheet(isPresented: $showingFollowing) {
-                FollowListView(mode: .following, currentUserUID: user.id)
+                FollowListView(mode: .following, uids: followStore.followingUIDs, currentUserUID: user.id)
             }
             .onChange(of: appDelegate.pendingCarID) { _, _ in tryDeepLinkNavigation() }
             .onChange(of: carStore.cars) { _, _ in tryDeepLinkNavigation() }
+            .overlay(alignment: .bottomTrailing) {
+                AskMarqueButton()
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
+            }
         }
     }
 

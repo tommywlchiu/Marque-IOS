@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import Photos
+import VisionKit
 
 // One photo in the editor's working list. Either it's already on disk
 // (`.existing`) or the user just picked it and we haven't saved it yet
@@ -64,6 +65,22 @@ struct EditCarDetailView: View {
     @State private var slotPendingRemoval: PhotoSlot?
     @State private var showingPermissionDenied = false
 
+    // MARK: - Insurance scan state
+
+    @State private var showingInsuranceScanner = false
+    @State private var isScanningInsurance = false
+    @State private var insuranceScanResult: InsuranceScanPreview?
+    @State private var insuranceScanError: DocumentScanService.ScanError?
+
+    private let scanService = DocumentScanService()
+
+    fileprivate struct InsuranceScanPreview: Identifiable {
+        let id = UUID()
+        let provider: String
+        let policyNumber: String
+        let expiryDate: Date?
+    }
+
     var isFormValid: Bool {
         !make.trimmingCharacters(in: .whitespaces).isEmpty &&
         !model.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -74,159 +91,236 @@ struct EditCarDetailView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                photoSection
+            formContent
+                .navigationTitle("Edit Car Details")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { toolbarContent }
+                .modifier(PhotoPickerPresenters(
+                    showingPicker: $showingPicker,
+                    selectedItems: $selectedItems,
+                    showingPermissionDenied: $showingPermissionDenied,
+                    slotPendingRemoval: $slotPendingRemoval,
+                    onPickedItems: { items in
+                        guard !items.isEmpty else { return }
+                        Task { await loadPickedPhotos(items) }
+                    },
+                    onRemoveConfirmed: { slot in remove(slot: slot) }
+                ))
+                .modifier(InsuranceScanPresenters(
+                    showingScanner: $showingInsuranceScanner,
+                    scanResult: $insuranceScanResult,
+                    scanError: $insuranceScanError,
+                    onImageScanned: { image in
+                        Task { await processInsuranceScan(image) }
+                    },
+                    applyScanResult: { applyInsuranceScan($0) }
+                ))
+                .onAppear { populateFields() }
+        }
+    }
 
-                Section(header: Text("Basic Information")) {
-                    Picker("Make", selection: $make) {
-                        Text("Select a make").tag("")
-                        ForEach(CarData.makes, id: \.self) { Text($0).tag($0) }
-                    }
-                    TextField("Model (e.g. Camry, 3 Series)", text: $model)
-                        .autocorrectionDisabled()
-                    TextField("Year (e.g. 2024)", text: $year)
-                        .keyboardType(.numberPad)
+    // MARK: - Form composition
+
+    // Split into a computed property so the type checker solves each Section
+    // independently. Prior to this split, chaining every Section inline with
+    // the trailing modifier chain (toolbar, alerts, PhotosPicker, three
+    // presenters) blew past Swift's type-checking budget.
+    @ViewBuilder
+    private var formContent: some View {
+        Form {
+            photoSection
+            basicInfoSection
+            registrationSection
+            vehicleDetailsSection
+            insuranceSection
+            notesSection
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Cancel") { dismiss() }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            Button("Save") { saveCar() }
+                .disabled(!isFormValid)
+                .fontWeight(.semibold)
+        }
+    }
+
+    private var basicInfoSection: some View {
+        Section(header: Text("Basic Information")) {
+            Picker("Make", selection: $make) {
+                Text("Select a make").tag("")
+                ForEach(CarData.makes, id: \.self) { Text($0).tag($0) }
+            }
+            TextField("Model (e.g. Camry, 3 Series)", text: $model)
+                .autocorrectionDisabled()
+            TextField("Year (e.g. 2024)", text: $year)
+                .keyboardType(.numberPad)
+        }
+    }
+
+    private var registrationSection: some View {
+        Section(header: Text("Registration & Identification")) {
+            TextField("License Plate Number", text: $licensePlate)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.characters)
+            TextField("VIN Number", text: $vinNumber)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.characters)
+
+            Toggle("Registration Expiry Date", isOn: $hasRegistrationExpiry.animation())
+                .onChange(of: hasRegistrationExpiry) { _, isOn in
+                    if isOn { NotificationManager.requestPermission() }
                 }
+            if hasRegistrationExpiry {
+                DatePicker("Expires", selection: $registrationExpiryDate, displayedComponents: .date)
+            }
+        }
+    }
 
-                Section(header: Text("Registration & Identification")) {
-                    TextField("License Plate Number", text: $licensePlate)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.characters)
-                    TextField("VIN Number", text: $vinNumber)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.characters)
+    private var vehicleDetailsSection: some View {
+        Section(header: Text("Vehicle Details")) {
+            TextField("Color (e.g. Silver, Black)", text: $color)
+            TextField("Mileage (e.g. 25,000 mi)", text: $mileage)
+                .keyboardType(.numberPad)
 
-                    Toggle("Registration Expiry Date", isOn: $hasRegistrationExpiry.animation())
-                        .onChange(of: hasRegistrationExpiry) { _, isOn in
-                            if isOn { NotificationManager.requestPermission() }
-                        }
-                    if hasRegistrationExpiry {
-                        DatePicker("Expires", selection: $registrationExpiryDate, displayedComponents: .date)
-                    }
+            Picker("Fuel Type", selection: $fuelType) {
+                Text("Select").tag("")
+                Text("Gasoline").tag("Gasoline")
+                Text("Diesel").tag("Diesel")
+                Text("Electric").tag("Electric")
+                Text("Hybrid").tag("Hybrid")
+                Text("Plug-in Hybrid").tag("Plug-in Hybrid")
+                Text("Flex Fuel").tag("Flex Fuel")
+            }
+
+            Picker("Transmission", selection: $transmission) {
+                Text("Select").tag("")
+                Text("Automatic").tag("Automatic")
+                Text("Manual").tag("Manual")
+                Text("CVT").tag("CVT")
+                Text("Dual-Clutch").tag("Dual-Clutch")
+            }
+
+            TextField("Trim (e.g. EX-L, Sport, XLE)", text: $trim)
+                .autocorrectionDisabled()
+
+            Picker("Body Style", selection: $bodyStyle) {
+                Text("Select").tag("")
+                Text("Sedan").tag("Sedan")
+                Text("Coupe").tag("Coupe")
+                Text("Hatchback").tag("Hatchback")
+                Text("SUV").tag("SUV")
+                Text("Crossover").tag("Crossover")
+                Text("Pickup").tag("Pickup")
+                Text("Van").tag("Van")
+                Text("Minivan").tag("Minivan")
+                Text("Wagon").tag("Wagon")
+                Text("Convertible").tag("Convertible")
+            }
+
+            Picker("Drive Type", selection: $driveType) {
+                Text("Select").tag("")
+                Text("FWD").tag("FWD")
+                Text("RWD").tag("RWD")
+                Text("AWD").tag("AWD")
+                Text("4WD").tag("4WD")
+            }
+
+            TextField("Engine (e.g. 2.5L 4-Cylinder)", text: $engine)
+                .autocorrectionDisabled()
+        }
+    }
+
+    private var insuranceSection: some View {
+        Section(header: Text("Insurance Information")) {
+            scanInsuranceRow
+
+            Picker("Insurance Provider", selection: $insuranceProvider) {
+                Text("Select a provider").tag("")
+                ForEach(CarData.insuranceProviders, id: \.self) { Text($0).tag($0) }
+            }
+            TextField("Policy Number", text: $insurancePolicyNumber)
+                .autocorrectionDisabled()
+
+            Toggle("Insurance Expiry Date", isOn: $hasInsuranceExpiry.animation())
+                .onChange(of: hasInsuranceExpiry) { _, isOn in
+                    if isOn { NotificationManager.requestPermission() }
                 }
+            if hasInsuranceExpiry {
+                DatePicker("Expires", selection: $insuranceExpiryDate, displayedComponents: .date)
+            }
+        }
+    }
 
-                Section(header: Text("Vehicle Details")) {
-                    TextField("Color (e.g. Silver, Black)", text: $color)
-                    TextField("Mileage (e.g. 25,000 mi)", text: $mileage)
-                        .keyboardType(.numberPad)
+    private var notesSection: some View {
+        Section(header: Text("Notes")) {
+            TextEditor(text: $notes)
+                .frame(minHeight: 80)
+        }
+    }
 
-                    Picker("Fuel Type", selection: $fuelType) {
-                        Text("Select").tag("")
-                        Text("Gasoline").tag("Gasoline")
-                        Text("Diesel").tag("Diesel")
-                        Text("Electric").tag("Electric")
-                        Text("Hybrid").tag("Hybrid")
-                        Text("Plug-in Hybrid").tag("Plug-in Hybrid")
-                        Text("Flex Fuel").tag("Flex Fuel")
-                    }
+    // MARK: - Insurance scan
 
-                    Picker("Transmission", selection: $transmission) {
-                        Text("Select").tag("")
-                        Text("Automatic").tag("Automatic")
-                        Text("Manual").tag("Manual")
-                        Text("CVT").tag("CVT")
-                        Text("Dual-Clutch").tag("Dual-Clutch")
-                    }
-
-                    TextField("Trim (e.g. EX-L, Sport, XLE)", text: $trim)
-                        .autocorrectionDisabled()
-
-                    Picker("Body Style", selection: $bodyStyle) {
-                        Text("Select").tag("")
-                        Text("Sedan").tag("Sedan")
-                        Text("Coupe").tag("Coupe")
-                        Text("Hatchback").tag("Hatchback")
-                        Text("SUV").tag("SUV")
-                        Text("Crossover").tag("Crossover")
-                        Text("Pickup").tag("Pickup")
-                        Text("Van").tag("Van")
-                        Text("Minivan").tag("Minivan")
-                        Text("Wagon").tag("Wagon")
-                        Text("Convertible").tag("Convertible")
-                    }
-
-                    Picker("Drive Type", selection: $driveType) {
-                        Text("Select").tag("")
-                        Text("FWD").tag("FWD")
-                        Text("RWD").tag("RWD")
-                        Text("AWD").tag("AWD")
-                        Text("4WD").tag("4WD")
-                    }
-
-                    TextField("Engine (e.g. 2.5L 4-Cylinder)", text: $engine)
-                        .autocorrectionDisabled()
-                }
-
-                Section(header: Text("Insurance Information")) {
-                    Picker("Insurance Provider", selection: $insuranceProvider) {
-                        Text("Select a provider").tag("")
-                        ForEach(CarData.insuranceProviders, id: \.self) { Text($0).tag($0) }
-                    }
-                    TextField("Policy Number", text: $insurancePolicyNumber)
-                        .autocorrectionDisabled()
-
-                    Toggle("Insurance Expiry Date", isOn: $hasInsuranceExpiry.animation())
-                        .onChange(of: hasInsuranceExpiry) { _, isOn in
-                            if isOn { NotificationManager.requestPermission() }
-                        }
-                    if hasInsuranceExpiry {
-                        DatePicker("Expires", selection: $insuranceExpiryDate, displayedComponents: .date)
-                    }
-                }
-
-                Section(header: Text("Notes")) {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 80)
+    private var scanInsuranceRow: some View {
+        Button {
+            if VNDocumentCameraViewController.isSupported {
+                showingInsuranceScanner = true
+            } else {
+                insuranceScanError = .cameraUnsupported
+            }
+        } label: {
+            HStack {
+                Label("Scan Insurance Card", systemImage: "doc.text.viewfinder")
+                Spacer()
+                if isScanningInsurance {
+                    ProgressView()
                 }
             }
-            .navigationTitle("Edit Car Details")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { saveCar() }
-                        .disabled(!isFormValid)
-                        .fontWeight(.semibold)
-                }
-            }
-            .alert("Photo Access Required", isPresented: $showingPermissionDenied) {
-                Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("To add car photos, allow Marque to access your photo library in Settings > Privacy > Photos.")
-            }
-            .photosPicker(
-                isPresented: $showingPicker,
-                selection: $selectedItems,
-                maxSelectionCount: 10,
-                matching: .images,
-                photoLibrary: .shared()
+        }
+        .disabled(isScanningInsurance)
+    }
+
+    private func processInsuranceScan(_ image: UIImage) async {
+        isScanningInsurance = true
+        insuranceScanError = nil
+        defer { isScanningInsurance = false }
+
+        do {
+            let result = try await scanService.scanInsuranceCard(image: image)
+            insuranceScanResult = InsuranceScanPreview(
+                provider: result.provider,
+                policyNumber: result.policyNumber,
+                expiryDate: result.expiryDate
             )
-            .onChange(of: selectedItems) { _, items in
-                guard !items.isEmpty else { return }
-                Task { await loadPickedPhotos(items) }
-            }
-            .confirmationDialog(
-                "Remove Photo",
-                isPresented: Binding(
-                    get: { slotPendingRemoval != nil },
-                    set: { if !$0 { slotPendingRemoval = nil } }
-                ),
-                titleVisibility: .visible,
-                presenting: slotPendingRemoval
-            ) { slot in
-                Button("Remove Photo", role: .destructive) { remove(slot: slot) }
-                Button("Cancel", role: .cancel) {}
-            } message: { _ in
-                Text("This will permanently remove the photo when you save.")
-            }
-            .onAppear { populateFields() }
+        } catch let error as DocumentScanService.ScanError {
+            insuranceScanError = error
+        } catch {
+            insuranceScanError = .unknown(error.localizedDescription)
+        }
+    }
+
+    // Merge-in policy: only overwrite a form field when the scan returned a
+    // non-empty value for it. Existing user input wins over blank scan output.
+    private func applyInsuranceScan(_ result: InsuranceScanPreview) {
+        if !result.provider.isEmpty {
+            // Snap to a known provider if the scanned name matches (case-insensitive)
+            // one from the picker's list; otherwise take the raw string. Values not in
+            // the list won't render in the Picker until we normalize, so the fallback
+            // is the closest match.
+            let matched = CarData.insuranceProviders.first { $0.caseInsensitiveCompare(result.provider) == .orderedSame }
+                ?? CarData.insuranceProviders.first(where: { result.provider.localizedCaseInsensitiveContains($0) })
+            insuranceProvider = matched ?? result.provider
+        }
+        if !result.policyNumber.isEmpty {
+            insurancePolicyNumber = result.policyNumber
+        }
+        if let expiry = result.expiryDate {
+            insuranceExpiryDate = expiry
+            hasInsuranceExpiry = true
         }
     }
 
@@ -549,5 +643,159 @@ struct EditCarDetailView: View {
         if let firstName = car.photoFileNames.first {
             primaryImage = ImageManager.loadImage(fileName: firstName)
         }
+    }
+}
+
+// MARK: - Presenter modifiers
+//
+// These wrap the two clusters of modifier-chain presenters (photo picker /
+// permission alert / removal confirmation dialog, and the insurance scan
+// fullScreenCover / sheet / alert) so the outer `body` composes only a
+// handful of terms. Keeping each cluster in its own ViewModifier gives the
+// Swift type checker a small, closed subtree to solve — the whole point of
+// the refactor that unblocked the "unable to type-check in reasonable time"
+// error.
+
+private struct PhotoPickerPresenters: ViewModifier {
+    @Binding var showingPicker: Bool
+    @Binding var selectedItems: [PhotosPickerItem]
+    @Binding var showingPermissionDenied: Bool
+    @Binding var slotPendingRemoval: PhotoSlot?
+    let onPickedItems: ([PhotosPickerItem]) -> Void
+    let onRemoveConfirmed: (PhotoSlot) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Photo Access Required", isPresented: $showingPermissionDenied) {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("To add car photos, allow Marque to access your photo library in Settings > Privacy > Photos.")
+            }
+            .photosPicker(
+                isPresented: $showingPicker,
+                selection: $selectedItems,
+                maxSelectionCount: 10,
+                matching: .images,
+                photoLibrary: .shared()
+            )
+            .onChange(of: selectedItems) { _, items in
+                onPickedItems(items)
+            }
+            .confirmationDialog(
+                "Remove Photo",
+                isPresented: Binding(
+                    get: { slotPendingRemoval != nil },
+                    set: { if !$0 { slotPendingRemoval = nil } }
+                ),
+                titleVisibility: .visible,
+                presenting: slotPendingRemoval
+            ) { slot in
+                Button("Remove Photo", role: .destructive) { onRemoveConfirmed(slot) }
+                Button("Cancel", role: .cancel) {}
+            } message: { _ in
+                Text("This will permanently remove the photo when you save.")
+            }
+    }
+}
+
+private struct InsuranceScanPresenters: ViewModifier {
+    @Binding var showingScanner: Bool
+    @Binding var scanResult: EditCarDetailView.InsuranceScanPreview?
+    @Binding var scanError: DocumentScanService.ScanError?
+    let onImageScanned: (UIImage) -> Void
+    let applyScanResult: (EditCarDetailView.InsuranceScanPreview) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .fullScreenCover(isPresented: $showingScanner) {
+                DocumentScannerView(
+                    onScan: { image in
+                        showingScanner = false
+                        onImageScanned(image)
+                    },
+                    onCancel: { showingScanner = false },
+                    onError: { error in
+                        showingScanner = false
+                        scanError = .unknown(error.localizedDescription)
+                    }
+                )
+                .ignoresSafeArea()
+            }
+            .sheet(item: $scanResult) { result in
+                InsuranceScanConfirmationSheet(
+                    result: result,
+                    onUse: { applyScanResult(result) }
+                )
+            }
+            .alert(
+                scanError?.alertTitle ?? "Scan Failed",
+                isPresented: Binding(
+                    get: { scanError != nil },
+                    set: { if !$0 { scanError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(scanError?.errorDescription ?? "")
+            }
+    }
+}
+
+// MARK: - Insurance scan confirmation sheet
+
+private struct InsuranceScanConfirmationSheet: View {
+    let result: EditCarDetailView.InsuranceScanPreview
+    let onUse: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text("Review what we found, then tap Use These to fill in the form. You can edit anything before saving.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+
+                Section("Extracted") {
+                    LabeledContent("Provider", value: displayValue(result.provider))
+                    LabeledContent("Policy Number", value: displayValue(result.policyNumber))
+                    LabeledContent("Expires", value: displayExpiry(result.expiryDate))
+                }
+            }
+            .navigationTitle("Scan Result")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Use These") {
+                        onUse()
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                    .disabled(!hasAnyValue)
+                }
+            }
+        }
+    }
+
+    private var hasAnyValue: Bool {
+        !result.provider.isEmpty || !result.policyNumber.isEmpty || result.expiryDate != nil
+    }
+
+    private func displayValue(_ s: String) -> String {
+        s.isEmpty ? "—" : s
+    }
+
+    private func displayExpiry(_ date: Date?) -> String {
+        guard let date else { return "—" }
+        return date.formatted(date: .abbreviated, time: .omitted)
     }
 }

@@ -14,6 +14,10 @@ struct AddReminderView: View {
     @State private var useMileageTrigger = false
     @State private var dueMileageText = ""
 
+    private var car: Car? {
+        carStore.cars.first(where: { $0.id == carID })
+    }
+
     private var resolvedServiceType: String {
         serviceType == "Other" ? customServiceType.trimmingCharacters(in: .whitespaces) : serviceType
     }
@@ -38,7 +42,7 @@ struct AddReminderView: View {
                     }
                 }
 
-                Section("When") {
+                Section {
                     Toggle("Set due date", isOn: $useDateTrigger.animation())
                     if useDateTrigger {
                         DatePicker("Due", selection: $dueDate, displayedComponents: .date)
@@ -48,6 +52,12 @@ struct AddReminderView: View {
                     if useMileageTrigger {
                         TextField("Due mileage (e.g. 50000)", text: $dueMileageText)
                             .keyboardType(.numberPad)
+                    }
+                } header: {
+                    Text("When")
+                } footer: {
+                    if useDateTrigger && useMileageTrigger {
+                        Text("Whichever comes first will trigger the reminder.")
                     }
                 }
 
@@ -77,6 +87,63 @@ struct AddReminderView: View {
                         .fontWeight(.semibold)
                 }
             }
+            .onAppear { configureDefaults(for: serviceType) }
+            .onChange(of: serviceType) { _, newType in configureDefaults(for: newType) }
+        }
+    }
+
+    // Auto-configures both triggers + their values based on the picked service
+    // type. Time-driven services get a date-only default; mileage-driven get
+    // mileage-only; safety/engine-critical get both.
+    //
+    // Mileage is anchored to the last service of this type when available,
+    // otherwise to current mileage; if neither is set, we skip the mileage
+    // trigger entirely (falling back to a date-only default so `canSave`
+    // still evaluates true).
+    //
+    // Trade-off: re-runs on every picker change, which will overwrite manual
+    // tweaks the user made before switching service types. Acceptable — the
+    // typical flow is "pick service, accept defaults."
+    private func configureDefaults(for type: String) {
+        guard let car else { return }
+
+        let months: Int?
+        let miles: Int?
+        if let interval = ServiceReminderEngine.interval(for: type) {
+            months = interval.months
+            miles = interval.miles
+        } else {
+            // Unknown service type (e.g., "Other") — sensible default of
+            // date-only 6 months. User can adjust or add mileage manually.
+            months = 6
+            miles = nil
+        }
+
+        // Date trigger
+        if let m = months {
+            useDateTrigger = true
+            let anchor = ServiceReminderEngine.dateAnchor(for: type, car: car)
+            dueDate = Calendar.current.date(byAdding: .month, value: m, to: anchor) ?? Date()
+        } else {
+            useDateTrigger = false
+        }
+
+        // Mileage trigger — only if we have both a known interval AND a
+        // mileage anchor to compute the next occurrence from.
+        if let mi = miles, let anchor = ServiceReminderEngine.mileageAnchor(for: type, car: car) {
+            useMileageTrigger = true
+            dueMileageText = String(ServiceReminderEngine.roundedMileage(anchor + mi))
+        } else {
+            useMileageTrigger = false
+            dueMileageText = ""
+        }
+
+        // Safety net: if we ended up with neither trigger enabled (mileage-
+        // only service with no mileage anchor), flip on the date trigger with
+        // a 6-month default so the form remains submittable.
+        if !useDateTrigger && !useMileageTrigger {
+            useDateTrigger = true
+            dueDate = Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date()
         }
     }
 

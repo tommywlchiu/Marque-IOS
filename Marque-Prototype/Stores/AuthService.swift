@@ -18,6 +18,7 @@ class AuthService: NSObject, ObservableObject {
     @Published var authState: AuthState = .unauthenticated
     @Published var hasSeenOnboarding: Bool
     @Published var hasCompletedProfileSetup: Bool = false
+    @Published var isEmailVerified: Bool = false
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -52,6 +53,7 @@ class AuthService: NSObject, ObservableObject {
                 if let fu = firebaseUser {
                     let p = LocalProfile.load(uid: fu.uid)
                     self.hasCompletedProfileSetup = p.hasCompletedProfileSetup
+                    self.isEmailVerified = fu.isEmailVerified
                     self.authState = .authenticated(AppUser(firebaseUser: fu, profile: (
                         username: p.username,
                         bio: p.bio,
@@ -68,6 +70,7 @@ class AuthService: NSObject, ObservableObject {
                     Task { await self.syncProStatusFromFirestore(uid: fu.uid) }
                 } else {
                     self.hasCompletedProfileSetup = false
+                    self.isEmailVerified = false
                     self.authState = .unauthenticated
                 }
             }
@@ -116,6 +119,11 @@ class AuthService: NSObject, ObservableObject {
             changeRequest.displayName = displayName.trimmingCharacters(in: .whitespaces)
             try await changeRequest.commitChanges()
 
+            // Send the verification email as part of signup so the user
+            // lands on VerifyEmailView with a fresh link already in their inbox.
+            // Failure is non-fatal — the user can hit "Resend" if it didn't arrive.
+            try? await result.user.sendEmailVerification()
+
             let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
             let trimmedName = displayName.trimmingCharacters(in: .whitespaces)
             let resolved = !trimmedUsername.isEmpty ? trimmedUsername : trimmedName
@@ -123,6 +131,30 @@ class AuthService: NSObject, ObservableObject {
         } catch {
             errorMessage = authErrorMessage(from: error)
         }
+    }
+
+    // MARK: - Email Verification
+
+    // Re-sends the verification link. Returns true on success so the caller
+    // can show a "sent" confirmation and start its cooldown.
+    func resendVerificationEmail() async -> Bool {
+        guard let firebaseUser = Auth.auth().currentUser else { return false }
+        do {
+            try await firebaseUser.sendEmailVerification()
+            return true
+        } catch {
+            errorMessage = authErrorMessage(from: error)
+            return false
+        }
+    }
+
+    // Refreshes the Firebase user so isEmailVerified reflects what the server
+    // sees right now (the state listener doesn't fire on reload). Call this
+    // when the user taps "I've Verified" or when the app returns to foreground.
+    func reloadEmailVerification() async {
+        guard let firebaseUser = Auth.auth().currentUser else { return }
+        try? await firebaseUser.reload()
+        isEmailVerified = Auth.auth().currentUser?.isEmailVerified ?? false
     }
 
     // MARK: - Apple Sign In
@@ -242,33 +274,86 @@ class AuthService: NSObject, ObservableObject {
     func updateProfile(displayName: String, username: String, bio: String, location: String, avatarFileName: String? = nil) {
         guard case .authenticated(var user) = authState,
               let firebaseUser = Auth.auth().currentUser else { return }
+        let uid = firebaseUser.uid
 
         let changeRequest = firebaseUser.createProfileChangeRequest()
         changeRequest.displayName = displayName
         changeRequest.commitChanges(completion: nil)
 
-        var profile = LocalProfile.load(uid: firebaseUser.uid)
+        var profile = LocalProfile.load(uid: uid)
         profile.username = username
         profile.bio = bio
         profile.location = location
         if let avatarFileName { profile.avatarFileName = avatarFileName }
-        profile.save(uid: firebaseUser.uid)
+        profile.save(uid: uid)
 
-        // Sync to Firestore so public profile reads return current data.
-        // Note: we intentionally do NOT touch `username` or `isPro` here — username
-        // changes require the atomic claim flow in completeProfileSetup, and isPro
-        // is owned by SubscriptionStore.
-        userDocument(uid: firebaseUser.uid).setData([
-            "displayName": displayName,
-            "bio": bio,
-            "avatarURL": profile.avatarStorageURL ?? firebaseUser.photoURL?.absoluteString ?? ""
-        ], merge: true)
-
+        // Update the in-memory user immediately so SwiftUI re-renders the avatar
+        // this frame. UserAvatar tries ImageManager.loadImage(fileName:) first,
+        // so a filename value works for instant local display while the cloud
+        // upload runs in the background below.
         user.displayName = displayName
         user.username = username
         user.bio = bio
         user.location = location
+        if let avatarFileName { user.avatarURL = avatarFileName }
         authState = .authenticated(user)
+
+        // Sync non-avatar fields to Firestore right away. When the avatar
+        // changed, defer the avatarURL write until we have the Storage URL —
+        // writing the stale storage URL here would immediately overwrite the
+        // fresh one from the background upload.
+        // Username and isPro are intentionally excluded: username needs the
+        // atomic claim in completeProfileSetup, isPro is owned by SubscriptionStore.
+        var firestorePayload: [String: Any] = [
+            "displayName": displayName,
+            "bio": bio,
+        ]
+        if avatarFileName == nil {
+            firestorePayload["avatarURL"] = profile.avatarStorageURL ?? firebaseUser.photoURL?.absoluteString ?? ""
+        }
+        userDocument(uid: uid).setData(firestorePayload, merge: true)
+
+        if let avatarFileName {
+            Task { await self.uploadAvatarToStorage(uid: uid, fileName: avatarFileName) }
+        }
+    }
+
+    // Uploads a locally-saved avatar to Firebase Storage, then reconciles the
+    // storage URL to LocalProfile, Firestore, Firebase Auth's photoURL, and
+    // the in-memory AppUser. On failure the local image stays visible; the
+    // user can retry by saving the profile again.
+    private func uploadAvatarToStorage(uid: String, fileName: String) async {
+        guard let image = ImageManager.loadImage(fileName: fileName),
+              let data = image.jpegData(compressionQuality: 0.8) else { return }
+        do {
+            let ref = Storage.storage().reference().child("users/\(uid)/avatar.jpg")
+            _ = try await ref.putDataAsync(data)
+            let url = try await ref.downloadURL()
+            let urlString = url.absoluteString
+
+            var stored = LocalProfile.load(uid: uid)
+            stored.avatarStorageURL = urlString
+            stored.save(uid: uid)
+
+            try? await userDocument(uid: uid).setData(["avatarURL": urlString], merge: true)
+
+            if let firebaseUser = Auth.auth().currentUser, firebaseUser.uid == uid {
+                let change = firebaseUser.createProfileChangeRequest()
+                change.photoURL = url
+                try? await change.commitChanges()
+            }
+
+            // Swap the in-memory user's avatarURL to the remote URL so future
+            // renders (and any subsequent cache invalidations) prefer the
+            // authoritative Storage URL over the local filename.
+            if case .authenticated(var current) = self.authState, current.id == uid {
+                current.avatarURL = urlString
+                self.authState = .authenticated(current)
+            }
+        } catch {
+            // Non-fatal — the local file is still displayed. Log left off to
+            // avoid noise; the user can retry from Edit Profile.
+        }
     }
 
     // MARK: - Profile Setup

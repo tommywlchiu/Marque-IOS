@@ -1,0 +1,15 @@
+{
+  "parameters": {
+    "marque_assistant_enabled": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "valueType": "BOOLEAN",
+      "description": "Gates the floating 'Ask Marque' button and, transitively, all askMarque Cloud Function traffic. Defaults false per FR-10.22 (phased rollout). Add a condition below to enable for a subset of users."
+    }
+  },
+  "conditions": [],
+  "version": {
+    "description": "Initial template — marque_assistant_enabled false everywhere."
+  }
+}

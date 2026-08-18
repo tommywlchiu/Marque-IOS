@@ -4,6 +4,7 @@ struct FollowListView: View {
     enum Mode { case following, followers }
 
     let mode: Mode
+    let uids: Set<String>
     let currentUserUID: String
 
     @EnvironmentObject var exploreStore: ExploreStore
@@ -16,10 +17,6 @@ struct FollowListView: View {
     @State private var searchText = ""
 
     private var title: String { mode == .following ? "Following" : "Followers" }
-
-    private var uidsToLoad: Set<String> {
-        mode == .following ? followStore.followingUIDs : followStore.followerUIDs
-    }
 
     private var filtered: [PublicUserProfile] {
         guard !searchText.isEmpty else { return profiles }
@@ -69,7 +66,7 @@ struct FollowListView: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .task(id: uidsToLoad) { await load() }
+            .task(id: uids) { await load() }
         }
     }
 
@@ -77,7 +74,7 @@ struct FollowListView: View {
         isLoading = true
         var loaded: [PublicUserProfile] = []
         await withTaskGroup(of: PublicUserProfile?.self) { group in
-            for uid in uidsToLoad {
+            for uid in uids {
                 group.addTask { await exploreStore.fetchUserProfile(uid: uid) }
             }
             for await profile in group {

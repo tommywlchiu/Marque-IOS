@@ -23,6 +23,14 @@ struct CarDetailView: View {
     @State private var galleryStartIndex: Int?
     @State private var showingDisconnectConfirmation = false
 
+    // Focused-sheet add/edit flows — one per section. Consolidated with the
+    // above state to make it obvious that every "add/edit" surface here is a
+    // sheet, not a full-form drop-in or a navigation push.
+    @State private var showingEditRegistration = false
+    @State private var showingEditVehicleDetails = false
+    @State private var showingEditInsurance = false
+    @State private var showingAddReminder = false
+
     init(car: Car) {
         self._ownCar = State(initialValue: car)
         self.publicCar = nil
@@ -141,6 +149,17 @@ struct CarDetailView: View {
                 carStore.updateCar(ownCar!)
             }
         }
+        .modifier(FocusedEditPresenters(
+            liveCar: liveCar,
+            showingEditRegistration: $showingEditRegistration,
+            showingEditVehicleDetails: $showingEditVehicleDetails,
+            showingEditInsurance: $showingEditInsurance,
+            showingAddReminder: $showingAddReminder,
+            onSave: { updated in
+                ownCar = updated
+                carStore.updateCar(updated)
+            }
+        ))
         .sheet(isPresented: $showingOwnerProfile) {
             if let pc = publicCar {
                 NavigationStack {
@@ -197,6 +216,13 @@ struct CarDetailView: View {
             Button("OK", role: .cancel) { smartcarStore.clearError() }
         } message: { message in
             Text(message)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if let car = liveCar {
+                AskMarqueButton(scopedCarId: car.id.uuidString)
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
+            }
         }
     }
 
@@ -398,21 +424,58 @@ struct CarDetailView: View {
         }
     }
 
+    // MARK: - Section header / empty-row helpers
+    //
+    // All four editable sections (Registration, Insurance, Reminders,
+    // Maintenance) use the same visual language via these helpers. The rule:
+    //  - `addHeader`: list-type sections (Reminders, Maintenance) — always
+    //    shows a "+" so the user can add more.
+    //  - `editHeader`: single-record sections (Registration, Insurance) —
+    //    only shows a pencil when there's data to edit; otherwise the empty
+    //    state IS the entry point.
+    //  - `emptySectionRow`: consistent inline empty-state button used inside
+    //    a Section body when there are no records yet.
+
+    private func addHeader(_ title: String, action: @escaping () -> Void) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Button(action: action) {
+                Image(systemName: "plus.circle.fill").font(.subheadline)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add \(title.lowercased())")
+        }
+    }
+
+    private func editHeader(_ title: String, action: @escaping () -> Void) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Button(action: action) {
+                Image(systemName: "pencil.circle.fill").font(.subheadline)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Edit \(title.lowercased())")
+        }
+    }
+
+    private func emptySectionRow(_ title: String, systemImage: String = "plus.circle", action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .foregroundColor(.accentColor)
+        }
+    }
+
     // MARK: - Registration (own only — contains private fields)
 
     private var registrationSection: some View {
-        Section(header: Text("Registration & Identification")) {
-            if let car = liveCar,
-               car.licensePlate.isEmpty && car.vinNumber.isEmpty && car.registrationExpiryDate == nil {
-                Button {
-                    showingEditDetails = true
-                } label: {
-                    Label("Add License Plate & VIN", systemImage: "plus.circle")
-                        .foregroundColor(.accentColor)
-                }
-            } else if let car = liveCar {
-                DetailRow(label: "License Plate", value: car.licensePlate)
-                DetailRow(label: "VIN Number", value: car.vinNumber)
+        let hasData = liveCar.map { !$0.licensePlate.isEmpty || !$0.vinNumber.isEmpty || $0.registrationExpiryDate != nil } ?? false
+
+        return Section(header: sectionHeader(title: "Registration & Identification", hasData: hasData, edit: { showingEditRegistration = true })) {
+            if let car = liveCar, hasData {
+                if !car.licensePlate.isEmpty { DetailRow(label: "License Plate", value: car.licensePlate) }
+                if !car.vinNumber.isEmpty { DetailRow(label: "VIN Number", value: car.vinNumber) }
                 if let regDate = car.registrationExpiryDate {
                     ExpiryRow(
                         label: "Registration Expires",
@@ -421,29 +484,48 @@ struct CarDetailView: View {
                         isExpiringSoon: car.isRegistrationExpiringSoon
                     )
                 }
+            } else {
+                emptySectionRow("Add License Plate & VIN") { showingEditRegistration = true }
             }
+        }
+    }
+
+    // Section header that swaps between plain title (empty) and title-with-edit
+    // (populated). Used by both single-record sections below.
+    @ViewBuilder
+    private func sectionHeader(title: String, hasData: Bool, edit: @escaping () -> Void) -> some View {
+        if hasData {
+            editHeader(title, action: edit)
+        } else {
+            Text(title)
         }
     }
 
     // MARK: - Vehicle Details (own — has empty-state CTA)
 
     private var vehicleDetailsSection: some View {
-        Section(header: Text("Vehicle Details")) {
-            if let car = liveCar,
-               !car.hasDetailedInfo && car.licensePlate.isEmpty && car.vinNumber.isEmpty {
-                Button {
-                    showingEditDetails = true
-                } label: {
-                    Label("Add Vehicle Details", systemImage: "plus.circle")
-                        .foregroundColor(.accentColor)
-                }
+        let hasData = liveCar.map(hasVehicleDetailsData) ?? false
+
+        return Section(header: sectionHeader(title: "Vehicle Details", hasData: hasData, edit: { showingEditVehicleDetails = true })) {
+            if let car = liveCar, hasData {
+                if !car.color.isEmpty        { DetailRow(label: "Color", value: car.color) }
+                if !car.mileage.isEmpty      { DetailRow(label: "Mileage", value: car.mileage) }
+                if !car.fuelType.isEmpty     { DetailRow(label: "Fuel Type", value: car.fuelType) }
+                if !car.transmission.isEmpty { DetailRow(label: "Transmission", value: car.transmission) }
+                if !car.trim.isEmpty         { DetailRow(label: "Trim", value: car.trim) }
+                if !car.bodyStyle.isEmpty    { DetailRow(label: "Body Style", value: car.bodyStyle) }
+                if !car.driveType.isEmpty    { DetailRow(label: "Drive Type", value: car.driveType) }
+                if !car.engine.isEmpty       { DetailRow(label: "Engine", value: car.engine) }
             } else {
-                DetailRow(label: "Color", value: color)
-                DetailRow(label: "Mileage", value: mileage)
-                DetailRow(label: "Fuel Type", value: fuelType)
-                DetailRow(label: "Transmission", value: transmission)
+                emptySectionRow("Add Vehicle Details") { showingEditVehicleDetails = true }
             }
         }
+    }
+
+    private func hasVehicleDetailsData(_ car: Car) -> Bool {
+        !car.color.isEmpty || !car.mileage.isEmpty || !car.fuelType.isEmpty ||
+            !car.transmission.isEmpty || !car.trim.isEmpty || !car.bodyStyle.isEmpty ||
+            !car.driveType.isEmpty || !car.engine.isEmpty
     }
 
     // MARK: - Smartcar (Connected Vehicle)
@@ -602,18 +684,12 @@ struct CarDetailView: View {
     // MARK: - Insurance (own only — private fields)
 
     private var insuranceSection: some View {
-        Section(header: Text("Insurance")) {
-            if let car = liveCar,
-               car.insuranceProvider.isEmpty && car.insurancePolicyNumber.isEmpty && car.insuranceExpiryDate == nil {
-                Button {
-                    showingEditDetails = true
-                } label: {
-                    Label("Add Insurance Info", systemImage: "plus.circle")
-                        .foregroundColor(.accentColor)
-                }
-            } else if let car = liveCar {
-                DetailRow(label: "Provider", value: car.insuranceProvider)
-                DetailRow(label: "Policy Number", value: car.insurancePolicyNumber)
+        let hasData = liveCar.map { !$0.insuranceProvider.isEmpty || !$0.insurancePolicyNumber.isEmpty || $0.insuranceExpiryDate != nil } ?? false
+
+        return Section(header: sectionHeader(title: "Insurance", hasData: hasData, edit: { showingEditInsurance = true })) {
+            if let car = liveCar, hasData {
+                if !car.insuranceProvider.isEmpty { DetailRow(label: "Provider", value: car.insuranceProvider) }
+                if !car.insurancePolicyNumber.isEmpty { DetailRow(label: "Policy Number", value: car.insurancePolicyNumber) }
                 if let insDate = car.insuranceExpiryDate {
                     ExpiryRow(
                         label: "Insurance Expires",
@@ -622,6 +698,8 @@ struct CarDetailView: View {
                         isExpiringSoon: car.isInsuranceExpiringSoon
                     )
                 }
+            } else {
+                emptySectionRow("Add Insurance Info") { showingEditInsurance = true }
             }
         }
     }
@@ -655,21 +733,27 @@ struct CarDetailView: View {
     // MARK: - Reminders (own only)
 
     private var remindersSection: some View {
-        Section(header: Text("Service Reminders")) {
+        Section(header: addHeader("Service Reminders") { showingAddReminder = true }) {
             if let car = liveCar {
                 let upcoming = car.serviceReminders.filter { !$0.isCompleted }
                 let currentMileage = ServiceReminderEngine.mileage(from: car.mileage)
                 let overdueCount = upcoming.filter { $0.status(currentMileage: currentMileage) == .overdue }.count
 
-                NavigationLink(destination: ServiceRemindersView(carID: car.id)) {
-                    HStack {
-                        Image(systemName: overdueCount > 0 ? "exclamationmark.circle.fill" : "wrench.and.screwdriver")
-                            .foregroundColor(overdueCount > 0 ? .red : .accentColor)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(upcoming.isEmpty ? "Add Reminders" : "\(upcoming.count) Upcoming")
-                                .font(.subheadline)
-                            if overdueCount > 0 {
-                                Text("\(overdueCount) overdue").font(.caption).foregroundColor(.red)
+                if upcoming.isEmpty && car.serviceReminders.isEmpty {
+                    emptySectionRow("Add Reminder", systemImage: "wrench.and.screwdriver") {
+                        showingAddReminder = true
+                    }
+                } else {
+                    NavigationLink(destination: ServiceRemindersView(carID: car.id)) {
+                        HStack {
+                            Image(systemName: overdueCount > 0 ? "exclamationmark.circle.fill" : "wrench.and.screwdriver")
+                                .foregroundColor(overdueCount > 0 ? .red : .accentColor)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(upcoming.isEmpty ? "\(car.serviceReminders.count) Completed" : "\(upcoming.count) Upcoming")
+                                    .font(.subheadline)
+                                if overdueCount > 0 {
+                                    Text("\(overdueCount) overdue").font(.caption).foregroundColor(.red)
+                                }
                             }
                         }
                     }
@@ -681,22 +765,11 @@ struct CarDetailView: View {
     // MARK: - Maintenance (own — editable with costs)
 
     private var maintenanceSection: some View {
-        Section(header: HStack {
-            Text("Maintenance Log")
-            Spacer()
-            Button {
-                showingAddMaintenance = true
-            } label: {
-                Image(systemName: "plus.circle.fill").font(.subheadline)
-            }
-        }) {
+        Section(header: addHeader("Maintenance Log") { showingAddMaintenance = true }) {
             if let car = liveCar {
                 if car.sortedMaintenanceRecords.isEmpty {
-                    Button {
+                    emptySectionRow("Add Service Record", systemImage: "wrench.and.screwdriver") {
                         showingAddMaintenance = true
-                    } label: {
-                        Label("Add Service Record", systemImage: "wrench.and.screwdriver")
-                            .foregroundColor(.accentColor)
                     }
                 } else {
                     ForEach(car.sortedMaintenanceRecords) { record in
@@ -850,5 +923,45 @@ struct DetailRow: View {
             Text(value.isEmpty ? "—" : value)
                 .foregroundColor(value.isEmpty ? .secondary.opacity(0.5) : .primary)
         }
+    }
+}
+
+// MARK: - Focused-edit presenter cluster
+//
+// Wraps the three per-section focused sheets (Registration, Insurance, Add
+// Reminder) into a single modifier so CarDetailView.body's trailing chain
+// stays cheap for the SwiftUI type checker. Same technique we used in
+// EditCarDetailView after the "unable to type-check in reasonable time"
+// error surfaced there.
+private struct FocusedEditPresenters: ViewModifier {
+    let liveCar: Car?
+    @Binding var showingEditRegistration: Bool
+    @Binding var showingEditVehicleDetails: Bool
+    @Binding var showingEditInsurance: Bool
+    @Binding var showingAddReminder: Bool
+    let onSave: (Car) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $showingEditRegistration) {
+                if let car = liveCar {
+                    EditRegistrationSheet(car: car, onSave: onSave)
+                }
+            }
+            .sheet(isPresented: $showingEditVehicleDetails) {
+                if let car = liveCar {
+                    EditVehicleDetailsSheet(car: car, onSave: onSave)
+                }
+            }
+            .sheet(isPresented: $showingEditInsurance) {
+                if let car = liveCar {
+                    EditInsuranceSheet(car: car, onSave: onSave)
+                }
+            }
+            .sheet(isPresented: $showingAddReminder) {
+                if let car = liveCar {
+                    AddReminderView(carID: car.id)
+                }
+            }
     }
 }

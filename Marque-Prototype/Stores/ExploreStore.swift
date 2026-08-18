@@ -79,4 +79,17 @@ class ExploreStore: ObservableObject {
         profileCache[uid] = profile
         return profile
     }
+
+    // FollowStore only tracks the current user's edges — for foreign profiles
+    // we one-shot the target user's followers/following subcollections.
+    func fetchFollowUIDs(uid: String) async -> (followers: Set<String>, following: Set<String>) {
+        async let followers = fetchUIDs(subcollection: "followers", ownerUID: uid)
+        async let following = fetchUIDs(subcollection: "following", ownerUID: uid)
+        return (await followers, await following)
+    }
+
+    private func fetchUIDs(subcollection: String, ownerUID: String) async -> Set<String> {
+        let snap = try? await db.collection("users").document(ownerUID).collection(subcollection).getDocuments()
+        return Set(snap?.documents.map { $0.documentID } ?? [])
+    }
 }

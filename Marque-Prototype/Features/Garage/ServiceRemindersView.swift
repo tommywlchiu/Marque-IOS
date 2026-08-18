@@ -90,8 +90,21 @@ struct ServiceRemindersView: View {
                 if !completed.isEmpty {
                     Section("Completed") {
                         ForEach(completed) { reminder in
-                            ReminderRow(reminder: reminder, currentMileage: currentMileage, onComplete: nil)
-                                .opacity(0.55)
+                            ReminderRow(
+                                reminder: reminder,
+                                currentMileage: currentMileage,
+                                onComplete: nil,
+                                onRestore: { restore(reminder) }
+                            )
+                            .opacity(0.7)
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    restore(reminder)
+                                } label: {
+                                    Label("Restore", systemImage: "arrow.uturn.backward")
+                                }
+                                .tint(.accentColor)
+                            }
                         }
                         .onDelete(perform: deleteCompleted)
                     }
@@ -132,6 +145,16 @@ struct ServiceRemindersView: View {
         }
     }
 
+    // Un-completes a reminder — for when the user misclicked "done" and wants
+    // to bring the reminder back into the Upcoming section.
+    private func restore(_ reminder: ServiceReminder) {
+        guard var car else { return }
+        if let idx = car.serviceReminders.firstIndex(where: { $0.id == reminder.id }) {
+            car.serviceReminders[idx].isCompleted = false
+            carStore.updateCar(car)
+        }
+    }
+
     private func deleteUpcoming(at offsets: IndexSet) {
         guard var car else { return }
         let toDelete = offsets.map { reminders[$0].id }
@@ -162,6 +185,7 @@ private struct ReminderRow: View {
     let reminder: ServiceReminder
     let currentMileage: Int
     let onComplete: (() -> Void)?
+    var onRestore: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -192,6 +216,15 @@ private struct ReminderRow: View {
                         .foregroundColor(.accentColor)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Mark \(reminder.serviceType) complete")
+            } else if let onRestore, reminder.isCompleted {
+                Button(action: onRestore) {
+                    Image(systemName: "arrow.uturn.backward.circle")
+                        .font(.title3)
+                        .foregroundColor(.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Restore \(reminder.serviceType)")
             }
         }
         .padding(.vertical, 4)
@@ -203,13 +236,17 @@ private struct ReminderRow: View {
 
     private var statusIcon: some View {
         Group {
-            switch status {
-            case .overdue:
-                Image(systemName: "exclamationmark.circle.fill").foregroundColor(.red)
-            case .dueSoon:
-                Image(systemName: "clock.fill").foregroundColor(.orange)
-            case .upcoming:
-                Image(systemName: "calendar.circle.fill").foregroundColor(.accentColor)
+            if reminder.isCompleted {
+                Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+            } else {
+                switch status {
+                case .overdue:
+                    Image(systemName: "exclamationmark.circle.fill").foregroundColor(.red)
+                case .dueSoon:
+                    Image(systemName: "clock.fill").foregroundColor(.orange)
+                case .upcoming:
+                    Image(systemName: "calendar.circle.fill").foregroundColor(.accentColor)
+                }
             }
         }
         .font(.title3)
@@ -229,7 +266,9 @@ private struct ReminderRow: View {
             else { parts.append("\(miles) mi to go") }
         }
 
-        return parts.joined(separator: " • ")
+        // Join with "or" (not "•") when both triggers are set — matches the
+        // whichever-first semantics of ServiceReminder.status().
+        return parts.joined(separator: " or ")
     }
 }
 
@@ -240,54 +279,148 @@ private struct SuggestedRemindersSheet: View {
     @Environment(\.dismiss) var dismiss
     let car: Car
 
-    @State private var selected: Set<UUID> = []
+    // Two possible sources: `ai` (Cloud Function-generated, includes reasoning
+    // and priority) or `rules` (local engine, used as fallback when the AI
+    // call fails or the network is down). Rendering unifies both under the
+    // `AIServiceSuggestion` shape — rule-source suggestions get empty
+    // reasoning and .medium priority.
+    enum Source: Equatable { case ai, rules }
 
-    private var suggestions: [ServiceReminder] {
-        ServiceReminderEngine.suggest(for: car)
-    }
+    @State private var suggestions: [AIServiceSuggestion] = []
+    @State private var selected: Set<UUID> = []
+    @State private var source: Source = .ai
+    @State private var isLoading = true
+    @State private var loadErrorHint: String?
+
+    private let aiService = AIServiceSuggestionService()
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Text("Based on your service history and standard intervals.")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .listRowBackground(Color.clear)
+            content
+                .navigationTitle("Suggested Reminders")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Add \(selected.count)") { addSelected() }
+                            .disabled(selected.isEmpty || isLoading)
+                            .fontWeight(.semibold)
+                    }
                 }
+        }
+        .task { await load() }
+    }
 
+    // MARK: - Content
+
+    @ViewBuilder
+    private var content: some View {
+        if isLoading {
+            loadingState
+        } else if suggestions.isEmpty {
+            emptyState
+        } else {
+            List {
+                intro
+                if let hint = loadErrorHint {
+                    Section {
+                        Label(hint, systemImage: "info.circle")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                }
                 Section {
-                    ForEach(suggestions) { reminder in
-                        Button { toggle(reminder.id) } label: {
-                            HStack {
-                                Image(systemName: selected.contains(reminder.id) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(.accentColor)
-                                ReminderRow(
-                                    reminder: reminder,
-                                    currentMileage: ServiceReminderEngine.mileage(from: car.mileage),
-                                    onComplete: nil
-                                )
-                            }
-                        }
-                        .buttonStyle(.plain)
+                    ForEach(suggestions) { suggestion in
+                        SuggestionRow(
+                            suggestion: suggestion,
+                            isSelected: selected.contains(suggestion.id),
+                            currentMileage: ServiceReminderEngine.mileage(from: car.mileage),
+                            onTap: { toggle(suggestion.id) }
+                        )
                     }
                 }
             }
-            .navigationTitle("Suggested Reminders")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+        }
+    }
+
+    private var intro: some View {
+        Section {
+            Text(source == .ai
+                 ? "Generated for your \(car.displayName) based on its specs and service history."
+                 : "Based on your service history and standard intervals.")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .listRowBackground(Color.clear)
+        }
+    }
+
+    private var loadingState: some View {
+        VStack(spacing: 14) {
+            ProgressView()
+            Text("Analyzing your service history…")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var emptyState: some View {
+        MarqueEmptyState(
+            icon: "checkmark.seal",
+            title: "You're All Set",
+            subtitle: "No new suggestions right now — nothing appears due based on your history."
+        )
+    }
+
+    // MARK: - Load
+
+    private func load() async {
+        // Skip re-loading if we already have suggestions (guards against
+        // .task firing again on view refresh).
+        guard suggestions.isEmpty else { return }
+
+        do {
+            let ai = try await aiService.suggest(for: car)
+            if ai.isEmpty {
+                // Cover the case where the model returns no suggestions — use
+                // the rule engine so we don't leave the user with a bare sheet.
+                await MainActor.run {
+                    self.applyFallback(hint: nil)
+                    self.isLoading = false
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add \(selected.count)") { addSelected() }
-                        .disabled(selected.isEmpty)
-                        .fontWeight(.semibold)
-                }
+                return
+            }
+            await MainActor.run {
+                self.suggestions = ai
+                self.selected = Set(ai.map(\.id))
+                self.source = .ai
+                self.isLoading = false
+            }
+        } catch let error as AIServiceSuggestionService.SuggestionError {
+            await MainActor.run {
+                self.applyFallback(hint: error.errorDescription)
+                self.isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                self.applyFallback(hint: nil)
+                self.isLoading = false
             }
         }
-        .onAppear { selected = Set(suggestions.map(\.id)) }
     }
+
+    private func applyFallback(hint: String?) {
+        let fallback = ServiceReminderEngine.suggest(for: car)
+            .map(AIServiceSuggestion.init(fallbackFrom:))
+        suggestions = fallback
+        selected = Set(fallback.map(\.id))
+        source = .rules
+        loadErrorHint = hint
+    }
+
+    // MARK: - Actions
 
     private func toggle(_ id: UUID) {
         if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
@@ -295,10 +428,93 @@ private struct SuggestedRemindersSheet: View {
 
     private func addSelected() {
         var updated = car
-        for s in suggestions where selected.contains(s.id) {
-            updated.serviceReminders.append(s)
+        for suggestion in suggestions where selected.contains(suggestion.id) {
+            updated.serviceReminders.append(suggestion.asReminder())
         }
         carStore.updateCar(updated)
         dismiss()
+    }
+}
+
+// Row for one suggestion. Shows priority (if reasoning is present — i.e.,
+// AI-sourced) and the reasoning line so the user knows WHY it's here.
+private struct SuggestionRow: View {
+    let suggestion: AIServiceSuggestion
+    let isSelected: Bool
+    let currentMileage: Int
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(.accentColor)
+                        .font(.title3)
+                        .padding(.top, 2)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 8) {
+                            Text(suggestion.serviceType)
+                                .font(.subheadline).fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                            if !suggestion.reasoning.isEmpty {
+                                priorityBadge
+                            }
+                        }
+                        Text(dueSummary)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+                }
+
+                if !suggestion.reasoning.isEmpty {
+                    Text(suggestion.reasoning)
+                        .font(.caption)
+                        .foregroundColor(.secondary.opacity(0.85))
+                        .padding(.leading, 32)  // aligns under the text column
+                }
+            }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var priorityBadge: some View {
+        Text(suggestion.priority.rawValue.capitalized)
+            .font(.caption2).fontWeight(.semibold)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .foregroundColor(priorityColor)
+            .background(priorityColor.opacity(0.15))
+            .clipShape(Capsule())
+    }
+
+    private var priorityColor: Color {
+        switch suggestion.priority {
+        case .high: return .red
+        case .medium: return .orange
+        case .low: return .blue
+        }
+    }
+
+    private var dueSummary: String {
+        var parts: [String] = []
+        if let date = suggestion.dueDate {
+            let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+            if days < 0 { parts.append("\(-days) days overdue") }
+            else if days == 0 { parts.append("Due today") }
+            else { parts.append("Due in \(days) days") }
+        }
+        if let miles = suggestion.dueMileage {
+            let delta = miles - currentMileage
+            if delta < 0 { parts.append("\(-delta) mi past due") }
+            else { parts.append("in \(delta) mi") }
+        }
+        // "or" — whichever comes first triggers the reminder.
+        return parts.isEmpty ? "No specific due date" : parts.joined(separator: " or ")
     }
 }

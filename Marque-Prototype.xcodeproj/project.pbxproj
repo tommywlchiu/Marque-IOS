@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		A10001 /* Marque_PrototypeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque_PrototypeApp.swift */; };
-		A10066 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20066 /* AppDelegate.swift */; };
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
 		A10003 /* CarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* CarStore.swift */; };
 		A10004 /* AddCarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* AddCarView.swift */; };
@@ -61,21 +60,35 @@
 		A10063 /* AppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20063 /* AppLinks.swift */; };
 		A10064 /* NotificationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20064 /* NotificationStore.swift */; };
 		A10065 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20065 /* DeleteAccountView.swift */; };
+		A10066 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20066 /* AppDelegate.swift */; };
 		A10067 /* FollowCleanupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20067 /* FollowCleanupView.swift */; };
 		A10068 /* SmartcarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20068 /* SmartcarStore.swift */; };
+		A10069 /* VerifyEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20069 /* VerifyEmailView.swift */; };
+		A10070 /* DocumentScanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20070 /* DocumentScanService.swift */; };
+		A10071 /* DocumentScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20071 /* DocumentScannerView.swift */; };
 		C3000001C3000001C3000001 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = C1000001C1000001C1000001 /* FirebaseCore */; };
 		C4000001C4000001C4000001 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C2000001C2000001C2000001 /* FirebaseAuth */; };
 		C5000001C5000001C5000001 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C5000002C5000002C5000002 /* FirebaseFirestore */; };
 		C6000001C6000001C6000001 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = C6000002C6000002C6000002 /* FirebaseStorage */; };
-		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
-		D0000003D0000003D0000003 /* SmartcarAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D0000002D0000002D0000002 /* SmartcarAuth */; };
 		C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = C7000002C7000002C7000002 /* FirebaseFunctions */; };
+		D0000003D0000003D0000003 /* SmartcarAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D0000002D0000002D0000002 /* SmartcarAuth */; };
+		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
 		F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */; };
+		F497CF0E300B0735001892AE /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF0C300B0735001892AE /* ChatMessage.swift */; };
+		F497CF0F300B0735001892AE /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF0D300B0735001892AE /* Conversation.swift */; };
+		F497CF11300B0749001892AE /* ChatStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF10300B0749001892AE /* ChatStore.swift */; };
+		F497CF13300B075C001892AE /* MarqueChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF12300B075C001892AE /* MarqueChatView.swift */; };
+		F497CF1530197BDF001892AE /* FeatureFlagsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */; };
+		F497CF18301D5D1B001892AE /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */; };
+		F497CF1F3022A2DB001892AE /* EditInsuranceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */; };
+		F497CF203022A2DB001892AE /* EditRegistrationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */; };
+		F497CF223022AC1B001892AE /* EditVehicleDetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF213022AC1B001892AE /* EditVehicleDetailsSheet.swift */; };
+		F497CF2430244586001892AE /* AIServiceSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF2330244586001892AE /* AIServiceSuggestion.swift */; };
+		F497CF263024459E001892AE /* AIServiceSuggestionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF253024459E001892AE /* AIServiceSuggestionService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A20001 /* Marque_PrototypeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque_PrototypeApp.swift; sourceTree = "<group>"; };
-		A20066 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
 		A20003 /* CarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarStore.swift; sourceTree = "<group>"; };
 		A20004 /* AddCarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCarView.swift; sourceTree = "<group>"; };
@@ -129,10 +142,24 @@
 		A20063 /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
 		A20064 /* NotificationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStore.swift; sourceTree = "<group>"; };
 		A20065 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
+		A20066 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A20067 /* FollowCleanupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowCleanupView.swift; sourceTree = "<group>"; };
 		A20068 /* SmartcarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartcarStore.swift; sourceTree = "<group>"; };
+		A20069 /* VerifyEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyEmailView.swift; sourceTree = "<group>"; };
+		A20070 /* DocumentScanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanService.swift; sourceTree = "<group>"; };
+		A20071 /* DocumentScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScannerView.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F421FDE72FA465A7000DBF3C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F497CF0C300B0735001892AE /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		F497CF0D300B0735001892AE /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
+		F497CF10300B0749001892AE /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
+		F497CF12300B075C001892AE /* MarqueChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueChatView.swift; sourceTree = "<group>"; };
+		F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsStore.swift; sourceTree = "<group>"; };
+		F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditInsuranceSheet.swift; sourceTree = "<group>"; };
+		F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRegistrationSheet.swift; sourceTree = "<group>"; };
+		F497CF213022AC1B001892AE /* EditVehicleDetailsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVehicleDetailsSheet.swift; sourceTree = "<group>"; };
+		F497CF2330244586001892AE /* AIServiceSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServiceSuggestion.swift; sourceTree = "<group>"; };
+		F497CF253024459E001892AE /* AIServiceSuggestionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServiceSuggestionService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +167,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F497CF18301D5D1B001892AE /* FirebaseRemoteConfig in Frameworks */,
 				C3000001C3000001C3000001 /* FirebaseCore in Frameworks */,
 				C4000001C4000001C4000001 /* FirebaseAuth in Frameworks */,
 				C5000001C5000001C5000001 /* FirebaseFirestore in Frameworks */,
@@ -158,6 +186,7 @@
 			isa = PBXGroup;
 			children = (
 				A50002 /* Marque-Prototype */,
+				F497CF16301D5D1B001892AE /* Frameworks */,
 				A50005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -166,6 +195,7 @@
 			isa = PBXGroup;
 			children = (
 				F421FDE72FA465A7000DBF3C /* Info.plist */,
+				F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */,
 				A20001 /* Marque_PrototypeApp.swift */,
 				A20066 /* AppDelegate.swift */,
 				A50003 /* Models */,
@@ -183,6 +213,9 @@
 		A50003 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				F497CF2330244586001892AE /* AIServiceSuggestion.swift */,
+				F497CF0C300B0735001892AE /* ChatMessage.swift */,
+				F497CF0D300B0735001892AE /* Conversation.swift */,
 				A20002 /* Car.swift */,
 				A20057 /* PublicCar.swift */,
 				A20063 /* AppLinks.swift */,
@@ -221,6 +254,8 @@
 		A50006 /* Stores */ = {
 			isa = PBXGroup;
 			children = (
+				F497CF253024459E001892AE /* AIServiceSuggestionService.swift */,
+				F497CF10300B0749001892AE /* ChatStore.swift */,
 				A20003 /* CarStore.swift */,
 				A20058 /* ExploreStore.swift */,
 				A20059 /* FollowStore.swift */,
@@ -228,6 +263,7 @@
 				A20061 /* BlockStore.swift */,
 				A20064 /* NotificationStore.swift */,
 				A20068 /* SmartcarStore.swift */,
+				A20070 /* DocumentScanService.swift */,
 				A20010 /* ImageManager.swift */,
 				A20012 /* NotificationManager.swift */,
 				A20015 /* VINDecodeService.swift */,
@@ -250,6 +286,7 @@
 		A50008 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				F497CF12300B075C001892AE /* MarqueChatView.swift */,
 				A50009 /* Onboarding */,
 				A50010 /* Auth */,
 				A50011 /* Profile */,
@@ -277,6 +314,7 @@
 				A20021 /* SignUpView.swift */,
 				A20022 /* ForgotPasswordView.swift */,
 				A20056 /* ProfileSetupView.swift */,
+				A20069 /* VerifyEmailView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -288,6 +326,7 @@
 				A20025 /* PublicProfileView.swift */,
 				A20026 /* FollowListView.swift */,
 				A20062 /* ReportView.swift */,
+				A20071 /* DocumentScannerView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -315,6 +354,9 @@
 		A50014 /* Garage */ = {
 			isa = PBXGroup;
 			children = (
+				F497CF213022AC1B001892AE /* EditVehicleDetailsSheet.swift */,
+				F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */,
+				F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */,
 				A20034 /* ServiceRemindersView.swift */,
 				A20035 /* AddReminderView.swift */,
 				A20037 /* PhotoGalleryView.swift */,
@@ -337,6 +379,13 @@
 				A20043 /* NotificationsInboxView.swift */,
 			);
 			path = Social;
+			sourceTree = "<group>";
+		};
+		F497CF16301D5D1B001892AE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -364,6 +413,7 @@
 				F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */,
 				D0000002D0000002D0000002 /* SmartcarAuth */,
 				C7000002C7000002C7000002 /* FirebaseFunctions */,
+				F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */,
 			);
 			productName = "Marque-Prototype";
 			productReference = A30001 /* Marque.app */;
@@ -431,12 +481,18 @@
 				A10063 /* AppLinks.swift in Sources */,
 				A10058 /* ExploreStore.swift in Sources */,
 				A10059 /* FollowStore.swift in Sources */,
+				F497CF1F3022A2DB001892AE /* EditInsuranceSheet.swift in Sources */,
+				F497CF203022A2DB001892AE /* EditRegistrationSheet.swift in Sources */,
 				A10060 /* SubscriptionStore.swift in Sources */,
 				A10065 /* DeleteAccountView.swift in Sources */,
 				A10067 /* FollowCleanupView.swift in Sources */,
+				F497CF263024459E001892AE /* AIServiceSuggestionService.swift in Sources */,
 				A10068 /* SmartcarStore.swift in Sources */,
+				A10070 /* DocumentScanService.swift in Sources */,
+				A10071 /* DocumentScannerView.swift in Sources */,
 				A10061 /* BlockStore.swift in Sources */,
 				A10064 /* NotificationStore.swift in Sources */,
+				F497CF223022AC1B001892AE /* EditVehicleDetailsSheet.swift in Sources */,
 				A10062 /* ReportView.swift in Sources */,
 				A10003 /* CarStore.swift in Sources */,
 				A10004 /* AddCarView.swift in Sources */,
@@ -446,6 +502,7 @@
 				A10009 /* MaintenanceRecord.swift in Sources */,
 				A10010 /* ImageManager.swift in Sources */,
 				A10011 /* AddMaintenanceView.swift in Sources */,
+				F497CF1530197BDF001892AE /* FeatureFlagsStore.swift in Sources */,
 				A10012 /* NotificationManager.swift in Sources */,
 				A10013 /* ExpenseSummaryView.swift in Sources */,
 				A10014 /* CarData.swift in Sources */,
@@ -455,15 +512,18 @@
 				A10018 /* MarqueComponents.swift in Sources */,
 				A10055 /* CarPhotoImage.swift in Sources */,
 				A10019 /* OnboardingView.swift in Sources */,
+				F497CF2430244586001892AE /* AIServiceSuggestion.swift in Sources */,
 				A10020 /* LoginView.swift in Sources */,
 				A10056 /* ProfileSetupView.swift in Sources */,
 				A10021 /* SignUpView.swift in Sources */,
 				A10022 /* ForgotPasswordView.swift in Sources */,
+				A10069 /* VerifyEmailView.swift in Sources */,
 				A10024 /* EditProfileView.swift in Sources */,
 				A10025 /* PublicProfileView.swift in Sources */,
 				A10026 /* FollowListView.swift in Sources */,
 				A10027 /* ExploreView.swift in Sources */,
 				A10028 /* SearchResultsView.swift in Sources */,
+				F497CF11300B0749001892AE /* ChatStore.swift in Sources */,
 				A10030 /* SettingsView.swift in Sources */,
 				A10031 /* ProUpgradeView.swift in Sources */,
 				A10032 /* ServiceReminder.swift in Sources */,
@@ -478,6 +538,9 @@
 				A10041 /* SocialStore.swift in Sources */,
 				A10042 /* CommentsView.swift in Sources */,
 				A10043 /* NotificationsInboxView.swift in Sources */,
+				F497CF13300B075C001892AE /* MarqueChatView.swift in Sources */,
+				F497CF0E300B0735001892AE /* ChatMessage.swift in Sources */,
+				F497CF0F300B0735001892AE /* Conversation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -687,6 +750,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		D0000001D0000001D0000001 /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/smartcar/ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.3.1;
+			};
+		};
 		F421FDE22FA44C19000DBF3C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -701,14 +772,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 12.12.1;
-			};
-		};
-		D0000001D0000001D0000001 /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/smartcar/ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 6.3.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -734,6 +797,16 @@
 			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
 		};
+		C7000002C7000002C7000002 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+		D0000002D0000002D0000002 /* SmartcarAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D0000001D0000001D0000001 /* XCRemoteSwiftPackageReference "ios-sdk" */;
+			productName = SmartcarAuth;
+		};
 		F421FDE32FA44C19000DBF3C /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F421FDE22FA44C19000DBF3C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
@@ -744,15 +817,10 @@
 			package = F421FDE22FA44C19000DBF3C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
 		};
-		D0000002D0000002D0000002 /* SmartcarAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D0000001D0000001D0000001 /* XCRemoteSwiftPackageReference "ios-sdk" */;
-			productName = SmartcarAuth;
-		};
-		C7000002C7000002C7000002 /* FirebaseFunctions */ = {
+		F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFunctions;
+			productName = FirebaseRemoteConfig;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

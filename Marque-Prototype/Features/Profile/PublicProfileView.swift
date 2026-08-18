@@ -10,14 +10,19 @@ struct PublicProfileView: View {
     @EnvironmentObject var blockStore: BlockStore
 
     @State private var profile: PublicUserProfile?
+    @State private var followerUIDs: Set<String> = []
+    @State private var followingUIDs: Set<String> = []
     @State private var showingUnfollowAlert = false
     @State private var showingBlockAlert = false
     @State private var showingReport = false
+    @State private var showingFollowers = false
+    @State private var showingFollowing = false
 
     private var cars: [PublicCar] { exploreStore.cars(for: ownerUID) }
     private var isOwnProfile: Bool { authService.currentUser?.id == ownerUID }
     private var isFollowing: Bool { followStore.isFollowing(ownerUID) }
     private var isBlocked: Bool { blockStore.isBlocked(ownerUID) }
+    private var currentUID: String { authService.currentUser?.id ?? "" }
 
     var body: some View {
         Group {
@@ -39,7 +44,21 @@ struct PublicProfileView: View {
         }
         .navigationTitle("@\(ownerUsername)")
         .navigationBarTitleDisplayMode(.inline)
-        .task { profile = await exploreStore.fetchUserProfile(uid: ownerUID) }
+        .task {
+            profile = await exploreStore.fetchUserProfile(uid: ownerUID)
+            let edges = await exploreStore.fetchFollowUIDs(uid: ownerUID)
+            followerUIDs = edges.followers
+            followingUIDs = edges.following
+        }
+        // Keep the visible follower count in sync when the current user follows
+        // or unfollows the profile owner. Foreign follow-graph changes (someone
+        // else follows this profile while we're viewing it) still require a
+        // re-open to refresh, which is acceptable for MVP.
+        .onChange(of: isFollowing) { _, nowFollowing in
+            guard !currentUID.isEmpty, currentUID != ownerUID else { return }
+            if nowFollowing { followerUIDs.insert(currentUID) }
+            else { followerUIDs.remove(currentUID) }
+        }
         .toolbar {
             if !isOwnProfile {
                 ToolbarItem(placement: .primaryAction) {
@@ -82,6 +101,12 @@ struct PublicProfileView: View {
         .sheet(isPresented: $showingReport) {
             ReportView(title: "Report User", reportedUID: ownerUID)
                 .environmentObject(blockStore)
+        }
+        .sheet(isPresented: $showingFollowers) {
+            FollowListView(mode: .followers, uids: followerUIDs, currentUserUID: currentUID)
+        }
+        .sheet(isPresented: $showingFollowing) {
+            FollowListView(mode: .following, uids: followingUIDs, currentUserUID: currentUID)
         }
     }
 
@@ -129,6 +154,14 @@ struct PublicProfileView: View {
 
             HStack(spacing: 0) {
                 StatChip(value: "\(cars.count)", label: "Cars")
+                Divider().frame(height: 30).padding(.horizontal, 16)
+                StatChip(value: "\(followerUIDs.count)", label: "Followers") {
+                    showingFollowers = true
+                }
+                Divider().frame(height: 30).padding(.horizontal, 16)
+                StatChip(value: "\(followingUIDs.count)", label: "Following") {
+                    showingFollowing = true
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)

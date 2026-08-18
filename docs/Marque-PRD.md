@@ -1,10 +1,12 @@
 # Marque — Product Requirements Document
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Ready for Development
 **Author:** Product
-**Last Updated:** April 2026
+**Last Updated:** July 2026
 **Audience:** Engineering, Design, Investors
+
+**v1.1 changes:** Added Tier 4 (Intelligence) with the Marque Assistant — an in-app AI chatbot for car-related questions. See Section 5 (Tier 4), Section 6 (Assistant stories), Section 7 (FR-10), Section 8 (EC-16–EC-20), Section 10 (R-11–R-12), and Section 11.
 
 ---
 
@@ -170,6 +172,12 @@ Organized by priority tier:
 | **Explore** | Browse public garages, search by make/model/username | P1 |
 | **Following Feed** | Chronological list of new cars from followed users | P1 |
 
+## Tier 4 — Intelligence (v1.1 New)
+
+| Feature | Description | Priority |
+|---|---|---|
+| **Marque Assistant** | Floating "Ask Marque" chatbot that answers car questions using the user's garage as context plus general automotive knowledge; read-only in v1 (no writes to user data) | P1 |
+
 ---
 
 # Section 6 — User Stories
@@ -221,6 +229,17 @@ Organized by priority tier:
 | US-21 | As a car owner, I want to store my driver's license number so I can retrieve it when filling out forms or at the DMV | Number, state, and expiry date are editable from Edit Profile; data is stored only on this device by default |
 | US-22 | As a user, I want my license number hidden by default so a glance at my screen doesn't expose it | Number rendered via `SecureField` with a reveal toggle, matching the iOS Settings password-reveal pattern |
 | US-23 | As a user, I want a reminder before my driver's license expires | If expiry is set, schedule local notifications at 30 days, 7 days, and on the day of expiry, reusing the existing notification engine |
+
+### Assistant
+
+| ID | Story | Acceptance Criteria |
+|---|---|---|
+| US-24 | As a car owner, I want to ask questions about my specific vehicles so the answers factor in my actual make, model, mileage, and service history | Assistant references the user's own cars by name (e.g., "Your 2018 Miata is due for…") when the question is contextually relevant to a car in the garage |
+| US-25 | As a car owner, I want to ask general car questions (comparisons, buying advice, common issues, DIY guidance) so I don't have to search the web | Assistant answers general automotive questions with model-neutral advice when no user car is contextually relevant |
+| US-26 | As a user, I want to open the assistant from anywhere in the app | A floating "Ask Marque" button is visible on the primary tabs; tapping it opens a chat surface |
+| US-27 | As a user viewing a car, I want to ask questions about *that* car specifically | An "Ask Marque about this car" entry point on Car Detail opens the chat pre-scoped to that car |
+| US-28 | As a free user, I want to know when I'm approaching my daily message limit so I'm not surprised | Remaining-message indicator visible in the chat surface; upgrade prompt shown on the 11th attempt |
+| US-29 | As a returning user, I want my past conversations available so I can pick up where I left off | Conversation history persists across sessions in Firestore; conversation list accessible from the chat surface |
 
 ---
 
@@ -308,6 +327,41 @@ Organized by priority tier:
 - **FR-09.6** If a license expiry date is set, the app must schedule local notifications at 30 days, 7 days, and on the day of expiry, using the same reschedule-on-change pattern as registration/insurance
 - **FR-09.7** Account deletion must clear license fields from local storage (already covered by the existing `marque_profile_{uid}` cleanup in `deleteAccount`)
 
+## FR-10: Marque Assistant
+
+- **FR-10.1** A floating "Ask Marque" button must appear on the primary tab views (Garage, Explore) anchored bottom-right, above the tab bar; it must not overlap primary actions or the "+" tab
+- **FR-10.2** Tapping the button opens a chat surface as a bottom sheet at ~90% height with message history, input field, close affordance, and a "New Chat" action. Sheet uses standard iOS sheet detents so the user can dismiss with a downward swipe
+- **FR-10.3** From `CarDetailView`, an "Ask Marque about this car" entry point must open the chat pre-scoped to the current car (that car's context is injected into the system prompt)
+- **FR-10.4** Free tier is capped at 10 assistant messages per calendar day (device local time, reset at midnight); Pro users have no daily cap (subject to an abuse throttle at 500/day). Starting cap is intentionally conservative — revisit after 30 days of production data
+- **FR-10.5** The daily cap must be enforced server-side in the `askMarque` Cloud Function, not client-side. The client sends its local date (`yyyy-mm-dd`) with each request; the function increments a Firestore counter at `users/{uid}/usage/assistant_{yyyy-mm-dd}` and rejects the call if it exceeds the cap for that user's tier
+- **FR-10.6** When the cap is reached, the message input must be disabled with a countdown to reset time and an upgrade sheet must be shown offering the Pro upsell
+- **FR-10.7** The assistant must have read-only access to the user's garage data (cars, maintenance records, expenses, expiry dates), passed as a serialized context block to the Cloud Function on each request. The assistant must never mutate CarStore or Firestore data on the user's behalf in v1.1
+- **FR-10.8** The backend must use Claude Sonnet 4.6 (`claude-sonnet-4-6`) via the existing `defineSecret("ANTHROPIC_API_KEY")` pattern; prompt caching must be enabled on the garage context block and the system prompt to reduce per-message cost. Model ID must be a string constant at the top of the Cloud Function file so it can be bumped in one place
+- **FR-10.9** Conversations must persist in Firestore at `users/{uid}/conversations/{convId}/messages/`; each message stores role, content, timestamp, and (for assistant messages) the model used and token counts. A conversation list must be accessible from the chat surface
+- **FR-10.10** The assistant's system prompt must (a) constrain responses to automotive topics with graceful decline on off-topic questions, (b) prefer facts derivable from the user's garage over generic advice when relevant, and (c) require recommending professional inspection for safety-critical concerns (brakes, suspension, steering, tires, structural)
+- **FR-10.11** A first-use disclaimer must be shown as a chip in the empty conversation state: "Marque assists but doesn't replace a mechanic. For safety issues, get professional inspection."
+- **FR-10.12** If the network is unavailable, the chat surface must show a non-blocking banner and disable the input; queued messages must not be silently sent later
+- **FR-10.13** Assistant responses must be streamed to the client as tokens arrive (Anthropic streaming API). A visible loading indicator must appear within 300ms of send. Non-streaming delivery is not acceptable for v1.1 — the perceived latency degrades the chat experience
+- **FR-10.14** Failed messages (network error, function error, model refusal) must not count against the daily cap; the message input must offer a Retry action
+- **FR-10.15** Account deletion must delete all `conversations` subcollections alongside the existing cascade
+
+### FR-10 — Data Scope in Context
+
+- **FR-10.16** The garage-context block passed to the Cloud Function must include, per car: make, model, year, trim, mileage, engine, fuel type, transmission, drive type, body style, color, registration expiry date, insurance expiry date, and maintenance records from the last 12 months (type, date, mileage, shop). It must also include aggregate expense totals YTD (overall + by category)
+- **FR-10.17** The context block must NEVER include: VIN, license plate, insurance provider, insurance policy number, driver license fields, per-record maintenance costs beyond aggregate totals, notes fields (any free-text field the user may have populated), or photo file names. This protects sensitive fields even if the model tries to echo them back
+- **FR-10.18** If the assistant needs data outside the context block (e.g., a specific maintenance record's cost), it must ask the user rather than have the client re-send additional context. Keeps context deterministic and cache-friendly
+
+### FR-10 — Conversation Lifecycle
+
+- **FR-10.19** A user may retain up to 50 conversations; on creating the 51st, the oldest un-pinned conversation is auto-deleted. Users may pin up to 10 conversations to exempt them from auto-deletion
+- **FR-10.20** Within a single conversation, the last 30 turns are sent as message history to the model. Older turns are omitted (not summarized) — this is a v1.1 simplification; summarization can come in v1.2 if 30 turns proves insufficient
+- **FR-10.21** Users may delete individual conversations via swipe-to-delete from the conversation list. Deletion is immediate and unconfirmed (matches iOS mail conventions)
+
+### FR-10 — Phased Rollout
+
+- **FR-10.22** v1.1 must ship behind a Firebase Remote Config flag (`marque_assistant_enabled`, default false). The flag is enabled for TestFlight builds first (small cohort: the founder + a handful of hand-picked testers), then flipped to 100% of production once qualitative validation is complete. At this scale, statistical thresholds (cap-hit rate, cost trends) will be too thin to be meaningful; the gate is qualitative — no critical bugs, no clearly hallucinated advice on safety-critical topics, and per-user cost within the napkin-math envelope in R-12. A percentage rollout stage can be added later when the user base grows enough to make it useful
+- **FR-10.23** The Cloud Function must log per-request telemetry (uid, model, input tokens, output tokens, cache hit rate, latency, error code if any) for cost attribution and quality monitoring. Formal success metrics targets in Section 9 are intentionally deferred until there is a large enough user base to measure against; telemetry is the source of truth in the meantime
+
 ---
 
 # Section 8 — Edge Cases
@@ -329,6 +383,13 @@ Organized by priority tier:
 | EC-13 | User opens app in airplane mode on first install | Auth cannot complete; "You need an internet connection to create your account" |
 | EC-14 | User enters a duplicate username during profile setup | Real-time check shows "taken" before they submit; suggestions offered |
 | EC-15 | User uploads a very large photo (12MP+ iPhone camera) | Photo compressed to JPEG at 0.8 quality before upload; original not stored |
+| EC-16 | User asks the assistant about a car not in their garage (e.g., "should I buy a Miata?") | Assistant responds with generic advice; does not fabricate ownership details about the user's cars |
+| EC-17 | User hits the 10-message daily cap mid-conversation | Input disabled with countdown to reset; upgrade sheet offered; existing conversation remains scrollable and re-readable |
+| EC-18 | User asks a safety-critical question ("my brakes feel spongy", "I hear grinding when turning") | Assistant provides contextual information but explicitly recommends immediate mechanic inspection |
+| EC-19 | Cloud Function times out or returns an error mid-message | Chat shows "Marque couldn't answer. Try again?" with a Retry button; the message is NOT counted against the daily cap |
+| EC-20 | User asks an off-topic question ("write me a poem", "what's the weather?") | Assistant declines briefly and redirects back to automotive topics without a lecture |
+| EC-21 | User with an empty garage opens the assistant | Assistant works normally for general questions; a hint suggests adding a car for personalized answers |
+| EC-22 | User deletes account while active conversations exist | All `conversations` subcollections deleted alongside cars, per the account-deletion cascade |
 
 ---
 
@@ -396,6 +457,8 @@ Organized by priority tier:
 | R-08 | Content moderation exposure (public profiles) | Medium | Medium | Block and report flows from day one; Firebase App Check; ToS prohibiting illegal content |
 | R-09 | Negative reviews from confusing UX for non-enthusiasts | Medium | Medium | Normal users should never see social features until they choose to |
 | R-10 | GDPR / CCPA compliance gap | Low | High | Privacy policy on file before launch; "Delete Account" must actually delete all data |
+| R-11 | Assistant hallucinates incorrect car advice (wrong specs, wrong service intervals, unsafe DIY guidance) | Medium | High | System prompt constrains scope and forbids diagnostic certainty; safety disclaimer chip on first use; explicit "see a mechanic" language for safety-critical topics; read-only in v1 (no data mutations from the assistant); monitor user reports |
+| R-12 | Anthropic API costs exceed budget as assistant usage scales | Medium | Medium | Server-side 10-msg/day cap for free tier; per-user 500/day abuse throttle for Pro; prompt caching on garage context block reduces repeated input token cost by ~90% within a conversation. **Cost math (Sonnet 4.6):** at 500 active users × 10 msg/day × ~2k input + 500 output tokens per turn with cache, expected spend is ~$150–300/month. At the 30-day install target (2,500 installs, ~50% activation → ~1,250 active users), expected spend is ~$400–800/month. Set Cloud Function budget alert at $500/month (soft warning) and $1,000/month (hard cap that pages the founder); revise thresholds based on actual usage after week 1 |
 
 ---
 
@@ -424,7 +487,26 @@ Organized by priority tier:
 - PDF export (teased as Pro feature, delivered in v1.1)
 - Likes / reactions
 - Following feed notifications
-- Follower/following list screens
+- ~~Follower/following list screens~~ (shipped in v1.1)
+
+### What is in v1.1
+
+Additive on top of v1.0. Ships behind a Remote Config flag; graduates to public release only after 7 days of TestFlight + limited-rollout telemetry.
+
+**Must ship:**
+- Marque Assistant (floating "Ask Marque" chatbot, 10 msg/day free / unlimited Pro, read-only in v1)
+- Streaming responses (Anthropic streaming API — non-streaming is not acceptable)
+- Conversation persistence in Firestore with 50-conversation retention + pin support
+- `askMarque` Cloud Function on Sonnet 4.6, with server-side rate limit, prompt caching, and per-request telemetry
+- Safety disclaimer chip on first use
+- Assistant entry point on Car Detail (per-car scoping)
+- Follower/following list screens (accessible from both own profile and public profiles)
+- Remote Config flag (`marque_assistant_enabled`) for phased rollout
+- Cloud Function budget alerts wired ($500 soft / $1,000 hard)
+
+**Deferred to v1.2:**
+- Write actions (assistant proposes → user confirms → assistant creates reminders/records)
+- Multi-turn context summarization (v1.1 hard-caps at 30 turns)
 
 ### Definition of Done for MVP
 
@@ -476,6 +558,10 @@ The MVP is complete when:
 | Deep link | A URL or notification payload that opens the app to a specific screen |
 | Expiry banner | The red/orange warning shown in Car Detail when insurance or registration is expired or expiring |
 | Activation | A user has added at least one car to their account |
+| Marque Assistant | The in-app conversational agent that answers car-related questions using the user's garage as context and Claude as the underlying model |
+| askMarque | The Cloud Function that proxies assistant chat requests to the Anthropic API and enforces the daily message cap |
+| Assistant message cap | The rolling 24-hour limit on assistant messages for free-tier users (10/day); Pro users are subject only to an abuse throttle (500/day) |
+| Prompt caching | Anthropic-side feature that caches static context blocks (like the user's garage) across turns to reduce token cost |
 
 ---
 
