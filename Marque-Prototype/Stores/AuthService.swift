@@ -615,6 +615,48 @@ class AuthService: NSObject, ObservableObject {
             }
         }
 
+        // 4a. Delete Marque Assistant conversations and their message subcollections
+        //     (PRD FR-10.15, EC-22). Firestore doesn't cascade subcollections, so
+        //     each conversation's messages must be batch-deleted BEFORE the parent
+        //     conversation doc is removed. Best-effort: any per-conversation
+        //     failure is logged-and-continued so it doesn't block the wider cascade.
+        if let convSnap = try? await db.collection("users").document(uid)
+            .collection("conversations").getDocuments(), !convSnap.documents.isEmpty {
+            for convDoc in convSnap.documents {
+                let messagesRef = convDoc.reference.collection("messages")
+                // Page through messages 500 at a time — a busy conversation can
+                // exceed a single WriteBatch's 500-op limit.
+                while let msgSnap = try? await messagesRef.limit(to: 500).getDocuments(),
+                      !msgSnap.documents.isEmpty {
+                    let batch = db.batch()
+                    msgSnap.documents.forEach { batch.deleteDocument($0.reference) }
+                    guard (try? await batch.commit()) != nil else { break }
+                    if msgSnap.documents.count < 500 { break }
+                }
+                // Delete the conversation doc only after its messages are gone.
+                try? await convDoc.reference.delete()
+            }
+        }
+
+        // 4b. Delete Assistant usage counter docs (PRD FR-10.15, EC-08).
+        //     NOTE: firestore.rules currently locks users/{uid}/usage/** to
+        //     server-only writes (to prevent daily-cap bypass), so this
+        //     client-side delete will fail with PERMISSION_DENIED and be
+        //     swallowed by `try?`. A Cloud Function triggered on user deletion
+        //     is the authoritative place to clean these up. This block is
+        //     kept as best-effort so it starts working automatically if the
+        //     rules are ever relaxed for the account-owner delete case.
+        if let usageSnap = try? await db.collection("users").document(uid)
+            .collection("usage").getDocuments(), !usageSnap.documents.isEmpty {
+            // Chunk into 500-op batches — usage docs accumulate one per day.
+            for chunk in stride(from: 0, to: usageSnap.documents.count, by: 500) {
+                let end = min(chunk + 500, usageSnap.documents.count)
+                let batch = db.batch()
+                usageSnap.documents[chunk..<end].forEach { batch.deleteDocument($0.reference) }
+                try? await batch.commit()
+            }
+        }
+
         // 5. Delete the user profile document.
         try? await db.collection("users").document(uid).delete()
 

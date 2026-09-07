@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
+import * as functionsV1 from "firebase-functions/v1";
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import {
@@ -1685,3 +1686,92 @@ export const askMarque = onCall(
     }
   }
 );
+
+// ============================================================================
+// onAuthUserDeleted — server-side account-deletion cleanup
+// ============================================================================
+//
+// Fires after a Firebase Auth user is deleted. Cleans up the two subcollections
+// under users/{uid} that the client cascade in AuthService.swift cannot
+// reliably remove:
+//
+//   1. users/{uid}/usage/**        — locked to server-only writes by
+//                                    firestore.rules (prevents daily-cap
+//                                    bypass). Client PERMISSION_DENIED here
+//                                    is expected. (FR-10.15, EC-08)
+//
+//   2. users/{uid}/conversations/**/messages/** — the client cascade *does*
+//                                    delete these, but if the app crashed or
+//                                    was suspended mid-cascade the leftovers
+//                                    orphan. Belt-and-suspenders re-run here
+//                                    (FR-10.15, EC-22).
+//
+// v1 API (functions.auth.user().onDelete) is used deliberately over the v2
+// beforeUserDeleted blocking trigger: v1 fires *after* auth deletion succeeds
+// (never blocks the user-visible delete), and its 60s default timeout — bumped
+// here to 300s — is safe for the recursive walk over months of usage docs and
+// long conversation histories. beforeUserDeleted's 7s hard cap is too tight.
+//
+// admin.firestore().recursiveDelete() (available in firebase-admin ^13.0.0)
+// pages the collection with a BulkWriter under the hood, so per-user cleanup
+// scales to thousands of docs without hand-rolled batching.
+//
+// Idempotency: recursiveDelete on a non-existent or already-empty path is a
+// no-op that resolves cleanly. If Firebase retries the trigger (rare but
+// possible for background functions), the second invocation is safe.
+
+const CLEANUP_TIMEOUT_SECONDS = 300;
+
+async function recursiveDeleteCollection(
+  path: string,
+  uid: string
+): Promise<{ path: string; ok: true } | { path: string; ok: false; error: string }> {
+  const ref = db.collection(path);
+  try {
+    await db.recursiveDelete(ref);
+    return { path, ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    functions.logger.error("onAuthUserDeleted recursiveDelete failed", {
+      uid,
+      path,
+      err: message,
+    });
+    return { path, ok: false, error: message };
+  }
+}
+
+export const onAuthUserDeleted = functionsV1
+  .runWith({ timeoutSeconds: CLEANUP_TIMEOUT_SECONDS })
+  .auth.user()
+  .onDelete(async (user) => {
+    const uid = user.uid;
+    const startedAt = Date.now();
+
+    // Two independent subtrees — walk them in parallel. Neither can influence
+    // the other, so a failure in one doesn't need to short-circuit the other.
+    const results = await Promise.all([
+      recursiveDeleteCollection(`users/${uid}/usage`, uid),
+      recursiveDeleteCollection(`users/${uid}/conversations`, uid),
+    ]);
+
+    const errors = results.filter((r) => !r.ok);
+    const succeeded = results.filter((r) => r.ok).map((r) => r.path);
+
+    functions.logger.info("onAuthUserDeleted cleanup", {
+      uid,
+      succeeded,
+      failed: errors.map((e) => e.path),
+      latency_ms: Date.now() - startedAt,
+    });
+
+    // Rethrow only if every branch failed — a partial success is still
+    // progress and we don't want the platform's retry to re-delete the
+    // already-cleaned branch. Individual failures are logged above.
+    if (errors.length === results.length && errors.length > 0) {
+      throw new Error(
+        `onAuthUserDeleted: all cleanup branches failed for uid=${uid}: ` +
+          errors.map((e) => `${e.path}: ${e.error}`).join("; ")
+      );
+    }
+  });
