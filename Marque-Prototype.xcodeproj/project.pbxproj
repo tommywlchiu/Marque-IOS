@@ -153,7 +153,7 @@
 		F497CF0C300B0735001892AE /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		F497CF0D300B0735001892AE /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
 		F497CF10300B0749001892AE /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
-		F497CF12300B075C001892AE /* MarqueChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueChatView.swift; sourceTree = "<group>"; };
+		F497CF12300B075C001892AE /* MarqueChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MarqueChatView.swift; path = Assistant/MarqueChatView.swift; sourceTree = "<group>"; };
 		F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsStore.swift; sourceTree = "<group>"; };
 		F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditInsuranceSheet.swift; sourceTree = "<group>"; };
 		F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRegistrationSheet.swift; sourceTree = "<group>"; };
