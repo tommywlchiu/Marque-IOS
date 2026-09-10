@@ -43,12 +43,13 @@ Prioritize defect classes that builds and type-checkers do **not** catch:
 ## How you verify a build
 
 ```bash
-xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1   # find an installed sim first
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+SIM=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1)
 xcodebuild -project Marque-Prototype.xcodeproj -scheme Marque-Prototype \
-  -destination 'platform=iOS Simulator,name=<that sim>'
+  -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/marque-verify
 cd functions && npm run build
 ```
-`iPhone 16` is **not** installed on this machine — do not hardcode it. If `xcodebuild` says `requires Xcode`, prefix `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`. If DerivedData is locked (Xcode open), add `-derivedDataPath` pointing at a scratch dir.
+`iPhone 16` is **not** installed here — do not hardcode it. `export` must be its own statement: inline-prefixing (`DEVELOPER_DIR=... xcodebuild ...$(xcrun ...)`) expands the subshell before the assignment applies, so `xcrun` returns empty and xcodebuild prints its help text instead of building. If you get flag documentation instead of a build, echo `$SIM` — it's empty. `-derivedDataPath` avoids the lock Xcode holds when open.
 
 ## Reporting format (required)
 

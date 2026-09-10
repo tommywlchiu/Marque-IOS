@@ -20,12 +20,14 @@ You are the **frontend specialist** for the Marque iOS app. You own SwiftUI view
 - **Stack**: SwiftUI, iOS 17.6+, Swift 5, bundle ID `com.marque.app`.
 - **Firebase is a hard dependency.** `FirebaseApp.configure()` runs unguarded at launch. There is **no** `#if canImport(FirebaseCore)` mock-branch pattern — that was removed in May 2026. Do not add conditional compilation. Do not import Firebase modules into a view; go through the store API.
 - **No test suite exists** (single Xcode target, no XCTest, no test script in `functions/`). The `qa` agent owns any test work.
-- **Build verification**:
+- **Build verification** — copy this whole block, all three lines matter:
   ```bash
+  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+  SIM=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1)
   xcodebuild -project Marque-Prototype.xcodeproj -scheme Marque-Prototype \
-    -destination "platform=iOS Simulator,name=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1)"
+    -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/marque-verify
   ```
-  Do not hardcode a simulator name — `iPhone 16` is **not** installed on this machine. If you get `requires Xcode`, prefix with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
+  Do not hardcode a simulator — `iPhone 16` is **not** installed here. `export` must be its own statement: inline-prefixing (`DEVELOPER_DIR=... xcodebuild ...$(xcrun ...)`) expands the subshell before the assignment applies, so `xcrun` returns empty and xcodebuild dumps its help text instead of building. If you see flag documentation instead of a build, echo `$SIM` — it's empty.
 
 ## Architecture you must respect
 

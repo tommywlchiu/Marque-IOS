@@ -106,10 +106,10 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — `iPhone 16` is not installed on this machine; every hardcoded build command failed until agents discovered iPhone 17.
 - **Detect** — `xcrun simctl list devices available | grep iPhone`
 
-### `xcodebuild` fails when xcode-select points at CommandLineTools
-- **Rule** — If `xcodebuild` reports `requires Xcode`, prefix `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`. If DerivedData is locked because Xcode is open, add `-derivedDataPath` pointing at a scratch dir.
-- **Why** — This machine's `xcode-select` points at CommandLineTools; bare `xcodebuild` fails.
-- **Detect** — `xcode-select -p`
+### `DEVELOPER_DIR` must be exported, not inline-prefixed
+- **Rule** — This machine's `xcode-select` points at CommandLineTools, so both `xcodebuild` and `xcrun` fail without `DEVELOPER_DIR`. It must be `export`ed as its own statement first. `DEVELOPER_DIR=... xcodebuild -destination "...$(xcrun ...)"` does **not** work: the shell expands the subshell before applying the command-prefix assignment, so `xcrun` runs without it, returns empty, and `xcodebuild` gets a malformed destination and silently dumps its help text instead of building. Also pass `-derivedDataPath` to a scratch dir — Xcode locks the default when open.
+- **Why** — The first fix for the hardcoded-simulator pitfall used the inline-prefix one-liner. It looked correct, was committed to three files, and produced a help dump rather than a build on the first run.
+- **Detect** — `xcode-select -p`. If a build prints flag documentation instead of compiling, the destination is malformed — echo the resolved `$SIM` and check it isn't empty.
 
 ### Firestore does not cascade subcollection deletes
 - **Rule** — Deleting a document orphans its subcollections; they stay queryable. Walk and delete children first, then the parent. Batches cap at 500 ops.
@@ -120,6 +120,21 @@ Learned the hard way. Each one cost real debugging time.
 - **Rule** — `firestore.rules` has no wildcard under `users/{userId}/` — it was removed deliberately so `usage/` could be server-only. Adding a subcollection without adding its rule means every client write silently fails.
 - **Why** — The client-side `usage/` cleanup fails with `PERMISSION_DENIED`, swallowed by `try?`. Correct behavior, but only discoverable by reading the rules.
 - **Detect** — `grep -n "match /users" firestore.rules` against the paths your change writes to.
+
+### `allow create, update` silently denies delete
+- **Rule** — Firestore decomposes `write` into `create`/`update`/`delete`. A rule enumerating only some verbs denies the rest. Never infer delete permission from the presence of a write grant — read the actual verb list. And check *which principal* the rule binds: `followers/` binds the follower, `following/` binds the path owner, so neither is deletable by the account owner.
+- **Why** — `deleteAccount` appeared to work while leaving the `users/{uid}` profile doc, `followers/**`, `notifications/**`, and every reverse follow pointer in Firestore. All four denials were swallowed by `try?`. The profile doc stayed world-readable to any signed-in user after "deletion".
+- **Detect** — For every path your code writes or deletes, find its `match` block and read the verb list and the principal: `grep -n "match /" firestore.rules`. Anything the client cannot delete belongs in `onAuthUserDeleted`, which uses the Admin SDK and bypasses rules.
+
+### Audit every write path against the rules, not just the new ones
+- **Rule** — When reviewing a change that touches Firestore access, enumerate *all* collection paths the affected code touches and check each against `firestore.rules`. Checking only the paths the diff adds is not sufficient.
+- **Why** — The review gate on the deletion-cascade commit verified that the two new subcollections had rules, and passed it. Four pre-existing paths in the same function were silently denied and shipped as fixed. A separate QA pass caught it; the orchestrator review did not.
+- **Detect** — `grep -rn 'collection("' Marque-Prototype/ functions/src/ | grep -oE 'collection\("[^"]+"\)' | sort -u` then cross-check each against `firestore.rules` and against both deletion paths.
+
+### A retry that destroys its own inputs reports success
+- **Rule** — "Every step is idempotent" is a claim about individual operations, not about the function. Before enabling retries, ask what the *second* run reads. If an earlier run deleted the state a later phase depends on, the retry does nothing, finds no errors, and exits green — worse than no retry, because it looks like it worked. Order destructive work so the widest-blast-radius delete happens **last**, and abort before it if any earlier phase failed.
+- **Why** — `onAuthUserDeleted` ran `recursiveDelete(users/{uid})` even when reverse-pointer cleanup had failed. The retry then read empty follower lists, cleaned nothing, and reported success — leaving ghost pointers permanently. The same shape burned the username reservation: once the profile doc was gone, the retry could no longer read the username it needed to release.
+- **Detect** — For every phase in a retryable function, list what it reads and what it deletes. Any phase that deletes something an earlier phase read is a retry hazard.
 
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.
@@ -132,11 +147,14 @@ Learned the hard way. Each one cost real debugging time.
 
 Build and run through **Xcode** — open `Marque-Prototype.xcodeproj`. One native target, no test harness (no XCTest bundle, no `test` script in `functions/`). The Firebase iOS SDK is added via SPM (`https://github.com/firebase/firebase-ios-sdk`); linked products include `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, and `FirebaseRemoteConfig`.
 
-Command-line build (see the simulator and DEVELOPER_DIR pitfalls above):
+Command-line build. Copy this whole block — the three lines are load-bearing and verified working on this machine:
 ```bash
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+SIM=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1)
 xcodebuild -project Marque-Prototype.xcodeproj -scheme Marque-Prototype \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+  -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/marque-verify
 ```
+`export` must come first and be its own statement — see the pitfall below. `-derivedDataPath` avoids the lock Xcode holds on the default DerivedData when it's open.
 
 Cloud Functions live in `functions/` (TypeScript, `firebase-functions` v6). Build with `cd functions && npm run build`. **Never deploy (`firebase deploy`) without explicit user approval.**
 
@@ -205,7 +223,20 @@ Dependency CVEs are handled via the `overrides` block in `functions/package.json
 
 ## Firestore Rules
 
-Live in `firestore.rules`. Owner-scoped writes on `users/{uid}/**` with `usage/` locked to server-only writes (prevents daily-cap bypass). `publicCars` is read-any-auth, write-owner. `reports` is create-only client-side. **When adding a new subcollection under `users/{uid}/`, add its rule explicitly — the previous wildcard `{document=**}` match was removed intentionally so `usage/` could be locked down.**
+Live in `firestore.rules`. **Read the actual rule before assuming a path is writable — the per-path grants are not uniform, and "owner-scoped" is wrong often enough to be dangerous:**
+
+- `users/{userId}` — grants `create, update` only. **`delete` is denied**, because Firestore decomposes `write` into create/update/delete and this rule never enumerates delete. Read is open to any authenticated user.
+- `users/{uid}/followers/{followerId}` — writes bind the **follower**, not the path owner. The account owner cannot delete their own followers subcollection.
+- `users/{uid}/following/{followedId}` — writes bind the **path owner**, so nobody can clean up a reverse pointer in someone else's `following`.
+- `users/{uid}/notifications/{id}` — grants `read, update, create`. No delete.
+- `users/{uid}/usage/{docId}` — `allow write: if false`. Server-only, to prevent Assistant daily-cap bypass.
+- `users/{uid}/cars`, `blocked`, `conversations/**` — genuinely owner-scoped read/write.
+- `publicCars` — read-any-auth, write-owner. `reports` — create-only client-side. `usernames` — delete permitted to the owning uid.
+- **`purchases/` has no rule at all** (default deny) — see Known Pitfalls.
+
+Client-side deletes on any denied path fail with `PERMISSION_DENIED`, and the cascade swallows those with `try?`. Anything the client cannot delete must be handled server-side in `onAuthUserDeleted`, which uses the Admin SDK and bypasses rules. **Do not relax a rule to make a client delete work** — these grants are deliberately narrow.
+
+**When adding a new subcollection under `users/{uid}/`, add its rule explicitly** — the previous wildcard `{document=**}` match was removed intentionally so `usage/` could be locked down, so an unlisted path is denied by default.
 
 ## Shared UI Components (`Components/MarqueComponents.swift`)
 
@@ -218,10 +249,12 @@ Marque-Prototype/
   Models/          — Car, AppUser, Post, Comment, AppNotification, ServiceReminder, MaintenanceRecord,
                      CarData, PublicCar, ChatMessage, Conversation, AIServiceSuggestion, AppLinks
   Stores/          — CarStore, AuthService, SocialStore, ChatStore, ExploreStore, FollowStore,
-                     BlockStore, NotificationStore, SubscriptionStore, SmartcarStore, FeatureFlagsStore,
+                     BlockStore, NotificationStore, SubscriptionStore, SmartcarStore,
                      ImageManager, NotificationManager, VINDecodeService, ServiceReminderEngine,
                      AIServiceSuggestionService, DocumentScanService
-  Components/      — MarqueComponents.swift (shared UI)
+                     (note: FeatureFlagsStore.swift sits at the Marque-Prototype/ root,
+                      not in Stores/, alongside AppDelegate.swift)
+  Components/      — MarqueComponents.swift, CarPhotoImage.swift
   Views/           — Legacy flat views (CarListView, CarDetailView, AddCarView, EditCarDetailView,
                      AddMaintenanceView, ExpenseSummaryView). Migration target: Features/.
   Features/        — Assistant, Auth, Expenses, Explore, Garage, Onboarding, Profile, Settings, Social

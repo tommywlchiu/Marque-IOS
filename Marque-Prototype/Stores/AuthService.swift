@@ -567,16 +567,16 @@ class AuthService: NSObject, ObservableObject {
             try? await db.collection("usernames").document(username).delete()
         }
 
-        // 3. Fan-out relationship cleanup: remove ghost references in other users'
-        //    subcollections before deleting the user's own data.
+        // 3. Fan-out relationship cleanup: remove this user from the followers
+        //    subcollection of every user they follow (users/{followedUID}/followers/{uid}).
+        //    Permitted because the followers/{followerId} rule binds
+        //    request.auth.uid == followerId and we ARE the follower.
         //
-        //    Problem: step 4 (below) deletes users/{uid}/following and users/{uid}/followers,
-        //    but it doesn't touch the reverse pointers that live under OTHER users' documents.
-        //    Without this cleanup, deleted accounts leave permanent ghost entries that inflate
-        //    follower/following counts for everyone this user ever interacted with.
-
-        // 3a. Remove this user from the followers subcollection of every user they follow.
-        //     e.g. users/{followedUID}/followers/{uid}
+        //    The mirror direction (users/{followerUID}/following/{uid}) is NOT done here:
+        //    the following/{followedId} rule binds the path owner, not the deleting user,
+        //    so it is denied. onAuthUserDeleted removes those reverse pointers with the
+        //    Admin SDK. Do not widen that rule — it would let any user delete other
+        //    people's follow relationships.
         if let followingSnap = try? await db.collection("users").document(uid)
             .collection("following").getDocuments(),
            !followingSnap.documents.isEmpty {
@@ -590,23 +590,25 @@ class AuthService: NSObject, ObservableObject {
             try? await batch.commit()
         }
 
-        // 3b. Remove this user from the following subcollection of every user who follows them.
-        //     e.g. users/{followerUID}/following/{uid}
-        if let followerSnap = try? await db.collection("users").document(uid)
-            .collection("followers").getDocuments(),
-           !followerSnap.documents.isEmpty {
-            let batch = db.batch()
-            for doc in followerSnap.documents.prefix(500) {
-                batch.deleteDocument(
-                    db.collection("users").document(doc.documentID)
-                        .collection("following").document(uid)
-                )
-            }
-            try? await batch.commit()
-        }
-
-        // 4. Delete every subcollection under users/{uid}.
-        for sub in ["cars", "following", "followers", "blocked", "notifications"] {
+        // 4. Delete the subcollections under users/{uid} that the rules actually let
+        //    the owner delete, so the user sees their data disappear immediately.
+        //    Deliberately EXCLUDES:
+        //      followers/     — rule binds followerId, not the owner → denied
+        //      notifications/ — rule grants read/update/create only  → denied
+        //      usage/         — `allow write: if false` (server-only) → denied
+        //    Listing a denied path still costs a billed read per document and produces
+        //    zero writes, so those paths are left entirely to onAuthUserDeleted, which
+        //    recursively deletes users/{uid} and everything beneath it with the Admin SDK.
+        //
+        //    ALSO deliberately excludes following/ — even though the owner CAN delete it.
+        //    onAuthUserDeleted reads users/{uid}/following in its read phase to clean the
+        //    reverse pointers under other users' documents. This step runs before
+        //    firebaseUser.delete() fires that trigger, so deleting the list here destroys
+        //    the server's only record of which pointers need cleanup. Step 3a above
+        //    normally handles them first, but its commit is wrapped in `try?` — if it
+        //    fails, the server is the sole remaining recovery path and needs this list
+        //    intact. recursiveDelete removes it server-side anyway.
+        for sub in ["cars", "blocked"] {
             if let snapshot = try? await db.collection("users").document(uid)
                 .collection(sub).getDocuments(), !snapshot.documents.isEmpty {
                 let batch = db.batch()
@@ -638,27 +640,20 @@ class AuthService: NSObject, ObservableObject {
             }
         }
 
-        // 4b. Delete Assistant usage counter docs (PRD FR-10.15, EC-08).
-        //     NOTE: firestore.rules currently locks users/{uid}/usage/** to
-        //     server-only writes (to prevent daily-cap bypass), so this
-        //     client-side delete will fail with PERMISSION_DENIED and be
-        //     swallowed by `try?`. A Cloud Function triggered on user deletion
-        //     is the authoritative place to clean these up. This block is
-        //     kept as best-effort so it starts working automatically if the
-        //     rules are ever relaxed for the account-owner delete case.
-        if let usageSnap = try? await db.collection("users").document(uid)
-            .collection("usage").getDocuments(), !usageSnap.documents.isEmpty {
-            // Chunk into 500-op batches — usage docs accumulate one per day.
-            for chunk in stride(from: 0, to: usageSnap.documents.count, by: 500) {
-                let end = min(chunk + 500, usageSnap.documents.count)
-                let batch = db.batch()
-                usageSnap.documents[chunk..<end].forEach { batch.deleteDocument($0.reference) }
-                try? await batch.commit()
-            }
-        }
-
-        // 5. Delete the user profile document.
-        try? await db.collection("users").document(uid).delete()
+        // 5. The users/{uid} profile document is deleted SERVER-SIDE by
+        //    onAuthUserDeleted, not here. `match /users/{userId}` grants
+        //    `allow create, update` only, and Firestore decomposes `write` into
+        //    create/update/delete — enumerating create+update DENIES delete, so a
+        //    client-side delete here would always fail. Do not widen that rule: it
+        //    would let someone wipe their profile while leaving server-only usage/
+        //    data behind. The Cloud Function reads `username` off this document
+        //    before deleting it, so the usernames/{username} reservation in step 2
+        //    is released even if this client cascade is interrupted — but only if
+        //    the interruption happens AFTER step 7's firebaseUser.delete() call
+        //    succeeds. onAuthUserDeleted is an Auth trigger: it never fires (and
+        //    the reservation is never released) if this cascade dies before that
+        //    call, including if step 2 itself failed and the app crashes or the
+        //    network drops before reaching step 7.
 
         // 6. Delete Storage files (best-effort — failures don't block account deletion).
         storage.child("users/\(uid)/avatar.jpg").delete(completion: nil)

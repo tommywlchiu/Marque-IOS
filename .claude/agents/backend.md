@@ -53,7 +53,14 @@ Build with `cd functions && npm run build` (runs `tsc`). Silent output means suc
 
 ## Verification
 
-- Swift: `xcodebuild -project Marque-Prototype.xcodeproj -scheme Marque-Prototype -destination "platform=iOS Simulator,name=<an installed sim>"`. Get the name from `xcrun simctl list devices available` — **do not hardcode `iPhone 16`, it is not installed**. If you get `requires Xcode`, prefix `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
+- Swift — copy the whole block, all three lines matter:
+  ```bash
+  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+  SIM=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1)
+  xcodebuild -project Marque-Prototype.xcodeproj -scheme Marque-Prototype \
+    -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/marque-verify
+  ```
+  `iPhone 16` is **not** installed here. `export` must be its own statement — inline-prefixing expands the subshell before the assignment applies, so `xcrun` returns empty and xcodebuild dumps help text instead of building.
 - Functions: `cd functions && npm run build`
 - Rules: emulator only, and only if the user asks (it's interactive)
 
