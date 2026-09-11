@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Marque is an iOS app (SwiftUI, iOS 17.6+, Swift 5, bundle ID `com.marque.app`) for car owners to manage, track, and share vehicle information. It combines a private garage tool (service history, document expiry alerts, expense tracking), a social layer (public profiles, follows, block/report), and an AI assistant (Marque Assistant, v1.1, behind a Remote Config flag).
+Marque is an iOS app (SwiftUI, iOS 17.6+, Swift 5, bundle ID `com.tommychiu.marque`) for car owners to manage, track, and share vehicle information. It combines a private garage tool (service history, document expiry alerts, expense tracking), a social layer (public profiles, follows, block/report), and an AI assistant (Marque Assistant, v1.1, behind a Remote Config flag).
 
 Product source of truth: `docs/Marque-PRD.md` (v1.1). Cite FR/EC/US identifiers from it when discussing intended behavior.
 
@@ -135,6 +135,11 @@ Learned the hard way. Each one cost real debugging time.
 - **Rule** — "Every step is idempotent" is a claim about individual operations, not about the function. Before enabling retries, ask what the *second* run reads. If an earlier run deleted the state a later phase depends on, the retry does nothing, finds no errors, and exits green — worse than no retry, because it looks like it worked. Order destructive work so the widest-blast-radius delete happens **last**, and abort before it if any earlier phase failed.
 - **Why** — `onAuthUserDeleted` ran `recursiveDelete(users/{uid})` even when reverse-pointer cleanup had failed. The retry then read empty follower lists, cleaned nothing, and reported success — leaving ghost pointers permanently. The same shape burned the username reservation: once the profile doc was gone, the retry could no longer read the username it needed to release.
 - **Detect** — For every phase in a retryable function, list what it reads and what it deletes. Any phase that deletes something an earlier phase read is a retry hazard.
+
+### A constant that "looks right" still needs checking against the actual build artifact
+- **Rule** — Never assert a bundle ID, app ID, or similar identifying constant in code or docs without checking it against the real source: `PRODUCT_BUNDLE_IDENTIFIER` in `project.pbxproj`, or `CFBundleIdentifier` in the built `Info.plist`. A value that reads as plausible — especially one matching the product's own name — is not evidence it's correct.
+- **Why** — `CLAUDE.md`, every agent brief, and the Cloud Functions `BUNDLE_ID` constant all asserted `com.marque.app` for the entire session. The real bundle ID, set in the very first commit, is `com.tommychiu.marque`. This silently broke `SignedDataVerifier`'s bundle-ID check on every production and sandbox verification, on top of the separate `appAppleId` constructor bug found the same week — two independent reasons the same code path never worked, neither visible from reading the code alone.
+- **Detect** — `grep PRODUCT_BUNDLE_IDENTIFIER Marque-Prototype.xcodeproj/project.pbxproj` and diff against any hardcoded bundle ID elsewhere in the repo.
 
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.

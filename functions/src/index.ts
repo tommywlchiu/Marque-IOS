@@ -18,7 +18,7 @@ import { randomUUID } from "crypto";
 admin.initializeApp();
 const db = admin.firestore();
 
-const BUNDLE_ID = "com.marque.app";
+const BUNDLE_ID = "com.tommychiu.marque";
 
 // The app's numeric App Store Connect identifier. Required by
 // SignedDataVerifier for Environment.PRODUCTION only — the constructor throws
