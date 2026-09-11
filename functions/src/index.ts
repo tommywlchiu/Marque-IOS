@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
+import * as functionsV1 from "firebase-functions/v1";
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import {
@@ -1685,3 +1686,477 @@ export const askMarque = onCall(
     }
   }
 );
+
+// ============================================================================
+// onAuthUserDeleted — server-side account-deletion cleanup
+// ============================================================================
+//
+// Fires after a Firebase Auth user is deleted. This trigger — not the client
+// cascade in AuthService.deleteAccount — is the AUTHORITATIVE eraser for
+// account data (FR-10.15, EC-08, EC-22, R-10). The Admin SDK bypasses
+// firestore.rules, which is the entire reason this work lives here: several of
+// the paths below are *denied* to the client by design. AuthService.deleteAccount
+// no longer even attempts them — listing a denied path still costs a billed read
+// per document and produces zero writes.
+//
+// Specifically, these paths cannot be deleted (or, for publicCars/Storage,
+// cannot be reliably deleted) by the signed-in owner:
+//
+//   1. users/{uid}                  — rules grant `create, update` only.
+//                                     Firestore decomposes `write` into
+//                                     create/update/delete, so enumerating
+//                                     create+update denies delete. The profile
+//                                     doc (and its `read: if request.auth
+//                                     != null`) would otherwise survive
+//                                     deletion and stay readable by any signed
+//                                     -in user.
+//   2. users/{uid}/followers/**     — rules bind `request.auth.uid ==
+//                                     followerId`; the account owner is not the
+//                                     follower, so every delete is denied (and
+//                                     because batches are atomic, one denial
+//                                     fails the whole batch).
+//   3. users/{uid}/notifications/** — rules grant read/update/create. No delete.
+//   4. users/{followerUID}/following/{uid} — the reverse follow pointer. Rules
+//                                     bind the *path owner* (followerUID), not
+//                                     the deleting user. Left unhandled these
+//                                     ghost entries permanently inflate other
+//                                     users' following counts.
+//                                     (The mirror direction,
+//                                     users/{followedUID}/followers/{uid}, IS
+//                                     permitted client-side and is still done
+//                                     there for immediate feedback; we redo it
+//                                     here idempotently.)
+//   5. users/{followedUID}/notifications/** where actorUID == uid — the
+//                                     deleted user's display name/username/
+//                                     avatar baked into OTHER users' follow
+//                                     notifications. FollowStore.follow()
+//                                     writes the notification into the
+//                                     FOLLOWED user's inbox (to: followedUID)
+//                                     with actorUID set to the follower, so
+//                                     these live under this account's
+//                                     following[], not followers[]. Rules
+//                                     grant the followed user no delete on
+//                                     their own notifications (create/read/
+//                                     update only), and even if they did, the
+//                                     deleted account can't act as them. Left
+//                                     unhandled, a deleted user's PII renders
+//                                     in every followed user's inbox
+//                                     indefinitely (R-10, EC-08).
+//   6. publicCars/{carId} where ownerUID == uid — client deletion is
+//                                     try?-swallowed (CarStore best-effort);
+//                                     an interrupted cascade leaves the
+//                                     deleted user's cars live in Explore for
+//                                     every user.
+//   7. Storage users/{uid}/**       — client deletion is fire-and-forget
+//                                     (delete(completion: nil)); an
+//                                     interrupted cascade leaves photos
+//                                     publicly fetchable by URL.
+//   8. users/{uid}/usage/**         — `allow write: if false` (server-only, so
+//                                     the assistant daily cap can't be bypassed).
+//
+// DO NOT "fix" the above by relaxing firestore.rules. Granting the client
+// delete on users/{uid} would let someone wipe their profile doc while leaving
+// usage/ behind; granting it on followers/ would let a user delete other
+// people's follow relationships; granting delete on another user's
+// notifications would let anyone clear anyone else's inbox. The rules are
+// correct — the cascade was in the wrong place.
+//
+// db.recursiveDelete(db.doc(`users/${uid}`)) deletes the profile document AND
+// every subcollection beneath it (cars, following, followers, blocked,
+// notifications, conversations/**/messages/**, usage) in one call, which is why
+// there is no longer a per-subcollection list to keep in sync under users/{uid}
+// itself. Reverse follow pointers and other-users'-notifications live under
+// *other* users' documents, so they are handled explicitly. publicCars and
+// Storage are top-level/bucket paths, also handled explicitly.
+//
+// ORDERING IS LOAD-BEARING, and recursiveDelete MUST BE LAST:
+//
+//   1. READ ONLY   — username, following[], followers[]. Nothing above this
+//                    line deletes anything; a failure here aborts before any
+//                    destructive write, so a retry starts from an intact graph.
+//   2. reverse follow pointers under following[]/followers[] counterparts.
+//   3. other-users'-notification cleanup, keyed off followers[].
+//   4. publicCars sweep (ownerUID == uid) + Storage prefix delete.
+//   5. username reservation release (needs `username` read in phase 1).
+//   6. recursiveDelete(users/{uid}) — destroys the profile doc and every
+//      subcollection beneath it, INCLUDING following/followers/notifications,
+//      which is exactly the state phases 2–5 depend on to find their targets.
+//
+// This is why recursiveDelete cannot run until phases 2–5 have all reported
+// clean: if it ran earlier (or phases 2–5 tolerated errors and continued past
+// them) and any of phases 2–5 then failed, a retry would re-run phase 1 against
+// an ALREADY-EMPTIED users/{uid} — following/followers would read back empty,
+// the notification sweep would find no followers to walk, and the retry would
+// report success while leaving the original ghost pointers, stale notifications,
+// or orphaned username reservation permanently in place. Concretely:
+//
+//   - Reverse pointers: if recursiveDelete ran before a failed phase-2 retry,
+//     the second attempt's phase-1 read of following/followers comes back
+//     empty (recursiveDelete already deleted those subcollections), so phase 2
+//     enqueues nothing, reports zero errors, and exits green — while the
+//     original counterparties still hold ghost pointers forever.
+//   - Username: if recursiveDelete ran before phase 5, the retry's phase-1
+//     read of the profile doc returns nothing, `username` comes back `""`,
+//     and the `if (username)` guard skips the release permanently — burning
+//     the reservation for good.
+//
+// So: phases 2–5 all run against the intact pre-delete graph, and if ANY of
+// them reports an error, we throw BEFORE reaching phase 6. recursiveDelete
+// never executes on a run that leaves the pre-delete state dirty. This does
+// mean a persistent pre-delete failure delays erasure of the user's OWN data
+// (recursiveDelete keeps getting deferred) — that's the correct tradeoff: the
+// alternative is the silent-green-retry described above. failurePolicy retries
+// for roughly 7 days before giving up; that terminal state is logged at
+// `error`, not silently swallowed.
+//
+// Once phases 2–5 succeed, recursiveDelete's own failure is a plain retry:
+// phases 2–5 re-run against already-emptied targets (all safely idempotent
+// no-ops — following/followers/notifications/publicCars/Storage/username are
+// already gone, so each phase finds nothing to do and reports no errors), and
+// recursiveDelete is attempted again on the still-present profile doc.
+//
+// v1 API (functions.auth.user().onDelete) is used deliberately over the v2
+// beforeUserDeleted blocking trigger: v1 fires *after* auth deletion succeeds
+// (never blocks the user-visible delete) and allows a long timeout for the
+// recursive walk. beforeUserDeleted's 7s hard cap is far too tight.
+//
+// Retries: failurePolicy is ON. A gen-1 background trigger has retries DISABLED
+// by default, which meant a timeout orphaned the subtree permanently with no
+// alert. Every phase is idempotent per-operation — recursiveDelete on an
+// absent or already-empty path is a clean no-op, deleting a non-existent
+// document succeeds, and re-querying an already-swept collection finds
+// nothing — so re-running any individual phase is always safe. What is NOT
+// safe is running recursiveDelete before phases 2–5 are clean; see above.
+
+const CLEANUP_TIMEOUT_SECONDS = 540; // gen-1 background maximum
+const CLEANUP_MEMORY = "512MB" as const;
+
+// Log loudly once we're within ~90s of the timeout. Ceiling to worry about:
+// Pro users are capped at 500 assistant messages/day, so a long-lived account
+// can accumulate six figures of message documents under conversations/**.
+const CLEANUP_WARN_ELAPSED_MS = (CLEANUP_TIMEOUT_SECONDS - 90) * 1000;
+
+// Read the document IDs of a subcollection without paying for the field data —
+// we only need the counterparty UIDs.
+async function collectDocumentIds(path: string): Promise<string[]> {
+  const snap = await db.collection(path).select().get();
+  return snap.docs.map((d) => d.id);
+}
+
+export const onAuthUserDeleted = functionsV1
+  .runWith({
+    timeoutSeconds: CLEANUP_TIMEOUT_SECONDS,
+    memory: CLEANUP_MEMORY,
+    failurePolicy: true,
+  })
+  .auth.user()
+  .onDelete(async (user) => {
+    const uid = user.uid;
+    const startedAt = Date.now();
+    const userRef = db.collection("users").doc(uid);
+    const errors: string[] = [];
+
+    // ---------------------------------------------------------------------
+    // Phase 1 — READ ONLY. Nothing below this point may delete anything
+    // until phases 2–5 have all been confirmed clean. A failure here aborts
+    // before any destructive write, so the retry sees an intact graph.
+    // (recursiveDelete runs LAST — see the ordering note above — because it
+    // would destroy the exact state phases 2–5 need to find their targets.)
+    // ---------------------------------------------------------------------
+    let username = "";
+    let following: string[];
+    let followers: string[];
+    try {
+      const profileSnap = await userRef.get();
+      const rawUsername = profileSnap.data()?.username;
+      if (typeof rawUsername === "string") {
+        username = rawUsername.trim().toLowerCase();
+      }
+      [following, followers] = await Promise.all([
+        collectDocumentIds(`users/${uid}/following`),
+        collectDocumentIds(`users/${uid}/followers`),
+      ]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      functions.logger.error("onAuthUserDeleted read phase failed — aborting before any delete", {
+        uid,
+        err: message,
+      });
+      throw new Error(`onAuthUserDeleted: read phase failed for uid=${uid}: ${message}`);
+    }
+
+    // One writer shared by phases 2–4 so all three drain through the same
+    // rate limiter. Default throttling is already the fastest safe setting
+    // (500 ops/s ramping 1.5x every 5 min up to 10,000) — overriding it here
+    // would only slow the walk down. Deliberately NOT shared with phase 6
+    // (recursiveDelete) — that phase only runs after this writer has closed
+    // and phases 2–5 are confirmed clean.
+    const preDeleteWriter = db.bulkWriter();
+
+    try {
+      // -------------------------------------------------------------------
+      // Phase 2 — reverse follow pointers under OTHER users' documents.
+      // These are outside users/{uid} so recursiveDelete never reaches them.
+      // Deleting an already-absent document succeeds, so this is idempotent.
+      // -------------------------------------------------------------------
+      const reversePointerOps: Array<Promise<Error | null>> = [];
+      const enqueueDelete = (ref: FirebaseFirestore.DocumentReference) => {
+        reversePointerOps.push(
+          preDeleteWriter.delete(ref).then(
+            () => null,
+            (err: unknown) => (err instanceof Error ? err : new Error(String(err)))
+          )
+        );
+      };
+
+      // Every user this account followed lists it under their followers/.
+      for (const followedUid of following) {
+        enqueueDelete(db.collection("users").doc(followedUid).collection("followers").doc(uid));
+      }
+      // Every user who followed this account lists it under their following/.
+      for (const followerUid of followers) {
+        enqueueDelete(db.collection("users").doc(followerUid).collection("following").doc(uid));
+      }
+
+      await preDeleteWriter.flush();
+      const reversePointerErrors = (await Promise.all(reversePointerOps)).filter(
+        (e): e is Error => e !== null
+      );
+      if (reversePointerErrors.length > 0) {
+        const message =
+          `${reversePointerErrors.length}/${reversePointerOps.length} reverse follow pointer ` +
+          `deletes failed; last error: ${reversePointerErrors[reversePointerErrors.length - 1].message}`;
+        functions.logger.error("onAuthUserDeleted reverse pointer cleanup failed", {
+          uid,
+          failed: reversePointerErrors.length,
+          attempted: reversePointerOps.length,
+        });
+        errors.push(message);
+      }
+
+      // -------------------------------------------------------------------
+      // Phase 3 — the deleted user's PII inside OTHER users' notification
+      // inboxes. FollowStore.follow() writes the follow notification to:
+      // followedUID (the person being followed), with actorUID set to the
+      // follower. So each entry in following[] (read in phase 1, before
+      // recursiveDelete can remove it) is someone this account followed,
+      // whose inbox therefore contains a notification with actorUID == uid.
+      // Walk following[] — NOT followers[] — and delete every notification
+      // each followed user has where actorUID == uid.
+      //
+      // Deliberately a per-followed-user query, NOT
+      // collectionGroup('notifications').where('actorUID','==',uid) — that
+      // needs a single-field index exemption (notifications' default index
+      // policy excludes large text fields, and collection-group queries need
+      // their own exemption declared). Do not add one; the per-followed-user
+      // loop is bounded by this account's own following count.
+      // -------------------------------------------------------------------
+      const notificationCleanupOps: Array<Promise<Error | null>> = [];
+      for (const followedUid of following) {
+        const notifSnap = await db
+          .collection("users")
+          .doc(followedUid)
+          .collection("notifications")
+          .where("actorUID", "==", uid)
+          .select()
+          .get();
+        for (const notifDoc of notifSnap.docs) {
+          notificationCleanupOps.push(
+            preDeleteWriter.delete(notifDoc.ref).then(
+              () => null,
+              (err: unknown) => (err instanceof Error ? err : new Error(String(err)))
+            )
+          );
+        }
+      }
+
+      await preDeleteWriter.flush();
+      const notificationCleanupErrors = (await Promise.all(notificationCleanupOps)).filter(
+        (e): e is Error => e !== null
+      );
+      if (notificationCleanupErrors.length > 0) {
+        const message =
+          `${notificationCleanupErrors.length}/${notificationCleanupOps.length} followed-user-inbox ` +
+          `notification deletes failed; last error: ` +
+          `${notificationCleanupErrors[notificationCleanupErrors.length - 1].message}`;
+        functions.logger.error("onAuthUserDeleted followed-user notification cleanup failed", {
+          uid,
+          failed: notificationCleanupErrors.length,
+          attempted: notificationCleanupOps.length,
+        });
+        errors.push(message);
+      }
+
+      // -------------------------------------------------------------------
+      // Phase 4 — publicCars sweep. Client deletion (CarStore) is
+      // try?-swallowed, so an interrupted cascade can leave this account's
+      // cars live in Explore forever (EC-08). Unbounded — BulkWriter has no
+      // 500-op batch cap.
+      // -------------------------------------------------------------------
+      try {
+        const publicCarsSnap = await db
+          .collection("publicCars")
+          .where("ownerUID", "==", uid)
+          .select()
+          .get();
+        const publicCarsOps: Array<Promise<Error | null>> = [];
+        for (const carDoc of publicCarsSnap.docs) {
+          publicCarsOps.push(
+            preDeleteWriter.delete(carDoc.ref).then(
+              () => null,
+              (err: unknown) => (err instanceof Error ? err : new Error(String(err)))
+            )
+          );
+        }
+        await preDeleteWriter.flush();
+        const publicCarsErrors = (await Promise.all(publicCarsOps)).filter(
+          (e): e is Error => e !== null
+        );
+        if (publicCarsErrors.length > 0) {
+          const message =
+            `${publicCarsErrors.length}/${publicCarsOps.length} publicCars deletes failed; ` +
+            `last error: ${publicCarsErrors[publicCarsErrors.length - 1].message}`;
+          functions.logger.error("onAuthUserDeleted publicCars sweep failed", {
+            uid,
+            failed: publicCarsErrors.length,
+            attempted: publicCarsOps.length,
+          });
+          errors.push(message);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        functions.logger.error("onAuthUserDeleted publicCars sweep failed", { uid, err: message });
+        errors.push(`publicCars(ownerUID=${uid}): ${message}`);
+      }
+
+      // -------------------------------------------------------------------
+      // Phase 4b — Storage prefix delete. Client deletion is fire-and-forget
+      // (delete(completion: nil)) and only ever targets the avatar plus
+      // filenames it can read off each car doc — a deleted/unreadable car
+      // silently strands its photos. Deliberately does NOT enumerate car
+      // documents to find photo filenames: those names live in
+      // `photoFileNames` on each car doc, and reading them back out here
+      // would require exactly the kind of "read state that a later phase
+      // might have already destroyed" ordering hazard this whole rewrite
+      // exists to avoid. A prefix delete needs no Firestore state at all.
+      // force:true so one undeletable object doesn't stop the rest of the
+      // prefix from being swept.
+      // -------------------------------------------------------------------
+      try {
+        await admin.storage().bucket().deleteFiles({ prefix: `users/${uid}/`, force: true });
+      } catch (err) {
+        // With force:true, a rejection here is the ARRAY of per-file errors
+        // deleteFiles collects when force lets it keep going past individual
+        // failures (see @google-cloud/storage's bucket.deleteFiles) — not a
+        // single Error. JSON.stringify(Error) serializes to "{}", so extract
+        // .message explicitly for both shapes rather than logging noise.
+        const message = Array.isArray(err)
+          ? err.map((e) => (e instanceof Error ? e.message : String(e))).join("; ")
+          : err instanceof Error
+            ? err.message
+            : String(err);
+        functions.logger.error("onAuthUserDeleted Storage prefix delete failed", { uid, err: message });
+        errors.push(`storage(users/${uid}/): ${message}`);
+      }
+    } finally {
+      // Never leave a BulkWriter open — close() resolves once every enqueued
+      // write settles and never rejects.
+      await preDeleteWriter.close();
+    }
+
+    // ---------------------------------------------------------------------
+    // Phase 5 — release the username reservation. Uses `username` read in
+    // phase 1: recursiveDelete (phase 6) hasn't run yet, but reading it now
+    // rather than re-reading the profile doc keeps this phase's dependency
+    // explicit and matches what phase 1 already guarantees is intact.
+    // Guarded by a transaction so we never delete a reservation that has
+    // since been claimed by a different account.
+    // ---------------------------------------------------------------------
+    if (username) {
+      try {
+        const usernameRef = db.collection("usernames").doc(username);
+        await db.runTransaction(async (tx) => {
+          const snap = await tx.get(usernameRef);
+          if (!snap.exists) return;
+          if (snap.data()?.uid !== uid) return; // reclaimed by someone else
+          tx.delete(usernameRef);
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        functions.logger.error("onAuthUserDeleted username release failed", {
+          uid,
+          username,
+          err: message,
+        });
+        errors.push(`usernames/${username}: ${message}`);
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Gate — recursiveDelete (phase 6) MUST NOT run unless phases 2–5 are
+    // all clean. See the ordering note at the top of this function: running
+    // it over a dirty pre-delete state is what turns "retry" into "silent
+    // false success." Bail here, loudly, and let failurePolicy retry the
+    // whole event against the still-intact graph.
+    // ---------------------------------------------------------------------
+    if (errors.length > 0) {
+      const elapsedMs = Date.now() - startedAt;
+      functions.logger.error(
+        "onAuthUserDeleted withholding recursiveDelete — pre-delete phases failed, retry will re-run against intact graph",
+        { uid, failed: errors.length, latency_ms: elapsedMs, errors }
+      );
+      throw new Error(
+        `onAuthUserDeleted: pre-delete phases failed for uid=${uid}, recursiveDelete withheld: ${errors.join("; ")}`
+      );
+    }
+
+    // ---------------------------------------------------------------------
+    // Phase 6 — the profile document and EVERY subcollection beneath it
+    // (cars, following, followers, blocked, notifications,
+    // conversations/**/messages/**, usage). This is the LAST destructive
+    // act in the function, by construction: everything above it has already
+    // succeeded, so there is no remaining phase that depends on the graph
+    // this call is about to erase.
+    // ---------------------------------------------------------------------
+    try {
+      await db.recursiveDelete(userRef);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      functions.logger.error("onAuthUserDeleted recursiveDelete failed", {
+        uid,
+        path: userRef.path,
+        err: message,
+      });
+      errors.push(`users/${uid}: ${message}`);
+    }
+
+    const elapsedMs = Date.now() - startedAt;
+    functions.logger.info("onAuthUserDeleted cleanup", {
+      uid,
+      following_count: following.length,
+      followers_count: followers.length,
+      // "attempted" — the transaction no-ops if the reservation is already gone
+      // (the client releases it in step 2) or has been reclaimed by another uid.
+      username_release_attempted: username !== "",
+      failed: errors.length,
+      latency_ms: elapsedMs,
+    });
+    if (elapsedMs > CLEANUP_WARN_ELAPSED_MS) {
+      functions.logger.warn("onAuthUserDeleted approaching timeout", {
+        uid,
+        latency_ms: elapsedMs,
+        timeout_ms: CLEANUP_TIMEOUT_SECONDS * 1000,
+      });
+    }
+
+    // Throw on ANY failure. failurePolicy is on and every phase is idempotent,
+    // so a retry is strictly better than silently leaving data behind. At
+    // this point the only phase that could have failed is recursiveDelete
+    // itself (phases 2–5 already gated above), so a retry re-runs phase 1
+    // against an unchanged profile doc and re-attempts recursiveDelete.
+    if (errors.length > 0) {
+      throw new Error(
+        `onAuthUserDeleted: cleanup incomplete for uid=${uid}: ${errors.join("; ")}`
+      );
+    }
+  });
