@@ -8,13 +8,33 @@ import {
   SignedDataVerifier,
   NotificationTypeV2,
   Subtype,
+  InAppOwnershipType,
+  VerificationException,
+  VerificationStatus,
 } from "@apple/app-store-server-library";
 import Anthropic from "@anthropic-ai/sdk";
+import { randomUUID } from "crypto";
 
 admin.initializeApp();
 const db = admin.firestore();
 
 const BUNDLE_ID = "com.marque.app";
+
+// The app's numeric App Store Connect identifier. Required by
+// SignedDataVerifier for Environment.PRODUCTION only — the constructor throws
+// synchronously ("appAppleId is required when the environment is Production")
+// if it's omitted there. Confirmed directly from App Store Connect; do not
+// alter.
+const APP_STORE_APP_ID = 6763424467;
+
+// The auto-renewable subscription products that grant Pro. Must stay in sync
+// with SubscriptionStore.monthlyID / .annualID on the client. Only used by
+// syncEntitlement — the webhook does not need it (there is a single
+// subscription group, and Apple only notifies about our own products).
+const PRO_PRODUCT_IDS = [
+  "com.tommychiu.marque.pro.monthly",
+  "com.tommychiu.marque.pro.annual",
+];
 
 // Apple Root CA - G3 (DER, base64-encoded).
 // Downloaded from https://www.apple.com/certificateauthority/
@@ -50,7 +70,8 @@ function getVerifier(env: Environment): SignedDataVerifier {
         [APPLE_ROOT_CA],
         true,
         Environment.PRODUCTION,
-        BUNDLE_ID
+        BUNDLE_ID,
+        APP_STORE_APP_ID
       );
     }
     return productionVerifier;
@@ -64,6 +85,123 @@ function getVerifier(env: Environment): SignedDataVerifier {
     );
   }
   return sandboxVerifier;
+}
+
+// SignedDataVerifier's constructor throws synchronously (not on verify) when
+// appAppleId is missing for Environment.PRODUCTION — see getVerifier above.
+// That failure mode looks identical to a genuine JWS verification rejection
+// unless we check for it by message, which is why both call sites below route
+// through verifyWithFallback instead of duplicating a bare try/catch: a
+// construction failure must never again be silently absorbed into the
+// "verification rejected, try sandbox" path (that is exactly how the missing
+// appAppleId argument went undetected for as long as it did).
+function isVerifierConstructionError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes("appAppleId is required");
+}
+
+// TRANSIENT vs PERMANENT verification failure.
+//
+// The library throws VerificationStatus.RETRYABLE_VERIFICATION_FAILURE
+// specifically to mean "this failed for a reason that may not fail next time" —
+// distinct from an invalid signature, wrong environment or wrong app ID. With
+// enableOnlineChecks = true (the `true` argument to SignedDataVerifier above)
+// every verification makes live OCSP calls to ocsp.apple.com, so a network blip
+// or slow responder surfaces here. appStoreNotifications must answer Apple with
+// a non-2xx in that case so the notification is redelivered (Apple retries over
+// ~3 days); a 200 would permanently drop it.
+function isRetryableVerificationFailure(err: unknown): boolean {
+  return (
+    err instanceof VerificationException &&
+    err.status === VerificationStatus.RETRYABLE_VERIFICATION_FAILURE
+  );
+}
+
+// Structured-logging-safe rendering of an error.
+//
+// functions.logger serializes its payload as JSON, and Error.message / .stack
+// are non-enumerable — so `logger.error(msg, { err })` writes `{}` for a plain
+// Error and `{ status: 2 }` for a VerificationException, discarding exactly the
+// part that explains the failure. Pull the fields out explicitly.
+function describeError(err: unknown): Record<string, unknown> {
+  if (err instanceof Error) {
+    const status = (err as { status?: unknown }).status;
+    return {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      ...(status !== undefined ? { status } : {}),
+    };
+  }
+  return { message: String(err) };
+}
+
+// Runs `verify` against the production verifier, falling back to sandbox on
+// any failure. Logs — and lets the caller distinguish via the thrown error —
+// whether the production attempt failed because the verifier could not be
+// constructed at all, or because it legitimately rejected the payload (e.g. a
+// sandbox JWS presented to production, which is expected during TestFlight).
+async function verifyWithFallback<T>(
+  verify: (v: SignedDataVerifier) => Promise<T>,
+  logContext: Record<string, unknown> = {}
+): Promise<T> {
+  let productionFailureMode: "construction" | "verification" | undefined;
+  let productionError: unknown;
+  try {
+    const v = getVerifier(Environment.PRODUCTION);
+    return await verify(v);
+  } catch (err) {
+    productionError = err;
+    if (isVerifierConstructionError(err)) {
+      productionFailureMode = "construction";
+      functions.logger.error(
+        "Production SignedDataVerifier failed to construct — check APP_STORE_APP_ID",
+        { err: describeError(err), ...logContext }
+      );
+    } else {
+      productionFailureMode = "verification";
+      functions.logger.info(
+        "Production verification did not accept payload — trying sandbox",
+        { err: describeError(err), ...logContext }
+      );
+    }
+  }
+
+  try {
+    const v = getVerifier(Environment.SANDBOX);
+    return await verify(v);
+  } catch (err) {
+    // Rethrow whichever attempt reported a TRANSIENT failure, so the caller
+    // can still tell "try again later" apart from "this will never verify".
+    // A production-side OCSP timeout followed by a sandbox-side
+    // INVALID_ENVIRONMENT would otherwise look permanent, and the webhook
+    // would tell Apple not to redeliver.
+    const retryableErr = isRetryableVerificationFailure(err)
+      ? err
+      : isRetryableVerificationFailure(productionError)
+        ? productionError
+        : undefined;
+    functions.logger.warn("Sandbox verification also failed", {
+      err: describeError(err),
+      productionErr: describeError(productionError),
+      productionFailureMode,
+      retryable: retryableErr !== undefined,
+      ...logContext,
+    });
+    throw retryableErr ?? err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Log-safe rendering of an appAccountToken.
+//
+// The token is not client-readable (appAccountTokens is `allow read: if false`)
+// but it is bearer-equivalent: anyone who learns a token can attach it to their
+// own purchase and redirect that user's entitlement. Cloud Logging is a wider
+// audience than the Admin SDK, so only ever log a prefix.
+// ---------------------------------------------------------------------------
+
+function truncateToken(token: string): string {
+  return `${token.slice(0, 8)}...`;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,6 +238,87 @@ function resolveProStatus(
 }
 
 // ---------------------------------------------------------------------------
+// getAppAccountToken — mint (or return) this user's Apple appAccountToken.
+//
+// StoreKit 2 lets the client attach an appAccountToken (a UUID) to a purchase.
+// Apple then echoes that UUID back, inside the signed transaction payload, on
+// every App Store Server Notification for that subscription — including
+// renewals, expirations and refunds. appStoreNotifications uses it to resolve
+// the owning Firebase uid.
+//
+// The security property of the whole flow rests on this function being the ONLY
+// writer of appAccountTokens/{token}:
+//   - uid comes from request.auth, verified by the Callable runtime. It is
+//     never read out of request.data.
+//   - appAccountTokens is `allow read, write: if false` in firestore.rules, so
+//     there is no client write path to squat or repoint a mapping.
+// This replaced an earlier revision of this same branch, which added a
+// purchases/{originalTransactionId} → { uid } rule that constrained the uid
+// FIELD but not the DOCUMENT ID — so any signed-in client could squat a
+// transaction ID before its real owner wrote it. QA caught it pre-merge; that
+// rule never existed on main and was never deployed.
+//
+// IDEMPOTENT — idempotency is determined by querying appAccountTokens for an
+// existing doc where uid == request.auth.uid (limit 1), NOT by a field on the
+// user's profile doc. Repeat calls (the app calls this on every purchase
+// attempt) return the same UUID instead of minting a new one.
+//
+// Duplicate mints are NON-FATAL, not a correctness bug. Minting only ever ADDS
+// an appAccountTokens/{token} doc; it never deletes one. Two docs mapping two
+// different tokens to the same uid resolve identically in the webhook, and
+// onAuthUserDeleted phase 4c deletes both (its query is `where uid == uid`, not
+// a single-doc get). The transaction below is therefore defense-in-depth
+// against collection bloat and a pointless extra write, not a guard against
+// data loss.
+//
+// DO NOT "fix" this by deleting a user's existing token docs when minting a new
+// one. Deleting a stale token is the one operation that DOES orphan a
+// subscription permanently: Apple keeps echoing the token that was attached at
+// purchase time, an appAccountToken cannot be re-attached to an
+// already-completed transaction, and the webhook's only uid lookup is that
+// doc. Stale tokens must be left in place — see syncEntitlement, which
+// re-claims a DANGLING mapping for its live owner (and never touches one that
+// already exists) rather than removing anything.
+//
+// The existence check and the mint-and-write both happen inside a single
+// Firestore transaction, via tx.get() on a Query (the Admin SDK supports
+// transactional reads of queries, not just document references). Firestore
+// tracks a transactional query read as part of the transaction's read set: if
+// another transaction commits a document that would change that query's
+// result — e.g. inserting the very row this transaction is about to insert —
+// before this transaction commits, Firestore fails this transaction with a
+// contention error and the SDK retries it automatically. On retry, the query
+// now finds the concurrently-minted token and returns it instead of minting a
+// second one. This is what makes two simultaneous calls from the same uid
+// safe: at most one of them ever writes a new appAccountTokens/{token} doc.
+// ---------------------------------------------------------------------------
+
+export const getAppAccountToken = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+  const uid = request.auth.uid;
+  const tokensRef = db.collection("appAccountTokens");
+
+  const token = await db.runTransaction(async (tx) => {
+    const existingQuery = tokensRef.where("uid", "==", uid).limit(1);
+    const existingSnap = await tx.get(existingQuery);
+    if (!existingSnap.empty) {
+      return existingSnap.docs[0].id;
+    }
+
+    const minted = randomUUID();
+    tx.set(tokensRef.doc(minted), {
+      uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return minted;
+  });
+
+  return { appAccountToken: token };
+});
+
+// ---------------------------------------------------------------------------
 // Webhook
 //
 // Register this HTTPS URL in App Store Connect:
@@ -124,29 +343,68 @@ export const appStoreNotifications = functions.https.onRequest(
     }
 
     // Try production first; fall back to sandbox so TestFlight and sandbox
-    // testers work without a separate webhook URL.
+    // testers work without a separate webhook URL. verifyWithFallback also
+    // distinguishes a verifier construction failure from a genuine
+    // verification rejection in its logs (see its definition above).
     let notification;
     let transaction;
 
     try {
-      const v = getVerifier(Environment.PRODUCTION);
-      notification = await v.verifyAndDecodeNotification(signedPayload);
-      transaction = await v.verifyAndDecodeTransaction(
-        notification.data!.signedTransactionInfo!
-      );
-    } catch {
-      try {
-        const v = getVerifier(Environment.SANDBOX);
-        notification = await v.verifyAndDecodeNotification(signedPayload);
-        transaction = await v.verifyAndDecodeTransaction(
-          notification.data!.signedTransactionInfo!
+      ({ notification, transaction } = await verifyWithFallback(async (v) => {
+        const decodedNotification = await v.verifyAndDecodeNotification(
+          signedPayload
         );
-      } catch (err) {
-        functions.logger.error("Failed to verify signed payload", { err });
-        // Return 200 so Apple does not keep retrying an unverifiable payload.
-        res.status(200).send("Unverifiable payload — ignored");
+        // Not every notification carries a transaction. TEST (the "Send Test
+        // Notification" button in App Store Connect — the standard way to
+        // validate this URL), RENEWAL_EXTENSION and other summary-shaped
+        // payloads have no signedTransactionInfo at all. Reading it
+        // unconditionally threw, and the throw landed in the catch below, so a
+        // perfectly healthy endpoint logged every test notification as a
+        // verification failure.
+        const signedTransactionInfo =
+          decodedNotification.data?.signedTransactionInfo;
+        if (!signedTransactionInfo) {
+          return { notification: decodedNotification, transaction: undefined };
+        }
+        const decodedTransaction = await v.verifyAndDecodeTransaction(
+          signedTransactionInfo
+        );
+        return { notification: decodedNotification, transaction: decodedTransaction };
+      }));
+    } catch (err) {
+      // TRANSIENT (e.g. the OCSP check against Apple timed out): answer
+      // non-2xx so Apple redelivers. Silently 200-ing these loses the
+      // notification for good — a dropped EXPIRED leaves isPro:true after a
+      // real cancellation, a dropped SUBSCRIBED leaves a paying user without
+      // cross-device unlock.
+      if (isRetryableVerificationFailure(err)) {
+        functions.logger.warn(
+          "Transient verification failure — returning 500 so Apple redelivers",
+          describeError(err)
+        );
+        res.status(500).send("Transient verification failure — please retry");
         return;
       }
+      // PERMANENT (bad signature, wrong environment, wrong bundle/app ID):
+      // 200, because redelivery would fail identically every time.
+      functions.logger.error(
+        "Failed to verify signed payload",
+        describeError(err)
+      );
+      res.status(200).send("Unverifiable payload — ignored");
+      return;
+    }
+
+    if (!transaction) {
+      functions.logger.info(
+        "Notification carries no transaction info — nothing to sync",
+        {
+          type: notification.notificationType,
+          subtype: notification.subtype,
+        }
+      );
+      res.status(200).send("OK — no transaction info");
+      return;
     }
 
     functions.logger.info("Notification received", {
@@ -172,20 +430,57 @@ export const appStoreNotifications = functions.https.onRequest(
       return;
     }
 
-    // Look up the Firebase UID that owns this transaction.
-    // The iOS app writes this mapping in SubscriptionStore when a purchase
-    // completes (see purchases/{originalTransactionId} → { uid }).
-    const purchaseDoc = await db.collection("purchases").doc(txId).get();
-    if (!purchaseDoc.exists) {
-      functions.logger.warn("No UID mapping for transaction", { txId });
-      res.status(200).send("OK — no user mapping");
+    // Resolve the Firebase UID that owns this transaction.
+    //
+    // The only input to this resolution is `transaction`, which came out of
+    // verifyAndDecodeTransaction above — Apple's JWS, signature-checked against
+    // the pinned Apple Root CA G3 for BUNDLE_ID. appAccountToken is the UUID
+    // the client attached at purchase time, but a client cannot forge it into
+    // someone else's uid: the token → uid mapping lives in
+    // appAccountTokens/{token}, written only by the getAppAccountToken callable
+    // (Admin SDK, uid taken from request.auth) and `allow read, write: if false`
+    // in firestore.rules. So nothing client-suppliable reaches the isPro write.
+    //
+    // This replaced an earlier revision of this same branch, which added a
+    // purchases/{originalTransactionId} → { uid } rule whose DOCUMENT ID was
+    // unconstrained (only the uid field was checked): any signed-in client
+    // could squat a victim's originalTransactionId and receive their
+    // entitlement. QA caught it pre-merge — main never had a purchases match
+    // block at all, so those writes were deny-by-default and the hole was
+    // never deployed.
+    //
+    // If the token is absent or unresolvable we SKIP the write rather than
+    // guessing — there is no safe fallback identifier in this payload.
+    const appAccountToken = transaction.appAccountToken;
+    if (!appAccountToken) {
+      functions.logger.warn(
+        "Transaction carries no appAccountToken — cannot resolve a user, skipping isPro write",
+        { txId, type: notification.notificationType }
+      );
+      res.status(200).send("OK — no appAccountToken");
       return;
     }
 
-    const uid = purchaseDoc.data()?.uid as string | undefined;
+    // Apple normalizes appAccountToken to a lowercase UUID string; randomUUID()
+    // already produces lowercase, so this only guards against case drift.
+    const tokenKey = appAccountToken.toLowerCase();
+    const tokenDoc = await db.collection("appAccountTokens").doc(tokenKey).get();
+    if (!tokenDoc.exists) {
+      functions.logger.warn(
+        "appAccountToken does not resolve to a user — skipping isPro write",
+        { txId, appAccountToken: truncateToken(tokenKey) }
+      );
+      res.status(200).send("OK — unresolved appAccountToken");
+      return;
+    }
+
+    const uid = tokenDoc.data()?.uid as string | undefined;
     if (!uid) {
-      functions.logger.warn("Purchase doc missing uid", { txId });
-      res.status(200).send("OK — malformed mapping");
+      functions.logger.warn(
+        "appAccountTokens doc missing uid — skipping isPro write",
+        { txId, appAccountToken: truncateToken(tokenKey) }
+      );
+      res.status(200).send("OK — malformed token mapping");
       return;
     }
 
@@ -194,6 +489,178 @@ export const appStoreNotifications = functions.https.onRequest(
     res.status(200).send("OK");
   }
 );
+
+// ---------------------------------------------------------------------------
+// syncEntitlement — client-triggered reconciliation for a subscription the
+// webhook cannot resolve on its own.
+//
+// WHY THIS EXISTS
+// appAccountToken is the webhook's only uid-resolution mechanism, and Apple
+// will not let a token be attached to an already-completed transaction. So any
+// subscription whose token is missing or no longer maps to a live user is
+// stranded: every future renewal notification falls through the webhook's
+// "unresolved appAccountToken" skip path forever, and server-side isPro can
+// never be set. The reachable case is delete-then-re-register — onAuthUserDeleted
+// phase 4c correctly deletes the token doc, but Apple keeps echoing that same
+// (now dangling) UUID on the still-live subscription.
+//
+// WHAT IT TRUSTS
+// Exactly one thing the client sends: a JWS transaction, which is verified here
+// with the SAME SignedDataVerifier the webhook uses (getVerifier → pinned Apple
+// Root CA G3, bundle-ID checked, production then sandbox). Nothing else in
+// request.data is read. The uid is taken from request.auth — verified by the
+// Callable runtime — and is the ONLY thing that determines which document gets
+// written. A client cannot name a target uid, and cannot assert an entitlement
+// Apple did not sign.
+//
+// PROMOTE-ONLY, deliberately. An inactive/expired transaction produces NO write
+// rather than isPro:false. Two reasons: (1) StoreKit's currentEntitlements
+// includes billing-grace-period subscriptions whose expiresDate is already in
+// the past, and the webhook correctly treats GRACE_PERIOD as still-Pro — a
+// demoting write here would fight it; (2) lapse is the webhook's job
+// (EXPIRED/REVOKE/REFUND), and once the token is repaired below the webhook can
+// do that job again. Consequence to be aware of: a stranded subscription that
+// lapses while its token is dangling keeps a stale isPro:true until the client
+// next calls with a repairable token, or never. StoreKit remains the authority
+// for the local paywall either way.
+//
+// TOKEN REPAIR is the part that actually un-strands the subscription. If the
+// verified transaction carries an appAccountToken with no mapping doc, we claim
+// it for this uid, so every SUBSEQUENT renewal notification resolves through
+// the normal webhook path without the client being involved. We only ever
+// CREATE a missing mapping — never delete or repoint an existing one (see the
+// getAppAccountToken header). A token already owned by a DIFFERENT uid is left
+// untouched and the isPro write is skipped: that is either a replayed JWS or a
+// Family Sharing member, and in both cases granting server-side Pro off another
+// account's transaction is not something we want to do. Family members still
+// get the local paywall from StoreKit; only the server-side flag is withheld.
+// ---------------------------------------------------------------------------
+
+export const syncEntitlement = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+  const uid = request.auth.uid;
+
+  const signedTransaction = (
+    request.data as { signedTransaction?: unknown } | null | undefined
+  )?.signedTransaction;
+  if (typeof signedTransaction !== "string" || signedTransaction.length === 0) {
+    throw new HttpsError(
+      "invalid-argument",
+      "signedTransaction (a StoreKit JWS string) is required."
+    );
+  }
+
+  // Same production-then-sandbox verification ladder as appStoreNotifications,
+  // via the shared helper so a verifier construction failure is logged
+  // distinctly from a genuine verification rejection.
+  let transaction;
+  try {
+    transaction = await verifyWithFallback(
+      (v) => v.verifyAndDecodeTransaction(signedTransaction),
+      { uid }
+    );
+  } catch (err) {
+    functions.logger.warn("syncEntitlement: unverifiable signedTransaction", {
+      uid,
+      err: describeError(err),
+      retryable: isRetryableVerificationFailure(err),
+    });
+    throw new HttpsError(
+      "permission-denied",
+      "Transaction could not be verified."
+    );
+  }
+
+  const productId = transaction.productId;
+  const expiresDate = transaction.expiresDate;
+  const isActive =
+    productId !== undefined &&
+    PRO_PRODUCT_IDS.includes(productId) &&
+    !transaction.revocationDate &&
+    typeof expiresDate === "number" &&
+    expiresDate > Date.now();
+
+  if (!isActive) {
+    functions.logger.info(
+      "syncEntitlement: not an active Pro entitlement — no write",
+      { uid, productId, expiresDate, revoked: !!transaction.revocationDate }
+    );
+    return { isPro: false, updated: false };
+  }
+
+  // Require a resolvable, non-Family-Shared token before granting anything.
+  //
+  // No appAccountToken at all: there is nothing here that ties this JWS to
+  // THIS uid rather than any other authenticated caller who happens to
+  // present a validly-signed Marque Pro transaction — mirror the webhook's
+  // own posture (appStoreNotifications) exactly and skip the write rather
+  // than inventing a fallback identifier.
+  const rawToken = transaction.appAccountToken;
+  if (!rawToken) {
+    functions.logger.warn(
+      "syncEntitlement: transaction carries no appAccountToken — cannot verify ownership, skipping isPro write",
+      { uid, productId }
+    );
+    return { isPro: false, updated: false };
+  }
+
+  // inAppOwnershipType distinguishes the actual purchaser ("PURCHASED") from
+  // a Family Sharing member who merely has entitlement to someone else's
+  // subscription ("FAMILY_SHARED"). Only the purchaser's token identifies the
+  // account that should be claimed below — a family member's token belongs to
+  // the purchaser and must never be repointed at whoever happens to call this
+  // callable from a shared device/account.
+  if (transaction.inAppOwnershipType !== InAppOwnershipType.PURCHASED) {
+    functions.logger.warn(
+      "syncEntitlement: transaction is Family Shared, not a direct purchase — skipping isPro write and token claim",
+      { uid, productId, ownershipType: transaction.inAppOwnershipType }
+    );
+    return { isPro: false, updated: false };
+  }
+
+  // Repair the token → uid mapping if it is missing, so the webhook can resolve
+  // this subscription on its own from here on.
+  let tokenRepaired = false;
+  const tokenKey = rawToken.toLowerCase();
+  const tokenRef = db.collection("appAccountTokens").doc(tokenKey);
+
+  // Transactional so two concurrent calls can't both create the doc; the
+  // loser retries, re-reads, and takes the "owned" branch.
+  const outcome = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(tokenRef);
+    if (!snap.exists) {
+      tx.set(tokenRef, {
+        uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        source: "syncEntitlement",
+      });
+      return "claimed";
+    }
+    return (snap.data()?.uid as string | undefined) === uid
+      ? "owned"
+      : "foreign";
+  });
+
+  if (outcome === "foreign") {
+    functions.logger.warn(
+      "syncEntitlement: appAccountToken belongs to another account — skipping isPro write",
+      { uid, appAccountToken: truncateToken(tokenKey) }
+    );
+    return { isPro: false, updated: false };
+  }
+  tokenRepaired = outcome === "claimed";
+
+  await db.collection("users").doc(uid).set({ isPro: true }, { merge: true });
+  functions.logger.info("syncEntitlement: isPro granted", {
+    uid,
+    productId,
+    tokenRepaired,
+  });
+
+  return { isPro: true, updated: true, tokenRepaired };
+});
 
 // ============================================================================
 // Smartcar — Connect, Sync, Disconnect
@@ -1753,6 +2220,18 @@ export const askMarque = onCall(
 //                                     publicly fetchable by URL.
 //   8. users/{uid}/usage/**         — `allow write: if false` (server-only, so
 //                                     the assistant daily cap can't be bypassed).
+//   9. appAccountTokens/{token} where uid == uid — top-level collection keyed
+//                                     by the Apple appAccountToken UUID, not
+//                                     by uid, so recursiveDelete(users/{uid})
+//                                     never reaches it. Rules deny read AND
+//                                     write to every client — stricter than
+//                                     usage/, which still grants the owner
+//                                     read — so nothing client-side can ever
+//                                     clean this up. There is no
+//                                     users/{uid}.appAccountToken field to
+//                                     worry about separately — the token has
+//                                     never lived on the profile doc; this
+//                                     collection is its only home.
 //
 // DO NOT "fix" the above by relaxing firestore.rules. Granting the client
 // delete on users/{uid} would let someone wipe their profile doc while leaving
@@ -1766,8 +2245,9 @@ export const askMarque = onCall(
 // notifications, conversations/**/messages/**, usage) in one call, which is why
 // there is no longer a per-subcollection list to keep in sync under users/{uid}
 // itself. Reverse follow pointers and other-users'-notifications live under
-// *other* users' documents, so they are handled explicitly. publicCars and
-// Storage are top-level/bucket paths, also handled explicitly.
+// *other* users' documents, so they are handled explicitly. publicCars,
+// Storage, and appAccountTokens are top-level/bucket paths, also handled
+// explicitly.
 //
 // ORDERING IS LOAD-BEARING, and recursiveDelete MUST BE LAST:
 //
@@ -1775,8 +2255,9 @@ export const askMarque = onCall(
 //                    line deletes anything; a failure here aborts before any
 //                    destructive write, so a retry starts from an intact graph.
 //   2. reverse follow pointers under following[]/followers[] counterparts.
-//   3. other-users'-notification cleanup, keyed off followers[].
-//   4. publicCars sweep (ownerUID == uid) + Storage prefix delete.
+//   3. other-users'-notification cleanup, keyed off following[].
+//   4. publicCars sweep (ownerUID == uid) + Storage prefix delete +
+//      appAccountTokens sweep (uid == uid).
 //   5. username reservation release (needs `username` read in phase 1).
 //   6. recursiveDelete(users/{uid}) — destroys the profile doc and every
 //      subcollection beneath it, INCLUDING following/followers/notifications,
@@ -2057,6 +2538,55 @@ export const onAuthUserDeleted = functionsV1
             : String(err);
         functions.logger.error("onAuthUserDeleted Storage prefix delete failed", { uid, err: message });
         errors.push(`storage(users/${uid}/): ${message}`);
+      }
+
+      // -------------------------------------------------------------------
+      // Phase 4c — appAccountTokens sweep. appAccountTokens/{token} is a
+      // top-level collection keyed by the Apple appAccountToken UUID, not by
+      // uid, so recursiveDelete(users/{uid}) never reaches it. Left unhandled,
+      // a deleted user's uid survives indefinitely in this collection — same
+      // class of gap as the publicCars sweep above, same fix shape. This
+      // collection is the token's only storage location (it is never mirrored
+      // onto the profile doc), so this sweep is the entirety of the cleanup.
+      // Unbounded — BulkWriter has no 500-op batch cap.
+      // -------------------------------------------------------------------
+      try {
+        const tokensSnap = await db
+          .collection("appAccountTokens")
+          .where("uid", "==", uid)
+          .select()
+          .get();
+        const tokenOps: Array<Promise<Error | null>> = [];
+        for (const tokenDoc of tokensSnap.docs) {
+          tokenOps.push(
+            preDeleteWriter.delete(tokenDoc.ref).then(
+              () => null,
+              (err: unknown) => (err instanceof Error ? err : new Error(String(err)))
+            )
+          );
+        }
+        await preDeleteWriter.flush();
+        const tokenErrors = (await Promise.all(tokenOps)).filter(
+          (e): e is Error => e !== null
+        );
+        if (tokenErrors.length > 0) {
+          const message =
+            `${tokenErrors.length}/${tokenOps.length} appAccountTokens deletes failed; ` +
+            `last error: ${tokenErrors[tokenErrors.length - 1].message}`;
+          functions.logger.error("onAuthUserDeleted appAccountTokens sweep failed", {
+            uid,
+            failed: tokenErrors.length,
+            attempted: tokenOps.length,
+          });
+          errors.push(message);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        functions.logger.error("onAuthUserDeleted appAccountTokens sweep failed", {
+          uid,
+          err: message,
+        });
+        errors.push(`appAccountTokens(uid=${uid}): ${message}`);
       }
     } finally {
       // Never leave a BulkWriter open — close() resolves once every enqueued

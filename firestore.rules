@@ -14,8 +14,53 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Fields written ONLY by the Admin SDK (the appStoreNotifications
+      // webhook, onAuthUserDeleted). Admin SDK writes bypass rules entirely,
+      // so denying them here costs the server nothing — it only removes the
+      // client's ability to forge them.
+      //   isPro — the paywall itself. Without this allowlist any signed-in
+      //           user could setData(["isPro": true]) on their own profile
+      //           and self-grant Pro.
+      // Note: the Apple appAccountToken never lives on this document — it is
+      // minted and stored exclusively in the top-level appAccountTokens/
+      // collection (see match /appAccountTokens/{token} below), so there is
+      // nothing to allowlist here for it.
+      function serverOwnedUserFields() {
+        return ['isPro'];
+      }
+
+      // The complete set of fields the iOS client actually writes today:
+      //   username    — AuthService.completeProfileSetup, .changeUsername
+      //   displayName — AuthService.completeProfileSetup, .updateProfile
+      //   bio         — AuthService.completeProfileSetup, .updateProfile
+      //   avatarURL   — AuthService.completeProfileSetup, .updateProfile,
+      //                 .uploadAvatarToStorage
+      //   createdAt   — AuthService.completeProfileSetup
+      // Adding a client-written profile field means adding it here, or the
+      // write is denied.
+      function clientOwnedUserFields() {
+        return ['username', 'displayName', 'bio', 'avatarURL', 'createdAt'];
+      }
+
       allow read: if request.auth != null;
-      allow create, update: if request.auth.uid == userId;
+
+      // hasOnly(clientOwnedUserFields()) — not just !hasAny(serverOwned...) —
+      // so create has the same allowlist posture as update. Verified against
+      // every client write path: completeProfileSetup writes exactly the five
+      // allowlisted keys, updateProfile / uploadAvatarToStorage / changeUsername
+      // each write a strict subset. A new client-written field must be added to
+      // clientOwnedUserFields() or the create is denied.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && !request.resource.data.keys().hasAny(serverOwnedUserFields())
+                    && request.resource.data.keys().hasOnly(clientOwnedUserFields());
+
+      // diff().affectedKeys() covers additions, changes AND removals, so a
+      // non-merge setData() that would drop isPro is denied too.
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(clientOwnedUserFields());
     }
 
     // NOTE: previously this was a wildcard `match /users/{userId}/{document=**}`
@@ -81,6 +126,30 @@ service cloud.firestore {
     match /users/{uid}/usage/{docId} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;  // server-only — only the Cloud Function may write
+    }
+
+    // Server-only reverse lookup: appAccountTokens/{token} -> { uid }.
+    //
+    // Written EXCLUSIVELY by two callables — getAppAccountToken (mints) and
+    // syncEntitlement (claims a dangling token off an Apple-signed JWS) —
+    // through the Admin SDK, with the uid taken from request.auth in both
+    // cases, never from client-supplied data. appStoreNotifications trusts this collection to resolve a
+    // signature-verified Apple transaction back to a Firebase user, so it must
+    // have ZERO client write surface: anything a client could write here it
+    // could squat, and squatting a token means stealing (or destroying) the
+    // real owner's Pro entitlement. That is precisely the hole in the design
+    // this replaced: an earlier revision of this same branch added a
+    // purchases/{txId} rule that constrained the uid FIELD but not the DOCUMENT
+    // ID, so any signed-in client could claim an originalTransactionId before
+    // its real owner did. QA caught it before merge — main never had a
+    // purchases match block at all (those writes were deny-by-default), so the
+    // hole existed only inside this unmerged branch's history and was never
+    // deployed.
+    //
+    // Read is denied as well: nothing client-side needs to read this, the
+    // callable returns the token directly to its owner.
+    match /appAccountTokens/{token} {
+      allow read, write: if false;
     }
 
   }
