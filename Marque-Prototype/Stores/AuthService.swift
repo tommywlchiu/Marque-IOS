@@ -397,13 +397,19 @@ class AuthService: NSObject, ObservableObject {
 
         let batch = db.batch()
         batch.setData(["uid": uid], forDocument: usernameRef)
+        // merge: true is load-bearing, not cosmetic. This screen re-appears on a
+        // reinstall or a new device (hasCompletedProfileSetup lives in
+        // UserDefaults), and a non-merge setData on an existing profile REMOVES
+        // every key it doesn't list — including the server-owned `isPro`.
+        // firestore.rules counts removals as affected keys, so that write is
+        // now denied outright and profile setup would throw.
         batch.setData([
             "username": username.lowercased(),
             "displayName": resolvedDisplayName,
             "bio": bio,
             "avatarURL": avatarStorageURL ?? firebaseUser.photoURL?.absoluteString ?? "",
             "createdAt": FieldValue.serverTimestamp()
-        ], forDocument: userDocument(uid: uid))
+        ], forDocument: userDocument(uid: uid), merge: true)
         try await batch.commit()
 
         var profile = LocalProfile.load(uid: uid)
