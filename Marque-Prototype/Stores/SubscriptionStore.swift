@@ -61,12 +61,29 @@ class SubscriptionStore: ObservableObject {
 
     func load() async {
         defer { hasLoaded = true }
-        guard products.isEmpty else { await refreshProStatus(); return }
+        // Key the retry on whether both known product IDs have actually
+        // resolved, not on whether the array is merely non-empty.
+        // `Product.products(for:)` does not throw for unresolvable IDs — it
+        // silently returns only the subset that resolved. If only one of the
+        // two resolves, `products` becomes non-empty and the old
+        // `products.isEmpty` guard would cache that partial result forever,
+        // leaving the other plan permanently nil.
+        guard monthlyProduct == nil || annualProduct == nil else { await refreshProStatus(); return }
         do {
             products = try await Product.products(for: [Self.annualID, Self.monthlyID])
                 .sorted { $0.price > $1.price }
+            print("MARQUE_DEBUG products fetched: \(products.map { $0.id })")
+            // Zero resolved takes this same success path — no thrown error —
+            // so without this, the UI can't tell "still loading" from
+            // "nothing will ever load." Surface it the same way a thrown
+            // error does, and clear it once something resolves.
+            purchaseError = products.isEmpty
+                ? "Subscriptions aren't available right now. Please try again later."
+                : nil
         } catch {
             // Products not configured in App Store Connect yet — silent in dev
+            print("MARQUE_DEBUG products fetch failed: \(error)")
+            purchaseError = "Subscriptions aren't available right now. Please try again later."
         }
         await refreshProStatus()
     }
