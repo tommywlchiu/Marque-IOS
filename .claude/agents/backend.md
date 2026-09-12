@@ -18,7 +18,7 @@ You are the **backend specialist** for the Marque iOS app. You own Cloud Functio
 ## Project facts (current as of 2026-09-07 — verify if something looks off, and report drift)
 
 - **Firebase is a hard dependency.** `FirebaseApp.configure()` runs unguarded in `Marque_PrototypeApp.init()`. There is **no** `#if canImport(FirebaseCore)` conditional-compilation pattern — it was removed in May 2026 when Firebase became required. **Do not add `#if canImport` guards or mock `#else` branches.** One vestigial guard remains in `Models/AppUser.swift`; it is dead code.
-- **All stores are Firestore-backed**, including `CarStore` (live listener on `users/{uid}/cars`, 100MB offline persistence cache). `SocialStore` is the one exception — legacy in-memory seed data.
+- **All stores are Firestore-backed**, including `CarStore` (live listener on `users/{uid}/cars`, 100MB offline persistence cache). No exceptions remain — the legacy in-memory `SocialStore` (and its unused `CommentsView`/`Post`/`Comment` scaffold) was removed as dead code.
 - **`SmartcarStore` is disabled** (`isEnabled = false`). Phase 2/3 is on hold — do not propose or build Smartcar work.
 - **Cloud Functions**: TypeScript in `functions/`, `firebase-functions` v6. The file uses a **v1/v2 mix** — v2 `onCall` for callables, root `functions.https.onRequest` for the App Store webhook, and `firebase-functions/v1` (imported as `functionsV1`) for the auth-delete trigger. Check which namespace a function uses before editing it.
 - **No test harness exists** in `functions/` (no test script) or Xcode (single target, no XCTest). The `qa` agent owns test work.
@@ -45,7 +45,7 @@ Build with `cd functions && npm run build` (runs `tsc`). Silent output means suc
 
 ## Architectural rules
 
-- **Stores are decoupled.** `CarStore` does not know about `AuthService`, `SocialStore`, or any other store. Cross-store coordination happens in `Marque_PrototypeApp.body`, not inside stores.
+- **Stores are decoupled.** `CarStore` does not know about `AuthService`, `FollowStore`, or any other store. Cross-store coordination happens in `Marque_PrototypeApp.body`, not inside stores.
 - **All stores are `@MainActor`.** Firebase callbacks arriving off-main must hop back via `await MainActor.run` or `Task { @MainActor in ... }`.
 - **Firestore does not cascade subcollection deletes.** Deleting a parent doc orphans its subcollections and they remain queryable. Always walk children first, then the parent.
 - **Batched writes cap at 500 ops.** Chunk beyond that.

@@ -167,7 +167,7 @@ Cloud Functions live in `functions/` (TypeScript, `firebase-functions` v6). Buil
 
 ## Navigation & Root State
 
-`Marque_PrototypeApp.swift` bootstraps eleven `@StateObject`s injected as environment objects: `CarStore`, `AuthService`, `SocialStore`, `ExploreStore`, `FollowStore`, `SubscriptionStore`, `BlockStore`, `NotificationStore`, `SmartcarStore`, `ChatStore`, and `FeatureFlagsStore`. `RootView` drives top-level navigation:
+`Marque_PrototypeApp.swift` bootstraps ten `@StateObject`s injected as environment objects: `CarStore`, `AuthService`, `ExploreStore`, `FollowStore`, `SubscriptionStore`, `BlockStore`, `NotificationStore`, `SmartcarStore`, `ChatStore`, and `FeatureFlagsStore`. `RootView` drives top-level navigation:
 
 ```
 Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
@@ -175,7 +175,7 @@ Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
                               → MainTabView
 ```
 
-`MainTabView` currently has 3 tabs (Garage, an Add "+" tab, Explore). Notifications inbox, Profile, and Settings are reached via toolbar buttons on the Garage screen rather than as tab items. The PRD's 5-tab layout (Garage / Explore / Notifications / Profile / Settings) is the eventual target; the current 3-tab UI is a deliberate interim state.
+`MainTabView` currently has 3 tabs (Garage, an Add "+" tab, Explore). None of Notifications, Profile, or Settings are tab items — each is reached differently: **Settings** is a toolbar gear icon on Garage; **Notifications** is a toolbar bell icon on Explore; **Profile** isn't a toolbar item anywhere — it's the inline header on Garage (Edit Profile button, follower/following stat chips). The PRD's 5-tab layout (Garage / Explore / Notifications / Profile / Settings) is the eventual target; the current arrangement is a deliberate interim state.
 
 ## Stores
 
@@ -191,7 +191,6 @@ All stores are `@MainActor` classes. Firestore listeners are started/stopped in 
 | `FollowStore` | Following/followers subcollections. |
 | `BlockStore` | Blocked users. |
 | `NotificationStore` | In-app notification inbox (Firestore). |
-| `SocialStore` | Legacy posts/comments store — in-memory seed data only; kept for the Social feature scaffold. Production social behavior lives in the dedicated stores above. |
 | `SmartcarStore` | OAuth + odometer integration — currently disabled (`isEnabled = false`); Phase 2/3 paused. |
 | `FeatureFlagsStore` | Firebase Remote Config gate (e.g. `marque_assistant_enabled`, default false). |
 
@@ -251,9 +250,9 @@ Reusable components used across views: `MarquePrimaryButton`, `MarqueEmptyState`
 
 ```
 Marque-Prototype/
-  Models/          — Car, AppUser, Post, Comment, AppNotification, ServiceReminder, MaintenanceRecord,
+  Models/          — Car, AppUser, AppNotification, ServiceReminder, MaintenanceRecord,
                      CarData, PublicCar, ChatMessage, Conversation, AIServiceSuggestion, AppLinks
-  Stores/          — CarStore, AuthService, SocialStore, ChatStore, ExploreStore, FollowStore,
+  Stores/          — CarStore, AuthService, ChatStore, ExploreStore, FollowStore,
                      BlockStore, NotificationStore, SubscriptionStore, SmartcarStore,
                      ImageManager, NotificationManager, VINDecodeService, ServiceReminderEngine,
                      AIServiceSuggestionService, DocumentScanService
@@ -275,7 +274,7 @@ New feature views should go under `Features/<FeatureName>/`. Do not add new file
 # Key Conventions
 
 - All stores are `@MainActor` classes. Avoid dispatching off the main actor inside stores.
-- Stores are decoupled — `CarStore` does not know about `AuthService`, `SocialStore`, or others. Cross-store coordination happens in `Marque_PrototypeApp.body`.
+- Stores are decoupled — `CarStore` does not know about `AuthService`, `FollowStore`, or others. Cross-store coordination happens in `Marque_PrototypeApp.body`.
 - `AppUser.preview` and `CarStore.previewCars` are the canonical mock data for SwiftUI `#Preview` blocks.
 - `Car.displayName` (`"<year> <make> <model>"`) is the canonical display string — don't reconstruct it inline.
 - `ExpensePeriod` is the source of truth for expense filter options; `Car.expenses(in:)` and `Car.expensesByCategory(in:)` use it.

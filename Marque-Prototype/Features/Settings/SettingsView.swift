@@ -9,7 +9,6 @@ struct SettingsView: View {
     @State private var notificationsEnabled = true
     @State private var useMiles = true
     @State private var showingDeleteAccountSheet = false
-    @State private var showingFollowCleanup = false
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
@@ -19,7 +18,6 @@ struct SettingsView: View {
             subscriptionSection
             preferencesSection
             supportSection
-            dataSection
             legalSection
             dangerSection
         }
@@ -30,9 +28,6 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingDeleteAccountSheet) {
             DeleteAccountView()
-        }
-        .sheet(isPresented: $showingFollowCleanup) {
-            FollowCleanupView()
         }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Sign Out", role: .destructive) { authService.signOut() }
@@ -151,17 +146,6 @@ struct SettingsView: View {
                 Text("1.0.0 (1)")
                     .foregroundColor(.secondary)
                     .font(.subheadline)
-            }
-        }
-    }
-
-    private var dataSection: some View {
-        Section(header: Text("Data")) {
-            Button {
-                showingFollowCleanup = true
-            } label: {
-                Label("Fix Follow Counts", systemImage: "person.2.slash")
-                    .foregroundColor(.primary)
             }
         }
     }

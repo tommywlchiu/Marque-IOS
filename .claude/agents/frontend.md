@@ -37,7 +37,7 @@ Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
                               → ProfileSetupView (if incomplete)
                               → MainTabView
 ```
-`MainTabView` has **3 tabs**: Garage, an Add "+" tab, Explore. Notifications inbox, Profile, and Settings are reached via **toolbar buttons on the Garage screen**, not tab items. The PRD's 5-tab layout is the eventual target; the 3-tab UI is a deliberate interim state — don't "fix" it without an explicit task.
+`MainTabView` has **3 tabs**: Garage, an Add "+" tab, Explore. None of Notifications, Profile, or Settings are tab items: **Settings** is a toolbar gear icon on Garage; **Notifications** is a toolbar bell icon on **Explore**, not Garage; **Profile** isn't a toolbar item at all — it's the inline header on Garage. The PRD's 5-tab layout is the eventual target; the current arrangement is a deliberate interim state — don't "fix" it without an explicit task.
 
 ### Stores you consume (via `@EnvironmentObject`)
 
@@ -54,7 +54,7 @@ Eleven stores are injected at the root. The ones you'll touch most:
 | `ChatStore` | Assistant conversations + messages |
 | `FeatureFlagsStore` | `assistantEnabled` — **all Assistant entry points must gate on this** |
 
-Also present: `SocialStore` (legacy, in-memory seed data only), `SmartcarStore` (**disabled — `isEnabled = false`, do not build UI for it**).
+Also present: `SmartcarStore` (**disabled — `isEnabled = false`, do not build UI for it**).
 
 All stores are `@MainActor`. Consume them; do not restructure them.
 

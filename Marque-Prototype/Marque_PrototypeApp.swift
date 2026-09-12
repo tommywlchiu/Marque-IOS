@@ -8,7 +8,6 @@ struct Marque_PrototypeApp: App {
 
     @StateObject private var carStore = CarStore()
     @StateObject private var authService = AuthService()
-    @StateObject private var socialStore = SocialStore()
     @StateObject private var exploreStore = ExploreStore()
     @StateObject private var followStore = FollowStore()
     @StateObject private var subscriptionStore = SubscriptionStore()
@@ -31,7 +30,6 @@ struct Marque_PrototypeApp: App {
             RootView()
                 .environmentObject(carStore)
                 .environmentObject(authService)
-                .environmentObject(socialStore)
                 .environmentObject(exploreStore)
                 .environmentObject(followStore)
                 .environmentObject(subscriptionStore)
