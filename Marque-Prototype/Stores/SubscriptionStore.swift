@@ -17,8 +17,13 @@ class SubscriptionStore: ObservableObject {
     // webhook and the syncEntitlement callable.
     @Published private(set) var hasLoaded: Bool = false
 
-    static let monthlyID = "com.tommychiu.marque.pro.monthly"
-    static let annualID  = "com.tommychiu.marque.pro.annual"
+    // NOTE: intentionally NOT prefixed with the bundle ID (com.tommychiu.marque.*).
+    // Those exact strings are permanently claimed under a stale App Store Connect
+    // app record (registered under the wrong bundle ID, com.marque.Marque-Prototype)
+    // and can never be reused, even though that app is abandoned. Product IDs
+    // don't need to match the bundle ID at all -- only be unique per account.
+    static let monthlyID = "marque.pro.monthly"
+    static let annualID  = "marque.pro.annual"
 
     private var transactionListener: Task<Void, Never>?
     private let functions = Functions.functions()
@@ -72,7 +77,6 @@ class SubscriptionStore: ObservableObject {
         do {
             products = try await Product.products(for: [Self.annualID, Self.monthlyID])
                 .sorted { $0.price > $1.price }
-            print("MARQUE_DEBUG products fetched: \(products.map { $0.id })")
             // Zero resolved takes this same success path — no thrown error —
             // so without this, the UI can't tell "still loading" from
             // "nothing will ever load." Surface it the same way a thrown
@@ -82,7 +86,6 @@ class SubscriptionStore: ObservableObject {
                 : nil
         } catch {
             // Products not configured in App Store Connect yet — silent in dev
-            print("MARQUE_DEBUG products fetch failed: \(error)")
             purchaseError = "Subscriptions aren't available right now. Please try again later."
         }
         await refreshProStatus()

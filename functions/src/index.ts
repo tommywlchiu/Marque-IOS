@@ -32,8 +32,8 @@ const APP_STORE_APP_ID = 6763424467;
 // syncEntitlement — the webhook does not need it (there is a single
 // subscription group, and Apple only notifies about our own products).
 const PRO_PRODUCT_IDS = [
-  "com.tommychiu.marque.pro.monthly",
-  "com.tommychiu.marque.pro.annual",
+  "marque.pro.monthly",
+  "marque.pro.annual",
 ];
 
 // Apple Root CA - G3 (DER, base64-encoded).
