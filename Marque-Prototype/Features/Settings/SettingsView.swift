@@ -19,6 +19,34 @@ struct SettingsView: View {
         UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
     }
 
+    /// Opens Mail pre-addressed to support, with app/OS version and a truncated
+    /// uid pre-filled so a reply-less bug report still carries useful debugging
+    /// context. uid is truncated (not omitted) so it's still useful for looking
+    /// up the account without reading like a full identifier in an email body.
+    private func sendFeedback() {
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
+        let uidSuffix = String(user.id.suffix(6))
+        let body = """
+
+
+        ---
+        App version: \(appVersion) (\(buildNumber))
+        iOS version: \(UIDevice.current.systemVersion)
+        Account: …\(uidSuffix)
+        """
+
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "marqueofficialhq@gmail.com"
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "Marque Feedback"),
+            URLQueryItem(name: "body", value: body),
+        ]
+        guard let url = components.url else { return }
+        UIApplication.shared.open(url)
+    }
+
     var body: some View {
         List {
             accountSection
@@ -80,11 +108,6 @@ struct SettingsView: View {
                     Label("Change Password", systemImage: "key.fill")
                         .foregroundColor(.primary)
                 }
-            }
-
-            Button { } label: {
-                Label("Linked Accounts", systemImage: "link")
-                    .foregroundColor(.primary)
             }
         }
     }
@@ -148,7 +171,9 @@ struct SettingsView: View {
                     .foregroundColor(.primary)
             }
 
-            Button { } label: {
+            Button {
+                sendFeedback()
+            } label: {
                 Label("Send Feedback", systemImage: "envelope")
                     .foregroundColor(.primary)
             }
