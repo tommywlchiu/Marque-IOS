@@ -7,7 +7,6 @@ struct SettingsView: View {
     @State private var showingProUpgrade = false
     @State private var showingDeleteAccountAlert = false
     @State private var showingSignOutAlert = false
-    @State private var notificationsEnabled = true
     @State private var useMiles = true
     @State private var showingDeleteAccountSheet = false
     @State private var showingChangePassword = false
@@ -147,10 +146,6 @@ struct SettingsView: View {
 
     private var preferencesSection: some View {
         Section(header: Text("Preferences")) {
-            Toggle(isOn: $notificationsEnabled) {
-                Label("Expiry Notifications", systemImage: "bell.fill")
-            }
-
             Picker(selection: $useMiles) {
                 Text("Miles").tag(true)
                 Text("Kilometers").tag(false)
@@ -232,20 +227,36 @@ struct SettingsView: View {
 // MARK: - Notifications Settings (stub)
 
 private struct NotificationsSettingsView: View {
-    @State private var insuranceAlerts = true
-    @State private var registrationAlerts = true
-    @State private var maintenanceReminders = false
-    @State private var socialActivity = true
+    @EnvironmentObject var carStore: CarStore
+    @EnvironmentObject var authService: AuthService
+    @AppStorage(NotificationManager.insuranceAlertsKey) private var insuranceAlerts = true
+    @AppStorage(NotificationManager.registrationAlertsKey) private var registrationAlerts = true
+    @AppStorage(NotificationManager.maintenanceRemindersKey) private var maintenanceReminders = false
 
     var body: some View {
         Form {
             Section(header: Text("Vehicle Alerts")) {
                 Toggle("Insurance Expiry", isOn: $insuranceAlerts)
+                    .onChange(of: insuranceAlerts) { _, _ in
+                        NotificationManager.scheduleAll(
+                            for: carStore.cars,
+                            licenseExpiry: authService.currentUser?.driverLicenseExpiryDate
+                        )
+                    }
                 Toggle("Registration Expiry", isOn: $registrationAlerts)
+                    .onChange(of: registrationAlerts) { _, _ in
+                        NotificationManager.scheduleAll(
+                            for: carStore.cars,
+                            licenseExpiry: authService.currentUser?.driverLicenseExpiryDate
+                        )
+                    }
                 Toggle("Maintenance Reminders", isOn: $maintenanceReminders)
-            }
-            Section(header: Text("Social")) {
-                Toggle("Likes & Comments", isOn: $socialActivity)
+                    .onChange(of: maintenanceReminders) { _, _ in
+                        NotificationManager.scheduleAll(
+                            for: carStore.cars,
+                            licenseExpiry: authService.currentUser?.driverLicenseExpiryDate
+                        )
+                    }
             }
         }
         .navigationTitle("Notifications")

@@ -1,6 +1,10 @@
 import UserNotifications
 
 struct NotificationManager {
+    static let insuranceAlertsKey = "marque_notif_insurance_enabled"
+    static let registrationAlertsKey = "marque_notif_registration_enabled"
+    static let maintenanceRemindersKey = "marque_notif_maintenance_enabled"
+
     static func requestPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
     }
@@ -49,7 +53,9 @@ struct NotificationManager {
     // MARK: - Expiry alerts (registration & insurance)
 
     private static func scheduleExpiryAlerts(for car: Car) {
-        if let regDate = car.registrationExpiryDate {
+        if UserDefaults.standard.object(forKey: registrationAlertsKey) == nil
+            || UserDefaults.standard.bool(forKey: registrationAlertsKey),
+           let regDate = car.registrationExpiryDate {
             scheduleAlert(
                 id: "reg-30-\(car.id)",
                 carId: car.id,
@@ -73,7 +79,9 @@ struct NotificationManager {
             )
         }
 
-        if let insDate = car.insuranceExpiryDate {
+        if UserDefaults.standard.object(forKey: insuranceAlertsKey) == nil
+            || UserDefaults.standard.bool(forKey: insuranceAlertsKey),
+           let insDate = car.insuranceExpiryDate {
             scheduleAlert(
                 id: "ins-30-\(car.id)",
                 carId: car.id,
@@ -101,6 +109,8 @@ struct NotificationManager {
     // MARK: - Service reminder alerts
 
     private static func scheduleReminderAlerts(for car: Car) {
+        guard UserDefaults.standard.bool(forKey: maintenanceRemindersKey) else { return }
+
         let cID = car.id.uuidString
         let carName = car.displayName
 
