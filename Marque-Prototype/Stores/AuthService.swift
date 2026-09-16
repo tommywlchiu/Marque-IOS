@@ -521,6 +521,11 @@ class AuthService: NSObject, ObservableObject {
         try await firebaseUser.reauthenticate(with: credential)
     }
 
+    func changePassword(currentPassword: String, newPassword: String) async throws {
+        try await reauthenticate(password: currentPassword)
+        try await Auth.auth().currentUser?.updatePassword(to: newPassword)
+    }
+
     func reauthenticateWithApple() async throws {
         isReauthenticating = true
         defer { isReauthenticating = false }

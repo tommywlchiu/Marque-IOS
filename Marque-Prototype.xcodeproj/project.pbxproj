@@ -56,6 +56,7 @@
 		A10063 /* AppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20063 /* AppLinks.swift */; };
 		A10064 /* NotificationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20064 /* NotificationStore.swift */; };
 		A10065 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20065 /* DeleteAccountView.swift */; };
+		A10067 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20067 /* ChangePasswordView.swift */; };
 		A10066 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20066 /* AppDelegate.swift */; };
 		A10068 /* SmartcarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20068 /* SmartcarStore.swift */; };
 		A10069 /* VerifyEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20069 /* VerifyEmailView.swift */; };
@@ -133,6 +134,7 @@
 		A20063 /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
 		A20064 /* NotificationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStore.swift; sourceTree = "<group>"; };
 		A20065 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
+		A20067 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 		A20066 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A20068 /* SmartcarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartcarStore.swift; sourceTree = "<group>"; };
 		A20069 /* VerifyEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyEmailView.swift; sourceTree = "<group>"; };
@@ -333,6 +335,7 @@
 				A20030 /* SettingsView.swift */,
 				A20031 /* ProUpgradeView.swift */,
 				A20065 /* DeleteAccountView.swift */,
+				A20067 /* ChangePasswordView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -470,6 +473,7 @@
 				F497CF203022A2DB001892AE /* EditRegistrationSheet.swift in Sources */,
 				A10060 /* SubscriptionStore.swift in Sources */,
 				A10065 /* DeleteAccountView.swift in Sources */,
+				A10067 /* ChangePasswordView.swift in Sources */,
 				F497CF263024459E001892AE /* AIServiceSuggestionService.swift in Sources */,
 				A10068 /* SmartcarStore.swift in Sources */,
 				A10070 /* DocumentScanService.swift in Sources */,

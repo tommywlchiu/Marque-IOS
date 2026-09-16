@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseAuth
+import StoreKit
 
 struct SettingsView: View {
     @EnvironmentObject var authService: AuthService
@@ -9,8 +10,14 @@ struct SettingsView: View {
     @State private var notificationsEnabled = true
     @State private var useMiles = true
     @State private var showingDeleteAccountSheet = false
+    @State private var showingChangePassword = false
 
     private var user: AppUser { authService.currentUser ?? .preview }
+
+    /// Foreground scene lookup shared by the StoreKit review/manage-subscription flows.
+    private var foregroundScene: UIWindowScene? {
+        UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+    }
 
     var body: some View {
         List {
@@ -28,6 +35,9 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingDeleteAccountSheet) {
             DeleteAccountView()
+        }
+        .sheet(isPresented: $showingChangePassword) {
+            ChangePasswordView()
         }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Sign Out", role: .destructive) { authService.signOut() }
@@ -62,9 +72,14 @@ struct SettingsView: View {
                 Label("Edit Profile", systemImage: "person.crop.circle")
             }
 
-            Button { } label: {
-                Label("Change Password", systemImage: "key.fill")
-                    .foregroundColor(.primary)
+            // Password-based accounts only — Apple/Google sign-in has no Marque password to change.
+            if authService.signInProvider == "password" {
+                Button {
+                    showingChangePassword = true
+                } label: {
+                    Label("Change Password", systemImage: "key.fill")
+                        .foregroundColor(.primary)
+                }
             }
 
             Button { } label: {
@@ -83,7 +98,10 @@ struct SettingsView: View {
                     Spacer()
                     ProBadge()
                 }
-                Button { } label: {
+                Button {
+                    guard let scene = foregroundScene else { return }
+                    Task { try? await AppStore.showManageSubscriptions(in: scene) }
+                } label: {
                     Label("Manage Subscription", systemImage: "creditcard")
                         .foregroundColor(.primary)
                 }
@@ -135,7 +153,11 @@ struct SettingsView: View {
                     .foregroundColor(.primary)
             }
 
-            Button { } label: {
+            Button {
+                if let scene = foregroundScene {
+                    SKStoreReviewController.requestReview(in: scene)
+                }
+            } label: {
                 Label("Rate Marque", systemImage: "star")
                     .foregroundColor(.primary)
             }
