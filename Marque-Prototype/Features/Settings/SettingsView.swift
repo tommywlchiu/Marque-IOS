@@ -58,7 +58,7 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingProUpgrade) {
-            ProUpgradeView()
+            ProUpgradeView(trigger: .settings)
         }
         .sheet(isPresented: $showingDeleteAccountSheet) {
             DeleteAccountView()

@@ -52,7 +52,7 @@ struct CarListView: View {
                 AddCarView()
             }
             .sheet(isPresented: $showingPaywall) {
-                ProUpgradeView()
+                ProUpgradeView(trigger: .carLimit)
                     .environmentObject(subscriptionStore)
             }
             .sheet(isPresented: $showingEditProfile) {

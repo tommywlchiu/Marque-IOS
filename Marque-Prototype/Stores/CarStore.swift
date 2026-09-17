@@ -98,13 +98,45 @@ class CarStore: ObservableObject {
 
     // MARK: - Car CRUD
 
-    func addCar(_ car: Car) {
+    // `entryMethod` exists only to satisfy FR-11.4's `car_added.entry_method`.
+    // The store cannot infer it — only the caller knows whether the user came
+    // through the VIN lookup or typed the car in by hand — so it is optional and
+    // the event is skipped entirely when it isn't supplied. A default of `.manual`
+    // would be a guess, and a fabricated `entry_method` corrupts the activation
+    // funnel R-01 depends on; a missing event is recoverable, a wrong one is not.
+    func addCar(_ car: Car, entryMethod: AnalyticsService.CarEntryMethod? = nil) {
         guard let userId = currentUserId else {
             cars.append(car)
             saveLocal()
+            reportCarAdded(entryMethod)
             return
         }
-        try? carRef(userId: userId, carId: car.id.uuidString).setData(from: car)
+        // Report only if the car was actually handed to Firestore. `setData(from:)`
+        // throws synchronously on Codable encoding failure — the network round
+        // trip is async and offline-buffered, so this confirms the write was
+        // enqueued, not that the server acked it.
+        guard (try? carRef(userId: userId, carId: car.id.uuidString).setData(from: car)) != nil else { return }
+        reportCarAdded(entryMethod)
+    }
+
+    // FR-11.4 `car_added`. Fire-and-forget: nothing here can alter the outcome
+    // of the save above.
+    private func reportCarAdded(_ entryMethod: AnalyticsService.CarEntryMethod?) {
+        guard let entryMethod else { return }
+        AnalyticsService.carAdded(entryMethod: entryMethod, secondsSinceSignup: Self.secondsSinceSignup())
+    }
+
+    // Serves the "time to first car added < 3 min" target in Section 9.
+    // Firebase Auth's own account creation date is the signup timestamp for all
+    // three auth methods (it is also what backs `AppUser.joinedDate`), so this
+    // needs no cooperation from AuthService and keeps the stores decoupled.
+    // Returns nil rather than a sentinel when the date is unavailable —
+    // AnalyticsService omits the property in that case.
+    private static func secondsSinceSignup() -> Int? {
+        guard let created = Auth.auth().currentUser?.metadata.creationDate else { return nil }
+        let elapsed = Date().timeIntervalSince(created)
+        guard elapsed >= 0 else { return nil }
+        return Int(elapsed)
     }
 
     func updateCar(_ car: Car) {

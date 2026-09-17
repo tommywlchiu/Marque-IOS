@@ -5,6 +5,10 @@ struct ProUpgradeView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var subscriptionStore: SubscriptionStore
 
+    // FR-11.5: which gate brought the user here. Deliberately has no default —
+    // a default would let a call site silently mislabel its own trigger.
+    let trigger: AnalyticsService.PaywallTrigger
+
     @State private var selectedPlan: PlanOption = .annual
 
     private enum PlanOption { case monthly, annual }
@@ -33,6 +37,9 @@ struct ProUpgradeView: View {
                 }
             }
             .task { await subscriptionStore.load() }
+            // Fires on appearance, not on the subscribe tap: the metric is the
+            // conversion denominator (how many saw this gate).
+            .onAppear { AnalyticsService.paywallViewed(trigger: trigger) }
             .onChange(of: subscriptionStore.isPro) { _, isPro in
                 if isPro { dismiss() }
             }

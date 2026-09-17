@@ -123,6 +123,16 @@ class SubscriptionStore: ObservableObject {
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
+                // FR-11.4 `purchase_completed`. Only here: `.pending` isn't a
+                // purchase yet, `.userCancelled` never becomes one, and an
+                // unverified result has already thrown out of checkVerified.
+                // Plan comes from the verified transaction's productID rather
+                // than the Product passed in, so the event reflects what Apple
+                // actually sold. An unrecognised productID reports nothing
+                // rather than guessing a plan.
+                if let plan = Self.analyticsPlan(for: transaction.productID) {
+                    AnalyticsService.purchaseCompleted(plan: plan)
+                }
                 await refreshProStatus()
                 await transaction.finish()
             case .userCancelled:
@@ -294,6 +304,14 @@ class SubscriptionStore: ObservableObject {
             lastSyncedTransactionID = transactionID
         } catch {
             // Leave lastSyncedTransactionID unset so the next refresh retries.
+        }
+    }
+
+    private static func analyticsPlan(for productID: String) -> AnalyticsService.SubscriptionPlan? {
+        switch productID {
+        case monthlyID: return .monthly
+        case annualID:  return .annual
+        default:        return nil
         }
     }
 

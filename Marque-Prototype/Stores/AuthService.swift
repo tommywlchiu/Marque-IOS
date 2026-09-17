@@ -115,6 +115,12 @@ class AuthService: NSObject, ObservableObject {
         defer { isLoading = false }
         do {
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
+
+            // FR-11.4 `signup_completed`. `createUser` only ever returns on a
+            // freshly created account (an existing email throws), so unlike the
+            // Apple/Google paths below there is nothing to disambiguate here.
+            AnalyticsService.signupCompleted(method: .email)
+
             let changeRequest = result.user.createProfileChangeRequest()
             changeRequest.displayName = displayName.trimmingCharacters(in: .whitespaces)
             try await changeRequest.commitChanges()
@@ -223,7 +229,15 @@ class AuthService: NSObject, ObservableObject {
                 withIDToken: idToken,
                 accessToken: result.user.accessToken.tokenString
             )
-            try await Auth.auth().signIn(with: credential)
+            let authResult = try await Auth.auth().signIn(with: credential)
+
+            // FR-11.4 `signup_completed`. This one method serves both first-time
+            // and returning users, so the event MUST be gated on isNewUser —
+            // firing it unconditionally would inflate the install -> signup
+            // funnel with every returning sign-in.
+            if authResult.additionalUserInfo?.isNewUser == true {
+                AnalyticsService.signupCompleted(method: .google)
+            }
         } catch {
             let nsError = error as NSError
             if nsError.domain != kGIDSignInErrorDomain || nsError.code != GIDSignInError.canceled.rawValue {
@@ -749,7 +763,15 @@ extension AuthService: ASAuthorizationControllerDelegate {
                 if await self.isReauthenticating {
                     try await Auth.auth().currentUser?.reauthenticate(with: firebaseCredential)
                 } else {
-                    try await Auth.auth().signIn(with: firebaseCredential)
+                    let authResult = try await Auth.auth().signIn(with: firebaseCredential)
+
+                    // FR-11.4 `signup_completed`. Same as Google: one path for
+                    // first-time and returning users, so isNewUser is the only
+                    // thing that keeps the signup count honest. The
+                    // reauthentication branch above is never a signup.
+                    if authResult.additionalUserInfo?.isNewUser == true {
+                        AnalyticsService.signupCompleted(method: .apple)
+                    }
                 }
                 await MainActor.run {
                     self.appleSignInController = nil

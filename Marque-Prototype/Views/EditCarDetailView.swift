@@ -608,6 +608,10 @@ struct EditCarDetailView: View {
             carStore.uploadPhotos(newPhotos, removingFileNames: fileNamesToDelete, for: updated)
         }
 
+        // One event per photo the save actually wrote. Fired here rather than in
+        // the picker so abandoning the edit sheet doesn't count.
+        for _ in newPhotos { AnalyticsService.carPhotoAdded() }
+
         dismiss()
     }
 

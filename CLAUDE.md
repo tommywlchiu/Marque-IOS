@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Marque is an iOS app (SwiftUI, iOS 17.6+, Swift 5, bundle ID `com.tommychiu.marque`) for car owners to manage, track, and share vehicle information. It combines a private garage tool (service history, document expiry alerts, expense tracking), a social layer (public profiles, follows, block/report), and an AI assistant (Marque Assistant, v1.1, behind a Remote Config flag).
 
-Product source of truth: `docs/Marque-PRD.md` (v1.1). Cite FR/EC/US identifiers from it when discussing intended behavior.
+Product source of truth: `docs/Marque-PRD.md` (v1.2). Cite FR/EC/US identifiers from it when discussing intended behavior.
 
 ---
 
@@ -150,7 +150,7 @@ Learned the hard way. Each one cost real debugging time.
 
 # Build & Run
 
-Build and run through **Xcode** — open `Marque-Prototype.xcodeproj`. One native target, no test harness (no XCTest bundle, no `test` script in `functions/`). The Firebase iOS SDK is added via SPM (`https://github.com/firebase/firebase-ios-sdk`); linked products include `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, and `FirebaseRemoteConfig`.
+Build and run through **Xcode** — open `Marque-Prototype.xcodeproj`. One native target, no test harness (no XCTest bundle, no `test` script in `functions/`). Three SPM packages: `firebase-ios-sdk` (linked products `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, `FirebaseRemoteConfig`), `GoogleSignIn-iOS` (`GoogleSignIn`, `GoogleSignInSwift`), and `posthog-ios` @ 3.77.0 (`PostHog`).
 
 Command-line build. Copy this whole block — the three lines are load-bearing and verified working on this machine:
 ```bash
@@ -167,7 +167,7 @@ Cloud Functions live in `functions/` (TypeScript, `firebase-functions` v6). Buil
 
 ## Navigation & Root State
 
-`Marque_PrototypeApp.swift` bootstraps ten `@StateObject`s injected as environment objects: `CarStore`, `AuthService`, `ExploreStore`, `FollowStore`, `SubscriptionStore`, `BlockStore`, `NotificationStore`, `SmartcarStore`, `ChatStore`, and `FeatureFlagsStore`. `RootView` drives top-level navigation:
+`Marque_PrototypeApp.swift` bootstraps nine `@StateObject`s injected as environment objects: `CarStore`, `AuthService`, `ExploreStore`, `FollowStore`, `SubscriptionStore`, `BlockStore`, `NotificationStore`, `ChatStore`, and `FeatureFlagsStore`. `RootView` drives top-level navigation:
 
 ```
 Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
@@ -191,14 +191,13 @@ All stores are `@MainActor` classes. Firestore listeners are started/stopped in 
 | `FollowStore` | Following/followers subcollections. |
 | `BlockStore` | Blocked users. |
 | `NotificationStore` | In-app notification inbox (Firestore). |
-| `SmartcarStore` | OAuth + odometer integration — currently disabled (`isEnabled = false`); Phase 2/3 paused. |
 | `FeatureFlagsStore` | Firebase Remote Config gate (e.g. `marque_assistant_enabled`, default false). |
 
 ## Firebase
 
 Firebase iOS SDK is a required build dependency. `FirebaseApp.configure()` runs unguarded in `Marque_PrototypeApp.init()`; Firestore offline persistence is enabled with a 100MB cache.
 
-An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#else` mock branches existed until May 2026 and was removed when Firebase became a hard dependency. **Do not reintroduce it.** One vestigial guard remains in `Models/AppUser.swift` — dead code, safe to strip.
+An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#else` mock branches existed until May 2026 and was removed when Firebase became a hard dependency. **Do not reintroduce it.** Two vestigial `#if canImport(FirebaseAuth)` guards remain in `Models/AppUser.swift` (lines 2 and 50) — dead code, safe to strip.
 
 ## Data Model Relationships
 
@@ -215,13 +214,24 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 - **`AIServiceSuggestionService`** — Cloud Function wrapper for AI-generated service suggestions.
 - **`DocumentScanService`** — VisionKit / on-device OCR wrapper for scanning insurance/registration/license documents.
 - **`ImageManager`** — local `Documents/CarPhotos/` file management (add, load, delete).
+- **`AnalyticsService`** — FR-11 PostHog wrapper. A struct of static functions (the `NotificationManager` pattern): no `ObservableObject`, no environment injection, no observable state. One typed method per FR-11.4 event; the generic `capture` is private. Configured once in `Marque_PrototypeApp.init()`, with `identify`/`reset` driven off the auth-state change. Autocapture, session replay, surveys, screen views, lifecycle events, and swizzling are all explicitly disabled — several default to *true*, and screen-view capture in particular would stamp `Car.displayName` onto every event. See Key Conventions.
 
 ## Cloud Functions
 
-Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it.
-- **`askMarque`** (v2 callable) — Marque Assistant chat proxy to Anthropic (Sonnet 4.6) with server-side daily cap enforcement (10/day free, 500/day Pro), prompt caching on the garage context block and system prompt, and streaming responses. Model ID is a constant at the top of the file so it can be bumped in one place.
-- **`appStoreNotifications`** (HTTPS) — App Store server-to-server webhook that syncs Pro subscription state to Firestore.
-- **`onAuthUserDeleted`** (v1 auth trigger, imported as `functionsV1`) — recursively cleans `users/{uid}/usage/**` (server-only per rules) and `users/{uid}/conversations/**` (belt-and-suspenders after the client cascade in `AuthService.deleteAccount`).
+Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it. Nine functions are exported; the constants block at the top (`BUNDLE_ID`, `APP_STORE_APP_ID`, `PRO_PRODUCT_IDS`, `APPLE_ROOT_CA`) is shared across the entitlement functions.
+
+**Assistant & AI**
+- **`askMarque`** (v2 callable) — Marque Assistant chat proxy to Anthropic (Sonnet 4.6) with server-side daily cap enforcement (10/day free, 500/day Pro), prompt caching on the garage context block and system prompt, and streaming responses. Model ID is a constant at the top of the file so it can be bumped in one place. Per FR-10.17 the context block must never include VIN, plate, insurance fields, driver license, per-record costs, notes, or photo names.
+- **`suggestServiceReminders`** (v2 callable) — AI-generated service suggestions from maintenance history. Wrapped client-side by `AIServiceSuggestionService`.
+- **`parseDriverLicense`**, **`parseInsuranceCard`**, **`parseMaintenanceReceipt`** (v2 callable) — Anthropic vision document parsers behind `DocumentScanService`. All three share the `ANTHROPIC_API_KEY` secret and the media-type constants.
+
+**Entitlements (Pro)** — these three are one system; a change to any of them needs the other two checked.
+- **`getAppAccountToken`** (v2 callable) — mints or returns this uid's `appAccountToken`, persisted at `appAccountTokens/{token}` (rules: `allow read, write: if false` — server-only). The client attaches it to the StoreKit purchase so a transaction can be bound to an account. Minting is contention-safe: a concurrent second call loses the transaction, retries, and finds the first token rather than minting a duplicate.
+- **`appStoreNotifications`** (v1 HTTPS) — App Store Server Notifications V2 webhook. `SignedDataVerifier` **requires `appAppleId` for the PRODUCTION environment** — omitting it means production notifications never verify, which was a live bug that went unnoticed precisely because it only failed in production. Returns 500 only for `RETRYABLE_VERIFICATION_FAILURE`, so Apple redelivers on a transient OCSP failure instead of treating a swallowed error as success.
+- **`syncEntitlement`** (v2 callable) — client-initiated entitlement sync. Grants `isPro` **only** when the transaction's `appAccountToken` maps back to the calling uid. No token match means the write is skipped, not granted — that's either a replayed JWS or a Family Sharing member, and self-granting off another account's transaction is the entitlement-hijack this guard exists to stop. Family members still get local Pro from StoreKit; only the server flag is withheld.
+
+**Lifecycle**
+- **`onAuthUserDeleted`** (v1 auth trigger, imported as `functionsV1`) — the FR-10.15 / EC-08 / EC-22 deletion cascade, using the Admin SDK to reach the many paths `firestore.rules` denies to clients. Runs in six ordered phases behind a gate: **(1)** read what later phases need (username, `following[]`, `followers[]`) **(2)** reverse follow pointers **(3)** cross-user notifications **(4)** `publicCars`, then the Storage prefix, then `appAccountTokens` **(5)** username release **→ gate: throw if any error accumulated →** **(6)** `recursiveDelete(users/{uid})` **last**. The ordering is load-bearing: `recursiveDelete` destroys the data phases 2–5 read from, so running it early made every retry read an emptied graph and exit green while leaving orphans behind. See Known Pitfalls.
 
 Dependency CVEs are handled via the `overrides` block in `functions/package.json` (currently pins `debug`, `uuid`, `qs`) — see Known Pitfalls.
 
@@ -253,9 +263,9 @@ Marque-Prototype/
   Models/          — Car, AppUser, AppNotification, ServiceReminder, MaintenanceRecord,
                      CarData, PublicCar, ChatMessage, Conversation, AIServiceSuggestion, AppLinks
   Stores/          — CarStore, AuthService, ChatStore, ExploreStore, FollowStore,
-                     BlockStore, NotificationStore, SubscriptionStore, SmartcarStore,
+                     BlockStore, NotificationStore, SubscriptionStore,
                      ImageManager, NotificationManager, VINDecodeService, ServiceReminderEngine,
-                     AIServiceSuggestionService, DocumentScanService
+                     AIServiceSuggestionService, DocumentScanService, AnalyticsService
                      (note: FeatureFlagsStore.swift sits at the Marque-Prototype/ root,
                       not in Stores/, alongside AppDelegate.swift)
   Components/      — MarqueComponents.swift, CarPhotoImage.swift
@@ -281,4 +291,7 @@ New feature views should go under `Features/<FeatureName>/`. Do not add new file
 - **Never deploy Cloud Functions or Firestore rules without explicit user approval.** Build/typecheck locally, then stop and confirm. This is not delegable — no agent may deploy on its own judgment.
 - Adding a new subcollection under `users/{uid}/` requires a matching rule in `firestore.rules` — the wildcard was removed intentionally.
 - The Marque Assistant ships behind `FeatureFlagsStore.assistantEnabled` (Remote Config `marque_assistant_enabled`). Entry points must gate on this flag.
-- `SmartcarStore` is on hold (`isEnabled = false`). Don't propose or build Smartcar work.
+- **Analytics goes through `AnalyticsService`'s typed static methods — never a raw `PostHogSDK.shared.capture`.** The generic `capture` is private on purpose: it's what makes FR-11.6 (no PII in analytics) structural rather than a rule someone has to remember. Adding an event means adding a typed method whose parameters are enums, `Bool`s, and counts only. A signature that accepts a `String` from a user-editable field is a bug.
+- Analytics is fire-and-forget and must never affect control flow. No `try`, no `await` that can fail a user action. A capture call that can break a save or a purchase is in the wrong place.
+- Instrument on **success**, after the operation completed — not on attempt. Events fired on attempt silently corrupt every funnel in PRD Section 9.
+- Smartcar/telematics was built, abandoned, and deleted in PRD v1.2 (see PRD Appendix A). Don't re-propose it without reading that entry first.

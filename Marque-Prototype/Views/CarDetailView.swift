@@ -144,6 +144,7 @@ struct CarDetailView: View {
                 ownCar = car
                 ownCar?.maintenanceRecords.append(record)
                 carStore.updateCar(ownCar!)
+                AnalyticsService.maintenanceRecordAdded()
             }
         }
         .modifier(FocusedEditPresenters(
@@ -360,6 +361,7 @@ struct CarDetailView: View {
                     let username = authService.currentUser?.username ?? ""
                     let avatarURL = authService.currentUser?.avatarURL
                     carStore.setVisibility(isPublic, for: car, ownerUsername: username, ownerAvatarURL: avatarURL)
+                    AnalyticsService.carVisibilityChanged(isPublic: isPublic)
                 }
             )) {
                 Label {

@@ -63,7 +63,7 @@ struct MarqueChatView: View {
                 ConversationHistoryView()
             }
             .sheet(isPresented: $showingPaywall) {
-                ProUpgradeView()
+                ProUpgradeView(trigger: .assistantCap)
                     .environmentObject(subscriptionStore)
             }
             .alert(
@@ -78,6 +78,13 @@ struct MarqueChatView: View {
             .onAppear {
                 if scopedCarId != nil && chatStore.currentConversation == nil {
                     chatStore.newConversation(scopedCarId: scopedCarId)
+                }
+            }
+            // Keyed off the cap transition rather than capReachedBar.onAppear so
+            // reopening the sheet while still capped doesn't re-count.
+            .onChange(of: chatStore.sendError?.isCap) { wasCap, isCap in
+                if isCap == true && wasCap != true {
+                    AnalyticsService.assistantCapReached()
                 }
             }
         }

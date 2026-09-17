@@ -83,7 +83,9 @@ struct AddCarView: View {
                             fuelType: fuelType,
                             transmission: transmission
                         )
-                        carStore.addCar(car)
+                        // FR-11.4 `car_added.entry_method`. `addMode` is the only
+                        // place this is known; without it CarStore skips the event.
+                        carStore.addCar(car, entryMethod: addMode == .vin ? .vin : .manual)
                         dismiss()
                     }
                     .disabled(!canAdd)

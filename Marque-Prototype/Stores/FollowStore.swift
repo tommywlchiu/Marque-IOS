@@ -72,6 +72,10 @@ class FollowStore: ObservableObject {
 
         do {
             try await batch.commit()
+            // FR-11.4 `user_followed` — committed follows only. Deliberately not
+            // mirrored in unfollow(): the event measures follow rate, and an
+            // unfollow is not a follow.
+            AnalyticsService.userFollowed()
             NotificationStore.writeFollowNotification(
                 to: uid,
                 actorUID: currentUID,

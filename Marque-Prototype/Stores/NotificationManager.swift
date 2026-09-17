@@ -6,7 +6,21 @@ struct NotificationManager {
     static let maintenanceRemindersKey = "marque_notif_maintenance_enabled"
 
     static func requestPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+        let center = UNUserNotificationCenter.current()
+        // FR-11.4 `notification_permission_result` measures the opt-in rate, so it
+        // has to correspond 1:1 with a prompt the user actually answered. Only the
+        // first call prompts; every later one (app launch, and each of the four
+        // alert toggles) returns the stored decision immediately without showing
+        // anything. Reporting unconditionally would therefore emit one event per
+        // launch and per toggle tap and make the rate meaningless, so the status is
+        // read first and the event is gated on `.notDetermined`.
+        center.getNotificationSettings { settings in
+            let isFirstPrompt = settings.authorizationStatus == .notDetermined
+            center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
+                guard isFirstPrompt else { return }
+                AnalyticsService.notificationPermissionResult(granted: granted)
+            }
+        }
     }
 
     // Full reschedule — cancels all pending Marque notifications then rebuilds

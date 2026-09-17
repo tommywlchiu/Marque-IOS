@@ -59,6 +59,18 @@ struct DocumentScanService {
             case .maintenanceReceipt: return "Receipt"
             }
         }
+
+        // FR-11.4 `document_scan_completed.doc_type`. Kept as a mapping rather
+        // than reusing this enum in AnalyticsService so the wire values stay
+        // owned by AnalyticsService (renaming a case here can't silently break a
+        // saved insight).
+        var analyticsType: AnalyticsService.DocumentType {
+            switch self {
+            case .driverLicense: return .driverLicense
+            case .insuranceCard: return .insuranceCard
+            case .maintenanceReceipt: return .maintenanceReceipt
+            }
+        }
     }
 
     // Categorizes failures so the UI can choose an appropriate title + body
@@ -181,6 +193,11 @@ struct DocumentScanService {
             throw ScanError.modelCouldntRead(modelError, .driverLicense)
         }
 
+        // FR-14.5 / FR-11.4: only on a successful extraction. Everything that
+        // counts as a failure (encode error, transport error, malformed payload,
+        // model read nothing) has already thrown by this point.
+        AnalyticsService.documentScanCompleted(docType: DocumentKind.driverLicense.analyticsType)
+
         return DriverLicenseResult(
             number: number,
             state: state.uppercased(),
@@ -203,6 +220,8 @@ struct DocumentScanService {
         if !modelError.isEmpty, allEmpty {
             throw ScanError.modelCouldntRead(modelError, .insuranceCard)
         }
+
+        AnalyticsService.documentScanCompleted(docType: DocumentKind.insuranceCard.analyticsType)
 
         return InsuranceCardResult(
             provider: provider,
@@ -229,6 +248,8 @@ struct DocumentScanService {
         if !modelError.isEmpty, allEmpty {
             throw ScanError.modelCouldntRead(modelError, .maintenanceReceipt)
         }
+
+        AnalyticsService.documentScanCompleted(docType: DocumentKind.maintenanceReceipt.analyticsType)
 
         return MaintenanceReceiptResult(
             serviceType: serviceType,

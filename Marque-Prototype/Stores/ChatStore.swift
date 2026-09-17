@@ -341,6 +341,12 @@ class ChatStore: ObservableObject {
             return
         }
 
+        // FR-11.4 `assistant_message_sent`. Fired here, after the stream
+        // completed without throwing — i.e. the message really was sent and
+        // answered, not merely attempted. Carries only whether the conversation
+        // was scoped to a car; never any part of the message body (FR-11.6).
+        AnalyticsService.assistantMessageSent(wasScopedToCar: conversation.scopedCarId != nil)
+
         // 6. Finalize: persist the assistant message and update convo metadata.
         guard let assistantIndex = currentMessages.firstIndex(where: { $0.id == assistantLocalId }) else {
             return

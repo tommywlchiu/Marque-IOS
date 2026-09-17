@@ -223,7 +223,7 @@ private struct MainTabView: View {
             AddCarView()
         }
         .sheet(isPresented: $showingPaywall) {
-            ProUpgradeView()
+            ProUpgradeView(trigger: .carLimit)
         }
     }
 
