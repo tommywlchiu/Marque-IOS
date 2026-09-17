@@ -1,5 +1,5 @@
 {
-  "originHash" : "ec6c031d6255324acba52d76a21340011566c6528adbf25e7f52b9c21311cd54",
+  "originHash" : "7ed78cec4688813732ed048994a6c24c5c081e333197fce4007040cea0ee7d0c",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -116,15 +116,6 @@
       "state" : {
         "revision" : "040d087ac2267d2ddd4cca36c757d1c6a05fdbfe",
         "version" : "101.0.0"
-      }
-    },
-    {
-      "identity" : "ios-sdk",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/smartcar/ios-sdk",
-      "state" : {
-        "revision" : "1f6d66aa07460e659441c48418ef70cb701bc8f9",
-        "version" : "6.3.1"
       }
     },
     {

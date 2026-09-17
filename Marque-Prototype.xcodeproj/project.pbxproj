@@ -58,7 +58,6 @@
 		A10065 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20065 /* DeleteAccountView.swift */; };
 		A10067 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20067 /* ChangePasswordView.swift */; };
 		A10066 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20066 /* AppDelegate.swift */; };
-		A10068 /* SmartcarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20068 /* SmartcarStore.swift */; };
 		A10069 /* VerifyEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20069 /* VerifyEmailView.swift */; };
 		A10070 /* DocumentScanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20070 /* DocumentScanService.swift */; };
 		A10071 /* DocumentScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20071 /* DocumentScannerView.swift */; };
@@ -67,7 +66,6 @@
 		C5000001C5000001C5000001 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C5000002C5000002C5000002 /* FirebaseFirestore */; };
 		C6000001C6000001C6000001 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = C6000002C6000002C6000002 /* FirebaseStorage */; };
 		C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = C7000002C7000002C7000002 /* FirebaseFunctions */; };
-		D0000003D0000003D0000003 /* SmartcarAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D0000002D0000002D0000002 /* SmartcarAuth */; };
 		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
 		F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */; };
 		F497CF0E300B0735001892AE /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF0C300B0735001892AE /* ChatMessage.swift */; };
@@ -136,7 +134,6 @@
 		A20065 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
 		A20067 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 		A20066 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A20068 /* SmartcarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartcarStore.swift; sourceTree = "<group>"; };
 		A20069 /* VerifyEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyEmailView.swift; sourceTree = "<group>"; };
 		A20070 /* DocumentScanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanService.swift; sourceTree = "<group>"; };
 		A20071 /* DocumentScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScannerView.swift; sourceTree = "<group>"; };
@@ -166,7 +163,6 @@
 				C6000001C6000001C6000001 /* FirebaseStorage in Frameworks */,
 				F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */,
 				F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */,
-				D0000003D0000003D0000003 /* SmartcarAuth in Frameworks */,
 				C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -252,7 +248,6 @@
 				A20060 /* SubscriptionStore.swift */,
 				A20061 /* BlockStore.swift */,
 				A20064 /* NotificationStore.swift */,
-				A20068 /* SmartcarStore.swift */,
 				A20070 /* DocumentScanService.swift */,
 				A20010 /* ImageManager.swift */,
 				A20012 /* NotificationManager.swift */,
@@ -399,7 +394,6 @@
 				C6000002C6000002C6000002 /* FirebaseStorage */,
 				F421FDE32FA44C19000DBF3C /* GoogleSignIn */,
 				F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */,
-				D0000002D0000002D0000002 /* SmartcarAuth */,
 				C7000002C7000002C7000002 /* FirebaseFunctions */,
 				F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */,
 			);
@@ -434,7 +428,6 @@
 			packageReferences = (
 				F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				F421FDE22FA44C19000DBF3C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
-				D0000001D0000001D0000001 /* XCRemoteSwiftPackageReference "ios-sdk" */,
 			);
 			productRefGroup = A50005 /* Products */;
 			projectDirPath = "";
@@ -475,7 +468,6 @@
 				A10065 /* DeleteAccountView.swift in Sources */,
 				A10067 /* ChangePasswordView.swift in Sources */,
 				F497CF263024459E001892AE /* AIServiceSuggestionService.swift in Sources */,
-				A10068 /* SmartcarStore.swift in Sources */,
 				A10070 /* DocumentScanService.swift in Sources */,
 				A10071 /* DocumentScannerView.swift in Sources */,
 				A10061 /* BlockStore.swift in Sources */,
@@ -734,14 +726,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		D0000001D0000001D0000001 /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/smartcar/ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 6.3.1;
-			};
-		};
 		F421FDE22FA44C19000DBF3C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -785,11 +769,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFunctions;
-		};
-		D0000002D0000002D0000002 /* SmartcarAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D0000001D0000001D0000001 /* XCRemoteSwiftPackageReference "ios-sdk" */;
-			productName = SmartcarAuth;
 		};
 		F421FDE32FA44C19000DBF3C /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

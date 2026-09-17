@@ -8,7 +8,6 @@ struct CarDetailView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var exploreStore: ExploreStore
     @EnvironmentObject var blockStore: BlockStore
-    @EnvironmentObject var smartcarStore: SmartcarStore
     @Environment(\.dismiss) var dismiss
 
     // Exactly one of these is non-nil. Own car is @State so mutations sync to UI.
@@ -21,7 +20,6 @@ struct CarDetailView: View {
     @State private var showingReport = false
     @State private var showingOwnerProfile = false
     @State private var galleryStartIndex: Int?
-    @State private var showingDisconnectConfirmation = false
 
     // Focused-sheet add/edit flows — one per section. Consolidated with the
     // above state to make it obvious that every "add/edit" surface here is a
@@ -93,7 +91,6 @@ struct CarDetailView: View {
             if liveCar != nil {
                 registrationSection
                 vehicleDetailsSection
-                smartcarSection
                 insuranceSection
             } else {
                 publicVehicleDetailsSection
@@ -192,31 +189,6 @@ struct CarDetailView: View {
         } message: {
             Text("Are you sure you want to delete \(displayName)? This action cannot be undone.")
         }
-        .alert(
-            "Disconnect Vehicle?",
-            isPresented: $showingDisconnectConfirmation,
-            presenting: liveCar
-        ) { car in
-            Button("Cancel", role: .cancel) {}
-            Button("Disconnect", role: .destructive) {
-                Task { await smartcarStore.disconnect(car) }
-            }
-        } message: { car in
-            let brand = car.smartcarBrand.map { "your \($0)" } ?? "this vehicle"
-            Text("Mileage will no longer auto-update from \(brand). You can reconnect anytime.")
-        }
-        .alert(
-            "Connection Issue",
-            isPresented: Binding(
-                get: { smartcarErrorMessage != nil },
-                set: { if !$0 { smartcarStore.clearError() } }
-            ),
-            presenting: smartcarErrorMessage
-        ) { _ in
-            Button("OK", role: .cancel) { smartcarStore.clearError() }
-        } message: { message in
-            Text(message)
-        }
         .overlay(alignment: .bottomTrailing) {
             if let car = liveCar {
                 AskMarqueButton(scopedCarId: car.id.uuidString)
@@ -224,13 +196,6 @@ struct CarDetailView: View {
                     .padding(.bottom, 16)
             }
         }
-    }
-
-    // MARK: - Smartcar error helper
-
-    private var smartcarErrorMessage: String? {
-        if case .error(let msg) = smartcarStore.state { return msg }
-        return nil
     }
 
     // EditCarDetailView wants a Binding<Car>; thread it through @State ownCar.
@@ -526,144 +491,6 @@ struct CarDetailView: View {
         !car.color.isEmpty || !car.mileage.isEmpty || !car.fuelType.isEmpty ||
             !car.transmission.isEmpty || !car.trim.isEmpty || !car.bodyStyle.isEmpty ||
             !car.driveType.isEmpty || !car.engine.isEmpty
-    }
-
-    // MARK: - Smartcar (Connected Vehicle)
-    //
-    // Lives between Vehicle Details and Insurance. Hidden for unsupported
-    // makes when not connected — once connected the section stays visible
-    // regardless of make so the user can always see/manage the link.
-
-    @ViewBuilder
-    private var smartcarSection: some View {
-        if SmartcarStore.isEnabled, let car = liveCar {
-            if car.isSmartcarConnected {
-                connectedSmartcarSection(for: car)
-            } else if SmartcarStore.isSupported(make: car.make) {
-                connectSmartcarSection(for: car)
-            }
-        }
-    }
-
-    private func connectSmartcarSection(for car: Car) -> some View {
-        let isBusy = smartcarStore.state == .launching
-            || smartcarStore.state == .authenticating
-            || smartcarStore.state == .finalizing
-
-        return Section {
-            Button {
-                smartcarStore.startConnection(for: car)
-            } label: {
-                HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.accentColor.opacity(0.12))
-                            .frame(width: 40, height: 40)
-                        Image(systemName: "bolt.car.fill")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.accentColor)
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Connect Your \(SmartcarStore.displayBrand(for: car.make))")
-                            .font(.subheadline).fontWeight(.semibold)
-                            .foregroundColor(.primary)
-                        Text(isBusy ? connectStatusCaption : "Auto-update mileage from your car")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-
-                    Spacer()
-
-                    if isBusy {
-                        ProgressView()
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(.secondary.opacity(0.5))
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-            .buttonStyle(.plain)
-            .disabled(isBusy)
-        } footer: {
-            Text("Securely link your vehicle to keep mileage in sync. You can disconnect anytime.")
-        }
-    }
-
-    private var connectStatusCaption: String {
-        switch smartcarStore.state {
-        case .launching:      return "Opening Smartcar…"
-        case .authenticating: return "Waiting for authorization…"
-        case .finalizing:     return "Finishing up…"
-        default:              return ""
-        }
-    }
-
-    private func connectedSmartcarSection(for car: Car) -> some View {
-        Section {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.green.opacity(0.15))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.green)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Connected to \(car.smartcarBrand ?? SmartcarStore.displayBrand(for: car.make))")
-                        .font(.subheadline).fontWeight(.semibold)
-                    if let synced = car.smartcarLastSyncedAt {
-                        Text("Last synced \(relativeSyncLabel(for: synced))")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text("Ready to sync")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                Spacer()
-
-                if smartcarStore.isSyncing(car) {
-                    ProgressView()
-                }
-            }
-            .padding(.vertical, 4)
-
-            Button {
-                Task { await smartcarStore.sync(car) }
-            } label: {
-                Label("Sync Now", systemImage: "arrow.clockwise")
-            }
-            .disabled(smartcarStore.isSyncing(car))
-
-            Button(role: .destructive) {
-                showingDisconnectConfirmation = true
-            } label: {
-                Label("Disconnect", systemImage: "minus.circle")
-            }
-        } header: {
-            Text("Connected Vehicle")
-        }
-    }
-
-    private func relativeSyncLabel(for date: Date) -> String {
-        let seconds = Int(Date().timeIntervalSince(date))
-        switch seconds {
-        case ..<60:     return "just now"
-        case ..<3600:   return "\(seconds / 60)m ago"
-        case ..<86400:  return "\(seconds / 3600)h ago"
-        case ..<604800: return "\(seconds / 86400)d ago"
-        default:
-            let f = RelativeDateTimeFormatter()
-            f.unitsStyle = .abbreviated
-            return f.localizedString(for: date, relativeTo: Date())
-        }
     }
 
     // MARK: - Vehicle Details (public — includes trim/body/drive/engine)

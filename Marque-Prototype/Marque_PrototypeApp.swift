@@ -13,7 +13,6 @@ struct Marque_PrototypeApp: App {
     @StateObject private var subscriptionStore = SubscriptionStore()
     @StateObject private var blockStore = BlockStore()
     @StateObject private var notificationStore = NotificationStore()
-    @StateObject private var smartcarStore = SmartcarStore()
     @StateObject private var chatStore = ChatStore()
     @StateObject private var featureFlagsStore = FeatureFlagsStore()
 
@@ -35,15 +34,9 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(subscriptionStore)
                 .environmentObject(blockStore)
                 .environmentObject(notificationStore)
-                .environmentObject(smartcarStore)
                 .environmentObject(chatStore)
                 .environmentObject(featureFlagsStore)
                 .environmentObject(appDelegate)
-                .onOpenURL { url in
-                    // Smartcar Connect redirects back to marque://smartcar-callback.
-                    // Phase 2 will fill in handleCallback; for now this just ignores.
-                    _ = smartcarStore.handleCallback(url)
-                }
                 .onChange(of: authService.authState) { _, newState in
                     if case .authenticated(let user) = newState {
                         carStore.startListening(userId: user.id)

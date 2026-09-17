@@ -31,13 +31,6 @@ struct Car: Identifiable, Codable, Equatable {
     var notes: String
     var isPublic: Bool
 
-    // Smartcar connection — populated when a user authorises this car via
-    // Smartcar Connect. The vehicleId is Smartcar's UUID; tokens are stored
-    // server-side in a private Firestore collection (never on the client).
-    var smartcarVehicleId: String?
-    var smartcarBrand: String?
-    var smartcarLastSyncedAt: Date?
-
     var maintenanceRecords: [MaintenanceRecord]
     var serviceReminders: [ServiceReminder]
 
@@ -65,9 +58,6 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate: Date? = nil,
         notes: String = "",
         isPublic: Bool = false,
-        smartcarVehicleId: String? = nil,
-        smartcarBrand: String? = nil,
-        smartcarLastSyncedAt: Date? = nil,
         maintenanceRecords: [MaintenanceRecord] = [],
         serviceReminders: [ServiceReminder] = []
     ) {
@@ -94,9 +84,6 @@ struct Car: Identifiable, Codable, Equatable {
         self.registrationExpiryDate = registrationExpiryDate
         self.notes = notes
         self.isPublic = isPublic
-        self.smartcarVehicleId = smartcarVehicleId
-        self.smartcarBrand = smartcarBrand
-        self.smartcarLastSyncedAt = smartcarLastSyncedAt
         self.maintenanceRecords = maintenanceRecords
         self.serviceReminders = serviceReminders
     }
@@ -114,7 +101,6 @@ struct Car: Identifiable, Codable, Equatable {
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
         case notes, isPublic
-        case smartcarVehicleId, smartcarBrand, smartcarLastSyncedAt
         case maintenanceRecords, serviceReminders
     }
 
@@ -151,9 +137,6 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
         notes = try c.decode(String.self, forKey: .notes)
         isPublic = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
-        smartcarVehicleId = try c.decodeIfPresent(String.self, forKey: .smartcarVehicleId)
-        smartcarBrand = try c.decodeIfPresent(String.self, forKey: .smartcarBrand)
-        smartcarLastSyncedAt = try c.decodeIfPresent(Date.self, forKey: .smartcarLastSyncedAt)
         maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
     }
@@ -184,15 +167,8 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encodeIfPresent(registrationExpiryDate, forKey: .registrationExpiryDate)
         try c.encode(notes, forKey: .notes)
         try c.encode(isPublic, forKey: .isPublic)
-        try c.encodeIfPresent(smartcarVehicleId, forKey: .smartcarVehicleId)
-        try c.encodeIfPresent(smartcarBrand, forKey: .smartcarBrand)
-        try c.encodeIfPresent(smartcarLastSyncedAt, forKey: .smartcarLastSyncedAt)
         try c.encode(maintenanceRecords, forKey: .maintenanceRecords)
         try c.encode(serviceReminders, forKey: .serviceReminders)
-    }
-
-    var isSmartcarConnected: Bool {
-        smartcarVehicleId != nil
     }
 
     var primaryPhotoFileName: String? {
