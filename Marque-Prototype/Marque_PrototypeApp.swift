@@ -2,6 +2,26 @@ import SwiftUI
 import FirebaseCore
 import FirebaseFirestore
 
+/// Process launch time, for `app_launch_completed` (FR-11.4). A Swift global is
+/// initialized lazily on first access; this is first touched in the App's init,
+/// so it lands as close to process start as we can get without an @main hook.
+private let launchStartedAt = Date()
+
+/// Owns `app_opened.is_first_open` (FR-11.4). Lives at the call site rather than
+/// in AnalyticsService: it's launch state, not analytics plumbing, and putting it
+/// here keeps AnalyticsService free of persistence concerns.
+private enum LaunchState {
+    private static let hasLaunchedKey = "marque_has_launched_before"
+
+    /// True exactly once per install. Reading it marks the install as launched.
+    static func consumeIsFirstOpen() -> Bool {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: hasLaunchedKey) { return false }
+        defaults.set(true, forKey: hasLaunchedKey)
+        return true
+    }
+}
+
 @main
 struct Marque_PrototypeApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -17,7 +37,9 @@ struct Marque_PrototypeApp: App {
     @StateObject private var featureFlagsStore = FeatureFlagsStore()
 
     init() {
+        _ = launchStartedAt  // force the global's lazy init as early as possible
         FirebaseApp.configure()
+        AnalyticsService.configure()
 
         let settings = FirestoreSettings()
         settings.cacheSettings = PersistentCacheSettings(sizeBytes: NSNumber(value: 100 * 1024 * 1024))
@@ -27,6 +49,15 @@ struct Marque_PrototypeApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .task {
+                    // FR-11.4 launch events. `.task` on the root view fires once
+                    // per process, after the first render is scheduled, which is
+                    // the closest proxy we have to "launch finished".
+                    AnalyticsService.appOpened(isFirstOpen: LaunchState.consumeIsFirstOpen())
+                    AnalyticsService.appLaunchCompleted(
+                        durationMs: Int(Date().timeIntervalSince(launchStartedAt) * 1000)
+                    )
+                }
                 .environmentObject(carStore)
                 .environmentObject(authService)
                 .environmentObject(exploreStore)
@@ -39,6 +70,10 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(appDelegate)
                 .onChange(of: authService.authState) { _, newState in
                     if case .authenticated(let user) = newState {
+                        // FR-11.3: binds the anonymous pre-signup ID to the uid so
+                        // the install -> signup funnel stays connected. Aliasing is
+                        // idempotent past the first call (see AnalyticsService).
+                        AnalyticsService.identify(uid: user.id)
                         carStore.startListening(userId: user.id)
                         exploreStore.startListening()
                         followStore.startListening(uid: user.id)
@@ -54,6 +89,9 @@ struct Marque_PrototypeApp: App {
                         notificationStore.stopListening()
                         chatStore.stopListening()
                         subscriptionStore.reset()
+                        // Issues a fresh anonymous ID so the next person to sign in
+                        // on this device isn't merged into the previous identity.
+                        AnalyticsService.reset()
                     }
                 }
                 .onChange(of: subscriptionStore.isPro) { oldValue, newValue in

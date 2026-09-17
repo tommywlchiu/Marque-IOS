@@ -19,6 +19,7 @@
 		A10010 /* ImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20010 /* ImageManager.swift */; };
 		A10011 /* AddMaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20011 /* AddMaintenanceView.swift */; };
 		A10012 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20012 /* NotificationManager.swift */; };
+		A10099 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20099 /* AnalyticsService.swift */; };
 		A10013 /* ExpenseSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013 /* ExpenseSummaryView.swift */; };
 		A10014 /* CarData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014 /* CarData.swift */; };
 		A10015 /* VINDecodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20015 /* VINDecodeService.swift */; };
@@ -66,6 +67,7 @@
 		C5000001C5000001C5000001 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C5000002C5000002C5000002 /* FirebaseFirestore */; };
 		C6000001C6000001C6000001 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = C6000002C6000002C6000002 /* FirebaseStorage */; };
 		C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = C7000002C7000002C7000002 /* FirebaseFunctions */; };
+		E0000003E0000003E0000003 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E0000002E0000002E0000002 /* PostHog */; };
 		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
 		F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */; };
 		F497CF0E300B0735001892AE /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF0C300B0735001892AE /* ChatMessage.swift */; };
@@ -94,6 +96,7 @@
 		A20010 /* ImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageManager.swift; sourceTree = "<group>"; };
 		A20011 /* AddMaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMaintenanceView.swift; sourceTree = "<group>"; };
 		A20012 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		A20099 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		A20013 /* ExpenseSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummaryView.swift; sourceTree = "<group>"; };
 		A20014 /* CarData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarData.swift; sourceTree = "<group>"; };
 		A20015 /* VINDecodeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINDecodeService.swift; sourceTree = "<group>"; };
@@ -163,6 +166,7 @@
 				C6000001C6000001C6000001 /* FirebaseStorage in Frameworks */,
 				F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */,
 				F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */,
+				E0000003E0000003E0000003 /* PostHog in Frameworks */,
 				C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -251,6 +255,7 @@
 				A20070 /* DocumentScanService.swift */,
 				A20010 /* ImageManager.swift */,
 				A20012 /* NotificationManager.swift */,
+				A20099 /* AnalyticsService.swift */,
 				A20015 /* VINDecodeService.swift */,
 				A20017 /* AuthService.swift */,
 				A20033 /* ServiceReminderEngine.swift */,
@@ -394,6 +399,7 @@
 				C6000002C6000002C6000002 /* FirebaseStorage */,
 				F421FDE32FA44C19000DBF3C /* GoogleSignIn */,
 				F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */,
+				E0000002E0000002E0000002 /* PostHog */,
 				C7000002C7000002C7000002 /* FirebaseFunctions */,
 				F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */,
 			);
@@ -428,6 +434,7 @@
 			packageReferences = (
 				F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				F421FDE22FA44C19000DBF3C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				E0000001E0000001E0000001 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			productRefGroup = A50005 /* Products */;
 			projectDirPath = "";
@@ -484,6 +491,7 @@
 				A10011 /* AddMaintenanceView.swift in Sources */,
 				F497CF1530197BDF001892AE /* FeatureFlagsStore.swift in Sources */,
 				A10012 /* NotificationManager.swift in Sources */,
+				A10099 /* AnalyticsService.swift in Sources */,
 				A10013 /* ExpenseSummaryView.swift in Sources */,
 				A10014 /* CarData.swift in Sources */,
 				A10015 /* VINDecodeService.swift in Sources */,
@@ -726,6 +734,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		E0000001E0000001E0000001 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 		F421FDE22FA44C19000DBF3C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -769,6 +785,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFunctions;
+		};
+		E0000002E0000002E0000002 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E0000001E0000001E0000001 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 		F421FDE32FA44C19000DBF3C /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
