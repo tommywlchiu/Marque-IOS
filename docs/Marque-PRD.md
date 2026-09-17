@@ -1,12 +1,23 @@
 # Marque — Product Requirements Document
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Ready for Development
 **Author:** Product
-**Last Updated:** July 2026
+**Last Updated:** September 2026
 **Audience:** Engineering, Design, Investors
 
 **v1.1 changes:** Added Tier 4 (Intelligence) with the Marque Assistant — an in-app AI chatbot for car-related questions. See Section 5 (Tier 4), Section 6 (Assistant stories), Section 7 (FR-10), Section 8 (EC-16–EC-20), Section 10 (R-11–R-12), and Section 11.
+
+**v1.2 changes:** A gap review against the built codebase found several places where this document was unmeasurable, self-contradictory, or drifted from reality. Corrected:
+
+1. **Instrumentation (new FR-11).** Section 9 defined ~20 success metrics and the document contained zero mentions of analytics. Nothing in the app measured any of them — `FirebaseAnalytics` was not even a linked dependency. Without instrumentation, none of G1–G5 can be validated. PostHog selected; events now specified per metric.
+2. **Pro tier repositioned (FR-08 rewritten).** Pro was advertising four benefits, three of which were free in the shipped code (expense analytics, notification customization, social profile). PDF export — the fourth — was listed as v1.0 in Section 5 *and* as cut-to-v1.1 in Section 11, and was built in neither. Pro now anchors on **metered AI** (Assistant, document scanning), the features with genuine recurring cost per use. Export is now free — see item 4.
+3. **Onboarding specified (new FR-13).** R-01 (low activation) is the only High/High risk in this document and its entire mitigation lived in a table cell. It now has requirements.
+4. **Export rescoped and freed (new FR-15).** The original framing — a service history to show a buyer — does not survive comparison to Carfax: a seller-generated PDF is unverified, and buyers already have a trusted third-party report for accidents and title. What survives is **tax and business expense reporting**, where Carfax is irrelevant. Rescoped accordingly, moved out of Pro, and paired with GDPR data portability.
+5. **Accessibility (new FR-12).** Previously absent entirely. Baseline requirements added while retrofit cost is still low.
+6. **Document scanning documented (new FR-14).** Shipped and in production, but listed in this document only as a deferred v2 *non-goal*. Corrected.
+7. **Smartcar removed.** A built-but-disabled telematics integration (store, three Cloud Functions, Car Detail UI) existed in the codebase and appeared nowhere in this document. Decision: abandon and delete. Recorded in Appendix A so the decision is not silently re-litigated.
+8. **Reality corrections.** Tab structure (3, not the 5 described), bundle identifier, subscription product IDs, and shipped-state of the Assistant all reconciled with the codebase.
 
 ---
 
@@ -122,7 +133,7 @@ These are explicitly deferred. Any feature request that falls under these should
 |---|---|
 | Direct messaging / chat | High complexity, moderation liability, distraction from core |
 | Fuel / mileage logbook | Valuable but a separate use case; validate core first |
-| Document storage (PDFs, receipts) | Storage costs, camera UX complexity; v2 |
+| Telematics / connected-car (Smartcar) | Built as a prototype integration, then abandoned and deleted in v1.2. OAuth complexity and per-read vendor cost were not justified by the single feature it enabled (odometer auto-sync). See Appendix A |
 | Car valuation / market pricing | Third-party API cost, legal liability; v2 |
 | Android version | Platform focus required for quality; v2 |
 | Web app or dashboard | iOS-first strategy; v2 |
@@ -160,7 +171,8 @@ Organized by priority tier:
 | **Profile Setup** | Post-signup onboarding: username, photo, bio | P0 |
 | **Driver License Storage** | Optional private storage of license number, state, and expiry date for personal reference | P2 |
 | **Local Data Import** | Migrate existing prototype data to cloud on first login | P1 |
-| **Pro Tier** | Unlimited cars, PDF export, Pro badge via monthly/annual subscription | P1 |
+| **Document Scanning** | Camera/photo capture of insurance cards, registrations, and maintenance receipts, parsed by AI into structured fields. **Shipped** — three Cloud Functions in production. Previously undocumented; see FR-14 | P1 |
+| **Pro Tier** | Higher AI limits — Assistant messages and document scans — plus unlimited cars and the Pro badge, via monthly/annual subscription. See FR-08 | P1 |
 
 ## Tier 3 — Social Layer (v1.0 New)
 
@@ -176,7 +188,18 @@ Organized by priority tier:
 
 | Feature | Description | Priority |
 |---|---|---|
-| **Marque Assistant** | Floating "Ask Marque" chatbot that answers car questions using the user's garage as context plus general automotive knowledge; read-only in v1 (no writes to user data) | P1 |
+| **Marque Assistant** | Floating "Ask Marque" chatbot that answers car questions using the user's garage as context plus general automotive knowledge; read-only in v1 (no writes to user data). **Deployed** behind the `marque_assistant_enabled` Remote Config flag | P1 |
+
+## Tier 5 — Foundations (v1.2 New)
+
+Not user-facing features. These exist because the document previously assumed them without requiring them.
+
+| Feature | Description | Priority |
+|---|---|---|
+| **Analytics Instrumentation** | PostHog event tracking covering every metric in Section 9. Without this, none of G1–G5 is measurable. See FR-11 | P0 |
+| **Accessibility Baseline** | Dynamic Type, VoiceOver labels, tap-target minimums, contrast. See FR-12 | P1 |
+| **Onboarding Flow** | First-run experience that ends at a saved car, not an empty garage — the mitigation for R-01, the highest-rated risk in this document. See FR-13 | P0 |
+| **Data Export** | Expense/service reporting for tax and business use, plus GDPR Art. 20 portability. Free, not Pro. See FR-15 | P2 |
 
 ---
 
@@ -221,6 +244,9 @@ Organized by priority tier:
 |---|---|---|
 | US-19 | As a user with 4+ cars, I want to upgrade to Pro to add more | Paywall shown on 4th car add; purchase unlocks immediately |
 | US-20 | As a Pro user, I want my subscription restored on a new device | Restore purchase link on paywall; Firestore updated on restore |
+| US-30 | As a heavy Assistant user, I want to keep asking questions after the free daily limit so my research isn't interrupted mid-task | Free tier caps at 10 messages/day; the cap notice states plainly what Pro raises it to; upgrading lifts the cap immediately without re-launching |
+| US-31 | As someone photographing a stack of maintenance receipts, I want to scan more than the free daily allowance in one sitting | Free tier caps document scans per day; the cap is shown before the scan is attempted, not after; Pro raises it |
+| US-32 | As a prospective subscriber, I want the paywall to describe only what Pro actually unlocks so I don't feel misled after paying | Every benefit listed on the upgrade sheet maps to an enforced gate in code. No benefit may be advertised that free users already receive |
 
 ### Driver License
 
@@ -310,12 +336,24 @@ Organized by priority tier:
 
 ## FR-08: Pro Tier
 
+**Positioning (v1.2).** Pro anchors on **metered AI usage** — the Assistant and document scanning. This is deliberate: those are the only features with real recurring marginal cost per use (Anthropic API tokens), which makes charging for them economically honest rather than artificial gating. Car count and the badge remain Pro benefits but are secondary; neither costs anything to serve, and the 3-car limit only binds the minority of users with four or more vehicles.
+
+What Pro is explicitly **not** anchored on, and why:
+
+- **Expense analytics** — the PRD classifies expense aggregation as Tier 1 core. Gating it would contradict this document's own feature tiering.
+- **Notification customization** — shipped free to all users; category toggles are table stakes, not a premium feature.
+- **Social profile** — free; gating discovery would starve the social graph before it has any density (see R-02).
+- **Export** — see FR-15. Free, for the reasons given there.
+
 - **FR-08.1** Free tier is capped at 3 cars; the 4th add attempt surfaces the upgrade sheet
 - **FR-08.2** The upgrade sheet must offer both monthly ($2.99) and annual ($24.99) plans; annual shown first as recommended
 - **FR-08.3** Pro must be verified via Firestore (`user.isPro = true`), not StoreKit alone, to support cross-device unlock
-- **FR-08.4** When a subscription lapses, existing cars must remain readable; only new car additions are blocked
+- **FR-08.4** When a subscription lapses, existing cars must remain readable; only new car additions are blocked. Likewise, Assistant conversation history and previously scanned documents must remain readable — lapsing reduces future allowance, it never destroys or hides data the user already created
 - **FR-08.5** "Restore purchase" must be visible on the upgrade screen without scrolling
 - **FR-08.6** The app must handle App Store server-to-server notifications for subscription events (renewal, cancellation, billing failure) via Firebase Cloud Functions
+- **FR-08.7** Every benefit shown on the upgrade sheet must correspond to a gate actually enforced in code. A benefit that free users already receive must not be advertised as a reason to subscribe. This requirement exists because the v1.1 paywall advertised four benefits, three of which were ungated — see the v1.2 changelog
+- **FR-08.8** All Pro-gated limits must be enforced **server-side**, in the Cloud Function that incurs the cost, not client-side. A client-side check is a display convenience, never the enforcement point. (Already true of the Assistant cap per FR-10.5; FR-14 extends this to document scanning)
+- **FR-08.9** Every Pro gate must be enumerated in one place in the codebase, so the paywall copy and the enforced gates can be diffed against each other rather than drifting independently
 
 ## FR-09: Driver License Storage
 
@@ -364,6 +402,93 @@ Organized by priority tier:
 
 ---
 
+## FR-11: Analytics & Instrumentation
+
+Section 9 defines roughly twenty success metrics. Prior to v1.2 nothing measured any of them — the app did not link an analytics SDK at all. Every target in Section 9 was therefore unfalsifiable. This section exists so that the launch described by this document can actually be evaluated.
+
+**Tool:** PostHog. Chosen over Firebase Analytics because Section 9 is dominated by retention curves and funnels, which are first-class in PostHog and require BigQuery export plus SQL in GA4. Free tier (~1M events/month) exceeds projected volume by a wide margin at the scale in Section 9.
+
+- **FR-11.1** Every metric in Section 9 must be derivable from instrumented events. A metric that cannot be computed from the event stream must either gain an event or be removed from Section 9 — no metric may remain aspirational
+- **FR-11.2** Events use `snake_case`, named as `object_verb` in the past tense (`car_added`, `paywall_viewed`, `purchase_completed`)
+- **FR-11.3** Users are identified by Firebase `uid`, so analytics identity survives reinstall and matches server-side records. Anonymous pre-signup events must be aliased to the `uid` on signup so the install → signup funnel remains connected
+- **FR-11.4** The minimum event set:
+
+| Event | Key properties | Serves |
+|---|---|---|
+| `app_opened` | `is_first_open` | D1/D7/D30 retention |
+| `app_launch_completed` | `duration_ms` | Cold launch <2s |
+| `onboarding_step_viewed` | `step` | FR-13 funnel, R-01 |
+| `onboarding_completed` | `added_car`, `skipped` | R-01 |
+| `signup_completed` | `method` (apple/google/email) | Signup rate, auth distribution |
+| `car_added` | `entry_method` (vin/manual), `seconds_since_signup` | Activation, time-to-first-car |
+| `car_photo_added` | — | Photo upload rate |
+| `maintenance_record_added` | — | Records per active car |
+| `car_visibility_changed` | `is_public` | Public car rate |
+| `user_followed` | — | Follow rate |
+| `notification_permission_result` | `granted` | Opt-in rate |
+| `assistant_message_sent` | `was_scoped_to_car` | Assistant engagement |
+| `assistant_cap_reached` | — | Pro demand signal |
+| `document_scan_completed` | `doc_type` | Scanning engagement |
+| `document_scan_cap_reached` | — | Pro demand signal |
+| `paywall_viewed` | `trigger` (car_limit/assistant_cap/scan_cap/settings) | Which gate actually converts |
+| `purchase_completed` | `plan` (monthly/annual) | Conversion, plan split |
+
+- **FR-11.5** `paywall_viewed.trigger` is the single most important property in this table. It is the only way to learn which Pro gate drives revenue, which directly determines whether the FR-08 positioning is correct. It must never be omitted
+- **FR-11.6** Analytics must never receive: VIN, license plate, insurance provider or policy number, driver license fields, email address, free-text notes, photo contents, or Assistant message bodies. This matches the PII discipline already required by FR-06.3 and FR-10.17. Event properties carry counts, enums, and booleans — not user content
+- **FR-11.7** No IDFA collection and no cross-app tracking. Analytics are first-party product measurement only, which keeps the app outside App Tracking Transparency prompt requirements. Adding any attribution SDK would change this and requires revisiting
+- **FR-11.8** Crash reporting is **not** covered by PostHog. The >99.5% crash-free target in Section 9 requires a separate crash reporter (Firebase Crashlytics is the natural fit given the existing Firebase dependency). Section 9's quality metrics are not measurable until this is added
+- **FR-11.9** Instrumentation must ship *before* launch, not after. Retention and activation metrics cannot be backfilled — a cohort not measured on day one is lost permanently
+
+## FR-12: Accessibility
+
+Absent from v1.0 and v1.1 entirely. Specified now because retrofitting Dynamic Type into a finished SwiftUI layout costs substantially more than building with it.
+
+- **FR-12.1** All text must use Dynamic Type text styles rather than fixed point sizes, and must remain legible and non-truncating through the `.accessibility3` size class. Layouts must reflow rather than clip
+- **FR-12.2** Every interactive control must have an accessibility label. This applies especially to icon-only buttons, of which the app has several (Settings gear, notifications bell, Ask Marque). An unlabeled icon button is unusable with VoiceOver
+- **FR-12.3** Interactive targets must be at least 44×44pt, per Apple's Human Interface Guidelines
+- **FR-12.4** Text and meaningful UI must meet WCAG AA contrast (4.5:1 for body text, 3:1 for large text) in both light and dark appearance
+- **FR-12.5** Information must never be conveyed by color alone. Expiry state in particular — currently communicated by red/orange banners — must also carry text or an icon, since red/green distinction is the most common form of color vision deficiency
+- **FR-12.6** Animations must respect Reduce Motion
+- **FR-12.7** Every screen must be verified with VoiceOver enabled and Dynamic Type at maximum before release. This is a manual pass; no automated tooling substitutes for it
+
+## FR-13: Onboarding & Activation
+
+R-01 (low activation) is the only High-likelihood / High-impact risk in Section 10, and prior to v1.2 its entire mitigation was a single sentence in a risk table. This section makes it a requirement.
+
+- **FR-13.1** Onboarding must end with a car saved to the user's garage, not at an empty Garage screen. An empty garage is the failure state R-01 describes, not a successful onboarding outcome
+- **FR-13.2** The first-run sequence is: value framing → authentication → profile setup (username required, per FR-01.6) → **add first car** → Garage
+- **FR-13.3** The add-first-car step must offer both VIN and manual entry with equal prominence. VIN is faster when the user is standing at the car; manual is the only option when they are not
+- **FR-13.4** A skip affordance must exist — a user who cannot complete this step must not be trapped — but it must be visually secondary, and skipping must route to a Garage empty state carrying the same add-car call to action
+- **FR-13.5** Every step must emit `onboarding_step_viewed` (FR-11.4) so the drop-off point is identifiable. R-01 cannot be managed without knowing *where* users abandon
+- **FR-13.6** Notification permission must not be requested during onboarding. FR-04.1 already defers it to the first expiry-date entry; onboarding must not pre-empt that
+- **FR-13.7** Time from `signup_completed` to first `car_added` is the primary activation measure, targeted at under 3 minutes per Section 9
+
+## FR-14: Document Scanning
+
+Shipped and in production — three Cloud Functions parse insurance cards, registrations, and maintenance receipts. This document previously listed document handling only as a deferred v2 *non-goal*, which was wrong in both directions: the feature exists, and it now carries Pro-tier significance under FR-08.
+
+- **FR-14.1** Users may capture or select an image of an insurance card, vehicle registration, or maintenance receipt, and have its fields extracted into the corresponding structured record
+- **FR-14.2** Extraction runs server-side in a Cloud Function. The client must never call an AI provider directly, so that API credentials, quota enforcement, and cost attribution stay server-controlled — consistent with FR-10.5
+- **FR-14.3** Extracted fields must be presented for user review and correction before being saved. Parsing is assistive; it must never write to a record without confirmation
+- **FR-14.4** Free tier is limited to a daily document-scan allowance; Pro raises it. Like the Assistant cap, the limit must be enforced server-side per FR-08.8, and the remaining allowance must be visible *before* a scan is attempted, not surfaced as a failure afterward
+- **FR-14.5** Scan failures — unreadable image, unrecognized document type, provider error — must not count against the allowance, matching FR-10.14
+- **FR-14.6** Source images must not be retained server-side after extraction completes. Only the structured fields the user confirms are persisted. Insurance cards and registrations carry exactly the identifiers FR-06.3 and FR-10.17 already forbid exposing elsewhere
+- **FR-14.7** Per-request telemetry equivalent to FR-10.23 (uid, document type, token counts, latency, error code) must be logged for cost attribution, since this feature now shares the Pro-tier cost thesis with the Assistant
+
+## FR-15: Data Export
+
+Repositioned in v1.2. The original framing — a PDF service history to show a prospective buyer — does not withstand scrutiny: a seller-generated document is unverified, and buyers already rely on Carfax for third-party-verified accident and title history. What survives is the case Carfax does not serve at all.
+
+- **FR-15.1** Export is **free**, not a Pro benefit. It is not differentiated enough to anchor a subscription (see FR-08 positioning), and its strongest use case is periodic rather than recurring
+- **FR-15.2** The primary use case is **tax and business expense reporting** — contractors, rideshare, and delivery drivers deducting vehicle expenses. Carfax is irrelevant here and an accountant needs categorized totals, not vehicle history
+- **FR-15.3** Two formats, because they serve different readers: **PDF** for a human-readable service and expense report, and **CSV** for expense line items, which is what an accountant or spreadsheet actually wants
+- **FR-15.4** Export scope is selectable: a single car or the whole garage, filtered by an `ExpensePeriod` consistent with the existing expense views
+- **FR-15.5** The export includes vehicle identity, the full service log (date, mileage, service type, shop, cost, notes), and expense totals by category. Unlike public cars (FR-06.3), nothing is redacted — this is the user's own data being handed to the user
+- **FR-15.6** Delivery is via the standard iOS share sheet, so the user chooses the destination. The app must not email, upload, or transmit the export anywhere on the user's behalf
+- **FR-15.7** Separately from the product feature, the user must be able to request a complete machine-readable export of their account data (JSON), satisfying GDPR Article 20 data portability. R-10 commits to the deletion half of GDPR compliance; this is the other half
+
+---
+
 # Section 8 — Edge Cases
 
 | ID | Scenario | Expected Behavior |
@@ -394,6 +519,16 @@ Organized by priority tier:
 ---
 
 # Section 9 — Success Metrics
+
+**Every metric below is now backed by an instrumented event (FR-11.4).** Prior to v1.2 none of them were measurable. Any metric added here in future must arrive with its event, or it is aspiration rather than measurement.
+
+## North Star
+
+| Metric | Definition | Why this one |
+|---|---|---|
+| **Weekly active garages with a maintenance record added in the last 90 days** | Distinct users who opened the app this week *and* have logged at least one service record in the trailing 90 days | Twenty metrics with no hierarchy gives no basis for trading one against another. This is the single number that captures the product actually working: a user who logs maintenance has moved past storing a car photo into treating Marque as their system of record. It is the behavior that predicts retention, makes the Assistant useful (it needs history to be specific), and makes export worth generating. Install and signup counts can be bought; this cannot |
+
+Supporting metrics below are diagnostic — they explain *why* the North Star moves, and should not be optimized against individually at its expense.
 
 ## Acquisition
 
@@ -447,7 +582,7 @@ Organized by priority tier:
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| R-01 | Low activation — users sign up but don't add a car | High | High | Empty state with clear CTA; onboarding ends at Add Car, not at Garage |
+| R-01 | Low activation — users sign up but don't add a car | High | High | **FR-13** specifies the onboarding flow (ends at a saved car, not an empty Garage) and **FR-11.4** instruments each step so the drop-off point is identifiable. Prior to v1.2 this mitigation was a sentence with no requirement and no measurement behind it — the highest-rated risk in this document was both unspecified and invisible |
 | R-02 | Social layer feels empty at launch (no one to follow) | High | Medium | Pre-seed with founder accounts and curated public garages |
 | R-03 | Firebase costs spike unexpectedly | Medium | High | Set Firebase budget alerts at $50/month; enforce photo compression; cache aggressively |
 | R-04 | App Store rejection for Sign in with Apple parity | Medium | High | Apple requires Apple login to be equal prominence; design per HIG |
@@ -456,9 +591,11 @@ Organized by priority tier:
 | R-07 | User data loss on UserDefaults → Firestore migration | Low | Very High | Import is additive only; never delete UserDefaults until Firestore write confirmed |
 | R-08 | Content moderation exposure (public profiles) | Medium | Medium | Block and report flows from day one; Firebase App Check; ToS prohibiting illegal content |
 | R-09 | Negative reviews from confusing UX for non-enthusiasts | Medium | Medium | Normal users should never see social features until they choose to |
-| R-10 | GDPR / CCPA compliance gap | Low | High | Privacy policy on file before launch; "Delete Account" must actually delete all data |
+| R-10 | GDPR / CCPA compliance gap | Low | High | Privacy policy on file before launch; "Delete Account" must actually delete all data (deletion cascade verified and deployed, including server-side cleanup of paths the client cannot reach); **FR-15.7** adds the Article 20 data-portability half, previously missing |
 | R-11 | Assistant hallucinates incorrect car advice (wrong specs, wrong service intervals, unsafe DIY guidance) | Medium | High | System prompt constrains scope and forbids diagnostic certainty; safety disclaimer chip on first use; explicit "see a mechanic" language for safety-critical topics; read-only in v1 (no data mutations from the assistant); monitor user reports |
-| R-12 | Anthropic API costs exceed budget as assistant usage scales | Medium | Medium | Server-side 10-msg/day cap for free tier; per-user 500/day abuse throttle for Pro; prompt caching on garage context block reduces repeated input token cost by ~90% within a conversation. **Cost math (Sonnet 4.6):** at 500 active users × 10 msg/day × ~2k input + 500 output tokens per turn with cache, expected spend is ~$150–300/month. At the 30-day install target (2,500 installs, ~50% activation → ~1,250 active users), expected spend is ~$400–800/month. Set Cloud Function budget alert at $500/month (soft warning) and $1,000/month (hard cap that pages the founder); revise thresholds based on actual usage after week 1 |
+| R-12 | Anthropic API costs exceed budget as assistant usage scales | Medium | Medium | Server-side 10-msg/day cap for free tier; per-user 500/day abuse throttle for Pro; prompt caching on garage context block reduces repeated input token cost by ~90% within a conversation. **Cost math (Sonnet 4.6):** at 500 active users × 10 msg/day × ~2k input + 500 output tokens per turn with cache, expected spend is ~$150–300/month. At the 30-day install target (2,500 installs, ~50% activation → ~1,250 active users), expected spend is ~$400–800/month. Set Cloud Function budget alert at $500/month (soft warning) and $1,000/month (hard cap that pages the founder); revise thresholds based on actual usage after week 1. **v1.2 note:** document scanning (FR-14) draws on the same budget and must be included in these thresholds — the original math counted Assistant traffic only |
+| R-13 | Pro value proposition is too thin to convert at the >3% target | High | High | Under FR-08, Pro now rests primarily on raising AI limits. If the free Assistant and scan allowances are set generously enough that few users ever reach them, there is no felt reason to upgrade; set too tightly, the free tier stops demonstrating value and hurts activation (R-01). This tension is not resolvable from first principles — it is an empirical calibration. `assistant_cap_reached`, `document_scan_cap_reached`, and `paywall_viewed.trigger` (FR-11.4) exist specifically to measure it. Revisit both allowances after 30 days of real usage rather than guessing pre-launch |
+| R-14 | Advertised Pro benefits drift from enforced gates | Medium | Medium | This already happened: the v1.1 paywall advertised four benefits, three of which free users already received in the shipped build. It was caught by code review, not by anything structural. **FR-08.7** forbids advertising an unenforced benefit and **FR-08.9** requires the gates be enumerated in one place so copy and enforcement can be diffed. Treat any change to paywall copy as requiring a check against that list |
 
 ---
 
@@ -482,12 +619,18 @@ Organized by priority tier:
 - Block and report (required for App Store social features approval)
 - Privacy policy + Terms of Service in-app
 
+**Added to v1.0 scope in v1.2** — these are not new features so much as requirements the launch was already depending on:
+- Analytics instrumentation (FR-11) — **blocking**. Without it, nothing in Section 9 is measurable and the launch cannot be evaluated
+- Onboarding flow (FR-13) — **blocking**. Mitigates R-01, the highest-rated risk
+- Accessibility baseline (FR-12)
+- Crash reporting (FR-11.8) — required by the >99.5% crash-free target
+
 **Cut from v1.0, ship in v1.1:**
 - Comments on public cars
-- PDF export (teased as Pro feature, delivered in v1.1)
 - Likes / reactions
 - Following feed notifications
 - ~~Follower/following list screens~~ (shipped in v1.1)
+- ~~PDF export (teased as Pro feature, delivered in v1.1)~~ — **superseded in v1.2.** This line contradicted Section 5, which listed PDF export as part of the v1.0 Pro tier; it was built in neither version. Export is now free and rescoped to tax/expense reporting (FR-15), targeted at v1.2
 
 ### What is in v1.1
 
@@ -508,6 +651,16 @@ Additive on top of v1.0. Ships behind a Remote Config flag; graduates to public 
 - Write actions (assistant proposes → user confirms → assistant creates reminders/records)
 - Multi-turn context summarization (v1.1 hard-caps at 30 turns)
 
+### What is in v1.2
+
+- Analytics instrumentation (FR-11) and crash reporting — prerequisites for evaluating v1.0, so these ship with or before launch rather than after
+- Onboarding flow (FR-13)
+- Accessibility baseline (FR-12)
+- Pro tier repositioned onto metered AI (FR-08), with document-scan allowances enforced server-side (FR-14.4)
+- Paywall copy reconciled against enforced gates (FR-08.7)
+- Data export, free (FR-15)
+- Smartcar integration deleted (Appendix A)
+
 ### Definition of Done for MVP
 
 The MVP is complete when:
@@ -525,12 +678,15 @@ The MVP is complete when:
 |---|---|---|
 | DM / Chat | v2.0 | Requires moderation; complex push infra |
 | Fuel logbook | v2.0 | High-frequency use case; justified after retention proven |
-| Document storage | v2.0 | Storage costs; camera UX complexity |
+| ~~Document storage~~ | — | **Shipped.** Document scanning went to production ahead of this parking-lot entry; see FR-14. Entry retained struck-through so the discrepancy isn't rediscovered as a new idea |
 | Car valuation | v2.0 | Third-party data licensing cost |
 | Android | v2.0 | After iOS PMF confirmed |
 | Marketplace | v3.0 | Different product; different legal surface |
 | Business / dealer accounts | v3.0 | B2B motion; different GTM |
 | Apple Watch | v3.0 | Nice-to-have; low user value at this stage |
+| Remote push (APNs) | v1.3 | **Gap identified in v1.2.** Every notification in the app today is local — scheduled on-device for expiry dates. Nothing can reach a user who hasn't opened the app, which means a new follower produces no re-engagement. The social layer's contribution to the D7/D30 targets in Section 9 is structurally capped without this. Deferred rather than specified because it needs a server-side push service, APNs certificates, and a notification-preference model that respects FR-04.1's permission discipline — a real project, not an addition |
+| Smartcar / telematics | **Abandoned** | Built as a working prototype — `SmartcarStore`, three Cloud Functions (`smartcarExchangeCode`, `smartcarReadOdometer`, `smartcarDisconnect`), and Car Detail UI — then left disabled behind `isEnabled = false` and never documented in this PRD at all. Deleted in v1.2. The single feature it delivered (odometer auto-sync) did not justify the OAuth flow, per-read vendor cost, and ongoing integration maintenance. Recorded here so the idea is not re-proposed without remembering it was tried |
+| Account linking UI | Post-launch | Managing multiple sign-in providers per account. The failure it prevents — losing access to your only provider — is real but rare, and manual support recovery is an adequate fallback at current scale. Distinct from FR-01.5, which handles the more common and more damaging case of a signup colliding with an existing email and is *not* deferred |
 
 ---
 
@@ -541,6 +697,8 @@ The MVP is complete when:
 3. Apple's App Store review will not flag the social features if block/report is implemented
 4. Users will accept a 3-car free limit without significant churn if the value per car is high enough
 5. The target demographic (car owners in the US) is sufficiently iOS-dominant to justify iOS-first
+6. **(v1.2)** Enough users will hit the free Assistant and document-scan allowances often enough to feel the limit, and will value crossing it at $2.99/month. This is the central monetization assumption after the FR-08 repositioning and it is unvalidated — the app has no real users yet. R-13 tracks it; `assistant_cap_reached`, `document_scan_cap_reached`, and `paywall_viewed.trigger` are the instruments that will confirm or refute it
+7. **(v1.2)** PostHog's free tier remains sufficient at the scale described in Section 9, and first-party product analytics continue not to require an App Tracking Transparency prompt (which holds only as long as FR-11.7's no-IDFA, no-cross-app-tracking constraint is respected)
 
 ---
 
