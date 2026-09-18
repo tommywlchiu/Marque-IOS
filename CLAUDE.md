@@ -141,6 +141,11 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — `CLAUDE.md`, every agent brief, and the Cloud Functions `BUNDLE_ID` constant all asserted `com.marque.app` for the entire session. The real bundle ID, set in the very first commit, is `com.tommychiu.marque`. This silently broke `SignedDataVerifier`'s bundle-ID check on every production and sandbox verification, on top of the separate `appAppleId` constructor bug found the same week — two independent reasons the same code path never worked, neither visible from reading the code alone.
 - **Detect** — `grep PRODUCT_BUNDLE_IDENTIFIER Marque-Prototype.xcodeproj/project.pbxproj` and diff against any hardcoded bundle ID elsewhere in the repo.
 
+### A cap keyed by a client-supplied value is not a cap
+- **Rule** — Any counter whose document ID or bucket key comes from the request (`usage/scans_{clientDate}`, `usage/assistant_{clientDate}`) must have that key validated against server state before use. Bound it to the server clock (±1 UTC day covers UTC-12..UTC+14). Checking only the *shape* of the key (a regex) lets a client mint a fresh allowance per call by sending a new key each time.
+- **Why** — `askMarque` and `withScanAllowance` only matched `clientDate` against `\d{4}-\d{2}-\d{2}`, so a modified client could send a new date per call and get unlimited Anthropic calls on a free account (it even accepted `9999-99-99`). The implementer copied the same shape into the new scan code; a QA pass caught it, not the review that shipped `askMarque`.
+- **Detect** — `grep -n "clientDate" functions/src/index.ts` — every use as a Firestore doc ID must go through `assertPlausibleClientDate` first.
+
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.
 - **Why** — Both this file and both agent definitions asserted a `#if canImport(FirebaseCore)` mock-branch pattern for ~4 months after it was removed. Agents were being briefed with a false architecture.
@@ -150,7 +155,9 @@ Learned the hard way. Each one cost real debugging time.
 
 # Build & Run
 
-Build and run through **Xcode** — open `Marque-Prototype.xcodeproj`. One native target, no test harness (no XCTest bundle, no `test` script in `functions/`). Three SPM packages: `firebase-ios-sdk` (linked products `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, `FirebaseRemoteConfig`), `GoogleSignIn-iOS` (`GoogleSignIn`, `GoogleSignInSwift`), and `posthog-ios` @ 3.77.0 (`PostHog`).
+Build and run through **Xcode** — open `Marque-Prototype.xcodeproj`. One native target, no test harness (no XCTest bundle, no `test` script in `functions/`). Three SPM packages: `firebase-ios-sdk` (linked products `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, `FirebaseRemoteConfig`, `FirebaseCrashlytics`), `GoogleSignIn-iOS` (`GoogleSignIn`, `GoogleSignInSwift`), and `posthog-ios` @ 3.77.0 (`PostHog`).
+
+The target has one Run Script build phase beyond the standard ones: **"Upload Crashlytics Symbols"**, which invokes the SPM-vendored `Crashlytics/run` script to upload dSYMs. It guards on `$CONFIGURATION` internally and exits immediately for anything but `Release` — Debug builds (including the `xcodebuild` command below) never make the network call. Don't remove that guard without confirming CI/local Debug builds still work offline.
 
 Command-line build. Copy this whole block — the three lines are load-bearing and verified working on this machine:
 ```bash
@@ -167,13 +174,16 @@ Cloud Functions live in `functions/` (TypeScript, `firebase-functions` v6). Buil
 
 ## Navigation & Root State
 
-`Marque_PrototypeApp.swift` bootstraps nine `@StateObject`s injected as environment objects: `CarStore`, `AuthService`, `ExploreStore`, `FollowStore`, `SubscriptionStore`, `BlockStore`, `NotificationStore`, `ChatStore`, and `FeatureFlagsStore`. `RootView` drives top-level navigation:
+`Marque_PrototypeApp.swift` bootstraps ten `@StateObject`s injected as environment objects: `CarStore`, `AuthService`, `ExploreStore`, `FollowStore`, `SubscriptionStore`, `BlockStore`, `NotificationStore`, `ChatStore`, `ScanAllowanceStore`, and `FeatureFlagsStore`. `RootView` drives top-level navigation:
 
 ```
 Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
                               → ProfileSetupView (if incomplete)
+                              → AddCarView (onboarding mode, if needsFirstCarStep)
                               → MainTabView
 ```
+
+`AddCarView` (onboarding mode) is FR-13's add-first-car step, gated by `AuthService.needsFirstCarStep`. It's session-local, not persisted: `completeProfileSetup()` sets it true, and either adding a car or tapping "Skip" (both routed through `completeFirstCarStep(addedCar:)`) sets it false and advances to `MainTabView`. An existing user's `hasCompletedProfileSetup` is already true when the auth listener loads it, so they never see this step and no migration flag was needed.
 
 `MainTabView` currently has 3 tabs (Garage, an Add "+" tab, Explore). None of Notifications, Profile, or Settings are tab items — each is reached differently: **Settings** is a toolbar gear icon on Garage; **Notifications** is a toolbar bell icon on Explore; **Profile** isn't a toolbar item anywhere — it's the inline header on Garage (Edit Profile button, follower/following stat chips). The PRD's 5-tab layout (Garage / Explore / Notifications / Profile / Settings) is the eventual target; the current arrangement is a deliberate interim state.
 
@@ -191,6 +201,7 @@ All stores are `@MainActor` classes. Firestore listeners are started/stopped in 
 | `FollowStore` | Following/followers subcollections. |
 | `BlockStore` | Blocked users. |
 | `NotificationStore` | In-app notification inbox (Firestore). |
+| `ScanAllowanceStore` | FR-14.4 read-only listeners on `users/{uid}/usage/scans_{date}` (today's count) and `users/{uid}` (the **server-side** `isPro`, deliberately not StoreKit's — a Family Sharing member has local Pro but the server withholds the flag and enforces the free cap, so the caption must show the server's number). Drives the "n of M scans left today" caption and the pre-scan paywall gate; both hide/fail open while the plan is unknown. Display only; the parsers enforce. The usage listener re-attaches when the local day rolls over; the plan listener only if it died. |
 | `FeatureFlagsStore` | Firebase Remote Config gate (e.g. `marque_assistant_enabled`, default false). |
 
 ## Firebase
@@ -215,6 +226,7 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 - **`DocumentScanService`** — VisionKit / on-device OCR wrapper for scanning insurance/registration/license documents.
 - **`ImageManager`** — local `Documents/CarPhotos/` file management (add, load, delete).
 - **`AnalyticsService`** — FR-11 PostHog wrapper. A struct of static functions (the `NotificationManager` pattern): no `ObservableObject`, no environment injection, no observable state. One typed method per FR-11.4 event; the generic `capture` is private. Configured once in `Marque_PrototypeApp.init()`, with `identify`/`reset` driven off the auth-state change. Autocapture, session replay, surveys, screen views, lifecycle events, and swizzling are all explicitly disabled — several default to *true*, and screen-view capture in particular would stamp `Car.displayName` onto every event. See Key Conventions.
+- **`CrashReportingService`** — FR-11.8 Firebase Crashlytics wrapper, same static-struct pattern. Deliberately separate from `AnalyticsService`: PostHog is explicitly not the crash reporter. `identify`/`reset` are driven off the same auth-state change as `AnalyticsService`, tying crash reports to the reporting uid. No configure step needed — linking the SPM product plus the existing unguarded `FirebaseApp.configure()` is sufficient; collection is on by default.
 
 ## Cloud Functions
 
@@ -223,7 +235,7 @@ Callable and trigger functions live in `functions/src/index.ts`. The file uses a
 **Assistant & AI**
 - **`askMarque`** (v2 callable) — Marque Assistant chat proxy to Anthropic (Sonnet 4.6) with server-side daily cap enforcement (10/day free, 500/day Pro), prompt caching on the garage context block and system prompt, and streaming responses. Model ID is a constant at the top of the file so it can be bumped in one place. Per FR-10.17 the context block must never include VIN, plate, insurance fields, driver license, per-record costs, notes, or photo names.
 - **`suggestServiceReminders`** (v2 callable) — AI-generated service suggestions from maintenance history. Wrapped client-side by `AIServiceSuggestionService`.
-- **`parseDriverLicense`**, **`parseInsuranceCard`**, **`parseMaintenanceReceipt`** (v2 callable) — Anthropic vision document parsers behind `DocumentScanService`. All three share the `ANTHROPIC_API_KEY` secret and the media-type constants.
+- **`parseDriverLicense`**, **`parseInsuranceCard`**, **`parseMaintenanceReceipt`** (v2 callable) — Anthropic vision document parsers behind `DocumentScanService`. All three share the `ANTHROPIC_API_KEY` secret and the media-type constants. All three are wrapped in `withScanAllowance`, which enforces the FR-14.4 daily allowance (`FREE_SCAN_DAILY_CAP` 5 / `PRO_SCAN_DAILY_CAP` 50, one counter shared across document types at `usage/scans_{clientDate}`). The slot is reserved before the Claude call and released on any thrown error or when the model read nothing (FR-14.5). Requests **must** carry `clientDate` (`yyyy-MM-dd`) within ±1 day of the server's UTC date (`assertPlausibleClientDate`, shared with `askMarque`) or they're rejected `invalid-argument` — the counter doc ID is derived from it, so an unbounded value would mint a fresh allowance per call. ±1 narrows the abuse rather than closing it: a client can still use up to three counter docs per UTC day. A spent allowance is `resource-exhausted`. The iOS caps in `ScanAllowanceStore` are display copies — change both together.
 
 **Entitlements (Pro)** — these three are one system; a change to any of them needs the other two checked.
 - **`getAppAccountToken`** (v2 callable) — mints or returns this uid's `appAccountToken`, persisted at `appAccountTokens/{token}` (rules: `allow read, write: if false` — server-only). The client attaches it to the StoreKit purchase so a transaction can be bound to an account. Minting is contention-safe: a concurrent second call loses the transaction, retries, and finds the first token rather than minting a duplicate.
@@ -243,7 +255,7 @@ Live in `firestore.rules`. **Read the actual rule before assuming a path is writ
 - `users/{uid}/followers/{followerId}` — writes bind the **follower**, not the path owner. The account owner cannot delete their own followers subcollection.
 - `users/{uid}/following/{followedId}` — writes bind the **path owner**, so nobody can clean up a reverse pointer in someone else's `following`.
 - `users/{uid}/notifications/{id}` — grants `read, update, create`. No delete.
-- `users/{uid}/usage/{docId}` — `allow write: if false`. Server-only, to prevent Assistant daily-cap bypass.
+- `users/{uid}/usage/{docId}` — `allow read` to the owner, `allow write: if false`. Writes are server-only, to prevent Assistant and document-scan daily-cap bypass. The owner **read** is load-bearing: `ScanAllowanceStore` (FR-14.4) listens on `scans_{date}`, so "locking down" `usage/` to match a write-only description would freeze the caption and gate silently.
 - `users/{uid}/cars`, `blocked`, `conversations/**` — genuinely owner-scoped read/write.
 - `publicCars` — read-any-auth, write-owner. `reports` — create-only client-side. `usernames` — delete permitted to the owning uid.
 - **`purchases/` has no rule at all** (default deny) — see Known Pitfalls.
@@ -265,10 +277,11 @@ Marque-Prototype/
   Stores/          — CarStore, AuthService, ChatStore, ExploreStore, FollowStore,
                      BlockStore, NotificationStore, SubscriptionStore,
                      ImageManager, NotificationManager, VINDecodeService, ServiceReminderEngine,
-                     AIServiceSuggestionService, DocumentScanService, AnalyticsService
+                     AIServiceSuggestionService, DocumentScanService, AnalyticsService,
+                     CrashReportingService, ScanAllowanceStore
                      (note: FeatureFlagsStore.swift sits at the Marque-Prototype/ root,
                       not in Stores/, alongside AppDelegate.swift)
-  Components/      — MarqueComponents.swift, CarPhotoImage.swift
+  Components/      — MarqueComponents.swift, CarPhotoImage.swift, ScanAllowanceViews.swift
   Views/           — Legacy flat views (CarListView, CarDetailView, AddCarView, EditCarDetailView,
                      AddMaintenanceView, ExpenseSummaryView). Migration target: Features/.
   Features/        — Assistant, Auth, Expenses, Explore, Garage, Onboarding, Profile, Settings, Social

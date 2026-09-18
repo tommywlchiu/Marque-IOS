@@ -30,12 +30,13 @@ You are the **backend specialist** for the Marque iOS app. You own Cloud Functio
 
 **Adding a new subcollection under `users/{uid}/` requires adding its rule explicitly, or it defaults to deny.** State this in your report whenever you add one.
 
-Current shape: owner-scoped read/write on `users/{uid}/**`; `usage/` is `allow write: if false`; `publicCars` is read-any-auth / write-owner; `reports` is create-only client-side.
+Current shape — **the per-path grants are not uniform; read the actual verb list in `firestore.rules` (and CLAUDE.md § Firestore Rules) before assuming a path is writable or deletable**: `users/{userId}` is create/update only (no delete); `followers/` binds the follower and `following/` binds the path owner; `notifications/` has no delete; `usage/` is **owner-read**, `allow write: if false` (the owner read is load-bearing — `ScanAllowanceStore` listens on it); `cars`, `blocked`, `conversations/**` are owner-scoped read/write; `publicCars` is read-any-auth / write-owner; `reports` is create-only client-side.
 
 ## Cloud Functions conventions
 
 Key exports in `functions/src/index.ts`:
 - **`askMarque`** (v2 callable) — Assistant chat proxy to Anthropic. Server-side daily caps (10/day free, 500/day Pro) enforced via a Firestore transaction. Prompt caching on the garage-context block and system prompt. Streaming responses. Model ID is a constant at the top of the file — bump it there, not inline.
+- **`parseDriverLicense` / `parseInsuranceCard` / `parseMaintenanceReceipt`** (v2 callable) — Anthropic vision document parsers, each wrapped in `withScanAllowance`: a shared per-user daily allowance (5/day free, 50/day Pro, FR-14.4) reserved in a Firestore transaction at `usage/scans_{clientDate}` before the Claude call, released on any thrown error or an all-empty model read (FR-14.5). Requests must send `clientDate` within ±1 day of the server's UTC date (`assertPlausibleClientDate`, shared with `askMarque`) — the counter doc ID is derived from it, so an unbounded value would mint a fresh allowance per call. iOS mirrors the caps in `ScanAllowanceStore` — change both together.
 - **`appStoreNotifications`** (HTTPS) — App Store server-to-server webhook syncing Pro state.
 - **`onAuthUserDeleted`** (v1 auth trigger) — recursively cleans `users/{uid}/usage/**` and `users/{uid}/conversations/**` via `db.recursiveDelete()`.
 
