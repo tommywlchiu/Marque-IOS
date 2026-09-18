@@ -54,15 +54,19 @@ struct ProUpgradeView: View {
                 Circle()
                     .fill(Color.accentColor.opacity(0.12))
                     .frame(width: 100, height: 100)
-                Image(systemName: "star.fill")
+                Image(systemName: "sparkles")
                     .font(.system(size: 44))
                     .foregroundColor(.accentColor)
             }
 
+            // FR-08's positioning: Pro anchors on metered AI usage (the
+            // Assistant), because that's the only feature with real recurring
+            // marginal cost. Leads with that rather than the generic
+            // "unlock everything" framing FR-08.7 was written to retire.
             VStack(spacing: 6) {
-                Text("Unlock Everything")
+                Text("More from Marque Assistant")
                     .font(.title2).fontWeight(.bold)
-                Text("Manage unlimited cars, get early access to new features, and remove all limits.")
+                Text("50x the daily messages, plus unlimited cars and a Pro badge on your profile.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -99,17 +103,26 @@ struct ProUpgradeView: View {
         }
     }
 
+    // FR-08.7: every benefit shown here must correspond to a gate actually
+    // enforced in code, and a benefit free users already get must not be
+    // advertised as a reason to subscribe. This is the exact mistake FR-08.7
+    // was written to prevent — the v1.1 paywall advertised four benefits,
+    // three of which were ungated. Smart Alerts, Expense Analytics, and
+    // Social Profile are explicitly free per FR-08's positioning note (a
+    // notification toggle, expense aggregation, and profile visibility all
+    // ship to every user), so they were removed rather than reworded.
+    // FR-08.9: cross-check this list against isPro's actual call sites
+    // (`grep -rn "isPro" Marque-Prototype/ functions/src/index.ts`) before
+    // adding or changing an entry.
     private var featureList: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Everything in Pro")
                 .font(.headline)
 
             let features: [(icon: String, title: String, subtitle: String)] = [
-                ("infinity",         "Unlimited Cars",     "Free plan is limited to 3 vehicles"),
-                ("bell.badge.fill",  "Smart Alerts",       "Customizable expiry & maintenance reminders"),
-                ("chart.bar.fill",   "Expense Analytics",  "Full breakdown by category and time period"),
-                ("person.2.fill",    "Social Profile",     "Share your garage and follow other enthusiasts"),
-                ("sparkles",         "Early Access",       "Be first to try new features"),
+                ("bubble.left.and.bubble.right.fill", "Marque Assistant", "500 messages a day, up from 10 free"),
+                ("infinity",                          "Unlimited Cars",   "Free plan is limited to 3 vehicles"),
+                ("checkmark.seal.fill",               "Pro Badge",        "Shown next to your name in Garage and Settings"),
             ]
 
             ForEach(features, id: \.title) { feat in
