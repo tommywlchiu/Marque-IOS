@@ -34,6 +34,7 @@ struct Marque_PrototypeApp: App {
     @StateObject private var blockStore = BlockStore()
     @StateObject private var notificationStore = NotificationStore()
     @StateObject private var chatStore = ChatStore()
+    @StateObject private var scanAllowanceStore = ScanAllowanceStore()
     @StateObject private var featureFlagsStore = FeatureFlagsStore()
 
     init() {
@@ -66,6 +67,7 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(blockStore)
                 .environmentObject(notificationStore)
                 .environmentObject(chatStore)
+                .environmentObject(scanAllowanceStore)
                 .environmentObject(featureFlagsStore)
                 .environmentObject(appDelegate)
                 .onChange(of: authService.authState) { _, newState in
@@ -74,12 +76,15 @@ struct Marque_PrototypeApp: App {
                         // the install -> signup funnel stays connected. Aliasing is
                         // idempotent past the first call (see AnalyticsService).
                         AnalyticsService.identify(uid: user.id)
+                        // FR-11.8: ties crash reports to the reporting uid.
+                        CrashReportingService.identify(uid: user.id)
                         carStore.startListening(userId: user.id)
                         exploreStore.startListening()
                         followStore.startListening(uid: user.id)
                         blockStore.startListening(uid: user.id)
                         notificationStore.startListening(uid: user.id)
                         chatStore.startListening(uid: user.id)
+                        scanAllowanceStore.startListening(uid: user.id)
                         Task { await subscriptionStore.load() }
                     } else {
                         carStore.stopListening()
@@ -88,10 +93,12 @@ struct Marque_PrototypeApp: App {
                         blockStore.stopListening()
                         notificationStore.stopListening()
                         chatStore.stopListening()
+                        scanAllowanceStore.stopListening()
                         subscriptionStore.reset()
                         // Issues a fresh anonymous ID so the next person to sign in
                         // on this device isn't merged into the previous identity.
                         AnalyticsService.reset()
+                        CrashReportingService.reset()
                     }
                 }
                 .onChange(of: subscriptionStore.isPro) { oldValue, newValue in
@@ -126,6 +133,16 @@ private struct RootView: View {
             } else if !authService.hasCompletedProfileSetup {
                 ProfileSetupView()
                     .transition(.opacity)
+            } else if authService.needsFirstCarStep {
+                // FR-13.2/13.3 — the onboarding step ends at a saved car, not an
+                // empty Garage screen. Reuses AddCarView (same VIN/manual form the
+                // "+" tab sheet uses) in its onboarding context rather than
+                // dismissing to a sheet.
+                AddCarView(onboarding: .init(
+                    onSkip: { authService.completeFirstCarStep(addedCar: false) },
+                    onAdded: { authService.completeFirstCarStep(addedCar: true) }
+                ))
+                .transition(.opacity)
             } else {
                 MainTabView()
                     .transition(.opacity)
@@ -135,6 +152,7 @@ private struct RootView: View {
         .animation(.easeInOut(duration: 0.25), value: authService.isAuthenticated)
         .animation(.easeInOut(duration: 0.25), value: authService.isEmailVerified)
         .animation(.easeInOut(duration: 0.25), value: authService.hasCompletedProfileSetup)
+        .animation(.easeInOut(duration: 0.25), value: authService.needsFirstCarStep)
     }
 }
 

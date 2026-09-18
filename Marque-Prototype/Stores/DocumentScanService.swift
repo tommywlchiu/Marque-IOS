@@ -87,6 +87,14 @@ struct DocumentScanService {
         case modelCouldntRead(String, DocumentKind)
         case malformedResponse
         case cameraUnsupported
+        // FR-14.4: the server refused because today's allowance is spent. Carries
+        // the server's own message, which already names the limit and the tier.
+        case capReached(String)
+        // The server rejected the request itself (`invalid-argument`) and said why
+        // in its own words — e.g. the clock-skew message when the device date is
+        // off by more than a day. Carries that message so the user sees it instead
+        // of a generic "unexpected response".
+        case requestRejected(String)
         case unknown(String)
 
         var errorDescription: String? {
@@ -105,6 +113,8 @@ struct DocumentScanService {
                     : reason
             case .malformedResponse:
                 return "Got an unexpected response from the scan service."
+            case .capReached(let message), .requestRejected(let message):
+                return message
             case .cameraUnsupported:
                 return "Document scanning requires a device with a camera. The simulator can't scan documents — try on a physical device."
             case .unknown(let detail):
@@ -117,12 +127,14 @@ struct DocumentScanService {
             switch self {
             case .modelCouldntRead(_, let kind), .imageEncodingFailed(let kind):
                 return "Couldn't Read \(kind.titleCased)"
-            case .offline, .serviceUnavailable, .malformedResponse, .unknown:
+            case .offline, .serviceUnavailable, .malformedResponse, .requestRejected, .unknown:
                 return "Scan Failed"
             case .authRequired:
                 return "Sign In Required"
             case .cameraUnsupported:
                 return "Camera Unavailable"
+            case .capReached:
+                return "Daily Limit Reached"
             }
         }
     }
@@ -148,6 +160,8 @@ struct DocumentScanService {
             switch code {
             case .unauthenticated:
                 return .authRequired
+            case .resourceExhausted:
+                return .capReached(ns.localizedDescription)
             case .notFound,
                  .unavailable,
                  .unimplemented:
@@ -161,8 +175,15 @@ struct DocumentScanService {
                  .dataLoss,
                  .aborted:
                 return .unknown(ns.localizedDescription)
-            case .invalidArgument,
-                 .failedPrecondition,
+            case .invalidArgument:
+                // Every invalid-argument the parse* functions throw carries a
+                // server-authored message (clock skew, oversized image, and the
+                // payload checks a healthy client never trips), so pass it
+                // through — same as ChatStore.translateSendError. No string
+                // matching: the code says "the server rejected this request", and
+                // the text says why.
+                return .requestRejected(ns.localizedDescription)
+            case .failedPrecondition,
                  .outOfRange:
                 return .malformedResponse
             default:
@@ -276,6 +297,8 @@ struct DocumentScanService {
         let payload: [String: Any] = [
             "imageBase64": jpeg.base64EncodedString(),
             "mediaType": "image/jpeg",
+            // FR-14.4: the server keys the daily allowance by the user's local date.
+            "clientDate": ScanAllowanceStore.localDateString(),
         ]
 
         let result: HTTPSCallableResult
@@ -286,7 +309,9 @@ struct DocumentScanService {
             let ns = error as NSError
             print("[DocumentScanService] \(name) failed — domain=\(ns.domain) code=\(ns.code) msg=\(ns.localizedDescription)")
             #endif
-            throw Self.scanError(from: error)
+            let scanError = Self.scanError(from: error)
+            if case .capReached = scanError { AnalyticsService.documentScanCapReached() }
+            throw scanError
         }
 
         guard let data = result.data as? [String: Any] else {

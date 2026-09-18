@@ -24,6 +24,8 @@ struct EditInsuranceSheet: View {
     @State private var scanError: DocumentScanService.ScanError?
 
     private let scanService = DocumentScanService()
+    @EnvironmentObject private var scanAllowance: ScanAllowanceStore
+    @State private var showingScanPaywall = false
 
     fileprivate struct ScanPreview: Identifiable {
         let id = UUID()
@@ -124,7 +126,11 @@ struct EditInsuranceSheet: View {
     private var scanRow: some View {
         Button {
             if VNDocumentCameraViewController.isSupported {
-                showingScanner = true
+                if scanAllowance.canStartScan() {
+                    showingScanner = true
+                } else {
+                    showingScanPaywall = true
+                }
             } else {
                 scanError = .cameraUnsupported
             }
@@ -132,10 +138,11 @@ struct EditInsuranceSheet: View {
             HStack {
                 Label("Scan Insurance Card", systemImage: "doc.text.viewfinder")
                 Spacer()
-                if isScanning { ProgressView() }
+                if isScanning { ProgressView() } else { ScanAllowanceCaption() }
             }
         }
         .disabled(isScanning)
+        .scanCapPaywall(isPresented: $showingScanPaywall)
     }
 
     private func processScan(_ image: UIImage) async {

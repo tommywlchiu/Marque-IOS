@@ -19,6 +19,23 @@ class AuthService: NSObject, ObservableObject {
     @Published var hasSeenOnboarding: Bool
     @Published var hasCompletedProfileSetup: Bool = false
     @Published var isEmailVerified: Bool = false
+
+    /// FR-13.2 — routes RootView to the "add your first car" onboarding step.
+    /// Deliberately **not** persisted: it is set true only by `completeProfileSetup()`,
+    /// i.e. only for a signup happening in this session. An existing user's
+    /// `hasCompletedProfileSetup` is already true when the auth listener loads it on
+    /// launch, so this stays false for them and they land straight on MainTabView —
+    /// no migration flag needed. A user who skips or backgrounds the app mid-step
+    /// simply reaches the Garage empty state on relaunch instead of being re-shown it.
+    @Published var needsFirstCarStep: Bool = false
+
+    /// FR-13.5 scoping window. `LoginView` is reached both by a first-time user
+    /// mid-onboarding and by any returning user who is simply signed out — only
+    /// the former is a real "authentication" step of the FR-13.2 funnel. This
+    /// flag is true only between `completeOnboarding()` (carousel finished) and
+    /// `completeFirstCarStep()` (funnel concluded), so `onboarding_step_viewed`
+    /// fires for genuine onboarding and never for an ordinary re-login.
+    private(set) var isFreshOnboarding = false
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -70,6 +87,8 @@ class AuthService: NSObject, ObservableObject {
                     Task { await self.syncProStatusFromFirestore(uid: fu.uid) }
                 } else {
                     self.hasCompletedProfileSetup = false
+                    self.needsFirstCarStep = false
+                    self.isFreshOnboarding = false
                     self.isEmailVerified = false
                     self.authState = .unauthenticated
                 }
@@ -94,6 +113,17 @@ class AuthService: NSObject, ObservableObject {
     func completeOnboarding() {
         UserDefaults.standard.set(true, forKey: onboardingKey)
         hasSeenOnboarding = true
+        isFreshOnboarding = true
+    }
+
+    /// FR-13.1/13.4 — concludes the add-first-car step, whether the user added a
+    /// car or skipped. Either way this is the end of onboarding: fires
+    /// `onboarding_completed` (FR-11.4), closes the `isFreshOnboarding` window,
+    /// and advances RootView to MainTabView.
+    func completeFirstCarStep(addedCar: Bool) {
+        needsFirstCarStep = false
+        isFreshOnboarding = false
+        AnalyticsService.onboardingCompleted(addedCar: addedCar, skipped: !addedCar)
     }
 
     // MARK: - Email / Password
@@ -434,6 +464,7 @@ class AuthService: NSObject, ObservableObject {
         profile.save(uid: uid)
 
         hasCompletedProfileSetup = true
+        needsFirstCarStep = true
         if case .authenticated(var user) = authState {
             user.displayName = resolvedDisplayName
             user.username = username

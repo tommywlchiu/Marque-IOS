@@ -36,6 +36,7 @@ struct ProfileSetupView: View {
         .onAppear {
             let name = authService.currentUser?.displayName ?? ""
             if name != "User" { displayName = name }
+            AnalyticsService.onboardingStepViewed(step: .profileSetup)
         }
         .onChange(of: selectedItem) { _, item in
             Task {

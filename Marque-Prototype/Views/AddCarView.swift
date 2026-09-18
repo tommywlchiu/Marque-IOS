@@ -9,6 +9,18 @@ struct AddCarView: View {
     @EnvironmentObject var carStore: CarStore
     @Environment(\.dismiss) var dismiss
 
+    /// FR-13.3 — when set, this view is being shown as the onboarding
+    /// add-first-car step rather than the "+" tab sheet. There is no sheet to
+    /// dismiss in that context, so completion is reported via these closures
+    /// instead of `dismiss()`, and the toolbar's "Cancel" becomes "Skip"
+    /// (FR-13.4 — a visually secondary skip affordance, not a destructive cancel).
+    var onboarding: OnboardingContext? = nil
+
+    struct OnboardingContext {
+        let onSkip: () -> Void
+        let onAdded: () -> Void
+    }
+
     @State private var addMode: AddMode = .vin
 
     // VIN search state
@@ -63,11 +75,15 @@ struct AddCarView: View {
                     searchResultSection
                 }
             }
-            .navigationTitle("Add a Car")
+            .navigationTitle(onboarding != nil ? "Add Your First Car" : "Add a Car")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    if let onboarding {
+                        Button("Skip") { onboarding.onSkip() }
+                    } else {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
@@ -86,11 +102,20 @@ struct AddCarView: View {
                         // FR-11.4 `car_added.entry_method`. `addMode` is the only
                         // place this is known; without it CarStore skips the event.
                         carStore.addCar(car, entryMethod: addMode == .vin ? .vin : .manual)
-                        dismiss()
+                        if let onboarding {
+                            onboarding.onAdded()
+                        } else {
+                            dismiss()
+                        }
                     }
                     .disabled(!canAdd)
                     .fontWeight(.semibold)
                 }
+            }
+        }
+        .onAppear {
+            if onboarding != nil {
+                AnalyticsService.onboardingStepViewed(step: .addFirstCar)
             }
         }
     }

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6B0782D5E6B383B850DEDC2E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C453D62471A58941090CEEB8 /* FirebaseCrashlytics */; };
+		9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */; };
 		A10001 /* Marque_PrototypeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque_PrototypeApp.swift */; };
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
 		A10003 /* CarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* CarStore.swift */; };
@@ -19,7 +21,6 @@
 		A10010 /* ImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20010 /* ImageManager.swift */; };
 		A10011 /* AddMaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20011 /* AddMaintenanceView.swift */; };
 		A10012 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20012 /* NotificationManager.swift */; };
-		A10099 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20099 /* AnalyticsService.swift */; };
 		A10013 /* ExpenseSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013 /* ExpenseSummaryView.swift */; };
 		A10014 /* CarData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014 /* CarData.swift */; };
 		A10015 /* VINDecodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20015 /* VINDecodeService.swift */; };
@@ -57,17 +58,20 @@
 		A10063 /* AppLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20063 /* AppLinks.swift */; };
 		A10064 /* NotificationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20064 /* NotificationStore.swift */; };
 		A10065 /* DeleteAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20065 /* DeleteAccountView.swift */; };
-		A10067 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20067 /* ChangePasswordView.swift */; };
 		A10066 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20066 /* AppDelegate.swift */; };
+		A10067 /* ChangePasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20067 /* ChangePasswordView.swift */; };
 		A10069 /* VerifyEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20069 /* VerifyEmailView.swift */; };
 		A10070 /* DocumentScanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20070 /* DocumentScanService.swift */; };
 		A10071 /* DocumentScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20071 /* DocumentScannerView.swift */; };
+		A10099 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20099 /* AnalyticsService.swift */; };
+		A3102D2E8EEAF6E1F29BF87E /* CrashReportingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */; };
 		C3000001C3000001C3000001 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = C1000001C1000001C1000001 /* FirebaseCore */; };
 		C4000001C4000001C4000001 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C2000001C2000001C2000001 /* FirebaseAuth */; };
 		C5000001C5000001C5000001 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C5000002C5000002C5000002 /* FirebaseFirestore */; };
 		C6000001C6000001C6000001 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = C6000002C6000002C6000002 /* FirebaseStorage */; };
 		C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = C7000002C7000002C7000002 /* FirebaseFunctions */; };
 		E0000003E0000003E0000003 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E0000002E0000002E0000002 /* PostHog */; };
+		E64384DAD01BCC101BC4750B /* ScanAllowanceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */; };
 		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
 		F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */; };
 		F497CF0E300B0735001892AE /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF0C300B0735001892AE /* ChatMessage.swift */; };
@@ -84,6 +88,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceViews.swift; sourceTree = "<group>"; };
+		20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrashReportingService.swift; sourceTree = "<group>"; };
+		8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceStore.swift; sourceTree = "<group>"; };
 		A20001 /* Marque_PrototypeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque_PrototypeApp.swift; sourceTree = "<group>"; };
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
 		A20003 /* CarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarStore.swift; sourceTree = "<group>"; };
@@ -96,7 +103,6 @@
 		A20010 /* ImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageManager.swift; sourceTree = "<group>"; };
 		A20011 /* AddMaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMaintenanceView.swift; sourceTree = "<group>"; };
 		A20012 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
-		A20099 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		A20013 /* ExpenseSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummaryView.swift; sourceTree = "<group>"; };
 		A20014 /* CarData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarData.swift; sourceTree = "<group>"; };
 		A20015 /* VINDecodeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINDecodeService.swift; sourceTree = "<group>"; };
@@ -135,11 +141,12 @@
 		A20063 /* AppLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinks.swift; sourceTree = "<group>"; };
 		A20064 /* NotificationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStore.swift; sourceTree = "<group>"; };
 		A20065 /* DeleteAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteAccountView.swift; sourceTree = "<group>"; };
-		A20067 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 		A20066 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A20067 /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 		A20069 /* VerifyEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyEmailView.swift; sourceTree = "<group>"; };
 		A20070 /* DocumentScanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScanService.swift; sourceTree = "<group>"; };
 		A20071 /* DocumentScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScannerView.swift; sourceTree = "<group>"; };
+		A20099 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F421FDE72FA465A7000DBF3C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F497CF0C300B0735001892AE /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
@@ -168,6 +175,7 @@
 				F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */,
 				E0000003E0000003E0000003 /* PostHog in Frameworks */,
 				C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */,
+				6B0782D5E6B383B850DEDC2E /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -259,6 +267,8 @@
 				A20015 /* VINDecodeService.swift */,
 				A20017 /* AuthService.swift */,
 				A20033 /* ServiceReminderEngine.swift */,
+				20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */,
+				8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -268,6 +278,7 @@
 			children = (
 				A20018 /* MarqueComponents.swift */,
 				A20055 /* CarPhotoImage.swift */,
+				000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -386,6 +397,7 @@
 				A70001 /* Sources */,
 				A40001 /* Frameworks */,
 				A70002 /* Resources */,
+				4D6E1D89B9CCDAFA5DDCDA13 /* Upload Crashlytics Symbols */,
 			);
 			buildRules = (
 			);
@@ -402,6 +414,7 @@
 				E0000002E0000002E0000002 /* PostHog */,
 				C7000002C7000002C7000002 /* FirebaseFunctions */,
 				F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */,
+				C453D62471A58941090CEEB8 /* FirebaseCrashlytics */,
 			);
 			productName = "Marque-Prototype";
 			productReference = A30001 /* Marque.app */;
@@ -456,6 +469,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		4D6E1D89B9CCDAFA5DDCDA13 /* Upload Crashlytics Symbols */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+			);
+			name = "Upload Crashlytics Symbols";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# FR-11.8 — only Release builds (TestFlight/App Store archives) upload dSYMs.\n# Debug builds, including the xcodebuild verification command in CLAUDE.md,\n# must never make this network call.\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Crashlytics symbol upload for ${CONFIGURATION} configuration.\"\n  exit 0\nfi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A70001 /* Sources */ = {
@@ -525,6 +561,9 @@
 				F497CF13300B075C001892AE /* MarqueChatView.swift in Sources */,
 				F497CF0E300B0735001892AE /* ChatMessage.swift in Sources */,
 				F497CF0F300B0735001892AE /* Conversation.swift in Sources */,
+				A3102D2E8EEAF6E1F29BF87E /* CrashReportingService.swift in Sources */,
+				9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */,
+				E64384DAD01BCC101BC4750B /* ScanAllowanceViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -770,6 +809,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		C453D62471A58941090CEEB8 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 		C5000002C5000002C5000002 /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;

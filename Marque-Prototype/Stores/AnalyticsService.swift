@@ -286,8 +286,9 @@ struct AnalyticsService {
 
     /// Pro demand signal; the other half of the R-13 cap calibration.
     ///
-    /// No call site yet: the FR-14.4 server-side document-scan allowance is not
-    /// built, so there is no cap to reach. Wire this where that cap is enforced.
+    /// Fired from `ScanAllowanceStore.canStartScan` when the client blocks a scan
+    /// up front, and from `DocumentScanService` when the server refuses one (a
+    /// second device or a stale count). The two paths are exclusive per attempt.
     static func documentScanCapReached() {
         capture("document_scan_cap_reached")
     }

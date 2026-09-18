@@ -21,6 +21,8 @@ struct AddMaintenanceView: View {
     @State private var scanError: DocumentScanService.ScanError?
 
     private let scanService = DocumentScanService()
+    @EnvironmentObject private var scanAllowance: ScanAllowanceStore
+    @State private var showingScanPaywall = false
 
     fileprivate struct ReceiptScanPreview: Identifiable {
         let id = UUID()
@@ -137,7 +139,11 @@ struct AddMaintenanceView: View {
     private var scanReceiptRow: some View {
         Button {
             if VNDocumentCameraViewController.isSupported {
-                showingReceiptScanner = true
+                if scanAllowance.canStartScan() {
+                    showingReceiptScanner = true
+                } else {
+                    showingScanPaywall = true
+                }
             } else {
                 scanError = .cameraUnsupported
             }
@@ -147,10 +153,13 @@ struct AddMaintenanceView: View {
                 Spacer()
                 if isScanningReceipt {
                     ProgressView()
+                } else {
+                    ScanAllowanceCaption()
                 }
             }
         }
         .disabled(isScanningReceipt)
+        .scanCapPaywall(isPresented: $showingScanPaywall)
     }
 
     private func processReceiptScan(_ image: UIImage) async {

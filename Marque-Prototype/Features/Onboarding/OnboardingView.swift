@@ -41,6 +41,9 @@ struct OnboardingView: View {
             bottomControls
         }
         .ignoresSafeArea(edges: .top)
+        .onAppear {
+            AnalyticsService.onboardingStepViewed(step: .valueFraming)
+        }
     }
 
     private var bottomControls: some View {

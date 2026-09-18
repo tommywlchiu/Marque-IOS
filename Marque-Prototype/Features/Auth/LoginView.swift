@@ -39,6 +39,14 @@ struct LoginView: View {
         .sheet(isPresented: $showingForgotPassword) {
             ForgotPasswordView()
         }
+        .onAppear {
+            // Gated on isFreshOnboarding: this view is also reached by any
+            // returning user who's simply signed out, which is not an
+            // onboarding funnel step (see AuthService.isFreshOnboarding).
+            if authService.isFreshOnboarding {
+                AnalyticsService.onboardingStepViewed(step: .authentication)
+            }
+        }
     }
 
     // MARK: - Subviews

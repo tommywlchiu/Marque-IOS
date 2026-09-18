@@ -27,6 +27,8 @@ struct EditProfileView: View {
     @State private var scanError: DocumentScanService.ScanError?
 
     private let scanService = DocumentScanService()
+    @EnvironmentObject private var scanAllowance: ScanAllowanceStore
+    @State private var showingScanPaywall = false
 
     // Wraps the extracted fields so we can drive a .sheet(item:) presentation.
     // fileprivate so LicenseScanConfirmationSheet (declared below) can see it.
@@ -255,7 +257,11 @@ struct EditProfileView: View {
     private var scanLicenseRow: some View {
         Button {
             if VNDocumentCameraViewController.isSupported {
-                showingDocumentScanner = true
+                if scanAllowance.canStartScan() {
+                    showingDocumentScanner = true
+                } else {
+                    showingScanPaywall = true
+                }
             } else {
                 scanError = .cameraUnsupported
             }
@@ -265,10 +271,13 @@ struct EditProfileView: View {
                 Spacer()
                 if isScanningLicense {
                     ProgressView()
+                } else {
+                    ScanAllowanceCaption()
                 }
             }
         }
         .disabled(isScanningLicense)
+        .scanCapPaywall(isPresented: $showingScanPaywall)
     }
 
     // MARK: - License scan

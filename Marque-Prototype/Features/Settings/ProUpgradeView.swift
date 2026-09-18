@@ -121,6 +121,7 @@ struct ProUpgradeView: View {
 
             let features: [(icon: String, title: String, subtitle: String)] = [
                 ("bubble.left.and.bubble.right.fill", "Marque Assistant", "500 messages a day, up from 10 free"),
+                ("doc.text.viewfinder",               "Document Scans",   "\(ScanAllowanceStore.proDailyCap) scans a day, up from \(ScanAllowanceStore.freeDailyCap) free"),
                 ("infinity",                          "Unlimited Cars",   "Free plan is limited to 3 vehicles"),
                 ("checkmark.seal.fill",               "Pro Badge",        "Shown next to your name in Garage and Settings"),
             ]
