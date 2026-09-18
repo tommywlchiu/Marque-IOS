@@ -680,6 +680,7 @@ const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 interface ParseDriverLicenseRequest {
   imageBase64: string;
   mediaType: string; // "image/jpeg" | "image/png" | "image/webp"
+  clientDate: string; // yyyy-mm-dd, user's local calendar date (FR-14.4)
 }
 
 interface ParseDriverLicenseResponse {
@@ -702,9 +703,143 @@ const ALLOWED_MEDIA_TYPES = new Set([
 // client.
 const MAX_IMAGE_BYTES = 7 * 1024 * 1024;
 
+// ---------------------------------------------------------------------------
+// Document-scan allowance (FR-14.4)
+//
+// Same mechanism as the Assistant cap (FR-10.5): the client sends its local
+// calendar date, and a Firestore counter at users/{uid}/usage/scans_{date} is
+// reserved in a transaction before the Claude call. The counter is shared by
+// all three parsers — the allowance is per user per day, not per document type.
+// A slot is released again on any failure (FR-14.5): thrown errors, and a
+// response where the model read nothing.
+// ---------------------------------------------------------------------------
+
+// The usage counters are keyed by the client-supplied local date
+// (usage/scans_{date}, usage/assistant_{date}), so an unchecked date lets a
+// client mint a fresh full allowance per call by sending a new one each time
+// (FR-08.8). A legitimate client's local date is always within one day of the
+// server's UTC date (local offsets span UTC-12..UTC+14), so anything further out
+// is rejected. This narrows the abuse to at most three counter docs per day
+// rather than closing it; it is not an exact-match check by design.
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function assertPlausibleClientDate(clientDate: unknown, now: Date = new Date()): string {
+  const malformed = () =>
+    new HttpsError("invalid-argument", "clientDate must be a yyyy-mm-dd string");
+  if (typeof clientDate !== "string") throw malformed();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(clientDate);
+  if (!m) throw malformed();
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const clientDay = Date.UTC(year, month - 1, day);
+  // Date.UTC rolls 2026-02-30 over to March 2 and maps years 0-99 to 1900+;
+  // round-tripping the components rejects both.
+  const roundTrip = new Date(clientDay);
+  if (
+    roundTrip.getUTCFullYear() !== year ||
+    roundTrip.getUTCMonth() !== month - 1 ||
+    roundTrip.getUTCDate() !== day
+  ) {
+    throw malformed();
+  }
+  const serverDay = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  if (Math.abs(clientDay - serverDay) > MS_PER_DAY) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Your device's date looks wrong. Set your clock to the current date and try again."
+    );
+  }
+  return clientDate;
+}
+
+const FREE_SCAN_DAILY_CAP = 5;
+const PRO_SCAN_DAILY_CAP = 50;
+
+interface ScanAllowance {
+  used: number;
+  limit: number;
+}
+
+async function reserveScanSlot(uid: string, date: string, cap: number): Promise<number> {
+  const ref = db
+    .collection("users").doc(uid)
+    .collection("usage").doc(`scans_${date}`);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = (snap.exists ? (snap.data()?.count as number | undefined) : 0) ?? 0;
+    if (current >= cap) {
+      const msg = cap === FREE_SCAN_DAILY_CAP
+        ? `You've reached today's ${cap} scan limit. Upgrade to Pro for more.`
+        : "You've reached today's scan limit. Try again tomorrow.";
+      throw new HttpsError("resource-exhausted", msg);
+    }
+    tx.set(ref, {
+      count: current + 1,
+      lastUsedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    return current + 1;
+  });
+}
+
+async function releaseScanSlot(uid: string, date: string): Promise<void> {
+  const ref = db
+    .collection("users").doc(uid)
+    .collection("usage").doc(`scans_${date}`);
+  try {
+    await ref.set(
+      { count: admin.firestore.FieldValue.increment(-1) },
+      { merge: true }
+    );
+  } catch (err) {
+    // Non-fatal — the counter may drift by one, self-corrects at midnight.
+    functions.logger.warn("scan failed to release slot", { uid, date, err });
+  }
+}
+
+// A parser "succeeds" at the transport level even when the model declines to
+// read the image: it returns every field empty plus a populated `error`. That
+// is the unreadable-image / wrong-document case in FR-14.5, so it is refunded.
+function isUnreadableScan(result: { error: string }): boolean {
+  return result.error !== "" &&
+    Object.entries(result).every(([k, v]) => k === "error" || v === "");
+}
+
+// Wraps a parser handler with the FR-14.4 allowance. Auth is checked here as
+// well as in the handler because the reservation needs a uid first.
+function withScanAllowance<Req extends { clientDate?: string }, Res extends { error: string }>(
+  handler: (request: CallableRequest<Req>) => Promise<Res>
+) {
+  return async (
+    request: CallableRequest<Req>
+  ): Promise<Res & { scanAllowance: ScanAllowance }> => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required");
+    }
+    const uid = request.auth.uid;
+    const clientDate = assertPlausibleClientDate(request.data?.clientDate);
+
+    const limit = (await getIsPro(uid)) ? PRO_SCAN_DAILY_CAP : FREE_SCAN_DAILY_CAP;
+    let used = await reserveScanSlot(uid, clientDate, limit);
+
+    let result: Res;
+    try {
+      result = await handler(request);
+    } catch (err) {
+      await releaseScanSlot(uid, clientDate);
+      throw err;
+    }
+    if (isUnreadableScan(result)) {
+      await releaseScanSlot(uid, clientDate);
+      used -= 1;
+    }
+    return { ...result, scanAllowance: { used, limit } };
+  };
+}
+
 export const parseDriverLicense = onCall(
   { secrets: [ANTHROPIC_API_KEY] },
-  async (
+  withScanAllowance(async (
     request: CallableRequest<ParseDriverLicenseRequest>
   ): Promise<ParseDriverLicenseResponse> => {
     if (!request.auth) {
@@ -838,7 +973,7 @@ export const parseDriverLicense = onCall(
       expiryDate: parsed.expiryDate ?? "",
       error: parsed.error ?? "",
     };
-  }
+  })
 );
 
 // ---------------------------------------------------------------------------
@@ -857,6 +992,7 @@ export const parseDriverLicense = onCall(
 interface ParseInsuranceCardRequest {
   imageBase64: string;
   mediaType: string;
+  clientDate: string; // yyyy-mm-dd, user's local calendar date (FR-14.4)
 }
 
 interface ParseInsuranceCardResponse {
@@ -869,7 +1005,7 @@ interface ParseInsuranceCardResponse {
 
 export const parseInsuranceCard = onCall(
   { secrets: [ANTHROPIC_API_KEY] },
-  async (
+  withScanAllowance(async (
     request: CallableRequest<ParseInsuranceCardRequest>
   ): Promise<ParseInsuranceCardResponse> => {
     if (!request.auth) {
@@ -1004,7 +1140,7 @@ export const parseInsuranceCard = onCall(
       expiryDate: parsed.expiryDate ?? "",
       error: parsed.error ?? "",
     };
-  }
+  })
 );
 
 // ---------------------------------------------------------------------------
@@ -1020,6 +1156,7 @@ export const parseInsuranceCard = onCall(
 interface ParseMaintenanceReceiptRequest {
   imageBase64: string;
   mediaType: string;
+  clientDate: string; // yyyy-mm-dd, user's local calendar date (FR-14.4)
 }
 
 interface ParseMaintenanceReceiptResponse {
@@ -1034,7 +1171,7 @@ interface ParseMaintenanceReceiptResponse {
 
 export const parseMaintenanceReceipt = onCall(
   { secrets: [ANTHROPIC_API_KEY] },
-  async (
+  withScanAllowance(async (
     request: CallableRequest<ParseMaintenanceReceiptRequest>
   ): Promise<ParseMaintenanceReceiptResponse> => {
     if (!request.auth) {
@@ -1183,7 +1320,7 @@ export const parseMaintenanceReceipt = onCall(
       description: parsed.description ?? "",
       error: parsed.error ?? "",
     };
-  }
+  })
 );
 
 // ---------------------------------------------------------------------------
@@ -1646,9 +1783,7 @@ export const askMarque = onCall(
         `Message is too long (max ${MAX_USER_MESSAGE_CHARS} characters).`
       );
     }
-    if (!data.clientDate || !/^\d{4}-\d{2}-\d{2}$/.test(data.clientDate)) {
-      throw new HttpsError("invalid-argument", "clientDate must be a yyyy-mm-dd string");
-    }
+    assertPlausibleClientDate(data.clientDate);
     const history = Array.isArray(data.history) ? data.history : [];
 
     // 1. Determine cap and reserve a slot. Slot released later if the Anthropic
