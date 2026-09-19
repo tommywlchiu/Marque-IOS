@@ -1569,7 +1569,7 @@ const SUGGEST_SYSTEM_PROMPT = [
   "Return between 3 and 6 suggestions ordered by priority (high first). For each:",
   "- serviceType: short, common name (e.g., 'Oil Change', 'Timing Belt Replacement', 'Brake Fluid Flush').",
   "- dueDate: ISO YYYY-MM-DD when the service should be done next, or empty string if only mileage-driven.",
-  "- dueMileage: integer odometer reading when due, or null if only date-driven or not applicable.",
+  "- dueMileage: integer odometer reading when due, or 0 if only date-driven or not applicable.",
   "- reasoning: one short sentence explaining WHY (reference the car's model/year/mileage/last service).",
   "- priority: 'high' = overdue or critical, 'medium' = coming up, 'low' = future/preventive.",
   "",
@@ -1631,9 +1631,11 @@ export const suggestServiceReminders = onCall(
               type: "object",
               properties: {
                 suggestions: {
+                  // No minItems/maxItems: Anthropic structured outputs reject
+                  // array size constraints (400 "property 'maxItems' is not
+                  // supported"). "3 to 6" is asked for in the system prompt and
+                  // the upper bound is enforced below with a slice.
                   type: "array",
-                  minItems: 0,
-                  maxItems: 6,
                   items: {
                     type: "object",
                     properties: {
@@ -1643,8 +1645,11 @@ export const suggestServiceReminders = onCall(
                         description: "ISO YYYY-MM-DD, or empty string if only mileage-driven.",
                       },
                       dueMileage: {
-                        type: ["integer", "null"],
-                        description: "Odometer reading when due, or null.",
+                        // Plain integer with 0 as "not applicable": the coercion
+                        // below already maps any value <= 0 to null, so clients
+                        // still receive null. Avoids a type-union in the schema.
+                        type: "integer",
+                        description: "Odometer reading when due, or 0 if only date-driven or not applicable.",
                       },
                       reasoning: {
                         type: "string",
@@ -1706,6 +1711,7 @@ export const suggestServiceReminders = onCall(
     // Defensive coercion — the schema constrains but we still normalize.
     const suggestions: SuggestedReminder[] = (parsed.suggestions ?? [])
       .filter((s) => s && typeof s.serviceType === "string" && s.serviceType.length > 0)
+      .slice(0, 6) // the schema cannot express maxItems, so cap it here
       .map((s) => ({
         serviceType: s.serviceType,
         dueDate: typeof s.dueDate === "string" ? s.dueDate : "",
