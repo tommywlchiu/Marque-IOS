@@ -756,6 +756,12 @@ function assertPlausibleClientDate(clientDate: unknown, now: Date = new Date()):
 const FREE_SCAN_DAILY_CAP = 5;
 const PRO_SCAN_DAILY_CAP = 50;
 
+// suggestServiceReminders: one flat per-user daily cap, the same for free and
+// Pro. An abuse guard on Anthropic spend, NOT a Pro gate — the sheet calls the
+// function automatically on open, so this must be generous enough that a
+// normal user never sees it.
+const SUGGEST_DAILY_CAP = 10;
+
 interface ScanAllowance {
   used: number;
   limit: number;
@@ -1375,6 +1381,188 @@ interface SuggestRemindersResponse {
   error: string;
 }
 
+// The request is untrusted: without bounds a client could inflate every call's
+// input tokens with a huge history even under a call cap. Required fields
+// (make/model/year) are rejected when absent; everything else is CLAMPED so a
+// legitimate heavy user is never errored. The prompt is built only from the
+// output of sanitizeSuggestInput — never from the raw request body.
+const SUGGEST_MAX_HISTORY = 100;
+const SUGGEST_MAX_ACTIVE = 50;
+const SUGGEST_MAX_NAME_LEN = 64;
+const SUGGEST_MAX_SHORT_LEN = 16;
+
+type CleanSuggestInput = Omit<SuggestRemindersRequest, "clientDate">;
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+// Accepts strings and finite numbers (stringified); anything else yields "".
+// Control characters become spaces, then the result is trimmed and clamped.
+function cleanSuggestString(v: unknown, max: number): string {
+  let s: string;
+  if (typeof v === "string") s = v;
+  else if (typeof v === "number" && Number.isFinite(v)) s = String(v);
+  else return "";
+  return s.replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, max);
+}
+
+// Copies only the whitelisted keys, skipping any that come out empty.
+function pickSuggestFields(
+  src: Record<string, unknown>,
+  fields: Array<[string, number]>
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, max] of fields) {
+    const value = cleanSuggestString(src[key], max);
+    if (value !== "") out[key] = value;
+  }
+  return out;
+}
+
+function sanitizeSuggestInput(data: unknown): CleanSuggestInput {
+  if (!isPlainObject(data)) {
+    throw new HttpsError("invalid-argument", "Request body must be an object");
+  }
+  const rawCar = data.car;
+  if (!isPlainObject(rawCar)) {
+    throw new HttpsError("invalid-argument", "car.make, car.model, and car.year are required");
+  }
+  const identity = pickSuggestFields(rawCar, [
+    ["make", SUGGEST_MAX_NAME_LEN],
+    ["model", SUGGEST_MAX_NAME_LEN],
+    ["year", SUGGEST_MAX_SHORT_LEN],
+  ]);
+  if (!identity.make || !identity.model || !identity.year) {
+    throw new HttpsError("invalid-argument", "car.make, car.model, and car.year are required");
+  }
+  const car = {
+    ...identity,
+    ...pickSuggestFields(rawCar, [
+      ["trim", SUGGEST_MAX_NAME_LEN],
+      ["mileage", SUGGEST_MAX_SHORT_LEN],
+      ["fuelType", SUGGEST_MAX_NAME_LEN],
+      ["transmission", SUGGEST_MAX_NAME_LEN],
+      ["driveType", SUGGEST_MAX_NAME_LEN],
+      ["engine", SUGGEST_MAX_NAME_LEN],
+      ["bodyStyle", SUGGEST_MAX_NAME_LEN],
+    ]),
+  } as CleanSuggestInput["car"];
+
+  // Newest-first from the client, so the first N valid entries are the newest.
+  const maintenanceHistory: CleanSuggestInput["maintenanceHistory"] = [];
+  if (Array.isArray(data.maintenanceHistory)) {
+    for (const raw of data.maintenanceHistory) {
+      if (maintenanceHistory.length >= SUGGEST_MAX_HISTORY) break;
+      if (!isPlainObject(raw)) continue;
+      const item = pickSuggestFields(raw, [
+        ["serviceType", SUGGEST_MAX_NAME_LEN],
+        ["date", SUGGEST_MAX_SHORT_LEN],
+        ["mileage", SUGGEST_MAX_SHORT_LEN],
+      ]);
+      if (!item.serviceType) continue;
+      maintenanceHistory.push(item as CleanSuggestInput["maintenanceHistory"][number]);
+    }
+  }
+
+  const activeReminders: CleanSuggestInput["activeReminders"] = [];
+  if (Array.isArray(data.activeReminders)) {
+    for (const raw of data.activeReminders) {
+      if (activeReminders.length >= SUGGEST_MAX_ACTIVE) break;
+      if (!isPlainObject(raw)) continue;
+      const fields = pickSuggestFields(raw, [
+        ["serviceType", SUGGEST_MAX_NAME_LEN],
+        ["dueDate", SUGGEST_MAX_SHORT_LEN],
+      ]);
+      if (!fields.serviceType) continue;
+      const item: CleanSuggestInput["activeReminders"][number] = {
+        serviceType: fields.serviceType,
+        ...(fields.dueDate ? { dueDate: fields.dueDate } : {}),
+      };
+      // The iOS client sends dueMileage as an Int.
+      const dm = raw.dueMileage;
+      if (typeof dm === "number" && Number.isFinite(dm) && Math.abs(dm) < 1e10) {
+        item.dueMileage = Math.trunc(dm);
+      }
+      activeReminders.push(item);
+    }
+  }
+
+  return { car, maintenanceHistory, activeReminders };
+}
+
+// Counter for suggestServiceReminders at usage/suggestions_{clientDate}.
+// Deliberately duplicates the scan helpers rather than generalizing them —
+// the scan path is live and this one must not be able to change its behaviour.
+async function reserveSuggestSlot(uid: string, date: string): Promise<number> {
+  const ref = db
+    .collection("users").doc(uid)
+    .collection("usage").doc(`suggestions_${date}`);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = (snap.exists ? (snap.data()?.count as number | undefined) : 0) ?? 0;
+    if (current >= SUGGEST_DAILY_CAP) {
+      throw new HttpsError(
+        "resource-exhausted",
+        `You've reached today's limit of ${SUGGEST_DAILY_CAP} AI suggestion requests. Try again tomorrow.`
+      );
+    }
+    tx.set(ref, {
+      count: current + 1,
+      lastUsedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    return current + 1;
+  });
+}
+
+async function releaseSuggestSlot(uid: string, date: string): Promise<void> {
+  const ref = db
+    .collection("users").doc(uid)
+    .collection("usage").doc(`suggestions_${date}`);
+  try {
+    await ref.set(
+      { count: admin.firestore.FieldValue.increment(-1) },
+      { merge: true }
+    );
+  } catch (err) {
+    // Non-fatal — the counter may drift by one, self-corrects at midnight.
+    functions.logger.warn("suggest failed to release slot", { uid, date, err });
+  }
+}
+
+interface SuggestContext {
+  uid: string;
+  clean: CleanSuggestInput;
+  clientDate: string;
+  reserved: number;
+}
+
+// Order matters: auth -> sanitize -> clientDate bound -> reserve. A request
+// that fails validation never consumes a slot. Any throw from the handler
+// (Claude failure, no text block, unparseable JSON, coercion error) refunds it;
+// a successful call that legitimately returns zero suggestions does not.
+function withSuggestCap(
+  handler: (ctx: SuggestContext) => Promise<SuggestRemindersResponse>
+) {
+  return async (
+    request: CallableRequest<SuggestRemindersRequest>
+  ): Promise<SuggestRemindersResponse> => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required");
+    }
+    const uid = request.auth.uid;
+    const clean = sanitizeSuggestInput(request.data);
+    const clientDate = assertPlausibleClientDate(request.data.clientDate);
+    const reserved = await reserveSuggestSlot(uid, clientDate);
+    try {
+      return await handler({ uid, clean, clientDate, reserved });
+    } catch (err) {
+      await releaseSuggestSlot(uid, clientDate);
+      throw err;
+    }
+  };
+}
+
 const SUGGEST_SYSTEM_PROMPT = [
   "You suggest realistic vehicle service reminders for a specific car based on its specs and maintenance history.",
   "",
@@ -1398,28 +1586,16 @@ const SUGGEST_SYSTEM_PROMPT = [
 
 export const suggestServiceReminders = onCall(
   { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60 },
-  async (
-    request: CallableRequest<SuggestRemindersRequest>
-  ): Promise<SuggestRemindersResponse> => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Sign in required");
-    }
-    const data = request.data;
-    if (!data?.car?.make || !data.car.model || !data.car.year) {
-      throw new HttpsError("invalid-argument", "car.make, car.model, and car.year are required");
-    }
-    if (!data.clientDate || !/^\d{4}-\d{2}-\d{2}$/.test(data.clientDate)) {
-      throw new HttpsError("invalid-argument", "clientDate must be yyyy-mm-dd");
-    }
-    const history = Array.isArray(data.maintenanceHistory) ? data.maintenanceHistory : [];
-    const active = Array.isArray(data.activeReminders) ? data.activeReminders : [];
+  withSuggestCap(async ({ uid, clean, clientDate, reserved }) => {
+    const history = clean.maintenanceHistory;
+    const active = clean.activeReminders;
 
     const userPrompt = [
-      `Today: ${data.clientDate}`,
+      `Today: ${clientDate}`,
       "",
       "Car:",
       "```json",
-      JSON.stringify(data.car, null, 2),
+      JSON.stringify(clean.car, null, 2),
       "```",
       "",
       history.length > 0 ? "Maintenance history (last 24 months):" : "Maintenance history: (none recorded)",
@@ -1503,7 +1679,8 @@ export const suggestServiceReminders = onCall(
     }
 
     functions.logger.info("suggestServiceReminders usage", {
-      uid: request.auth.uid,
+      uid,
+      reserved_count: reserved,
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,
       cache_read_tokens: response.usage.cache_read_input_tokens ?? 0,
@@ -1541,7 +1718,7 @@ export const suggestServiceReminders = onCall(
       suggestions,
       error: parsed.error ?? "",
     };
-  }
+  })
 );
 
 // ============================================================================

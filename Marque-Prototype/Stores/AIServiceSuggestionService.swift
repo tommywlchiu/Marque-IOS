@@ -19,6 +19,7 @@ struct AIServiceSuggestionService {
         case offline
         case unavailable
         case authRequired
+        case dailyLimit
         case malformedResponse
         case unknown(String)
 
@@ -30,6 +31,8 @@ struct AIServiceSuggestionService {
                 return "AI suggestions unavailable right now — using built-in suggestions."
             case .authRequired:
                 return "Sign in required."
+            case .dailyLimit:
+                return "Daily AI suggestion limit reached — using built-in suggestions instead."
             case .malformedResponse:
                 return "Unexpected response from the suggestion service."
             case .unknown(let detail):
@@ -156,6 +159,8 @@ struct AIServiceSuggestionService {
             switch code {
             case .unauthenticated:
                 return .authRequired
+            case .resourceExhausted:
+                return .dailyLimit
             case .deadlineExceeded:
                 return .offline
             case .notFound, .unavailable, .unimplemented:
