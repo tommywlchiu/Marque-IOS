@@ -18,6 +18,7 @@
 6. **Document scanning documented (new FR-14).** Shipped and in production, but listed in this document only as a deferred v2 *non-goal*. Corrected.
 7. **Smartcar removed.** A built-but-disabled telematics integration (store, three Cloud Functions, Car Detail UI) existed in the codebase and appeared nowhere in this document. Decision: abandon and delete. Recorded in Appendix A so the decision is not silently re-litigated.
 8. **Reality corrections.** Tab structure (3, not the 5 described), bundle identifier, subscription product IDs, and shipped-state of the Assistant all reconciled with the codebase.
+9. **AI service suggestions documented (new FR-16).** The iOS client already contained an AI-powered "Suggested Reminders" sheet that this document never mentioned, calling a Cloud Function that was not deployed — so the sheet fell back to rule-based suggestions every time — and that, as written, had no usage cap and no bound on request size. Specified here as a free feature behind a flat server-side abuse cap, with a cost note added to R-12.
 
 ---
 
@@ -189,6 +190,7 @@ Organized by priority tier:
 | Feature | Description | Priority |
 |---|---|---|
 | **Marque Assistant** | Floating "Ask Marque" chatbot that answers car questions using the user's garage as context plus general automotive knowledge; read-only in v1 (no writes to user data). **Deployed** behind the `marque_assistant_enabled` Remote Config flag | P1 |
+| **AI Service Suggestions** | The Suggested Reminders sheet proposes service reminders specific to the car using an AI model, falling back to the rule-based engine when the AI path is unavailable. Free for all users, behind a flat daily abuse cap — deliberately not a Pro lever. See FR-16 | P2 |
 
 ## Tier 5 — Foundations (v1.2 New)
 
@@ -487,6 +489,20 @@ Repositioned in v1.2. The original framing — a PDF service history to show a p
 - **FR-15.6** Delivery is via the standard iOS share sheet, so the user chooses the destination. The app must not email, upload, or transmit the export anywhere on the user's behalf
 - **FR-15.7** Separately from the product feature, the user must be able to request a complete machine-readable export of their account data (JSON), satisfying GDPR Article 20 data portability. R-10 commits to the deletion half of GDPR compliance; this is the other half
 
+## FR-16: AI Service Suggestions
+
+Added in v1.2 to document a feature the iOS client already contained and this document never mentioned. The Suggested Reminders sheet asks an AI model for service reminders specific to the car, and falls back to the rule-based `ServiceReminderEngine` whenever the AI path is unavailable. Unlike FR-10 and FR-14 it is deliberately **not** a Pro lever: the output is short and structured, the model is lightweight, and gating it would add a paywall benefit that FR-08.7 and FR-08.9 would then require us to keep in sync with an enforced gate.
+
+- **FR-16.1** The sheet requests AI-generated reminders for a car: 3–6 suggestions, each with a service type, a due date and/or due mileage, a one-sentence reason specific to the car, and a priority. Suggestions are proposals — no reminder is created until the user reviews the list and taps Add
+- **FR-16.2** Generation runs server-side in a Cloud Function. The client must never call an AI provider directly, consistent with FR-10.5 and FR-14.2
+- **FR-16.3** The feature is free for all users and must not appear in paywall copy. A flat per-user cap of **10 requests per day**, identical for free and Pro, exists solely as an abuse guard and must be enforced server-side per FR-08.8. Because the sheet requests on every open, the cap must be high enough that a normal user never sees it; if `resource-exhausted` responses appear in ordinary use in the logs, raise it
+- **FR-16.4** The cap's counter is keyed by the client's local date, so that date must be validated against server time — accepted only within one day of the server's UTC date. An unvalidated key lets a client mint a fresh allowance on every call. The same rule applies to the FR-10 and FR-14 counters. One day of tolerance narrows the abuse rather than closing it: a modified client can still reach up to three counters per UTC day
+- **FR-16.5** Request size must be bounded server-side so a client cannot inflate the cost of an individual call: at most 100 maintenance records and 50 active reminders, short length-limited text fields, and only whitelisted fields are read. Worst case is roughly 20K characters of input (about 5–6K tokens); output is capped at 2,048 tokens
+- **FR-16.6** A request that fails — provider error, unparseable response — must not count against the cap, matching FR-10.14 and FR-14.5. A successful request that returns zero suggestions does count, because it incurred cost
+- **FR-16.7** When the cap is reached, or on any error, or when the device is offline, or when the AI returns nothing, the sheet must show the rule-based suggestions with a short explanatory hint. The user is never left at a dead end
+- **FR-16.8** Data sent to the model is limited to: make, model, year, trim, mileage, fuel type, transmission, drive type, engine, body style; the last 24 months of service records (service type, date, mileage); and active reminders (service type, due date, due mileage). Never VIN, license plate, insurance details, driver license, costs, shop names, notes, or photo names — the same exclusions as FR-10.17
+- **FR-16.9** Per-request usage telemetry (uid, reserved count, token counts, latency) must be logged for cost attribution, equivalent to FR-10.23 and FR-14.7
+
 ---
 
 # Section 8 — Edge Cases
@@ -593,7 +609,7 @@ Supporting metrics below are diagnostic — they explain *why* the North Star mo
 | R-09 | Negative reviews from confusing UX for non-enthusiasts | Medium | Medium | Normal users should never see social features until they choose to |
 | R-10 | GDPR / CCPA compliance gap | Low | High | Privacy policy on file before launch; "Delete Account" must actually delete all data (deletion cascade verified and deployed, including server-side cleanup of paths the client cannot reach); **FR-15.7** adds the Article 20 data-portability half, previously missing |
 | R-11 | Assistant hallucinates incorrect car advice (wrong specs, wrong service intervals, unsafe DIY guidance) | Medium | High | System prompt constrains scope and forbids diagnostic certainty; safety disclaimer chip on first use; explicit "see a mechanic" language for safety-critical topics; read-only in v1 (no data mutations from the assistant); monitor user reports |
-| R-12 | Anthropic API costs exceed budget as assistant usage scales | Medium | Medium | Server-side 10-msg/day cap for free tier; per-user 500/day abuse throttle for Pro; prompt caching on garage context block reduces repeated input token cost by ~90% within a conversation. **Cost math (Sonnet 4.6):** at 500 active users × 10 msg/day × ~2k input + 500 output tokens per turn with cache, expected spend is ~$150–300/month. At the 30-day install target (2,500 installs, ~50% activation → ~1,250 active users), expected spend is ~$400–800/month. Set Cloud Function budget alert at $500/month (soft warning) and $1,000/month (hard cap that pages the founder); revise thresholds based on actual usage after week 1. **v1.2 note:** document scanning (FR-14) draws on the same budget and must be included in these thresholds — the original math counted Assistant traffic only |
+| R-12 | Anthropic API costs exceed budget as assistant usage scales | Medium | Medium | Server-side 10-msg/day cap for free tier; per-user 500/day abuse throttle for Pro; prompt caching on garage context block reduces repeated input token cost by ~90% within a conversation. **Cost math (Sonnet 4.6):** at 500 active users × 10 msg/day × ~2k input + 500 output tokens per turn with cache, expected spend is ~$150–300/month. At the 30-day install target (2,500 installs, ~50% activation → ~1,250 active users), expected spend is ~$400–800/month. Set Cloud Function budget alert at $500/month (soft warning) and $1,000/month (hard cap that pages the founder); revise thresholds based on actual usage after week 1. **v1.2 note:** document scanning (FR-14) draws on the same budget and must be included in these thresholds — the original math counted Assistant traffic only. **FR-16 note:** AI service suggestions are a third cost surface and are deliberately free for all users. They use a lightweight model with short structured output behind a flat 10 requests/day per-user abuse cap and server-side input bounds (worst case about 5–6K input tokens and at most 2,048 output tokens per request), so worst-case spend per user per day is bounded regardless of what a modified client sends — allow up to 3x for the one-day clock tolerance in FR-16.4. Include this function in the same budget alerts |
 | R-13 | Pro value proposition is too thin to convert at the >3% target | High | High | Under FR-08, Pro now rests primarily on raising AI limits. If the free Assistant and scan allowances are set generously enough that few users ever reach them, there is no felt reason to upgrade; set too tightly, the free tier stops demonstrating value and hurts activation (R-01). This tension is not resolvable from first principles — it is an empirical calibration. `assistant_cap_reached`, `document_scan_cap_reached`, and `paywall_viewed.trigger` (FR-11.4) exist specifically to measure it. Revisit both allowances after 30 days of real usage rather than guessing pre-launch |
 | R-14 | Advertised Pro benefits drift from enforced gates | Medium | Medium | This already happened: the v1.1 paywall advertised four benefits, three of which free users already received in the shipped build. It was caught by code review, not by anything structural. **FR-08.7** forbids advertising an unenforced benefit and **FR-08.9** requires the gates be enumerated in one place so copy and enforcement can be diffed. Treat any change to paywall copy as requiring a check against that list |
 
@@ -659,6 +675,7 @@ Additive on top of v1.0. Ships behind a Remote Config flag; graduates to public 
 - Pro tier repositioned onto metered AI (FR-08), with document-scan allowances enforced server-side (FR-14.4)
 - Paywall copy reconciled against enforced gates (FR-08.7)
 - Data export, free (FR-15)
+- AI service suggestions, free behind a flat server-side abuse cap (FR-16)
 - Smartcar integration deleted (Appendix A)
 
 ### Definition of Done for MVP
