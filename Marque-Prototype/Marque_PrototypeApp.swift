@@ -213,7 +213,9 @@ private struct MainTabView: View {
                     .tag(Tab.explore)
             }
             .onAppear {
-                NotificationManager.requestPermission()
+                // No permission prompt here: FR-04.1 / FR-13.6 require it to be
+                // requested when the user first sets an expiry date (each expiry
+                // toggle calls `requestPermission()`), not on first launch.
                 NotificationManager.scheduleAll(
                     for: carStore.cars,
                     licenseExpiry: authService.currentUser?.driverLicenseExpiryDate

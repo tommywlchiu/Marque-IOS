@@ -244,6 +244,11 @@ struct EditProfileView: View {
             }
 
             Toggle("Track Expiration", isOn: $hasLicenseExpiryDate.animation())
+                .onChange(of: hasLicenseExpiryDate) { _, isOn in
+                    // FR-04.1: ask for notification permission when the user first
+                    // sets any expiry date (also fires when a license scan turns it on).
+                    if isOn { NotificationManager.requestPermission() }
+                }
             if hasLicenseExpiryDate {
                 DatePicker(
                     "Expires",
