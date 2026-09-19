@@ -196,14 +196,14 @@ All stores are `@MainActor` classes. Firestore listeners are started/stopped in 
 |---|---|
 | `CarStore` | User's cars — Firestore-backed with local persistence cache; propagates changes to `NotificationManager`. |
 | `AuthService` | Firebase Auth (Apple, Google, Email + email verification). Owns profile extras: username/bio/location sync to Firestore `users/{uid}`; driver license fields live in UserDefaults only (`marque_profile_{uid}`) per FR-09.4. `hasCompletedProfileSetup` is UserDefaults-primary with a Firestore backstop (`resolveProfileFromFirestore`: non-empty `users/{uid}.username` = setup complete) so a reinstall or new device doesn't force an existing account back through Set Up Your Profile. `completeProfileSetup` never overwrites an existing `bio`, `createdAt`, `displayName` or `avatarURL` with an empty/fallback value. |
-| `ChatStore` | Marque Assistant conversations + messages at `users/{uid}/conversations/{convId}/messages/`. |
+| `ChatStore` | Marque Assistant conversations + messages at `users/{uid}/conversations/{convId}/messages/`. Also tracks today's message count (`usage/assistant_{date}`) and, like `ScanAllowanceStore`, follows the **server-side** plan (`users/{uid}.isPro`, not StoreKit's — FR-08.3; `serverIsPro` is `nil` until known) so the "n / 10 today" counter and the cap-reached copy match what `askMarque` enforces (10 free / 500 Pro; the client constants are display copies — change them together). |
 | `SubscriptionStore` | StoreKit purchases + Firestore `isPro` sync for Pro tier. |
 | `ExploreStore` | Public cars feed for Explore tab (Firestore listener on `publicCars`). |
 | `FollowStore` | Following/followers subcollections. |
 | `BlockStore` | Blocked users. |
 | `NotificationStore` | In-app notification inbox (Firestore). |
 | `ScanAllowanceStore` | FR-14.4 read-only listeners on `users/{uid}/usage/scans_{date}` (today's count) and `users/{uid}` (the **server-side** `isPro`, deliberately not StoreKit's — a Family Sharing member has local Pro but the server withholds the flag and enforces the free cap, so the caption must show the server's number). Drives the "n of M scans left today" caption and the pre-scan paywall gate; both hide/fail open while the plan is unknown. Display only; the parsers enforce. The usage listener re-attaches when the local day rolls over; the plan listener only if it died. |
-| `FeatureFlagsStore` | Firebase Remote Config gate (e.g. `marque_assistant_enabled`, default false). |
+| `FeatureFlagsStore` | Firebase Remote Config gate (e.g. `marque_assistant_enabled`, default false). DEBUG builds only: launching with `-marque_assistant_enabled_override YES` (or `NO`) forces the flag locally without touching production config — compiled out of Release. |
 
 ## Firebase
 
@@ -305,7 +305,7 @@ New feature views should go under `Features/<FeatureName>/`. Do not add new file
 - `ExpensePeriod` is the source of truth for expense filter options; `Car.expenses(in:)` and `Car.expensesByCategory(in:)` use it.
 - **Never deploy Cloud Functions or Firestore rules without explicit user approval.** Build/typecheck locally, then stop and confirm. This is not delegable — no agent may deploy on its own judgment.
 - Adding a new subcollection under `users/{uid}/` requires a matching rule in `firestore.rules` — the wildcard was removed intentionally.
-- The Marque Assistant ships behind `FeatureFlagsStore.assistantEnabled` (Remote Config `marque_assistant_enabled`). Entry points must gate on this flag.
+- The Marque Assistant ships behind `FeatureFlagsStore.assistantEnabled` (Remote Config `marque_assistant_enabled`). Entry points must gate on this flag. To exercise the Assistant in the Simulator, launch a Debug build with `-marque_assistant_enabled_override YES` (`xcrun simctl launch <udid> <bundle id> -marque_assistant_enabled_override YES`) — it never affects Release or the production Remote Config value.
 - **Analytics goes through `AnalyticsService`'s typed static methods — never a raw `PostHogSDK.shared.capture`.** The generic `capture` is private on purpose: it's what makes FR-11.6 (no PII in analytics) structural rather than a rule someone has to remember. Adding an event means adding a typed method whose parameters are enums, `Bool`s, and counts only. A signature that accepts a `String` from a user-editable field is a bug.
 - Analytics is fire-and-forget and must never affect control flow. No `try`, no `await` that can fail a user action. A capture call that can break a save or a purchase is in the wrong place.
 - Instrument on **success**, after the operation completed — not on attempt. Events fired on attempt silently corrupt every funnel in PRD Section 9.

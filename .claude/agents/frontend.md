@@ -54,7 +54,7 @@ Eleven stores are injected at the root. The ones you'll touch most:
 | `FollowStore` / `BlockStore` | Follow state, block state |
 | `NotificationStore` | In-app notification inbox |
 | `ChatStore` | Assistant conversations + messages |
-| `FeatureFlagsStore` | `assistantEnabled` — **all Assistant entry points must gate on this** |
+| `FeatureFlagsStore` | `assistantEnabled` — **all Assistant entry points must gate on this**. To see the Assistant in the Simulator, launch a Debug build with `-marque_assistant_enabled_override YES` |
 
 Analytics is **not** an environment object: `AnalyticsService` (`Stores/AnalyticsService.swift`) is a struct of static functions you call directly — `AnalyticsService.paywallViewed(trigger: .settings)`. One typed method per FR-11.4 event; the generic `capture` is private, which is what makes FR-11.6 (no PII in analytics) structural. Never call `PostHogSDK.shared.capture` directly. Analytics is fire-and-forget — no `try`, no failable `await`, and it must never change what the UI does. Fire on success/appearance, not on tap-intent.
 

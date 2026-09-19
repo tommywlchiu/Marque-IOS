@@ -76,6 +76,9 @@ struct MarqueChatView: View {
                 Button("OK", role: .cancel) { chatStore.sendError = nil }
             }
             .onAppear {
+                // Re-attach the server-plan listener if an error killed it, so the
+                // counter and cap copy below follow the plan the server enforces.
+                chatStore.refreshPlanIfNeeded()
                 if scopedCarId != nil && chatStore.currentConversation == nil {
                     chatStore.newConversation(scopedCarId: scopedCarId)
                 }
@@ -221,7 +224,11 @@ struct MarqueChatView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .overlay(alignment: .top) {
-            if !subscriptionStore.isPro {
+            // Follows the SERVER's plan (users/{uid}.isPro — what askMarque enforces,
+            // FR-08.3), not StoreKit's: a Family Sharing member is Pro locally but
+            // capped at the free limit, and a Pro bought on another device is Pro
+            // here even if StoreKit says otherwise. Hidden while the plan is unknown.
+            if chatStore.serverIsPro == false {
                 Text("\(chatStore.todayMessageCount) / \(ChatStore.freeDailyCap) today")
                     .font(.caption2)
                     .foregroundColor(.secondary)
@@ -237,18 +244,28 @@ struct MarqueChatView: View {
                 Text("Daily limit reached").font(.subheadline).fontWeight(.medium)
                 Spacer()
             }
-            Text("Free tier is capped at \(ChatStore.freeDailyCap) messages per day. Upgrade to Pro for unlimited access, or try again tomorrow.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Button {
-                showingPaywall = true
-            } label: {
-                Text("Upgrade to Pro")
-                    .font(.subheadline).fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
+            if chatStore.serverIsPro == true {
+                // A Pro account at the abuse throttle: nothing to upsell.
+                Text("You've used all \(ChatStore.proDailyCap) of today's messages. Try again tomorrow.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                // Free — or plan not yet known, which is treated as free (the server
+                // just refused the message, so the free copy is the safe default).
+                Text("Free tier is capped at \(ChatStore.freeDailyCap) messages per day. Upgrade to Pro for \(ChatStore.proDailyCap) messages a day, or try again tomorrow.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button {
+                    showingPaywall = true
+                } label: {
+                    Text("Upgrade to Pro")
+                        .font(.subheadline).fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
         }
         .padding(12)
         .background(Color.orange.opacity(0.08))

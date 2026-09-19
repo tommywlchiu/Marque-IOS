@@ -25,11 +25,26 @@ class ChatStore: ObservableObject {
     @Published var todayMessageCount: Int = 0
     @Published var isOffline: Bool = false
 
+    /// Server-side plan (`users/{uid}.isPro`, the value `getIsPro` reads in
+    /// `askMarque`). `nil` means "not yet known" — before the first snapshot,
+    /// after a listener error, and after `stopListening()`. Never read StoreKit
+    /// for the cap: a Family Sharing member has local StoreKit Pro but the server
+    /// withholds the flag, so it enforces the free cap.
+    @Published private(set) var serverIsPro: Bool?
+
     // MARK: - Config
 
-    // Match FR-10.4 caps. Displayed in UI as "n / 10 today" for free users.
-    static let freeDailyCap = 10
-    static let proDailyCap = 500
+    // Match FR-10.4 caps. Display copies of FREE_DAILY_CAP / PRO_DAILY_CAP in
+    // functions/src/index.ts; change them together. `nonisolated` because
+    // SendError.errorDescription (not main-actor) reads proDailyCap.
+    nonisolated static let freeDailyCap = 10
+    nonisolated static let proDailyCap = 500
+
+    /// Today's cap for the server-side plan, or `nil` while the plan is unknown.
+    var dailyCap: Int? {
+        guard let serverIsPro else { return nil }
+        return serverIsPro ? Self.proDailyCap : Self.freeDailyCap
+    }
 
     // Match FR-10.19 lifecycle. Pinned convos are exempt from auto-delete.
     private let maxConversations = 50
@@ -41,7 +56,7 @@ class ChatStore: ObservableObject {
     // MARK: - Errors
 
     enum SendError: LocalizedError, Identifiable {
-        case capReached(cap: Int)
+        case capReached(cap: Int, isPro: Bool)
         case offline
         case authRequired
         case service(String)
@@ -51,8 +66,10 @@ class ChatStore: ObservableObject {
 
         var errorDescription: String? {
             switch self {
-            case .capReached(let cap):
-                return "You've reached today's \(cap) message limit. Upgrade to Pro for unlimited access."
+            case .capReached(let cap, let isPro):
+                return isPro
+                    ? "You've reached today's \(cap) message limit. Try again tomorrow."
+                    : "You've reached today's \(cap) message limit. Upgrade to Pro for \(ChatStore.proDailyCap) messages a day."
             case .offline:
                 return "Marque needs a connection. Check your network and try again."
             case .authRequired:
@@ -108,6 +125,9 @@ class ChatStore: ObservableObject {
     private var conversationsListener: ListenerRegistration?
     private var messagesListener: ListenerRegistration?
     private var usageListener: ListenerRegistration?
+    private var planListener: ListenerRegistration?
+    private var planListenerFailed = false
+    private var planGeneration = 0
     private var currentUID: String?
 
     private let networkMonitor = NWPathMonitor()
@@ -157,6 +177,7 @@ class ChatStore: ObservableObject {
             }
 
         watchTodayUsage(uid: uid)
+        attachPlanListener(uid: uid)
     }
 
     func stopListening() {
@@ -166,6 +187,11 @@ class ChatStore: ObservableObject {
         messagesListener = nil
         usageListener?.remove()
         usageListener = nil
+        planListener?.remove()
+        planListener = nil
+        planGeneration += 1
+        planListenerFailed = false
+        serverIsPro = nil
         currentUID = nil
         conversations = []
         currentConversation = nil
@@ -402,6 +428,42 @@ class ChatStore: ObservableObject {
         }
     }
 
+    /// Follows `users/{uid}.isPro` (server-written only, so the client cannot forge
+    /// it — see firestore.rules). Independent of the date-scoped usage listener.
+    /// A live listener, so the cap updates by itself when the server flag flips.
+    private func attachPlanListener(uid: String) {
+        planListener?.remove()
+        planGeneration += 1
+        let generation = planGeneration
+        planListenerFailed = false
+        planListener = db.collection("users").document(uid)
+            .addSnapshotListener { [weak self] snap, error in
+                guard let self, self.currentUID == uid, self.planGeneration == generation else { return }
+                if let error {
+                    // Firestore ends a listener after an error. Fall back to
+                    // "unknown" rather than keep a plan that can no longer update;
+                    // refreshPlanIfNeeded() re-attaches on the next chat appearance.
+                    print("[ChatStore] Plan listener error: \(error.localizedDescription)")
+                    self.serverIsPro = nil
+                    self.planListenerFailed = true
+                    return
+                }
+                guard let snap else { return }
+                // A missing profile doc means free to the server (getIsPro), but a
+                // *cache-only* miss just means we haven't heard from the server
+                // yet — asserting "free" then would mislabel a Pro user offline.
+                if !snap.exists && snap.metadata.isFromCache { return }
+                self.serverIsPro = snap.data()?["isPro"] as? Bool == true
+            }
+    }
+
+    /// Re-attaches the plan listener only if an error killed it. Safe to call
+    /// repeatedly; a no-op when signed out or when the listener is healthy.
+    func refreshPlanIfNeeded() {
+        guard let uid = currentUID, planListenerFailed else { return }
+        attachPlanListener(uid: uid)
+    }
+
     // MARK: - Private helpers
 
     private func ensureConversation(uid: String, firstMessage: String) async -> (Conversation, Bool) {
@@ -471,7 +533,8 @@ class ChatStore: ObservableObject {
            let code = FunctionsErrorCode(rawValue: ns.code) {
             switch code {
             case .resourceExhausted:
-                return .capReached(cap: Self.freeDailyCap)
+                let isPro = serverIsPro == true
+                return .capReached(cap: isPro ? Self.proDailyCap : Self.freeDailyCap, isPro: isPro)
             case .unauthenticated:
                 return .authRequired
             case .deadlineExceeded:

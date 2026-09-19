@@ -58,6 +58,20 @@ class FeatureFlagsStore: ObservableObject {
     }
 
     private func applyValues() {
+        // DEBUG-only local override so the Assistant can be exercised in the
+        // Simulator without touching production Remote Config. Set it with a
+        // launch argument (Xcode scheme > Arguments, or `simctl launch`):
+        //   -marque_assistant_enabled_override YES     (or NO to force off)
+        // Compiled out of Release. Entry points still gate on `assistantEnabled`;
+        // this only changes what value it holds. Because `refresh()` re-runs
+        // applyValues() after the fetch, the override wins there too.
+        #if DEBUG
+        let overrideKey = "marque_assistant_enabled_override"
+        if UserDefaults.standard.object(forKey: overrideKey) != nil {
+            assistantEnabled = UserDefaults.standard.bool(forKey: overrideKey)
+            return
+        }
+        #endif
         assistantEnabled = config[Key.assistantEnabled.rawValue].boolValue
     }
 }
