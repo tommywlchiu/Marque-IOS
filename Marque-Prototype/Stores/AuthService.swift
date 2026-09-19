@@ -52,7 +52,8 @@ class AuthService: NSObject, ObservableObject {
     /// the former is a real "authentication" step of the FR-13.2 funnel. This
     /// flag is true only between `completeOnboarding()` (carousel finished) and
     /// `completeFirstCarStep()` (funnel concluded), so `onboarding_step_viewed`
-    /// fires for genuine onboarding and never for an ordinary re-login.
+    /// fires for genuine onboarding and never for an ordinary re-login. Both
+    /// `LoginView` (authentication) and `ProfileSetupView` (profile_setup) gate on it.
     private(set) var isFreshOnboarding = false
     @Published var isLoading = false
     @Published var errorMessage: String?

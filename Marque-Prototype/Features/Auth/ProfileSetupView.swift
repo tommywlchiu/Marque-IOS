@@ -36,7 +36,13 @@ struct ProfileSetupView: View {
         .onAppear {
             let name = authService.currentUser?.displayName ?? ""
             if name != "User" { displayName = name }
-            AnalyticsService.onboardingStepViewed(step: .profileSetup)
+            // Gated on isFreshOnboarding, like LoginView: this screen is also reached
+            // by a returning user whose Firestore lookup failed, or by someone
+            // relaunching mid-setup — neither is a fresh pass through the FR-13.2
+            // funnel, and counting them would distort the R-01 drop-off metric.
+            if authService.isFreshOnboarding {
+                AnalyticsService.onboardingStepViewed(step: .profileSetup)
+            }
         }
         .onChange(of: selectedItem) { _, item in
             Task {
