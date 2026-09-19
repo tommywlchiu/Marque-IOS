@@ -101,10 +101,10 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — audit recommended `firebase-admin@14.3.0` for a `uuid` CVE; 14.3.0 pins the same vulnerable `@google-cloud/storage`, so the upgrade would have cleared nothing and added a peer-dep conflict with `firebase-functions@6`.
 - **Detect** — `mkdir /tmp/scratch && cd /tmp/scratch && npm i <pkg>@<version> && npm audit`
 
-### Simulator names are machine-specific
-- **Rule** — Never hardcode a simulator in an `xcodebuild` destination. Query for an installed one.
-- **Why** — `iPhone 16` is not installed on this machine; every hardcoded build command failed until agents discovered iPhone 17.
-- **Detect** — `xcrun simctl list devices available | grep iPhone`
+### Anthropic structured-output schemas reject constraints the compiler can't see
+- **Rule** — `output_config.format` schemas must not use array size limits (`maxItems`; `minItems` above 1), numeric or string constraints (`minimum`, `maximum`, `multipleOf`, `minLength`, `maxLength`), or type unions (use `anyOf`), and every object needs `additionalProperties: false`. Enforce a limit like "at most 6" in the prompt and in code (`slice`), not in the schema. A function that has never made a real call to Anthropic is unverified: run `node scripts/check-anthropic-schemas.js --live` before its first deploy and after any schema change.
+- **Why** — `suggestServiceReminders` was deployed with `minItems`/`maxItems` on its array and failed every real call with a 400 (`For 'array' type, property 'maxItems' is not supported`); the sheet silently fell back to built-in suggestions. `tsc`, both builds, and a smoke test that only reached the auth check all passed.
+- **Detect** — `node scripts/check-anthropic-schemas.js` (free, offline lint of every schema in `functions/src/index.ts`); add `--live` for one tiny real call per schema (about $0.01 total). Needs `ANTHROPIC_API_KEY` or `ant auth login`.
 
 ### `DEVELOPER_DIR` must be exported, not inline-prefixed
 - **Rule** — This machine's `xcode-select` points at CommandLineTools, so both `xcodebuild` and `xcrun` fail without `DEVELOPER_DIR`. It must be `export`ed as its own statement first. `DEVELOPER_DIR=... xcodebuild -destination "...$(xcrun ...)"` does **not** work: the shell expands the subshell before applying the command-prefix assignment, so `xcrun` runs without it, returns empty, and `xcodebuild` gets a malformed destination and silently dumps its help text instead of building. Also pass `-derivedDataPath` to a scratch dir — Xcode locks the default when open.
@@ -290,6 +290,7 @@ functions/         — TypeScript Cloud Functions (askMarque, appStoreNotificati
 firestore.rules    — Firestore security rules
 firebase.json      — Firebase project + emulator config
 docs/              — Product docs (Marque-PRD.md)
+scripts/           — Dev tooling: check-anthropic-schemas.js (lint / --live check of every Anthropic output_config schema)
 ```
 
 New feature views should go under `Features/<FeatureName>/`. Do not add new files to `Views/`.

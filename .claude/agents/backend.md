@@ -65,6 +65,7 @@ Build with `cd functions && npm run build` (runs `tsc`). Silent output means suc
   ```
   `iPhone 16` is **not** installed here. `export` must be its own statement — inline-prefixing expands the subshell before the assignment applies, so `xcrun` returns empty and xcodebuild dumps help text instead of building.
 - Functions: `cd functions && npm run build`
+- Anthropic schemas: `node scripts/check-anthropic-schemas.js` after touching any `output_config` schema (free lint); add `--live` (one tiny real call per schema, ~$0.01) before the FIRST deploy of any function that calls Anthropic. `tsc` cannot see schema constraints Anthropic rejects — see CLAUDE.md Known Pitfalls.
 - Rules: emulator only, and only if the user asks (it's interactive)
 
 ## Never deploy
