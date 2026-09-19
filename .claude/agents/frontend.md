@@ -34,7 +34,9 @@ You are the **frontend specialist** for the Marque iOS app. You own SwiftUI view
 ### Root navigation
 ```
 Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
+                              → ProfileResolvingView (only while AuthService looks up an existing profile in Firestore)
                               → ProfileSetupView (if incomplete)
+                              → AddCarView (onboarding mode, if needsFirstCarStep — FR-13's add-first-car step)
                               → MainTabView
 ```
 `MainTabView` has **3 tabs**: Garage, an Add "+" tab, Explore. None of Notifications, Profile, or Settings are tab items: **Settings** is a toolbar gear icon on Garage; **Notifications** is a toolbar bell icon on **Explore**, not Garage; **Profile** isn't a toolbar item at all — it's the inline header on Garage. The PRD's 5-tab layout is the eventual target; the current arrangement is a deliberate interim state — don't "fix" it without an explicit task.

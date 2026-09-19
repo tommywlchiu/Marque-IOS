@@ -178,12 +178,13 @@ Cloud Functions live in `functions/` (TypeScript, `firebase-functions` v6). Buil
 
 ```
 Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
+                              → ProfileResolvingView (only while AuthService looks up an existing profile in Firestore)
                               → ProfileSetupView (if incomplete)
                               → AddCarView (onboarding mode, if needsFirstCarStep)
                               → MainTabView
 ```
 
-`AddCarView` (onboarding mode) is FR-13's add-first-car step, gated by `AuthService.needsFirstCarStep`. It's session-local, not persisted: `completeProfileSetup()` sets it true, and either adding a car or tapping "Skip" (both routed through `completeFirstCarStep(addedCar:)`) sets it false and advances to `MainTabView`. An existing user's `hasCompletedProfileSetup` is already true when the auth listener loads it, so they never see this step and no migration flag was needed.
+`AddCarView` (onboarding mode) is FR-13's add-first-car step, gated by `AuthService.needsFirstCarStep`. It's session-local, not persisted: `completeProfileSetup()` sets it true, and either adding a car or tapping "Skip" (both routed through `completeFirstCarStep(addedCar:)`) sets it false and advances to `MainTabView`. An existing user never sees this step and no migration flag was needed: their `hasCompletedProfileSetup` is either already true locally, or — on a fresh install / new device, where the UserDefaults copy is gone — restored from Firestore by `AuthService.resolveProfileFromFirestore` before `RootView` routes (a non-empty `users/{uid}.username` means setup was completed; only `completeProfileSetup` and `changeUsername` write it, and the server can create a `users/{uid}` doc holding just `isPro`, so the doc merely *existing* is **not** the signal). While that lookup runs, `isResolvingProfile` holds `RootView` on `ProfileResolvingView`, with an 8 s backstop so it can never pin the user.
 
 `MainTabView` currently has 3 tabs (Garage, an Add "+" tab, Explore). None of Notifications, Profile, or Settings are tab items — each is reached differently: **Settings** is a toolbar gear icon on Garage; **Notifications** is a toolbar bell icon on Explore; **Profile** isn't a toolbar item anywhere — it's the inline header on Garage (Edit Profile button, follower/following stat chips). The PRD's 5-tab layout (Garage / Explore / Notifications / Profile / Settings) is the eventual target; the current arrangement is a deliberate interim state.
 
@@ -194,7 +195,7 @@ All stores are `@MainActor` classes. Firestore listeners are started/stopped in 
 | Store | Responsibility |
 |---|---|
 | `CarStore` | User's cars — Firestore-backed with local persistence cache; propagates changes to `NotificationManager`. |
-| `AuthService` | Firebase Auth (Apple, Google, Email + email verification). Owns profile extras: username/bio/location sync to Firestore `users/{uid}`; driver license fields live in UserDefaults only (`marque_profile_{uid}`) per FR-09.4. |
+| `AuthService` | Firebase Auth (Apple, Google, Email + email verification). Owns profile extras: username/bio/location sync to Firestore `users/{uid}`; driver license fields live in UserDefaults only (`marque_profile_{uid}`) per FR-09.4. `hasCompletedProfileSetup` is UserDefaults-primary with a Firestore backstop (`resolveProfileFromFirestore`: non-empty `users/{uid}.username` = setup complete) so a reinstall or new device doesn't force an existing account back through Set Up Your Profile. `completeProfileSetup` never overwrites an existing `bio`, `createdAt`, `displayName` or `avatarURL` with an empty/fallback value. |
 | `ChatStore` | Marque Assistant conversations + messages at `users/{uid}/conversations/{convId}/messages/`. |
 | `SubscriptionStore` | StoreKit purchases + Firestore `isPro` sync for Pro tier. |
 | `ExploreStore` | Public cars feed for Explore tab (Firestore listener on `publicCars`). |
