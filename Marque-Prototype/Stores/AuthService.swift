@@ -20,12 +20,30 @@ class AuthService: NSObject, ObservableObject {
     @Published var hasCompletedProfileSetup: Bool = false
     @Published var isEmailVerified: Bool = false
 
+    /// True while a returning user's profile is being looked up in Firestore
+    /// because the local `hasCompletedProfileSetup` flag says "not done" (fresh
+    /// install / new device). Set synchronously, before `authState` is published
+    /// as `.authenticated`, so RootView can hold a loading state instead of
+    /// flashing ProfileSetupView. Always ends false: success, no username in
+    /// Firestore, read error, sign-out, or a different uid taking over.
+    @Published private(set) var isResolvingProfile: Bool = false
+
+    /// Bumped on every auth-state change. A resolve only clears
+    /// `isResolvingProfile` if it is still the latest one, so a stale read from a
+    /// previous sign-in of the same uid can't drop the spinner under a newer read.
+    private var profileResolveGeneration = 0
+
+    /// How long RootView may hold the "Loading your profile…" screen before falling
+    /// through to ProfileSetupView. A normal lookup takes well under a second.
+    private static let profileResolveTimeout: Duration = .seconds(8)
+
     /// FR-13.2 — routes RootView to the "add your first car" onboarding step.
     /// Deliberately **not** persisted: it is set true only by `completeProfileSetup()`,
     /// i.e. only for a signup happening in this session. An existing user's
-    /// `hasCompletedProfileSetup` is already true when the auth listener loads it on
-    /// launch, so this stays false for them and they land straight on MainTabView —
-    /// no migration flag needed. A user who skips or backgrounds the app mid-step
+    /// `hasCompletedProfileSetup` is either already true locally, or — on a fresh
+    /// install / new device — restored from Firestore by `resolveProfileFromFirestore`
+    /// before RootView routes, so this stays false for them and they land straight on
+    /// MainTabView — no migration flag needed. A user who skips or backgrounds the app mid-step
     /// simply reaches the Garage empty state on relaunch instead of being re-shown it.
     @Published var needsFirstCarStep: Bool = false
 
@@ -69,6 +87,11 @@ class AuthService: NSObject, ObservableObject {
                 guard let self else { return }
                 if let fu = firebaseUser {
                     let p = LocalProfile.load(uid: fu.uid)
+                    self.profileResolveGeneration += 1
+                    let generation = self.profileResolveGeneration
+                    // Must be set before authState is published below, or RootView
+                    // renders one frame of ProfileSetupView for a returning user.
+                    self.isResolvingProfile = !p.hasCompletedProfileSetup
                     self.hasCompletedProfileSetup = p.hasCompletedProfileSetup
                     self.isEmailVerified = fu.isEmailVerified
                     self.authState = .authenticated(AppUser(firebaseUser: fu, profile: (
@@ -85,7 +108,25 @@ class AuthService: NSObject, ObservableObject {
                     // without requiring "Restore Purchases". The Cloud Function
                     // keeps this field authoritative via App Store Server Notifications.
                     Task { await self.syncProStatusFromFirestore(uid: fu.uid) }
+                    // Local flag is UserDefaults-only, so it's false on a fresh
+                    // install / new device even for an account that finished setup.
+                    // Ask Firestore before deciding to show the setup screen.
+                    if !p.hasCompletedProfileSetup {
+                        Task { await self.resolveProfileFromFirestore(uid: fu.uid, generation: generation) }
+                        // Backstop: the read has no timeout of its own, and the
+                        // holding screen has no escape hatch. If the lookup is still
+                        // pending at the deadline, fall through to the setup screen.
+                        // A late result that finds a username still hydrates the
+                        // profile and routes to MainTabView; a timeout never marks
+                        // setup complete by itself.
+                        Task {
+                            try? await Task.sleep(for: Self.profileResolveTimeout)
+                            if generation == self.profileResolveGeneration { self.isResolvingProfile = false }
+                        }
+                    }
                 } else {
+                    self.profileResolveGeneration += 1
+                    self.isResolvingProfile = false
                     self.hasCompletedProfileSetup = false
                     self.needsFirstCarStep = false
                     self.isFreshOnboarding = false
@@ -402,6 +443,57 @@ class AuthService: NSObject, ObservableObject {
 
     // MARK: - Profile Setup
 
+    /// Restores "setup already completed" for a returning user whose local
+    /// profile is missing (fresh install / new device). A non-empty `username`
+    /// on `users/{uid}` is the signal: only `completeProfileSetup` and
+    /// `changeUsername` write it. Doc existence is NOT the signal — the server
+    /// creates the doc with just `isPro`. On a missing doc, no username, or a
+    /// read error, `hasCompletedProfileSetup` stays false and the setup screen
+    /// shows, exactly as it did before this lookup existed.
+    /// Deliberately never touches `needsFirstCarStep` / `isFreshOnboarding`:
+    /// a returning user goes straight to MainTabView.
+    private func resolveProfileFromFirestore(uid: String, generation: Int) async {
+        defer {
+            if generation == profileResolveGeneration { isResolvingProfile = false }
+        }
+
+        let data: [String: Any]?
+        do {
+            data = try await userDocument(uid: uid).getDocument().data()
+        } catch {
+            print("[AuthService] Profile lookup failed for \(uid); showing profile setup: \(error.localizedDescription)")
+            return
+        }
+
+        // Signed out, or a different account signed in, while the read was in flight.
+        guard Auth.auth().currentUser?.uid == uid else { return }
+        // Setup finished in the meantime — local state is already authoritative.
+        guard !hasCompletedProfileSetup else { return }
+
+        guard let data,
+              let username = data["username"] as? String, !username.isEmpty else {
+            print("[AuthService] No completed profile in Firestore for \(uid); showing profile setup")
+            return
+        }
+
+        var profile = LocalProfile.load(uid: uid)
+        profile.username = username
+        if let bio = data["bio"] as? String { profile.bio = bio }
+        if let avatarURL = data["avatarURL"] as? String, !avatarURL.isEmpty {
+            profile.avatarStorageURL = avatarURL
+        }
+        profile.hasCompletedProfileSetup = true
+        profile.save(uid: uid)
+
+        hasCompletedProfileSetup = true
+        if case .authenticated(var user) = authState, user.id == uid {
+            user.username = profile.username
+            user.bio = profile.bio
+            user.avatarURL = profile.avatarStorageURL ?? profile.avatarFileName ?? user.avatarURL
+            authState = .authenticated(user)
+        }
+    }
+
     func checkUsernameAvailability(_ username: String) async -> Bool {
         do {
             let doc = try await usernameDocument(username).getDocument()
@@ -424,6 +516,20 @@ class AuthService: NSObject, ObservableObject {
             throw ProfileSetupError.usernameTaken
         }
 
+        // Read the current profile doc (also before any upload, so a failed read
+        // can't orphan a Storage file). Setup can still run for an account that
+        // already has a doc — the server-written `isPro`-only doc, or a returning
+        // user whose lookup failed — so don't reset createdAt or blank a bio.
+        let currentProfile = try await userDocument(uid: uid).getDocument().data()
+        let hasCreatedAt = currentProfile?["createdAt"] != nil
+        let existingBio = (currentProfile?["bio"] as? String) ?? ""
+        let preserveExistingBio = bio.isEmpty && !existingBio.isEmpty
+        let resolvedBio = preserveExistingBio ? existingBio : bio
+        // Same protection for the name and photo: the fallbacks below ("User", or
+        // Auth's photoURL / "") must not overwrite real values already on the doc.
+        let existingDisplayName = (currentProfile?["displayName"] as? String) ?? ""
+        let existingAvatarURL = (currentProfile?["avatarURL"] as? String) ?? ""
+
         var avatarStorageURL: String? = nil
         let changeRequest = firebaseUser.createProfileChangeRequest()
         if !displayName.isEmpty { changeRequest.displayName = displayName }
@@ -437,29 +543,42 @@ class AuthService: NSObject, ObservableObject {
         }
         try await changeRequest.commitChanges()
 
-        let resolvedDisplayName = displayName.isEmpty ? (firebaseUser.displayName ?? "User") : displayName
+        let resolvedDisplayName = !displayName.isEmpty
+            ? displayName
+            : (firebaseUser.displayName ?? (existingDisplayName.isEmpty ? "User" : existingDisplayName))
 
         let batch = db.batch()
         batch.setData(["uid": uid], forDocument: usernameRef)
-        // merge: true is load-bearing, not cosmetic. This screen re-appears on a
-        // reinstall or a new device (hasCompletedProfileSetup lives in
-        // UserDefaults), and a non-merge setData on an existing profile REMOVES
-        // every key it doesn't list — including the server-owned `isPro`.
+        // merge: true is load-bearing, not cosmetic. The profile doc can already
+        // exist when this runs (the server writes `isPro` onto it; this screen
+        // also re-appears if the returning-user lookup in
+        // resolveProfileFromFirestore failed, e.g. offline on a fresh install),
+        // and a non-merge setData on an existing profile REMOVES every key it
+        // doesn't list — including the server-owned `isPro`.
         // firestore.rules counts removals as affected keys, so that write is
         // now denied outright and profile setup would throw.
-        batch.setData([
+        var profilePayload: [String: Any] = [
             "username": username.lowercased(),
-            "displayName": resolvedDisplayName,
-            "bio": bio,
-            "avatarURL": avatarStorageURL ?? firebaseUser.photoURL?.absoluteString ?? "",
-            "createdAt": FieldValue.serverTimestamp()
-        ], forDocument: userDocument(uid: uid), merge: true)
+            "displayName": resolvedDisplayName
+        ]
+        // A new photo wins; otherwise keep an existing avatarURL, and only fall back
+        // to Auth's photoURL (or "") when the doc has none.
+        if let avatarStorageURL {
+            profilePayload["avatarURL"] = avatarStorageURL
+        } else if existingAvatarURL.isEmpty {
+            profilePayload["avatarURL"] = firebaseUser.photoURL?.absoluteString ?? ""
+        }
+        // An empty field must not blank a bio that already exists.
+        if !preserveExistingBio { profilePayload["bio"] = bio }
+        // Only stamp createdAt on first setup, never reset an existing one.
+        if !hasCreatedAt { profilePayload["createdAt"] = FieldValue.serverTimestamp() }
+        batch.setData(profilePayload, forDocument: userDocument(uid: uid), merge: true)
         try await batch.commit()
 
         var profile = LocalProfile.load(uid: uid)
         profile.username = username
-        profile.bio = bio
-        profile.avatarStorageURL = avatarStorageURL
+        profile.bio = resolvedBio
+        profile.avatarStorageURL = avatarStorageURL ?? (existingAvatarURL.isEmpty ? nil : existingAvatarURL)
         profile.hasCompletedProfileSetup = true
         profile.save(uid: uid)
 
@@ -468,7 +587,7 @@ class AuthService: NSObject, ObservableObject {
         if case .authenticated(var user) = authState {
             user.displayName = resolvedDisplayName
             user.username = username
-            user.bio = bio
+            user.bio = resolvedBio
             if let avatarStorageURL { user.avatarURL = avatarStorageURL }
             authState = .authenticated(user)
         }

@@ -130,6 +130,12 @@ private struct RootView: View {
             } else if !authService.isEmailVerified {
                 VerifyEmailView()
                     .transition(.opacity)
+            } else if authService.isResolvingProfile {
+                // Existing account, no local profile (reinstall / new device): hold
+                // here while AuthService checks Firestore, so ProfileSetupView
+                // doesn't flash for someone who has already set up their profile.
+                ProfileResolvingView()
+                    .transition(.opacity)
             } else if !authService.hasCompletedProfileSetup {
                 ProfileSetupView()
                     .transition(.opacity)
@@ -151,8 +157,26 @@ private struct RootView: View {
         .animation(.easeInOut(duration: 0.25), value: authService.hasSeenOnboarding)
         .animation(.easeInOut(duration: 0.25), value: authService.isAuthenticated)
         .animation(.easeInOut(duration: 0.25), value: authService.isEmailVerified)
+        .animation(.easeInOut(duration: 0.25), value: authService.isResolvingProfile)
         .animation(.easeInOut(duration: 0.25), value: authService.hasCompletedProfileSetup)
         .animation(.easeInOut(duration: 0.25), value: authService.needsFirstCarStep)
+    }
+}
+
+// Brief holding screen while AuthService looks up an existing profile in Firestore.
+private struct ProfileResolvingView: View {
+    var body: some View {
+        ZStack {
+            Color(.systemGroupedBackground).ignoresSafeArea()
+            VStack(spacing: 12) {
+                ProgressView()
+                Text("Loading your profile…")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Loading your profile")
     }
 }
 
