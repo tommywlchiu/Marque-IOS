@@ -966,9 +966,13 @@ export const parseDriverLicense = onCall(
     try {
       parsed = JSON.parse(textBlock.text);
     } catch (err) {
+      // Metadata only: the raw text is the extracted license content, and V8's
+      // JSON.parse error message quotes a snippet of its input — neither may
+      // reach Cloud Logging (FR-14.6).
       functions.logger.error("Failed to parse model output as JSON", {
-        text: textBlock.text,
-        err,
+        text_length: textBlock.text.length,
+        stop_reason: response.stop_reason,
+        error_type: err instanceof Error ? err.name : typeof err,
       });
       throw new HttpsError("internal", "Couldn't parse the model response");
     }
@@ -1132,9 +1136,11 @@ export const parseInsuranceCard = onCall(
     try {
       parsed = JSON.parse(textBlock.text);
     } catch (err) {
+      // Metadata only — see parseDriverLicense: the text is policy data (FR-14.6).
       functions.logger.error("Failed to parse insurance model output as JSON", {
-        text: textBlock.text,
-        err,
+        text_length: textBlock.text.length,
+        stop_reason: response.stop_reason,
+        error_type: err instanceof Error ? err.name : typeof err,
       });
       throw new HttpsError("internal", "Couldn't parse the model response");
     }
@@ -1310,9 +1316,11 @@ export const parseMaintenanceReceipt = onCall(
     try {
       parsed = JSON.parse(textBlock.text);
     } catch (err) {
+      // Metadata only — see parseDriverLicense: the text is receipt content (FR-14.6).
       functions.logger.error("Failed to parse receipt model output as JSON", {
-        text: textBlock.text,
-        err,
+        text_length: textBlock.text.length,
+        stop_reason: response.stop_reason,
+        error_type: err instanceof Error ? err.name : typeof err,
       });
       throw new HttpsError("internal", "Couldn't parse the model response");
     }
@@ -1582,6 +1590,7 @@ const SUGGEST_SYSTEM_PROMPT = [
   "- If the car has no maintenance history at all, suggest what's appropriate for a vehicle of that age and mileage.",
   "- Never invent maintenance the user already did. Use dates and mileages from the provided history when computing the next occurrence.",
   "- Reasoning must be specific and factual — no marketing language, no hedging with 'consider' or 'may want to'.",
+  "- Reasoning must agree with the dates: say a service is overdue or due now only if its dueDate is today or in the past; otherwise describe when it is coming due.",
 ].join("\n");
 
 export const suggestServiceReminders = onCall(
@@ -1704,7 +1713,12 @@ export const suggestServiceReminders = onCall(
     try {
       parsed = JSON.parse(textBlock.text);
     } catch (err) {
-      functions.logger.error("Failed to parse suggestions JSON", { text: textBlock.text, err });
+      // Not PII, but unbounded log text; keep the same metadata-only shape as the parsers.
+      functions.logger.error("Failed to parse suggestions JSON", {
+        text_length: textBlock.text.length,
+        stop_reason: response.stop_reason,
+        error_type: err instanceof Error ? err.name : typeof err,
+      });
       throw new HttpsError("internal", "Couldn't parse the model response");
     }
 
