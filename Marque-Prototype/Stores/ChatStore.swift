@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseFunctions
@@ -129,6 +130,8 @@ class ChatStore: ObservableObject {
     private var planListenerFailed = false
     private var planGeneration = 0
     private var currentUID: String?
+    private var usageListeningDate: String?
+    private var observers: [NSObjectProtocol] = []
 
     private let networkMonitor = NWPathMonitor()
     private let networkQueue = DispatchQueue(label: "com.marque.chat.network")
@@ -148,10 +151,24 @@ class ChatStore: ObservableObject {
             }
         }
         networkMonitor.start(queue: networkQueue)
+
+        // The usage document is keyed by local date, so a session that crosses
+        // midnight must re-attach — otherwise a stale count would show as fact.
+        let names: [Notification.Name] = [.NSCalendarDayChanged, UIApplication.didBecomeActiveNotification]
+        observers = names.map { name in
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.refreshIfNeeded() }
+            }
+        }
     }
 
     deinit {
         networkMonitor.cancel()
+        observers.forEach(NotificationCenter.default.removeObserver)
+        conversationsListener?.remove()
+        messagesListener?.remove()
+        usageListener?.remove()
+        planListener?.remove()
     }
 
     // MARK: - Auth lifecycle
@@ -187,6 +204,7 @@ class ChatStore: ObservableObject {
         messagesListener = nil
         usageListener?.remove()
         usageListener = nil
+        usageListeningDate = nil
         planListener?.remove()
         planListener = nil
         planGeneration += 1
@@ -417,12 +435,36 @@ class ChatStore: ObservableObject {
 
     // MARK: - Cap tracking
 
+    /// Runs on day rollover and on foreground. A cheap no-op on an ordinary
+    /// foreground within the same day; re-attaches the usage listener only when
+    /// its date is stale (or an error cleared it).
+    private func refreshIfNeeded() {
+        guard let uid = currentUID else { return }
+        if usageListeningDate != Self.localDateFormatter.string(from: Date()) {
+            watchTodayUsage(uid: uid)
+        }
+        refreshPlanIfNeeded()
+    }
+
     private func watchTodayUsage(uid: String) {
+        usageListener?.remove()
         let date = Self.localDateFormatter.string(from: Date())
+        usageListeningDate = date
+        // Never show the previous day's count as fact while the new snapshot loads.
+        todayMessageCount = 0
         let ref = db.collection("users").document(uid)
             .collection("usage").document("assistant_\(date)")
-        usageListener = ref.addSnapshotListener { [weak self] snap, _ in
-            guard let self, self.currentUID == uid else { return }
+        usageListener = ref.addSnapshotListener { [weak self] snap, error in
+            guard let self, self.currentUID == uid, self.usageListeningDate == date else { return }
+            if let error {
+                // Firestore ends a listener after an error, so this count would go
+                // stale. Keep the last count (display only — the server enforces
+                // the cap) and clear usageListeningDate so the next foreground
+                // re-attaches instead of leaving the listener dead all day.
+                print("[ChatStore] Usage listener error: \(error.localizedDescription)")
+                self.usageListeningDate = nil
+                return
+            }
             let count = (snap?.data()?["count"] as? Int) ?? 0
             self.todayMessageCount = max(count, 0)
         }
