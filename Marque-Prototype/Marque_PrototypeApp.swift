@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAppCheck
 import FirebaseCore
 import FirebaseFirestore
 
@@ -22,6 +23,27 @@ private enum LaunchState {
     }
 }
 
+/// Chooses the App Check provider. App Attest does not run in the Simulator, so
+/// the Simulator gets the debug provider (its token must be registered in the
+/// Firebase console before it validates). This is keyed on the Simulator, NOT on
+/// `DEBUG`, on purpose: a Debug build on a real device should exercise App
+/// Attest, and a Release build must never fall back to the debug provider.
+///
+/// Registered before `FirebaseApp.configure()`. If a token can't be obtained
+/// (console not set up, attestation failure), the Functions SDK still sends
+/// the call with a placeholder token rather than blocking it.
+final class MarqueAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
+    func createProvider(with app: FirebaseApp) -> AppCheckProvider? {
+        #if targetEnvironment(simulator)
+        return AppCheckDebugProvider(app: app)
+        #else
+        // Failable: nil if the FirebaseApp options are incomplete. iOS 14+ only,
+        // which the iOS 17.6 deployment target already guarantees.
+        return AppAttestProvider(app: app)
+        #endif
+    }
+}
+
 @main
 struct Marque_PrototypeApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -39,6 +61,8 @@ struct Marque_PrototypeApp: App {
 
     init() {
         _ = launchStartedAt  // force the global's lazy init as early as possible
+        // Must precede configure(): App Check reads the factory when Firebase starts.
+        AppCheck.setAppCheckProviderFactory(MarqueAppCheckProviderFactory())
         FirebaseApp.configure()
         AnalyticsService.configure()
 

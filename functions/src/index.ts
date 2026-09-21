@@ -56,6 +56,15 @@ const APPLE_ROOT_CA_G3_B64 =
 
 const APPLE_ROOT_CA = Buffer.from(APPLE_ROOT_CA_G3_B64, "base64");
 
+// Firebase App Check enforcement for the cost-bearing callables (askMarque, the
+// three parse* document scanners, suggestServiceReminders). Must stay false
+// until (1) a client build that sends App Check tokens is in users' hands,
+// (2) the app is registered with App Check in the Firebase console, and
+// (3) the function logs show `verifications: { app: "VALID" }`. With it false,
+// tokenless calls are still accepted (logged as app: "MISSING"). Flipping it to
+// true is a deploy and needs the user's explicit approval.
+const ENFORCE_APP_CHECK = false;
+
 // ---------------------------------------------------------------------------
 // Verifier helpers — one per environment, created lazily on cold start.
 // ---------------------------------------------------------------------------
@@ -888,7 +897,7 @@ function withScanAllowance<Req extends { clientDate?: string }, Res extends { er
 }
 
 export const parseDriverLicense = onCall(
-  { secrets: [ANTHROPIC_API_KEY] },
+  { secrets: [ANTHROPIC_API_KEY], enforceAppCheck: ENFORCE_APP_CHECK },
   withScanAllowance(async (
     request: CallableRequest<ParseDriverLicenseRequest>
   ): Promise<ParseDriverLicenseResponse> => {
@@ -1058,7 +1067,7 @@ interface ParseInsuranceCardResponse {
 }
 
 export const parseInsuranceCard = onCall(
-  { secrets: [ANTHROPIC_API_KEY] },
+  { secrets: [ANTHROPIC_API_KEY], enforceAppCheck: ENFORCE_APP_CHECK },
   withScanAllowance(async (
     request: CallableRequest<ParseInsuranceCardRequest>
   ): Promise<ParseInsuranceCardResponse> => {
@@ -1226,7 +1235,7 @@ interface ParseMaintenanceReceiptResponse {
 }
 
 export const parseMaintenanceReceipt = onCall(
-  { secrets: [ANTHROPIC_API_KEY] },
+  { secrets: [ANTHROPIC_API_KEY], enforceAppCheck: ENFORCE_APP_CHECK },
   withScanAllowance(async (
     request: CallableRequest<ParseMaintenanceReceiptRequest>
   ): Promise<ParseMaintenanceReceiptResponse> => {
@@ -1639,7 +1648,7 @@ const SUGGEST_SYSTEM_PROMPT = [
 ].join("\n");
 
 export const suggestServiceReminders = onCall(
-  { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60 },
+  { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, enforceAppCheck: ENFORCE_APP_CHECK },
   withSuggestCap(async ({ uid, clean, clientDate, reserved }) => {
     const history = clean.maintenanceHistory;
     const active = clean.activeReminders;
@@ -2008,6 +2017,7 @@ export const askMarque = onCall(
   {
     secrets: [ANTHROPIC_API_KEY],
     timeoutSeconds: 60,
+    enforceAppCheck: ENFORCE_APP_CHECK,
   },
   async (request, response) => {
     if (!request.auth) {
