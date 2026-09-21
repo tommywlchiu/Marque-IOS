@@ -76,9 +76,10 @@ struct MarqueChatView: View {
                 Button("OK", role: .cancel) { chatStore.sendError = nil }
             }
             .onAppear {
-                // Re-attach the server-plan listener if an error killed it, so the
-                // counter and cap copy below follow the plan the server enforces.
-                chatStore.refreshPlanIfNeeded()
+                // Re-attach any listener an error killed (server plan, conversation
+                // list, this conversation's messages), so the counter, cap copy and
+                // chat below never sit frozen on stale data.
+                chatStore.refreshListenersIfNeeded()
                 if scopedCarId != nil && chatStore.currentConversation == nil {
                     chatStore.newConversation(scopedCarId: scopedCarId)
                 }

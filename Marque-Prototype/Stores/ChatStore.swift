@@ -129,6 +129,10 @@ class ChatStore: ObservableObject {
     private var planListener: ListenerRegistration?
     private var planListenerFailed = false
     private var planGeneration = 0
+    private var conversationsListenerFailed = false
+    private var conversationsGeneration = 0
+    private var messagesListenerFailedConvId: String?
+    private var messagesGeneration = 0
     private var currentUID: String?
     private var usageListeningDate: String?
     private var observers: [NSObjectProtocol] = []
@@ -178,21 +182,7 @@ class ChatStore: ObservableObject {
         stopListening()
         currentUID = uid
 
-        let convosRef = db.collection("users").document(uid).collection("conversations")
-        conversationsListener = convosRef
-            .order(by: "updatedAt", descending: true)
-            .limit(to: maxConversations + 5)  // slack for auto-delete timing
-            .addSnapshotListener { [weak self] snapshot, _ in
-                guard let self, let snapshot else { return }
-                guard self.currentUID == uid else { return }
-                let all = snapshot.documents.compactMap { try? $0.data(as: Conversation.self) }
-                // Pinned first, then by updatedAt desc within each group.
-                self.conversations = all.sorted { a, b in
-                    if a.isPinned != b.isPinned { return a.isPinned && !b.isPinned }
-                    return a.updatedAt > b.updatedAt
-                }
-            }
-
+        attachConversationsListener(uid: uid)
         watchTodayUsage(uid: uid)
         attachPlanListener(uid: uid)
     }
@@ -209,6 +199,10 @@ class ChatStore: ObservableObject {
         planListener = nil
         planGeneration += 1
         planListenerFailed = false
+        conversationsGeneration += 1
+        conversationsListenerFailed = false
+        messagesGeneration += 1
+        messagesListenerFailedConvId = nil
         serverIsPro = nil
         currentUID = nil
         conversations = []
@@ -223,6 +217,8 @@ class ChatStore: ObservableObject {
     func newConversation(scopedCarId: String? = nil) {
         messagesListener?.remove()
         messagesListener = nil
+        messagesGeneration += 1
+        messagesListenerFailedConvId = nil
         currentConversation = nil
         currentMessages = []
         sendError = nil
@@ -234,28 +230,11 @@ class ChatStore: ObservableObject {
 
     func openConversation(_ conversation: Conversation) {
         guard let uid = currentUID, let convId = conversation.id else { return }
-        messagesListener?.remove()
         currentConversation = conversation
         currentMessages = []
         sendError = nil
-
-        let ref = db.collection("users").document(uid)
-            .collection("conversations").document(convId)
-            .collection("messages")
-            .order(by: "createdAt", descending: false)
-
-        messagesListener = ref.addSnapshotListener { [weak self] snap, _ in
-            guard let self, let snap else { return }
-            guard self.currentConversation?.id == convId else { return }
-            let loaded = snap.documents.compactMap { try? $0.data(as: ChatMessage.self) }
-            // Preserve a locally-streaming assistant message not yet persisted.
-            let streaming = self.currentMessages.first(where: { $0.isStreaming == true })
-            var merged = loaded
-            if let streaming, !loaded.contains(where: { $0.id == streaming.id }) {
-                merged.append(streaming)
-            }
-            self.currentMessages = merged
-        }
+        // Replaces the previous listener and clears its failure record.
+        attachMessagesListener(uid: uid, convId: convId)
     }
 
     func deleteConversation(_ conversation: Conversation) async {
@@ -443,7 +422,7 @@ class ChatStore: ObservableObject {
         if usageListeningDate != Self.localDateFormatter.string(from: Date()) {
             watchTodayUsage(uid: uid)
         }
-        refreshPlanIfNeeded()
+        refreshListenersIfNeeded()
     }
 
     private func watchTodayUsage(uid: String) {
@@ -506,6 +485,24 @@ class ChatStore: ObservableObject {
         attachPlanListener(uid: uid)
     }
 
+    /// Re-attaches any snapshot listener that an error ended: plan, conversation
+    /// list, and the open conversation's messages. Safe to call repeatedly; a
+    /// no-op when signed out or when every listener is healthy.
+    func refreshListenersIfNeeded() {
+        guard let uid = currentUID else { return }
+        refreshPlanIfNeeded()
+        if conversationsListenerFailed {
+            attachConversationsListener(uid: uid)
+        }
+        if let failedConvId = messagesListenerFailedConvId {
+            if currentConversation?.id == failedConvId {
+                attachMessagesListener(uid: uid, convId: failedConvId)
+            } else {
+                messagesListenerFailedConvId = nil
+            }
+        }
+    }
+
     // MARK: - Private helpers
 
     private func ensureConversation(uid: String, firstMessage: String) async -> (Conversation, Bool) {
@@ -547,16 +544,59 @@ class ChatStore: ObservableObject {
         }
     }
 
+    private func attachConversationsListener(uid: String) {
+        conversationsListener?.remove()
+        conversationsGeneration += 1
+        let generation = conversationsGeneration
+        conversationsListenerFailed = false
+        let convosRef = db.collection("users").document(uid).collection("conversations")
+        conversationsListener = convosRef
+            .order(by: "updatedAt", descending: true)
+            .limit(to: maxConversations + 5)  // slack for auto-delete timing
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self, self.currentUID == uid, self.conversationsGeneration == generation else { return }
+                if let error {
+                    // Firestore ends a listener after an error. Keep the last list
+                    // (display only) and record the failure so
+                    // refreshListenersIfNeeded() re-attaches on the next foreground.
+                    print("[ChatStore] Conversations listener error: \(error.localizedDescription)")
+                    self.conversationsListenerFailed = true
+                    return
+                }
+                guard let snapshot else { return }
+                let all = snapshot.documents.compactMap { try? $0.data(as: Conversation.self) }
+                // Pinned first, then by updatedAt desc within each group.
+                self.conversations = all.sorted { a, b in
+                    if a.isPinned != b.isPinned { return a.isPinned && !b.isPinned }
+                    return a.updatedAt > b.updatedAt
+                }
+            }
+    }
+
     private func attachMessagesListener(uid: String, convId: String) {
         messagesListener?.remove()
+        messagesGeneration += 1
+        let generation = messagesGeneration
+        messagesListenerFailedConvId = nil
         let ref = db.collection("users").document(uid)
             .collection("conversations").document(convId)
             .collection("messages")
             .order(by: "createdAt", descending: false)
-        messagesListener = ref.addSnapshotListener { [weak self] snap, _ in
-            guard let self, let snap else { return }
-            guard self.currentConversation?.id == convId else { return }
+        messagesListener = ref.addSnapshotListener { [weak self] snap, error in
+            guard let self, self.currentUID == uid, self.messagesGeneration == generation,
+                  self.currentConversation?.id == convId else { return }
+            if let error {
+                // Firestore ends a listener after an error. Keep the messages on
+                // screen and record which conversation lost its listener so
+                // refreshListenersIfNeeded() re-attaches it — only while that
+                // conversation is still the open one.
+                print("[ChatStore] Messages listener error: \(error.localizedDescription)")
+                self.messagesListenerFailedConvId = convId
+                return
+            }
+            guard let snap else { return }
             let loaded = snap.documents.compactMap { try? $0.data(as: ChatMessage.self) }
+            // Preserve a locally-streaming assistant message not yet persisted.
             let streaming = self.currentMessages.first(where: { $0.isStreaming == true })
             var merged = loaded
             if let streaming, !loaded.contains(where: { $0.id == streaming.id }) {
