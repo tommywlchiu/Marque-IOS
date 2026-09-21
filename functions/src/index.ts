@@ -57,13 +57,13 @@ const APPLE_ROOT_CA_G3_B64 =
 const APPLE_ROOT_CA = Buffer.from(APPLE_ROOT_CA_G3_B64, "base64");
 
 // Firebase App Check enforcement for the cost-bearing callables (askMarque, the
-// three parse* document scanners, suggestServiceReminders). Must stay false
-// until (1) a client build that sends App Check tokens is in users' hands,
-// (2) the app is registered with App Check in the Firebase console, and
-// (3) the function logs show `verifications: { app: "VALID" }`. With it false,
-// tokenless calls are still accepted (logged as app: "MISSING"). Flipping it to
-// true is a deploy and needs the user's explicit approval.
-const ENFORCE_APP_CHECK = false;
+// three parse* document scanners, suggestServiceReminders). Turned on after the
+// console registration and both providers were confirmed working (Simulator debug
+// token and a real device via App Attest both logged verifications.app = "VALID").
+// With it true, a call carrying no valid App Check token is rejected before the
+// handler runs, so a client build without App Check loses these features. Turn it
+// back off (and redeploy) if a legitimate client build is being rejected.
+const ENFORCE_APP_CHECK = true;
 
 // ---------------------------------------------------------------------------
 // Verifier helpers — one per environment, created lazily on cold start.
