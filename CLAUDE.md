@@ -146,6 +146,11 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — `askMarque` and `withScanAllowance` only matched `clientDate` against `\d{4}-\d{2}-\d{2}`, so a modified client could send a new date per call and get unlimited Anthropic calls on a free account (it even accepted `9999-99-99`). The implementer copied the same shape into the new scan code; a QA pass caught it, not the review that shipped `askMarque`.
 - **Detect** — `grep -n "clientDate" functions/src/index.ts` — every use as a Firestore doc ID must go through `assertPlausibleClientDate` first.
 
+### A hand-written Xcode scheme can crash Xcode on open, and `xcodebuild` won't tell you
+- **Rule** — Never hand-write or hand-edit an `.xcscheme` (or anything else Xcode loads when it opens the project) in a location the user's Xcode will read. The StoreKit reference in particular (`StoreKitConfigurationFileReference identifier`) must be a **relative** path; an absolute one aborts Xcode. Have Xcode's scheme editor write it, or try the file first on a scratch copy of the project (`cp -R` to `/tmp`), never in the live checkout.
+- **Why** — A local scheme with an absolute `.storekit` path passed `xcodebuild -list`, but crashed the user's Xcode on every open (five crash reports in three minutes) with `dvt_stringByMakingAbsolutePathWithBasePath:` asserting inside `IDESchemeOptionReference.resolvedReference`. It was invisible while their already-running Xcode session hadn't rescanned, and fatal on the restart.
+- **Detect** — `ls -t ~/Library/Logs/DiagnosticReports | grep '^Xcode'`; an `.ips` whose crashed thread has `IDESchemeOptionReference` is this. Removing the scheme file from `<project>.xcodeproj/xcuserdata/*/xcschemes/` restores the project. Note a user scheme also hides the auto-generated default `Marque-Prototype` scheme from `xcodebuild -list`, breaking the build command above.
+
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.
 - **Why** — Both this file and both agent definitions asserted a `#if canImport(FirebaseCore)` mock-branch pattern for ~4 months after it was removed. Agents were being briefed with a false architecture.
