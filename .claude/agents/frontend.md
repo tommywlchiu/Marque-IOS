@@ -49,7 +49,7 @@ Eleven stores are injected at the root. The ones you'll touch most:
 |---|---|
 | `CarStore` | `cars` array (Firestore-backed, live listener). Not UserDefaults. |
 | `AuthService` | Auth state, current `AppUser`, profile fields |
-| `SubscriptionStore` | `isPro` for paywall/Pro-badge gating |
+| `SubscriptionStore` | `isPro` (the device's StoreKit entitlement) for paywall/Pro-badge gating; `isFamilyShared` when that Pro is not a direct purchase. `ProUpgradeView` shows an "already Pro" state — never the Subscribe screen — when `isPro`, and must not fire `paywall_viewed` then (it is the conversion denominator). A Family Sharing member is Pro locally but capped at free limits by the server, so copy about limits must follow the *server* plan (`ChatStore.serverIsPro`, `ScanAllowanceStore`), not `isPro` |
 | `ExploreStore` | Public cars feed |
 | `FollowStore` / `BlockStore` | Follow state, block state |
 | `NotificationStore` | In-app notification inbox |
