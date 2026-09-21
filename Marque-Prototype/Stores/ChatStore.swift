@@ -437,7 +437,10 @@ class ChatStore: ObservableObject {
         do {
             try assistantRef.setData(from: finalized)
         } catch {
-            // Message stayed in memory; user can copy it. Non-fatal.
+            // setData(from:) without a completion only throws on an encoding
+            // failure (the write itself is queued locally). The message stays in
+            // memory so the user can still read and copy it.
+            print("[ChatStore] Couldn't encode the assistant message for saving: \(error.localizedDescription)")
         }
 
         let convoRef = db.collection("users").document(uid)
@@ -581,9 +584,11 @@ class ChatStore: ObservableObject {
         do {
             try convoRef.setData(from: convo)
         } catch {
-            // Fall through — we still return the in-memory convo so the user
-            // can see their message; persistence errors surface as save
-            // failures below.
+            // setData(from:) without a completion only throws on an encoding
+            // failure (the write itself is queued locally), so a rejected write
+            // is not reported here. Fall through: the in-memory convo still lets
+            // the user see their message.
+            print("[ChatStore] Couldn't encode the new conversation for saving: \(error.localizedDescription)")
         }
         return (convo, true)
     }
