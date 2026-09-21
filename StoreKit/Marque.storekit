@@ -1,0 +1,82 @@
+{
+  "identifier" : "5D6A1F0B",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21500001",
+      "localizations" : [
+
+      ],
+      "name" : "Marque Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "24.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "6740000101",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Marque Pro, billed yearly",
+              "displayName" : "Marque Pro Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "marque.pro.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Marque Pro Annual",
+          "subscriptionGroupID" : "21500001",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : true,
+          "groupNumber" : 2,
+          "internalID" : "6740000102",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Marque Pro, billed monthly",
+              "displayName" : "Marque Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "marque.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Marque Pro Monthly",
+          "subscriptionGroupID" : "21500001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

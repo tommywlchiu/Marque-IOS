@@ -149,6 +149,7 @@
 		A20099 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F421FDE72FA465A7000DBF3C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F48D28383061DC040024F1C7 /* Marque.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = Marque.storekit; path = StoreKit/Marque.storekit; sourceTree = "<group>"; };
 		F497CF0C300B0735001892AE /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		F497CF0D300B0735001892AE /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
 		F497CF10300B0749001892AE /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
@@ -185,6 +186,7 @@
 		A50001 = {
 			isa = PBXGroup;
 			children = (
+				F48D28383061DC040024F1C7 /* Marque.storekit */,
 				A50002 /* Marque-Prototype */,
 				F497CF16301D5D1B001892AE /* Frameworks */,
 				A50005 /* Products */,
@@ -473,6 +475,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		4D6E1D89B9CCDAFA5DDCDA13 /* Upload Crashlytics Symbols */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -482,7 +485,6 @@
 				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
 			);
-			alwaysOutOfDate = 1;
 			name = "Upload Crashlytics Symbols";
 			outputFileListPaths = (
 			);
