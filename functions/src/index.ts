@@ -753,6 +753,49 @@ function assertPlausibleClientDate(clientDate: unknown, now: Date = new Date()):
   return clientDate;
 }
 
+// Cost-bearing callables (askMarque, the three document parsers,
+// suggestServiceReminders) require a verified email so an unverified
+// email/password account cannot call them directly and spend Anthropic money
+// on a fresh daily allowance. The iOS app already keeps unverified users behind
+// VerifyEmailView; this closes the direct-API path.
+//
+// Limitation: this raises the cost of abuse, it does not stop it. Someone with
+// real or disposable mailboxes can still verify many accounts. App Check is
+// the stronger control and is tracked separately.
+//
+// Must run right after the `!request.auth` check and before anything that
+// consumes a slot or reaches Anthropic, so a rejected request costs nothing.
+async function requireVerifiedEmail(
+  auth: NonNullable<CallableRequest<unknown>["auth"]>
+): Promise<void> {
+  const token = auth.token;
+  if (token.email_verified === true) return;
+
+  // Apple and Google verify the identity themselves. Don't gate on the email
+  // claim for them (Apple "Hide My Email" / no-email sign-ins).
+  const provider = token.firebase?.sign_in_provider;
+  if (provider === "google.com" || provider === "apple.com") return;
+
+  // The ID token's email_verified claim only refreshes about hourly, so a user
+  // who verified minutes ago would be wrongly rejected for up to an hour. The
+  // Admin record is authoritative; we only pay for the lookup on tokens that
+  // claim unverified.
+  let recordVerified: boolean;
+  try {
+    const record = await admin.auth().getUser(auth.uid);
+    recordVerified = record.emailVerified === true;
+  } catch {
+    // Fail closed. Log the uid only — never the error object (may carry
+    // account details) and never the email.
+    functions.logger.error("email verification lookup failed", { uid: auth.uid });
+    throw new HttpsError("unavailable", "Couldn't verify your account. Try again.");
+  }
+  if (recordVerified) return;
+
+  functions.logger.warn("unverified email rejected", { uid: auth.uid, provider });
+  throw new HttpsError("permission-denied", "Verify your email address to use this feature.");
+}
+
 const FREE_SCAN_DAILY_CAP = 5;
 const PRO_SCAN_DAILY_CAP = 50;
 
@@ -822,6 +865,7 @@ function withScanAllowance<Req extends { clientDate?: string }, Res extends { er
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Sign in required");
     }
+    await requireVerifiedEmail(request.auth);
     const uid = request.auth.uid;
     const clientDate = assertPlausibleClientDate(request.data?.clientDate);
 
@@ -1558,6 +1602,7 @@ function withSuggestCap(
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Sign in required");
     }
+    await requireVerifiedEmail(request.auth);
     const uid = request.auth.uid;
     const clean = sanitizeSuggestInput(request.data);
     const clientDate = assertPlausibleClientDate(request.data.clientDate);
@@ -1968,6 +2013,7 @@ export const askMarque = onCall(
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Sign in to use Marque.");
     }
+    await requireVerifiedEmail(request.auth);
     const uid = request.auth.uid;
     const data = request.data as AskMarqueRequest | undefined;
 

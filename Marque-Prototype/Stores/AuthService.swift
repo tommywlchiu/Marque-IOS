@@ -232,7 +232,13 @@ class AuthService: NSObject, ObservableObject {
     func reloadEmailVerification() async {
         guard let firebaseUser = Auth.auth().currentUser else { return }
         try? await firebaseUser.reload()
-        isEmailVerified = Auth.auth().currentUser?.isEmailVerified ?? false
+        let verified = Auth.auth().currentUser?.isEmailVerified ?? false
+        if verified {
+            // The ID token's email_verified claim is stale until refreshed; force it so
+            // the next callable carries the new claim (server also falls back to Admin).
+            _ = try? await Auth.auth().currentUser?.getIDTokenResult(forcingRefresh: true)
+        }
+        isEmailVerified = verified
     }
 
     // MARK: - Apple Sign In

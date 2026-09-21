@@ -277,7 +277,7 @@ Not user-facing features. These exist because the document previously assumed th
 
 - **FR-01.1** App must support Sign in with Apple, Google, and Email/Password
 - **FR-01.2** Sign in with Apple must be listed first (App Store requirement when offering any social login)
-- **FR-01.3** Email accounts must verify their address before full access is granted
+- **FR-01.3** Email accounts must verify their address before full access is granted. Also enforced server-side: the AI callables (Assistant, document scans, service suggestions) reject unverified email/password accounts with `permission-denied`
 - **FR-01.4** Firebase Auth token must be refreshed silently; the user should not be prompted to re-authenticate within a 90-day session
 - **FR-01.5** If the same email exists under two providers, the app must offer to link the accounts rather than show an error
 - **FR-01.6** Profile setup (username, photo, bio) must be completed before the main app is accessible; only username is required
