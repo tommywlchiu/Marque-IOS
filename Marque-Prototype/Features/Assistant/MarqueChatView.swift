@@ -205,25 +205,9 @@ struct MarqueChatView: View {
     }
 
     private var composerBar: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            TextField("Ask about your car…", text: $draft, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(1...5)
-                .focused($inputFocused)
-                .disabled(chatStore.isSending || chatStore.isOffline)
-                .submitLabel(.send)
-                .onSubmit(send)
-
-            Button(action: send) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 30))
-                    .foregroundColor(canSend ? .accentColor : .gray)
-            }
-            .disabled(!canSend)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .overlay(alignment: .top) {
+        // The counter is a real row above the input, not an overlay: an overlay with
+        // negative padding drew it on top of the last message bubble.
+        VStack(spacing: 4) {
             // Follows the SERVER's plan (users/{uid}.isPro — what askMarque enforces,
             // FR-08.3), not StoreKit's: a Family Sharing member is Pro locally but
             // capped at the free limit, and a Pro bought on another device is Pro
@@ -232,9 +216,28 @@ struct MarqueChatView: View {
                 Text("\(chatStore.todayMessageCount) / \(ChatStore.freeDailyCap) today")
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                    .padding(.top, -14)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField("Ask about your car…", text: $draft, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .lineLimit(1...5)
+                    .focused($inputFocused)
+                    .disabled(chatStore.isSending || chatStore.isOffline)
+                    .submitLabel(.send)
+                    .onSubmit(send)
+
+                Button(action: send) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(canSend ? .accentColor : .gray)
+                }
+                .disabled(!canSend)
             }
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     private var capReachedBar: some View {
@@ -306,6 +309,30 @@ private struct ChatBubble: View {
         }
     }
 
+    /// The assistant answers in light Markdown (**bold**, `code`, "- " lists). Render
+    /// the inline styling instead of showing the raw markers. Inline-only parsing
+    /// keeps the reply's line breaks; list dashes become bullets and "#" headings
+    /// become bold, because Text can't lay out block-level Markdown. Model-written
+    /// links lose their tap target — a tappable link inside an AI reply is a
+    /// phishing risk, and the visible text is still shown. Assistant messages only:
+    /// a user's own typed asterisks must not be interpreted.
+    private static func rendered(_ text: String) -> AttributedString {
+        var prepared = text.replacingOccurrences(
+            of: "(?m)^([ \\t]*)[-*] ", with: "$1• ", options: .regularExpression)
+        prepared = prepared.replacingOccurrences(
+            of: "(?m)^#{1,6}[ \\t]+(.+)$", with: "**$1**", options: .regularExpression)
+        let options = AttributedString.MarkdownParsingOptions(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace,
+            failurePolicy: .returnPartiallyParsedIfPossible
+        )
+        guard var attributed = try? AttributedString(markdown: prepared, options: options) else {
+            return AttributedString(text)
+        }
+        let linkRanges = attributed.runs.compactMap { $0.link != nil ? $0.range : nil }
+        for range in linkRanges { attributed[range].link = nil }
+        return attributed
+    }
+
     private var bubble: some View {
         Text(message.content)
             .font(.body)
@@ -327,7 +354,7 @@ private struct ChatBubble: View {
                 .background(Color(.systemGray6))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             } else {
-                Text(message.content)
+                Text(Self.rendered(message.content))
                     .font(.body)
                     .foregroundColor(.primary)
                     .padding(.horizontal, 12).padding(.vertical, 8)
