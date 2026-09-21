@@ -502,7 +502,19 @@ class ChatStore: ObservableObject {
             }
             let count = (snap?.data()?["count"] as? Int) ?? 0
             self.todayMessageCount = max(count, 0)
+            self.clearStaleCapError()
         }
+    }
+
+    /// A cap-reached error is sticky (it swaps the composer for the cap bar), so
+    /// clear it once the plan and count say the user is under today's cap again:
+    /// the plan flipped to Pro after they upgraded from the bar, or the day rolled
+    /// over and the count reset. Without this the bar — and the hidden composer —
+    /// outlives the condition that raised it, and a Pro user who just paid is told
+    /// they've used all 500 messages. Does nothing while the plan is unknown.
+    private func clearStaleCapError() {
+        guard sendError?.isCap == true, let cap = dailyCap, todayMessageCount < cap else { return }
+        sendError = nil
     }
 
     /// Follows `users/{uid}.isPro` (server-written only, so the client cannot forge
@@ -531,6 +543,7 @@ class ChatStore: ObservableObject {
                 // yet — asserting "free" then would mislabel a Pro user offline.
                 if !snap.exists && snap.metadata.isFromCache { return }
                 self.serverIsPro = snap.data()?["isPro"] as? Bool == true
+                self.clearStaleCapError()
             }
     }
 
