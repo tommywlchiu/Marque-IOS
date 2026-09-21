@@ -7,6 +7,13 @@ import FirebaseFunctions
 class SubscriptionStore: ObservableObject {
     @Published private(set) var products: [Product] = []
     @Published private(set) var isPro: Bool = false
+    // True when this device has a Pro entitlement but none of them is a direct
+    // purchase by the signed-in Apple ID — i.e. Pro arrived through Family
+    // Sharing. Such a member is Pro locally, but the server withholds `isPro`
+    // (entitlement-hijack guard in syncEntitlement), so their Assistant and scan
+    // limits stay at the free tier until they subscribe themselves. The paywall
+    // uses this to explain that instead of re-selling a plan they half-have.
+    @Published private(set) var isFamilyShared: Bool = false
     @Published private(set) var purchaseError: String?
     @Published private(set) var isRestoring: Bool = false
     // Set once load() has actually queried StoreKit for this session's
@@ -93,6 +100,7 @@ class SubscriptionStore: ObservableObject {
 
     func reset() {
         isPro = false
+        isFamilyShared = false
         purchaseError = nil
         hasLoaded = false
         // Must clear: the token is per-account, and this store outlives sign-out.
@@ -183,6 +191,7 @@ class SubscriptionStore: ObservableObject {
         // iterating it twice starts two separate sequences, so both answers
         // come out of this one loop.
         var hasProEntitlement = false
+        var hasDirectPurchase = false
         // The JWS lives on the VerificationResult, not on Transaction itself,
         // so capture both: the ID de-duplicates the server call, the JWS is what
         // the server re-verifies.
@@ -195,6 +204,7 @@ class SubscriptionStore: ObservableObject {
 
             hasProEntitlement = true
             if transaction.ownershipType == .purchased {
+                hasDirectPurchase = true
                 syncCandidate = (transaction.id, result.jwsRepresentation)
                 // Both questions are now settled — nothing later in the
                 // sequence can change either answer.
@@ -202,6 +212,7 @@ class SubscriptionStore: ObservableObject {
             }
         }
         isPro = hasProEntitlement
+        isFamilyShared = hasProEntitlement && !hasDirectPurchase
 
         if let syncCandidate {
             await syncEntitlement(transactionID: syncCandidate.id,

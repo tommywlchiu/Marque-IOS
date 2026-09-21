@@ -17,12 +17,17 @@ struct ProUpgradeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
-                    heroSection
-                    planPicker
-                    selectedPlanCard
-                    featureList
-                    ctaButton
-                    legalFooter
+                    if subscriptionStore.isPro {
+                        alreadyProSection
+                        proLegalLinks
+                    } else {
+                        heroSection
+                        planPicker
+                        selectedPlanCard
+                        featureList
+                        ctaButton
+                        legalFooter
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
@@ -32,14 +37,22 @@ struct ProUpgradeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Not Now") { dismiss() }
+                    Button(subscriptionStore.isPro ? "Done" : "Not Now") { dismiss() }
                         .foregroundColor(.secondary)
                 }
             }
             .task { await subscriptionStore.load() }
             // Fires on appearance, not on the subscribe tap: the metric is the
-            // conversion denominator (how many saw this gate).
-            .onAppear { AnalyticsService.paywallViewed(trigger: trigger) }
+            // conversion denominator (how many saw this gate). Skipped when the
+            // user is already Pro — they're shown the "already Pro" state, not the
+            // gate, and counting them would inflate the denominator. isPro is read
+            // at appearance: a not-yet-resolved entitlement (false for an instant
+            // after launch) still counts, and the dismiss-on-flip below closes it.
+            .onAppear {
+                if !subscriptionStore.isPro {
+                    AnalyticsService.paywallViewed(trigger: trigger)
+                }
+            }
             .onChange(of: subscriptionStore.isPro) { _, isPro in
                 if isPro { dismiss() }
             }
@@ -70,6 +83,43 @@ struct ProUpgradeView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
+            }
+        }
+    }
+
+    // Shown instead of the paywall when this device is already Pro. Family
+    // Sharing members are Pro locally, but the server withholds users/{uid}.isPro
+    // for them, so their Assistant/scan limits stay at the free tier — the copy
+    // says so rather than re-selling them a plan.
+    private var alreadyProSection: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.12))
+                    .frame(width: 100, height: 100)
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 44))
+                    .foregroundColor(.accentColor)
+            }
+
+            VStack(spacing: 6) {
+                Text("You're on Marque Pro")
+                    .font(.title2).fontWeight(.bold)
+                Text(subscriptionStore.isFamilyShared
+                     ? "You have Marque Pro through Family Sharing, so Pro features are unlocked on this device. The higher daily Assistant and document-scan limits are tied to a subscription on your own Apple ID."
+                     : "Marque Pro is active on this device. If your daily limits still look like the free plan, tap Restore Purchases to re-sync your account.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            if !subscriptionStore.isFamilyShared {
+                Button("Restore Purchases") {
+                    Task { await subscriptionStore.restore() }
+                }
+                .buttonStyle(.bordered)
+                .disabled(subscriptionStore.isRestoring)
+                .padding(.top, 6)
             }
         }
     }
@@ -189,6 +239,17 @@ struct ProUpgradeView: View {
             .font(.caption2)
             .foregroundColor(.accentColor)
         }
+    }
+
+    // The already-Pro state has no renewal line to show, but the policy links
+    // must stay reachable from every paywall-adjacent screen.
+    private var proLegalLinks: some View {
+        HStack(spacing: 16) {
+            Link("Privacy Policy", destination: AppLinks.privacyPolicy)
+            Link("Terms", destination: AppLinks.termsOfService)
+        }
+        .font(.caption2)
+        .foregroundColor(.accentColor)
     }
 }
 

@@ -254,6 +254,22 @@ struct MarqueChatView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            } else if subscriptionStore.isPro {
+                // Pro on this device but the server plan isn't Pro: Family Sharing
+                // (the server withholds the flag) or a sync that hasn't landed.
+                // "Upgrade" would be wrong; the paywall sheet explains this state.
+                Text("Your account is on the free limit of \(ChatStore.freeDailyCap) messages per day, even though this device has Pro. Try again tomorrow.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button {
+                    showingPaywall = true
+                } label: {
+                    Text("About your Pro plan")
+                        .font(.subheadline).fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
             } else {
                 // Free — or plan not yet known, which is treated as free (the server
                 // just refused the message, so the free copy is the safe default).
