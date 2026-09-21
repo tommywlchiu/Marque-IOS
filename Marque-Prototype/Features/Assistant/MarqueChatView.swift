@@ -318,7 +318,14 @@ private struct ChatBubble: View {
     /// phishing risk, and the visible text is still shown. Assistant messages only:
     /// a user's own typed asterisks must not be interpreted.
     private static func rendered(_ text: String) -> AttributedString {
+        // A Text can't draw a horizontal rule, and left alone "---" shows as literal
+        // dashes. The blank lines around it already separate the sections, so drop
+        // the line (before the bullet rule, which "- - -" would otherwise match).
         var prepared = text.replacingOccurrences(
+            of: "(?m)^[ \\t]*([-*_])([ \\t]*\\1){2,}[ \\t]*$", with: "", options: .regularExpression)
+        prepared = prepared.replacingOccurrences(
+            of: "\\n{3,}", with: "\n\n", options: .regularExpression)
+        prepared = prepared.replacingOccurrences(
             of: "(?m)^([ \\t]*)[-*] ", with: "$1• ", options: .regularExpression)
         prepared = prepared.replacingOccurrences(
             of: "(?m)^#{1,6}[ \\t]+(.+)$", with: "**$1**", options: .regularExpression)
