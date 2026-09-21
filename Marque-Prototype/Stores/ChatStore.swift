@@ -26,6 +26,11 @@ class ChatStore: ObservableObject {
     @Published var todayMessageCount: Int = 0
     @Published var isOffline: Bool = false
 
+    /// User-facing message for a failed delete or pin action the user asked for
+    /// (or the pin limit). `nil` normally; the view shows it and calls
+    /// `clearConversationActionError()`. Never set by automatic cap enforcement.
+    @Published var conversationActionError: String?
+
     /// Server-side plan (`users/{uid}.isPro`, the value `getIsPro` reads in
     /// `askMarque`). `nil` means "not yet known" — before the first snapshot,
     /// after a listener error, and after `stopListening()`. Never read StoreKit
@@ -209,6 +214,7 @@ class ChatStore: ObservableObject {
         currentConversation = nil
         currentMessages = []
         todayMessageCount = 0
+        conversationActionError = nil
     }
 
     // MARK: - Conversation management
@@ -237,34 +243,76 @@ class ChatStore: ObservableObject {
         attachMessagesListener(uid: uid, convId: convId)
     }
 
-    func deleteConversation(_ conversation: Conversation) async {
-        guard let uid = currentUID, let convId = conversation.id else { return }
-        // Delete messages subcollection first (batched), then the parent doc.
-        let messagesRef = db.collection("users").document(uid)
-            .collection("conversations").document(convId).collection("messages")
-        do {
-            let snap = try await messagesRef.limit(to: 500).getDocuments()
-            let batch = db.batch()
-            for doc in snap.documents { batch.deleteDocument(doc.reference) }
-            batch.deleteDocument(db.collection("users").document(uid)
-                .collection("conversations").document(convId))
-            try await batch.commit()
-            if currentConversation?.id == convId {
-                newConversation()
-            }
-        } catch {
-            // Non-fatal — Firestore listener will reflect the state next tick.
+    func clearConversationActionError() {
+        conversationActionError = nil
+    }
+
+    /// User-initiated delete. Returns true only if the messages and the parent doc
+    /// are both gone; on failure sets `conversationActionError`.
+    @discardableResult
+    func deleteConversation(_ conversation: Conversation) async -> Bool {
+        conversationActionError = nil
+        let deleted = await removeConversation(conversation)
+        if !deleted {
+            conversationActionError = "Couldn't delete that conversation. Try again."
         }
+        return deleted
+    }
+
+    /// Shared by the user-initiated delete and automatic cap enforcement; reports
+    /// failure by return value only, so the caller decides whether to surface it.
+    private func removeConversation(_ conversation: Conversation) async -> Bool {
+        guard let uid = currentUID, let convId = conversation.id else { return false }
+        // Firestore doesn't cascade: delete every message (a page per batch),
+        // then the parent doc LAST. A failure part-way leaves the parent in place,
+        // still listed and retryable, instead of orphaning its messages.
+        let convoRef = db.collection("users").document(uid)
+            .collection("conversations").document(convId)
+        let messagesRef = convoRef.collection("messages")
+        do {
+            var previousFirstId: String?
+            while true {
+                let snap = try await messagesRef.limit(to: 500).getDocuments()
+                guard let firstId = snap.documents.first?.documentID else { break }
+                // A commit that succeeded but left the same page in place would
+                // spin forever; treat it as a failure.
+                guard firstId != previousFirstId else {
+                    print("[ChatStore] Delete conversation made no progress")
+                    return false
+                }
+                previousFirstId = firstId
+                let batch = db.batch()
+                for doc in snap.documents { batch.deleteDocument(doc.reference) }
+                try await batch.commit()
+            }
+            try await convoRef.delete()
+        } catch {
+            print("[ChatStore] Delete conversation failed: \(error.localizedDescription)")
+            return false
+        }
+        if currentConversation?.id == convId {
+            newConversation()
+        }
+        return true
     }
 
     func togglePin(_ conversation: Conversation) async {
         guard let uid = currentUID, let convId = conversation.id else { return }
+        conversationActionError = nil
         let currentlyPinnedCount = conversations.filter { $0.isPinned }.count
         let newValue = !conversation.isPinned
-        if newValue && currentlyPinnedCount >= maxPinned { return }
+        if newValue && currentlyPinnedCount >= maxPinned {
+            conversationActionError = "You can pin up to \(maxPinned) conversations."
+            return
+        }
         let ref = db.collection("users").document(uid)
             .collection("conversations").document(convId)
-        try? await ref.updateData(["isPinned": newValue])
+        do {
+            try await ref.updateData(["isPinned": newValue])
+        } catch {
+            print("[ChatStore] Pin update failed: \(error.localizedDescription)")
+            conversationActionError = "Couldn't update the pin. Try again."
+        }
     }
 
     // MARK: - Sending
@@ -394,10 +442,15 @@ class ChatStore: ObservableObject {
 
         let convoRef = db.collection("users").document(uid)
             .collection("conversations").document(convId)
-        try? await convoRef.updateData([
-            "updatedAt": FieldValue.serverTimestamp(),
-            "messageCount": FieldValue.increment(Int64(2)),
-        ])
+        do {
+            try await convoRef.updateData([
+                "updatedAt": FieldValue.serverTimestamp(),
+                "messageCount": FieldValue.increment(Int64(2)),
+            ])
+        } catch {
+            // Bookkeeping only — the message already sent. Not surfaced to the user.
+            print("[ChatStore] Conversation metadata update failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Streaming helpers
@@ -540,7 +593,10 @@ class ChatStore: ObservableObject {
         guard unpinned.count >= maxConversations else { return }
         let sorted = unpinned.sorted { $0.updatedAt < $1.updatedAt }
         if let oldest = sorted.first {
-            await deleteConversation(oldest)
+            // Automatic, not user-requested: log a failure, never surface it.
+            if !(await removeConversation(oldest)) {
+                print("[ChatStore] Couldn't auto-delete oldest conversation (FR-10.19)")
+            }
         }
     }
 

@@ -408,6 +408,15 @@ private struct ConversationHistoryView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .alert(
+                chatStore.conversationActionError ?? "",
+                isPresented: Binding(
+                    get: { chatStore.conversationActionError != nil },
+                    set: { if !$0 { chatStore.clearConversationActionError() } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            }
         }
     }
 
