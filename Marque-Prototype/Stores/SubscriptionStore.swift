@@ -15,6 +15,13 @@ class SubscriptionStore: ObservableObject {
     // uses this to explain that instead of re-selling a plan they half-have.
     @Published private(set) var isFamilyShared: Bool = false
     @Published private(set) var purchaseError: String?
+    // Separate from purchaseError on purpose: ProUpgradeView's `.task { load() }`
+    // runs unconditionally, including on the already-Pro screen, and a failed
+    // product fetch there overwrites purchaseError with "Subscriptions aren't
+    // available right now" — a message about buying, not restoring. Reusing it
+    // for a failed restore() would flash that unrelated text (or silently say
+    // nothing) to a Pro user who never tried to subscribe.
+    @Published private(set) var restoreError: String?
     @Published private(set) var isRestoring: Bool = false
     // Set once load() has actually queried StoreKit for this session's
     // entitlements. Marque_PrototypeApp gates authService.setProStatus() on it,
@@ -102,6 +109,7 @@ class SubscriptionStore: ObservableObject {
         isPro = false
         isFamilyShared = false
         purchaseError = nil
+        restoreError = nil
         hasLoaded = false
         // Must clear: the token is per-account, and this store outlives sign-out.
         cachedAppAccountToken = nil
@@ -113,6 +121,7 @@ class SubscriptionStore: ObservableObject {
     // MARK: - Purchase
 
     func clearError() { purchaseError = nil }
+    func clearRestoreError() { restoreError = nil }
 
     func purchase(_ product: Product) async {
         purchaseError = nil
@@ -158,6 +167,7 @@ class SubscriptionStore: ObservableObject {
     // MARK: - Restore
 
     func restore() async {
+        restoreError = nil
         isRestoring = true
         defer { isRestoring = false }
         do {
@@ -167,7 +177,7 @@ class SubscriptionStore: ObservableObject {
             lastSyncedTransactionID = nil
             await refreshProStatus()
         } catch {
-            purchaseError = "Restore failed. Please try again."
+            restoreError = "Restore failed. Please try again."
         }
     }
 

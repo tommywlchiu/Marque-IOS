@@ -133,6 +133,13 @@ struct ProUpgradeView: View {
                     .multilineTextAlignment(.center)
             }
 
+            if let error = subscriptionStore.restoreError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
+
             Button("Restore Purchases") {
                 Task { await subscriptionStore.restore() }
             }
@@ -304,6 +311,15 @@ struct ProUpgradeView: View {
                 .font(.caption2)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+
+            // Its own line, separate from ctaButton's purchaseError above: a
+            // failed Restore here is a distinct error from a failed Subscribe.
+            if let error = subscriptionStore.restoreError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+            }
 
             HStack(spacing: 16) {
                 Button("Restore Purchases") {
