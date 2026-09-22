@@ -17,9 +17,23 @@ struct ProUpgradeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
-                    if subscriptionStore.isPro {
+                    if subscriptionStore.isPro && !subscriptionStore.isFamilyShared {
                         alreadyProSection
                         proLegalLinks
+                    } else if subscriptionStore.isFamilyShared {
+                        // Pro via Family Sharing: unlimited cars and the badge are
+                        // already theirs (free to serve), but the server withholds
+                        // isPro for a family entitlement, so the metered features —
+                        // FR-08's actual conversion driver — stay at the free tier.
+                        // Still offer the same purchase flow as a non-Pro user: a
+                        // direct purchase here is what unlocks it (see
+                        // familySharedHero's comment on why this is safe to sync).
+                        familySharedHero
+                        planPicker
+                        selectedPlanCard
+                        familySharedFeatureList
+                        ctaButton
+                        legalFooter
                     } else {
                         heroSection
                         planPicker
@@ -37,24 +51,34 @@ struct ProUpgradeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(subscriptionStore.isPro ? "Done" : "Not Now") { dismiss() }
+                    // "Done" only for a fully-resolved Pro user with nothing left to
+                    // do here; a Family Sharing member still has a live CTA, so they
+                    // get "Not Now" like a non-Pro user.
+                    Button(subscriptionStore.isPro && !subscriptionStore.isFamilyShared ? "Done" : "Not Now") { dismiss() }
                         .foregroundColor(.secondary)
                 }
             }
             .task { await subscriptionStore.load() }
             // Fires on appearance, not on the subscribe tap: the metric is the
-            // conversion denominator (how many saw this gate). Skipped when the
-            // user is already Pro — they're shown the "already Pro" state, not the
-            // gate, and counting them would inflate the denominator. isPro is read
+            // conversion denominator (how many saw this gate). Skipped only when
+            // fully already-Pro (nothing to convert) — a Family Sharing member
+            // still sees a real purchase CTA here, so they count. isPro is read
             // at appearance: a not-yet-resolved entitlement (false for an instant
             // after launch) still counts, and the dismiss-on-flip below closes it.
             .onAppear {
-                if !subscriptionStore.isPro {
+                if !subscriptionStore.isPro || subscriptionStore.isFamilyShared {
                     AnalyticsService.paywallViewed(trigger: trigger)
                 }
             }
             .onChange(of: subscriptionStore.isPro) { _, isPro in
                 if isPro { dismiss() }
+            }
+            // A Family Sharing member who then buys their own subscription stays
+            // isPro == true throughout, so the onChange above never fires for them.
+            // isFamilyShared flipping true -> false is the actual "just converted"
+            // signal (refreshProStatus sets it false once a direct purchase exists).
+            .onChange(of: subscriptionStore.isFamilyShared) { wasFamilyShared, isFamilyShared in
+                if wasFamilyShared && !isFamilyShared { dismiss() }
             }
         }
     }
@@ -87,10 +111,8 @@ struct ProUpgradeView: View {
         }
     }
 
-    // Shown instead of the paywall when this device is already Pro. Family
-    // Sharing members are Pro locally, but the server withholds users/{uid}.isPro
-    // for them, so their Assistant/scan limits stay at the free tier — the copy
-    // says so rather than re-selling them a plan.
+    // Shown instead of the paywall when this device is Pro via a DIRECT
+    // purchase (never reached for Family Sharing — see familySharedHero).
     private var alreadyProSection: some View {
         VStack(spacing: 14) {
             ZStack {
@@ -105,21 +127,45 @@ struct ProUpgradeView: View {
             VStack(spacing: 6) {
                 Text("You're on Marque Pro")
                     .font(.title2).fontWeight(.bold)
-                Text(subscriptionStore.isFamilyShared
-                     ? "You have Marque Pro through Family Sharing, so Pro features are unlocked on this device. The higher daily Assistant and document-scan limits are tied to a subscription on your own Apple ID."
-                     : "Marque Pro is active on this device. If your daily limits still look like the free plan, tap Restore Purchases to re-sync your account.")
+                Text("Marque Pro is active on this device. If your daily limits still look like the free plan, tap Restore Purchases to re-sync your account.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
 
-            if !subscriptionStore.isFamilyShared {
-                Button("Restore Purchases") {
-                    Task { await subscriptionStore.restore() }
-                }
-                .buttonStyle(.bordered)
-                .disabled(subscriptionStore.isRestoring)
-                .padding(.top, 6)
+            Button("Restore Purchases") {
+                Task { await subscriptionStore.restore() }
+            }
+            .buttonStyle(.bordered)
+            .disabled(subscriptionStore.isRestoring)
+            .padding(.top, 6)
+        }
+    }
+
+    // Shown to a Family Sharing member instead of alreadyProSection. Their
+    // Transaction.currentEntitlements already includes a FAMILY_SHARED Pro
+    // entry, but purchasing here creates a PURCHASED one; SubscriptionStore.
+    // refreshProStatus() prefers a PURCHASED transaction when picking what to
+    // sync (see its `hasDirectPurchase` / `syncCandidate` logic), so this needs
+    // no store changes — the existing sync already does the right thing.
+    private var familySharedHero: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.12))
+                    .frame(width: 100, height: 100)
+                Image(systemName: "sparkles")
+                    .font(.system(size: 44))
+                    .foregroundColor(.accentColor)
+            }
+
+            VStack(spacing: 6) {
+                Text("Get More From Marque Assistant")
+                    .font(.title2).fontWeight(.bold)
+                Text("You already have the Pro badge and unlimited cars through Family Sharing. Subscribing on your own Apple ID adds 500 Assistant messages and \(ScanAllowanceStore.proDailyCap) document scans a day.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
             }
         }
     }
@@ -174,6 +220,38 @@ struct ProUpgradeView: View {
                 ("doc.text.viewfinder",               "Document Scans",   "\(ScanAllowanceStore.proDailyCap) scans a day, up from \(ScanAllowanceStore.freeDailyCap) free"),
                 ("infinity",                          "Unlimited Cars",   "Free plan is limited to 3 vehicles"),
                 ("checkmark.seal.fill",               "Pro Badge",        "Shown next to your name in Garage and Settings"),
+            ]
+
+            ForEach(features, id: \.title) { feat in
+                HStack(alignment: .top, spacing: 14) {
+                    Image(systemName: feat.icon)
+                        .font(.body)
+                        .foregroundColor(.accentColor)
+                        .frame(width: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(feat.title).font(.subheadline).fontWeight(.semibold)
+                        Text(feat.subtitle).font(.caption).foregroundColor(.secondary)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    // FR-08.7 applies here too, in the other direction: a Family Sharing member
+    // already has Unlimited Cars and the Pro Badge, so — unlike featureList —
+    // this must NOT list them; doing so would advertise a benefit they already
+    // get for free as a reason to pay, the exact mistake FR-08.7 forbids.
+    private var familySharedFeatureList: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("What subscribing personally adds")
+                .font(.headline)
+
+            let features: [(icon: String, title: String, subtitle: String)] = [
+                ("bubble.left.and.bubble.right.fill", "Marque Assistant", "500 messages a day, up from 10 free"),
+                ("doc.text.viewfinder",               "Document Scans",   "\(ScanAllowanceStore.proDailyCap) scans a day, up from \(ScanAllowanceStore.freeDailyCap) free"),
             ]
 
             ForEach(features, id: \.title) { feat in
