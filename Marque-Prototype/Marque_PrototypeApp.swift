@@ -133,6 +133,18 @@ struct Marque_PrototypeApp: App {
                     guard subscriptionStore.hasLoaded else { return }
                     authService.setProStatus(newValue)
                 }
+                // load() sets isPro (a @Published setter fires synchronously) before
+                // its `defer { hasLoaded = true }` runs, so a device already
+                // entitled at launch — a direct purchase StoreKit already knows
+                // about, or Family Sharing — flips isPro to true while hasLoaded is
+                // still false. The guard above then drops that flip, and nothing
+                // else re-fires it: isPro doesn't change again this session, so
+                // AppUser.isProMember (the Garage/Settings PRO badge) never gets
+                // set, even though subscriptionStore.isPro is correctly true
+                // everywhere else. Catch it up once loading actually finishes.
+                .onChange(of: subscriptionStore.hasLoaded) { _, hasLoaded in
+                    if hasLoaded { authService.setProStatus(subscriptionStore.isPro) }
+                }
         }
     }
 }
