@@ -321,7 +321,21 @@ struct DocumentScanService {
     }
 
     private static func parseISODate(_ s: String) -> Date? {
-        s.isEmpty ? nil : isoDateFormatter.date(from: s)
+        guard !s.isEmpty, let utcMidnight = isoDateFormatter.date(from: s) else { return nil }
+        // isoDateFormatter (.withFullDate, no time/zone in the string) parses
+        // "yyyy-MM-dd" as midnight UTC. Every other date in the app — DatePicker
+        // input, NotificationManager's Calendar.current reminder math, and the
+        // .formatted() calls that display these fields — operates in the
+        // device's LOCAL calendar. A UTC-midnight Date, read back through any of
+        // those, lands on the previous calendar day for anyone west of UTC
+        // (nearly all US users, which this app is built for): a card that reads
+        // "expires 3/15" showed as 3/14, and a 30-day-before reminder would fire
+        // a day early too. Re-anchor to local midnight for the same
+        // year/month/day the string named, rather than the same instant.
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let ymd = utc.dateComponents([.year, .month, .day], from: utcMidnight)
+        return Calendar.current.date(from: ymd)
     }
 }
 

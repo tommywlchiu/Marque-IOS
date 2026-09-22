@@ -55,6 +55,19 @@ struct AIServiceSuggestionService {
         return df
     }()
 
+    // Mirrors DocumentScanService.parseISODate: isoDateFormatter (.withFullDate,
+    // no time/zone in the string) parses "yyyy-MM-dd" as midnight UTC, but this
+    // Date is later read through Calendar.current (display, reminder math), so a
+    // UTC-midnight instant lands on the previous local calendar day for anyone
+    // west of UTC. Re-anchor to local midnight for the same year/month/day.
+    private static func parseISODate(_ s: String) -> Date? {
+        guard !s.isEmpty, let utcMidnight = isoDateFormatter.date(from: s) else { return nil }
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let ymd = utc.dateComponents([.year, .month, .day], from: utcMidnight)
+        return Calendar.current.date(from: ymd)
+    }
+
     func suggest(for car: Car) async throws -> [AIServiceSuggestion] {
         let carPayload: [String: Any] = [
             "make": car.make,
@@ -79,7 +92,13 @@ struct AIServiceSuggestionService {
             .map { record in
                 var dict: [String: Any] = [
                     "serviceType": record.serviceType,
-                    "date": Self.isoDateFormatter.string(from: record.date),
+                    // clientDateFormatter, not isoDateFormatter: the latter formats
+                    // in UTC, so a record's local-time Date could serialize to the
+                    // wrong calendar day near midnight, depending on the device's
+                    // UTC offset and time of day. clientDateFormatter is already
+                    // built local-timezone-aware (see clientDate below) — reuse it
+                    // rather than invent a second, inconsistent date encoding.
+                    "date": Self.clientDateFormatter.string(from: record.date),
                 ]
                 if !record.mileage.isEmpty { dict["mileage"] = record.mileage }
                 return dict
@@ -90,7 +109,7 @@ struct AIServiceSuggestionService {
             .map { reminder in
                 var dict: [String: Any] = ["serviceType": reminder.serviceType]
                 if let dueDate = reminder.dueDate {
-                    dict["dueDate"] = Self.isoDateFormatter.string(from: dueDate)
+                    dict["dueDate"] = Self.clientDateFormatter.string(from: dueDate)
                 }
                 if let dueMileage = reminder.dueMileage {
                     dict["dueMileage"] = dueMileage
@@ -129,7 +148,7 @@ struct AIServiceSuggestionService {
             else { return nil }
 
             let dueDateString = (item["dueDate"] as? String) ?? ""
-            let dueDate = dueDateString.isEmpty ? nil : Self.isoDateFormatter.date(from: dueDateString)
+            let dueDate = Self.parseISODate(dueDateString)
             let dueMileage = item["dueMileage"] as? Int
 
             return AIServiceSuggestion(
