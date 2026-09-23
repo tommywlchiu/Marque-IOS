@@ -47,6 +47,7 @@
 		A10040 /* AppNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20040 /* AppNotification.swift */; };
 		A10043 /* NotificationsInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20043 /* NotificationsInboxView.swift */; };
 		A10044 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A20044 /* GoogleService-Info.plist */; };
+		F5B1000100000000B1000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F5B1000200000000B1000002 /* PrivacyInfo.xcprivacy */; };
 		A10055 /* CarPhotoImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20055 /* CarPhotoImage.swift */; };
 		A10056 /* ProfileSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20056 /* ProfileSetupView.swift */; };
 		A10057 /* PublicCar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20057 /* PublicCar.swift */; };
@@ -130,6 +131,7 @@
 		A20040 /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
 		A20043 /* NotificationsInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsInboxView.swift; sourceTree = "<group>"; };
 		A20044 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		F5B1000200000000B1000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A20045 /* Marque-Prototype.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Marque-Prototype.entitlements"; sourceTree = "<group>"; };
 		A20055 /* CarPhotoImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPhotoImage.swift; sourceTree = "<group>"; };
 		A20056 /* ProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupView.swift; sourceTree = "<group>"; };
@@ -209,6 +211,7 @@
 				A50004 /* Views */,
 				A20008 /* Assets.xcassets */,
 				A20044 /* GoogleService-Info.plist */,
+				F5B1000200000000B1000002 /* PrivacyInfo.xcprivacy */,
 				A20045 /* Marque-Prototype.entitlements */,
 			);
 			path = "Marque-Prototype";
@@ -470,6 +473,7 @@
 			files = (
 				A10008 /* Assets.xcassets in Resources */,
 				A10044 /* GoogleService-Info.plist in Resources */,
+				F5B1000100000000B1000001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -495,7 +499,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# FR-11.8 — only Release builds (TestFlight/App Store archives) upload dSYMs.\n# Debug builds, including the xcodebuild verification command in CLAUDE.md,\n# must never make this network call.\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Crashlytics symbol upload for ${CONFIGURATION} configuration.\"\n  exit 0\nfi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+			shellScript = "# FR-11.8 — only Release builds (TestFlight/App Store archives) upload dSYMs.\n# Debug builds, including the xcodebuild verification command in CLAUDE.md,\n# must never make this network call.\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"Skipping Crashlytics symbol upload for ${CONFIGURATION} configuration.\"\n  exit 0\nfi\n# Known unresolved firebase-ios-sdk bug (archive-only, not build/run):\n# https://github.com/firebase/firebase-ios-sdk/issues/11836 — the underlying\n# tool can print \"error: Could not get GOOGLE_APP_ID...\" during an actual\n# archive even though GoogleService-Info.plist is correctly bundled. Xcode\n# fails the whole archive on any \"error:\"-prefixed line in a Run Script\n# phase's output, regardless of the script's own exit code — so the fix has\n# to keep that raw text out of the build log, not just zero the exit code.\n# Symbol upload only affects crash-report readability, not the app itself,\n# so redirect the tool's own output to a log file and emit only our own\n# note on failure.\nCRASHLYTICS_LOG=\"${TEMP_DIR}/crashlytics-upload.log\"\nif ! \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\" > \"$CRASHLYTICS_LOG\" 2>&1; then\n  echo \"note: Crashlytics symbol upload failed — continuing archive without it. Log: $CRASHLYTICS_LOG\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
