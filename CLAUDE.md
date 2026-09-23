@@ -96,10 +96,10 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — `npm audit fix` cleared 1 of 12 CVEs. Overrides on `uuid` and `qs` cleared the remaining 11 to zero.
 - **Detect** — `cd functions && npm audit` after any dependency change.
 
-### npm's suggested fix version can be wrong
-- **Rule** — Before committing to a major upgrade that audit recommends, install the proposed version in a scratch dir and re-run `npm audit` to confirm it actually clears the CVE.
-- **Why** — audit recommended `firebase-admin@14.3.0` for a `uuid` CVE; 14.3.0 pins the same vulnerable `@google-cloud/storage`, so the upgrade would have cleared nothing and added a peer-dep conflict with `firebase-functions@6`.
-- **Detect** — `mkdir /tmp/scratch && cd /tmp/scratch && npm i <pkg>@<version> && npm audit`
+### Xcode fails a build on the literal text `error:` in a Run Script phase, independent of its exit code
+- **Rule** — Xcode scans a Run Script build phase's raw stdout/stderr for a line starting with `error:` and fails the whole build/archive on sight of it, even if the phase's own process exits `0`. Making a flaky script "non-fatal" needs two things, not one: zero the exit code (`cmd || true`) *and* keep the underlying tool's own `error:`-prefixed output from ever reaching the log — redirect it to a file and emit your own `note:`/`warning:`-prefixed line instead. Fixing only the exit code still fails the build; Xcode's own log even says so ("emitted errors but did not return a nonzero exit code to indicate failure") while still marking it failed.
+- **Why** — The Crashlytics symbol-upload script hits an open, unresolved `firebase-ios-sdk` bug on every Release archive (`Could not get GOOGLE_APP_ID...`, archive-only, `GoogleService-Info.plist` correctly bundled). The first fix (`cmd || echo "warning: ..."`) still failed the archive, because the underlying tool's own `error:` line printed before the `||` fallback ran.
+- **Detect** — Grep a failing Run Script phase's raw output (not just its exit code) for `error:`; if found, the phase must redirect that command's own stdout/stderr rather than let it print directly.
 
 ### A date-only string parsed by `ISO8601DateFormatter` is UTC midnight, not local
 - **Rule** — `ISO8601DateFormatter` with `.withFullDate` parses `"yyyy-MM-dd"` as midnight **UTC**. Every date-consuming call in this app (`.formatted()`, `Calendar.current` reminder math in `NotificationManager`, DatePicker input) reads dates in the **device's local calendar**. Never hand a UTC-midnight `Date` to those directly — re-anchor it first: pull `[.year, .month, .day]` via a UTC-timezone `Calendar`, then rebuild the `Date` via `Calendar.current.date(from:)`. Same care in reverse when encoding a local `Date` back to a date-only string for the server — use a `DateFormatter` with `timeZone = .current`, not `ISO8601DateFormatter`'s UTC default.
@@ -163,7 +163,15 @@ Learned the hard way. Each one cost real debugging time.
 
 Build and run through **Xcode** — open `Marque-Prototype.xcodeproj`. One native target, no test harness (no XCTest bundle, no `test` script in `functions/`). Three SPM packages: `firebase-ios-sdk` (linked products `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, `FirebaseRemoteConfig`, `FirebaseCrashlytics`), `GoogleSignIn-iOS` (`GoogleSignIn`, `GoogleSignInSwift`), and `posthog-ios` @ 3.77.0 (`PostHog`).
 
-The target has one Run Script build phase beyond the standard ones: **"Upload Crashlytics Symbols"**, which invokes the SPM-vendored `Crashlytics/run` script to upload dSYMs. It guards on `$CONFIGURATION` internally and exits immediately for anything but `Release` — Debug builds (including the `xcodebuild` command below) never make the network call. Don't remove that guard without confirming CI/local Debug builds still work offline.
+The target has one Run Script build phase beyond the standard ones: **"Upload Crashlytics Symbols"**, which invokes the SPM-vendored `Crashlytics/run` script to upload dSYMs. It guards on `$CONFIGURATION` internally and exits immediately for anything but `Release` — Debug builds (including the `xcodebuild` command below) never make the network call. Don't remove that guard without confirming CI/local Debug builds still work offline. In `Release`, it redirects the underlying tool's own output to `${TEMP_DIR}/crashlytics-upload.log` and only echoes a `note:`-prefixed line on failure — never let that tool's raw output reach the build log directly. That's load-bearing, not cosmetic: `firebase-ios-sdk` has a known, open, unresolved bug (issues/11836) where this script can print `error: Could not get GOOGLE_APP_ID...` on an actual archive even with `GoogleService-Info.plist` correctly bundled, and Xcode fails the **whole archive** on any `error:`-prefixed line anywhere in a Run Script phase's output — independent of that phase's own exit code. Fixing only the exit code (`|| echo "warning: ..."`) is not enough; the raw text has to be kept out of the log entirely.
+
+**Release archive** (TestFlight/App Store) — verified working end to end:
+```bash
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+xcodebuild -project Marque-Prototype.xcodeproj -scheme Marque-Prototype -configuration Release \
+  -destination "generic/platform=iOS" -archivePath /tmp/marque-release.xcarchive archive
+```
+No prior session had ever run this until 2026-09-22 — every build before that was Debug. `PrivacyInfo.xcprivacy` (app-level, `NSPrivacyAccessedAPICategoryUserDefaults` reason `CA92.1` for the app's own direct `UserDefaults` use — re-check with `grep -rn "creationDate\|contentModificationDate\|systemUptime\|volumeAvailableCapacity" Marque-Prototype --include='*.swift'` before assuming no other required-reason API category needs adding) must be present or App Store Connect can reject the binary at upload, TestFlight included, not just final review.
 
 Command-line build. Copy this whole block — the three lines are load-bearing and verified working on this machine:
 ```bash
