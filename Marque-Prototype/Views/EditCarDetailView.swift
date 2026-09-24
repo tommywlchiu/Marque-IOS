@@ -305,6 +305,9 @@ struct EditCarDetailView: View {
                 policyNumber: result.policyNumber,
                 expiryDate: result.expiryDate
             )
+            // Light success touch the moment OCR data comes back — no sound,
+            // no confetti, just a confirming tap.
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
         } catch let error as DocumentScanService.ScanError {
             insuranceScanError = error
         } catch {
@@ -765,11 +768,28 @@ private struct InsuranceScanConfirmationSheet: View {
     let result: EditCarDetailView.InsuranceScanPreview
     let onUse: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var checkmarkVisible = false
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.green)
+                            .scaleEffect(checkmarkVisible ? 1.0 : 0.6)
+                            .opacity(checkmarkVisible ? 1.0 : 0.0)
+                            .onAppear {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                                    checkmarkVisible = true
+                                }
+                            }
+                        Spacer()
+                    }
+                    .listRowBackground(Color.clear)
+
                     Text("Review what we found, then tap Use These to fill in the form. You can edit anything before saving.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
