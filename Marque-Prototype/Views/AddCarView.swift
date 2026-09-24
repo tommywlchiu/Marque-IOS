@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 private enum AddMode: String, CaseIterable {
     case vin = "Search by VIN"
@@ -22,6 +23,11 @@ struct AddCarView: View {
     }
 
     @State private var addMode: AddMode = .vin
+
+    // FR-13's add-first-car step: shown in place of the Form the instant a
+    // car is added while `onboarding != nil`. The normal "+" tab flow never
+    // sets this — see the toolbar's "Add" button action.
+    @State private var showCelebration = false
 
     // VIN search state
     @State private var vinInput = ""
@@ -51,65 +57,88 @@ struct AddCarView: View {
     }
 
     var body: some View {
+        // The NavigationStack stays mounted across the showCelebration swap —
+        // only the Group's content inside it changes — matching
+        // ProUpgradeView's showCelebration pattern. Swapping the
+        // NavigationStack itself in/out (the previous structure here) tore
+        // down its UINavigationController along with the Form whose toolbar
+        // button had just been tapped, and GarageReadyCelebrationView came in
+        // as bare content with no container: it never actually appeared on
+        // screen even though onAppear (and its chime) still fired. Only the
+        // onboarding add-first-car path ever sets showCelebration true — the
+        // "+" tab flow (onboarding == nil) never reaches it, so it keeps its
+        // existing immediate-dismiss behavior.
         NavigationStack {
-            Form {
-                Section {
-                    Picker("Add Method", selection: $addMode.animation()) {
-                        ForEach(AddMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
+            Group {
+                if showCelebration {
+                    GarageReadyCelebrationView {
+                        onboarding?.onAdded()
+                    }
+                } else {
+                    Form {
+                        Section {
+                            Picker("Add Method", selection: $addMode.animation()) {
+                                ForEach(AddMode.allCases, id: \.self) { mode in
+                                    Text(mode.rawValue).tag(mode)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                        }
+                        .onChange(of: addMode) { _, _ in resetFields() }
+
+                        if addMode == .vin {
+                            vinInputSection
+                        }
+
+                        if addMode == .manual {
+                            manualSection
+                        } else if vinSearched {
+                            searchResultSection
                         }
                     }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                }
-                .onChange(of: addMode) { _, _ in resetFields() }
-
-                if addMode == .vin {
-                    vinInputSection
-                }
-
-                if addMode == .manual {
-                    manualSection
-                } else if vinSearched {
-                    searchResultSection
-                }
-            }
-            .navigationTitle(onboarding != nil ? "Add Your First Car" : "Add a Car")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    if let onboarding {
-                        Button("Skip") { onboarding.onSkip() }
-                    } else {
-                        Button("Cancel") { dismiss() }
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        let car = Car(
-                            make: make.trimmingCharacters(in: .whitespaces),
-                            model: model.trimmingCharacters(in: .whitespaces),
-                            year: year.trimmingCharacters(in: .whitespaces),
-                            vinNumber: addMode == .vin ? vinInput.uppercased().trimmingCharacters(in: .whitespaces) : "",
-                            trim: trim,
-                            bodyStyle: bodyStyle,
-                            driveType: driveType,
-                            engine: engine,
-                            fuelType: fuelType,
-                            transmission: transmission
-                        )
-                        // FR-11.4 `car_added.entry_method`. `addMode` is the only
-                        // place this is known; without it CarStore skips the event.
-                        carStore.addCar(car, entryMethod: addMode == .vin ? .vin : .manual)
-                        if let onboarding {
-                            onboarding.onAdded()
-                        } else {
-                            dismiss()
+                    .navigationTitle(onboarding != nil ? "Add Your First Car" : "Add a Car")
+                    .navigationBarTitleDisplayMode(.large)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            if let onboarding {
+                                Button("Skip") { onboarding.onSkip() }
+                            } else {
+                                Button("Cancel") { dismiss() }
+                            }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Add") {
+                                let car = Car(
+                                    make: make.trimmingCharacters(in: .whitespaces),
+                                    model: model.trimmingCharacters(in: .whitespaces),
+                                    year: year.trimmingCharacters(in: .whitespaces),
+                                    vinNumber: addMode == .vin ? vinInput.uppercased().trimmingCharacters(in: .whitespaces) : "",
+                                    trim: trim,
+                                    bodyStyle: bodyStyle,
+                                    driveType: driveType,
+                                    engine: engine,
+                                    fuelType: fuelType,
+                                    transmission: transmission
+                                )
+                                // FR-11.4 `car_added.entry_method`. `addMode` is the only
+                                // place this is known; without it CarStore skips the event.
+                                carStore.addCar(car, entryMethod: addMode == .vin ? .vin : .manual)
+                                if onboarding != nil {
+                                    // FR-13's first-car milestone: show the celebration and
+                                    // defer onAdded() until the user dismisses it (see
+                                    // GarageReadyCelebrationView's continue button). The
+                                    // non-onboarding path below is unchanged.
+                                    showCelebration = true
+                                } else {
+                                    dismiss()
+                                }
+                            }
+                            .disabled(!canAdd)
+                            .fontWeight(.semibold)
                         }
                     }
-                    .disabled(!canAdd)
-                    .fontWeight(.semibold)
                 }
             }
         }
@@ -284,5 +313,69 @@ struct AddCarView: View {
         vinInput = ""
         searchError = nil
         resetSearchedFields()
+    }
+}
+
+// MARK: - Onboarding first-car celebration
+
+// FR-13.3's "you're all set" moment, shown once in place of the Form when a
+// car is added during onboarding specifically (never for the "+" tab flow,
+// and never on Skip — see AddCarView.body). Same confetti/chime language as
+// ProUpgradeView's ProCelebrationView (Components/CelebrationEffects.swift),
+// but a simpler icon entrance since there's no Pro badge here.
+private struct GarageReadyCelebrationView: View {
+    let onContinue: () -> Void
+
+    @State private var iconVisible = false
+    // Held so ARC keeps it alive through playback (assigned in onAppear,
+    // never read otherwise) — same reasoning as ProCelebrationView.
+    @State private var audioPlayer: AVAudioPlayer?
+
+    var body: some View {
+        ZStack {
+            // Behind the text/button rather than above it — a one-shot burst
+            // that settles in ~2s, not a loop.
+            ConfettiView()
+
+            VStack(spacing: 28) {
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.12))
+                        .frame(width: 120, height: 120)
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 52))
+                        .foregroundColor(.accentColor)
+                }
+                .scaleEffect(iconVisible ? 1 : 0.7)
+                .opacity(iconVisible ? 1 : 0)
+
+                VStack(spacing: 8) {
+                    Text("Your Garage is Ready!")
+                        .font(.title2).fontWeight(.bold)
+                    Text("Your first car is in. Track service history, document expirations, and expenses right from your Garage.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 12)
+                }
+
+                Spacer()
+
+                MarquePrimaryButton("Let's Go!") {
+                    onContinue()
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 48)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                iconVisible = true
+            }
+            audioPlayer = CelebrationChime.play()
+        }
     }
 }
