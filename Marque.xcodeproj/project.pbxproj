@@ -10,7 +10,7 @@
 		6B0782D5E6B383B850DEDC2E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C453D62471A58941090CEEB8 /* FirebaseCrashlytics */; };
 		762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */; };
 		9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */; };
-		A10001 /* Marque_PrototypeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque_PrototypeApp.swift */; };
+		A10001 /* Marque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque.swift */; };
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
 		A10003 /* CarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* CarStore.swift */; };
 		A10004 /* AddCarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* AddCarView.swift */; };
@@ -95,7 +95,7 @@
 		20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrashReportingService.swift; sourceTree = "<group>"; };
 		62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationEffects.swift; sourceTree = "<group>"; };
 		8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceStore.swift; sourceTree = "<group>"; };
-		A20001 /* Marque_PrototypeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque_PrototypeApp.swift; sourceTree = "<group>"; };
+		A20001 /* Marque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque.swift; sourceTree = "<group>"; };
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
 		A20003 /* CarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarStore.swift; sourceTree = "<group>"; };
 		A20004 /* AddCarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCarView.swift; sourceTree = "<group>"; };
@@ -193,18 +193,18 @@
 			isa = PBXGroup;
 			children = (
 				F48D28383061DC040024F1C7 /* Marque.storekit */,
-				A50002 /* Marque-Prototype */,
+				A50002 /* Marque */,
 				F497CF16301D5D1B001892AE /* Frameworks */,
 				A50005 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A50002 /* Marque-Prototype */ = {
+		A50002 /* Marque */ = {
 			isa = PBXGroup;
 			children = (
 				F421FDE72FA465A7000DBF3C /* Info.plist */,
 				F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */,
-				A20001 /* Marque_PrototypeApp.swift */,
+				A20001 /* Marque.swift */,
 				A20066 /* AppDelegate.swift */,
 				A50003 /* Models */,
 				A50006 /* Stores */,
@@ -216,7 +216,7 @@
 				F5B1000200000000B1000002 /* PrivacyInfo.xcprivacy */,
 				A20045 /* Marque-Prototype.entitlements */,
 			);
-			path = "Marque-Prototype";
+			path = Marque;
 			sourceTree = "<group>";
 		};
 		A50003 /* Models */ = {
@@ -511,7 +511,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10001 /* Marque_PrototypeApp.swift in Sources */,
+				A10001 /* Marque.swift in Sources */,
 				A10066 /* AppDelegate.swift in Sources */,
 				A10002 /* Car.swift in Sources */,
 				A10057 /* PublicCar.swift in Sources */,
@@ -713,14 +713,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Marque-Prototype/Marque-Prototype.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Marque/Marque-Prototype.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "Marque-Prototype/Info.plist";
+				INFOPLIST_FILE = "Marque/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -742,14 +742,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Marque-Prototype/Marque-Prototype.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Marque/Marque-Prototype.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "Marque-Prototype/Info.plist";
+				INFOPLIST_FILE = "Marque/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
