@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		6B0782D5E6B383B850DEDC2E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C453D62471A58941090CEEB8 /* FirebaseCrashlytics */; };
+		762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */; };
 		9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */; };
 		A10001 /* Marque_PrototypeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque_PrototypeApp.swift */; };
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
@@ -72,7 +73,6 @@
 		C7000001C7000001C7000001 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = C7000002C7000002C7000002 /* FirebaseFunctions */; };
 		E0000003E0000003E0000003 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E0000002E0000002E0000002 /* PostHog */; };
 		E64384DAD01BCC101BC4750B /* ScanAllowanceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */; };
-		762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */; };
 		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
 		F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */; };
 		F497CF0E300B0735001892AE /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF0C300B0735001892AE /* ChatMessage.swift */; };
@@ -92,8 +92,8 @@
 
 /* Begin PBXFileReference section */
 		000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceViews.swift; sourceTree = "<group>"; };
-		62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationEffects.swift; sourceTree = "<group>"; };
 		20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrashReportingService.swift; sourceTree = "<group>"; };
+		62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationEffects.swift; sourceTree = "<group>"; };
 		8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceStore.swift; sourceTree = "<group>"; };
 		A20001 /* Marque_PrototypeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque_PrototypeApp.swift; sourceTree = "<group>"; };
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
@@ -400,9 +400,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A60001 /* Marque-Prototype */ = {
+		A60001 /* Marque */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A80002 /* Build configuration list for PBXNativeTarget "Marque-Prototype" */;
+			buildConfigurationList = A80002 /* Build configuration list for PBXNativeTarget "Marque" */;
 			buildPhases = (
 				A70001 /* Sources */,
 				A40001 /* Frameworks */,
@@ -413,7 +413,7 @@
 			);
 			dependencies = (
 			);
-			name = "Marque-Prototype";
+			name = Marque;
 			packageProductDependencies = (
 				C1000001C1000001C1000001 /* FirebaseCore */,
 				C2000001C2000001C2000001 /* FirebaseAuth */,
@@ -446,7 +446,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A80001 /* Build configuration list for PBXProject "Marque-Prototype" */;
+			buildConfigurationList = A80001 /* Build configuration list for PBXProject "Marque" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -464,7 +464,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A60001 /* Marque-Prototype */,
+				A60001 /* Marque */,
 			);
 		};
 /* End PBXProject section */
@@ -768,7 +768,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A80001 /* Build configuration list for PBXProject "Marque-Prototype" */ = {
+		A80001 /* Build configuration list for PBXProject "Marque" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B10001 /* Debug */,
@@ -777,7 +777,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A80002 /* Build configuration list for PBXNativeTarget "Marque-Prototype" */ = {
+		A80002 /* Build configuration list for PBXNativeTarget "Marque" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B20001 /* Debug */,
