@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var useMiles = true
     @State private var showingDeleteAccountSheet = false
     @State private var showingChangePassword = false
+    @State private var showingEditProfile = false
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
@@ -66,6 +67,9 @@ struct SettingsView: View {
         .sheet(isPresented: $showingChangePassword) {
             ChangePasswordView()
         }
+        .sheet(isPresented: $showingEditProfile) {
+            EditProfileView()
+        }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Sign Out", role: .destructive) { authService.signOut() }
             Button("Cancel", role: .cancel) { }
@@ -95,8 +99,18 @@ struct SettingsView: View {
             }
             .padding(.vertical, 4)
 
-            NavigationLink(destination: EditProfileView()) {
+            // EditProfileView wraps itself in its own NavigationStack (it's
+            // built for sheet presentation — see its Cancel -> dismiss()
+            // toolbar button, and CarListView's own sheet(isPresented:) use
+            // of it). Pushing it here via NavigationLink instead nested a
+            // second NavigationStack inside this screen's already-active
+            // one, which glitched on the first push before "settling" —
+            // sheet presentation avoids the nested-stack conflict entirely.
+            Button {
+                showingEditProfile = true
+            } label: {
                 Label("Edit Profile", systemImage: "person.crop.circle")
+                    .foregroundColor(.primary)
             }
 
             // Password-based accounts only — Apple/Google sign-in has no Marque password to change.
