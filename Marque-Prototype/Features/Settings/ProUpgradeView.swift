@@ -1,5 +1,6 @@
 import SwiftUI
 import StoreKit
+import AVFoundation
 
 struct ProUpgradeView: View {
     @Environment(\.dismiss) var dismiss
@@ -11,51 +12,74 @@ struct ProUpgradeView: View {
 
     @State private var selectedPlan: PlanOption = .annual
 
+    // Set true right before calling subscriptionStore.purchase(product) and
+    // false once it returns (see ctaButton). Doubles as the "did the isPro /
+    // isFamilyShared flip below come from this screen's own purchase tap"
+    // gate: purchase() awaits refreshProStatus() before returning, so the
+    // @Published flip lands on MainActor while this is still true. A flip
+    // that arrives with this false (Transaction.updates firing in the
+    // background, or restore() completing) keeps the old silent-dismiss
+    // behavior instead of celebrating.
+    @State private var isPurchasing = false
+    @State private var showCelebration = false
+
     private enum PlanOption { case monthly, annual }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 28) {
-                    if subscriptionStore.isPro && !subscriptionStore.isFamilyShared {
-                        alreadyProSection
-                        proLegalLinks
-                    } else if subscriptionStore.isFamilyShared {
-                        // Pro via Family Sharing: unlimited cars and the badge are
-                        // already theirs (free to serve), but the server withholds
-                        // isPro for a family entitlement, so the metered features —
-                        // FR-08's actual conversion driver — stay at the free tier.
-                        // Still offer the same purchase flow as a non-Pro user: a
-                        // direct purchase here is what unlocks it (see
-                        // familySharedHero's comment on why this is safe to sync).
-                        familySharedHero
-                        planPicker
-                        selectedPlanCard
-                        familySharedFeatureList
-                        ctaButton
-                        legalFooter
-                    } else {
-                        heroSection
-                        planPicker
-                        selectedPlanCard
-                        featureList
-                        ctaButton
-                        legalFooter
+            Group {
+                if showCelebration {
+                    ProCelebrationView(isFamilyShared: subscriptionStore.isFamilyShared) {
+                        dismiss()
+                    }
+                } else {
+                    ScrollView {
+                        VStack(spacing: 28) {
+                            if subscriptionStore.isPro && !subscriptionStore.isFamilyShared {
+                                alreadyProSection
+                                proLegalLinks
+                            } else if subscriptionStore.isFamilyShared {
+                                // Pro via Family Sharing: unlimited cars and the badge are
+                                // already theirs (free to serve), but the server withholds
+                                // isPro for a family entitlement, so the metered features —
+                                // FR-08's actual conversion driver — stay at the free tier.
+                                // Still offer the same purchase flow as a non-Pro user: a
+                                // direct purchase here is what unlocks it (see
+                                // familySharedHero's comment on why this is safe to sync).
+                                familySharedHero
+                                planPicker
+                                selectedPlanCard
+                                familySharedFeatureList
+                                ctaButton
+                                legalFooter
+                            } else {
+                                heroSection
+                                planPicker
+                                selectedPlanCard
+                                featureList
+                                ctaButton
+                                legalFooter
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
+                        .padding(.bottom, 48)
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-                .padding(.bottom, 48)
             }
             .navigationTitle("Marque Pro")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    // "Done" only for a fully-resolved Pro user with nothing left to
-                    // do here; a Family Sharing member still has a live CTA, so they
-                    // get "Not Now" like a non-Pro user.
-                    Button(subscriptionStore.isPro && !subscriptionStore.isFamilyShared ? "Done" : "Not Now") { dismiss() }
-                        .foregroundColor(.secondary)
+                // Hidden during the celebration so the user acknowledges via
+                // its own "Let's Go" button rather than this Done/Not Now one.
+                if !showCelebration {
+                    ToolbarItem(placement: .cancellationAction) {
+                        // "Done" only for a fully-resolved Pro user with nothing left to
+                        // do here; a Family Sharing member still has a live CTA, so they
+                        // get "Not Now" like a non-Pro user.
+                        Button(subscriptionStore.isPro && !subscriptionStore.isFamilyShared ? "Done" : "Not Now") { dismiss() }
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             .task { await subscriptionStore.load() }
@@ -71,14 +95,24 @@ struct ProUpgradeView: View {
                 }
             }
             .onChange(of: subscriptionStore.isPro) { _, isPro in
-                if isPro { dismiss() }
+                guard isPro else { return }
+                if isPurchasing {
+                    showCelebration = true
+                } else {
+                    dismiss()
+                }
             }
             // A Family Sharing member who then buys their own subscription stays
             // isPro == true throughout, so the onChange above never fires for them.
             // isFamilyShared flipping true -> false is the actual "just converted"
             // signal (refreshProStatus sets it false once a direct purchase exists).
             .onChange(of: subscriptionStore.isFamilyShared) { wasFamilyShared, isFamilyShared in
-                if wasFamilyShared && !isFamilyShared { dismiss() }
+                guard wasFamilyShared && !isFamilyShared else { return }
+                if isPurchasing {
+                    showCelebration = true
+                } else {
+                    dismiss()
+                }
             }
         }
     }
@@ -296,12 +330,16 @@ struct ProUpgradeView: View {
                 product != nil
                     ? "Subscribe — \(product!.displayPrice) \(selectedPlan == .annual ? "/ yr" : "/ mo")"
                     : "Subscribe",
-                isLoading: false
+                isLoading: isPurchasing
             ) {
                 guard let product else { return }
-                Task { await subscriptionStore.purchase(product) }
+                isPurchasing = true
+                Task {
+                    defer { isPurchasing = false }
+                    await subscriptionStore.purchase(product)
+                }
             }
-            .disabled(product == nil)
+            .disabled(product == nil || isPurchasing)
         }
     }
 
@@ -382,3 +420,96 @@ private struct PlanCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
+
+// MARK: - Celebration
+
+// Shown in place of the paywall ScrollView the instant a purchase this
+// screen initiated actually completes (see ProUpgradeView.isPurchasing).
+// A background entitlement flip (Transaction.updates, or restore()) never
+// reaches this — those still take the old silent-dismiss path.
+private struct ProCelebrationView: View {
+    let isFamilyShared: Bool
+    let onContinue: () -> Void
+
+    @State private var badgeVisible = false
+    // Held so ARC keeps it alive through playback (assigned in
+    // playCelebrationSound(), never read otherwise).
+    @State private var audioPlayer: AVAudioPlayer?
+
+    var body: some View {
+        ZStack {
+            // Behind the text/button rather than above it — a one-shot burst
+            // (see ConfettiPieceView) that settles in ~2s, not a loop, so it
+            // never competes with reading the screen.
+            ConfettiView()
+
+            VStack(spacing: 28) {
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.12))
+                        .frame(width: 120, height: 120)
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 52))
+                        .foregroundColor(.accentColor)
+
+                    // The badge pops in shortly after the logo appears, with a
+                    // spring overshoot rather than a linear fade.
+                    ProBadge()
+                        .scaleEffect(1.7)
+                        .scaleEffect(badgeVisible ? 1 : 0.01)
+                        .opacity(badgeVisible ? 1 : 0)
+                        .offset(x: 42, y: -42)
+                }
+
+                VStack(spacing: 8) {
+                    Text("Welcome to Marque Pro!")
+                        .font(.title2).fontWeight(.bold)
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 12)
+                }
+
+                Spacer()
+
+                MarquePrimaryButton("Awesome, Thanks!") {
+                    onContinue()
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 48)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.55).delay(0.35)) {
+                badgeVisible = true
+            }
+            playCelebrationSound()
+        }
+    }
+
+    // Setup (audio session + synthesis + playback) lives in the shared
+    // CelebrationChime.play() (Components/CelebrationEffects.swift).
+    // Fire-and-forget: a nil result (setup or playback failure) must never
+    // surface to the user or affect the celebration UI.
+    private func playCelebrationSound() {
+        audioPlayer = CelebrationChime.play()
+    }
+
+    // Pulled straight from featureList / familySharedFeatureList — per
+    // FR-08.7 this must never claim a benefit that isn't actually gated,
+    // and a Family Sharing member already has Unlimited Cars + the Pro
+    // Badge, so their copy only names what subscribing personally added.
+    private var subtitle: String {
+        isFamilyShared
+            ? "You've unlocked 500 Assistant messages a day and \(ScanAllowanceStore.proDailyCap) document scans a day."
+            : "You now have 500 Assistant messages a day, \(ScanAllowanceStore.proDailyCap) document scans a day, unlimited cars, and a Pro badge on your profile."
+    }
+}
+
+// Confetti (ConfettiPiece/ConfettiView/ConfettiPieceView) and CelebrationChime
+// now live in Components/CelebrationEffects.swift, shared with other
+// milestone celebrations (e.g. AddCarView's onboarding first-car step).
