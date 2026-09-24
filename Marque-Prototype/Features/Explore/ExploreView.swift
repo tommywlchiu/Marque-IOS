@@ -59,6 +59,9 @@ struct ExploreView: View {
                         .padding(.top, 8)
                         .padding(.bottom, 24)
                     }
+                    .refreshable {
+                        await exploreStore.refresh()
+                    }
                 }
             }
             .navigationTitle("Explore")

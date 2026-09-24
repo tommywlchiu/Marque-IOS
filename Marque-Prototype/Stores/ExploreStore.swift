@@ -50,6 +50,23 @@ class ExploreStore: ObservableObject {
         }
     }
 
+    // Manual pull-to-refresh. The live listener in startListening() already
+    // keeps `cars` current, so this isn't fixing staleness in the normal
+    // case — it's a forced server round-trip (bypassing any local cache)
+    // for the case the listener silently dropped (e.g. after a network
+    // blip) and to give pull-to-refresh a real action instead of a fake
+    // delay. Mirrors startListening()'s query and decode; the listener's
+    // own next snapshot will reconcile `cars` again regardless.
+    func refresh() async {
+        guard let snapshot = try? await db.collection("publicCars")
+            .order(by: "updatedAt", descending: true)
+            .limit(to: 100)
+            .getDocuments(source: .server)
+        else { return }
+        cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
+        await patchMissingOwnerAvatars()
+    }
+
     func stopListening() {
         listener?.remove()
         listener = nil
