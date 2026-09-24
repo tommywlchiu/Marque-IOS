@@ -72,9 +72,15 @@ struct ServiceRemindersView: View {
                                 currentMileage: currentMileage,
                                 onComplete: { complete(reminder) }
                             )
+                            .transition(.opacity.combined(with: .scale(scale: 0.94)))
                         }
                         .onDelete(perform: deleteUpcoming)
                     }
+                    // Keyed on the filtered array itself so the row smoothly
+                    // animates out of Upcoming whenever it changes — covers
+                    // both the immediate local tap and the store's async
+                    // round trip landing later.
+                    .animation(.easeInOut(duration: 0.3), value: reminders)
                 }
 
                 if !suggestions.isEmpty {
@@ -141,7 +147,11 @@ struct ServiceRemindersView: View {
         guard var car else { return }
         if let idx = car.serviceReminders.firstIndex(where: { $0.id == reminder.id }) {
             car.serviceReminders[idx].isCompleted = true
-            carStore.updateCar(car)
+            // Success haptic on completion only — restoring isn't a success moment.
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation(.easeInOut(duration: 0.3)) {
+                carStore.updateCar(car)
+            }
         }
     }
 
@@ -187,6 +197,14 @@ private struct ReminderRow: View {
     let onComplete: (() -> Void)?
     var onRestore: (() -> Void)? = nil
 
+    // Optimistic, row-local "just completed" flag. Drives an immediate
+    // checkmark pop + strikethrough + fade the moment the user taps, rather
+    // than waiting on carStore.updateCar's async Firestore round trip before
+    // showing any feedback. The row itself is removed from "Upcoming" a
+    // moment later (see the `.animation(value: reminders)` on the List)
+    // once that write lands and `car.serviceReminders` actually updates.
+    @State private var isCompleting = false
+
     var body: some View {
         HStack(spacing: 12) {
             statusIcon
@@ -194,6 +212,8 @@ private struct ReminderRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(reminder.serviceType)
                     .font(.subheadline).fontWeight(.semibold)
+                    .strikethrough(isCompleting, color: .secondary)
+                    .foregroundColor(isCompleting ? .secondary : .primary)
 
                 Text(detailText)
                     .font(.caption)
@@ -210,12 +230,19 @@ private struct ReminderRow: View {
             Spacer()
 
             if let onComplete, !reminder.isCompleted {
-                Button(action: onComplete) {
-                    Image(systemName: "checkmark.circle")
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.62)) {
+                        isCompleting = true
+                    }
+                    onComplete()
+                } label: {
+                    Image(systemName: isCompleting ? "checkmark.circle.fill" : "checkmark.circle")
                         .font(.title3)
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(isCompleting ? .green : .accentColor)
+                        .scaleEffect(isCompleting ? 1.15 : 1.0)
                 }
                 .buttonStyle(.plain)
+                .disabled(isCompleting)
                 .accessibilityLabel("Mark \(reminder.serviceType) complete")
             } else if let onRestore, reminder.isCompleted {
                 Button(action: onRestore) {
@@ -228,6 +255,7 @@ private struct ReminderRow: View {
             }
         }
         .padding(.vertical, 4)
+        .opacity(isCompleting ? 0.55 : 1)
     }
 
     private var status: ServiceReminder.Status {
