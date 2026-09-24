@@ -13,8 +13,25 @@ enum AuthState: Equatable {
     case authenticated(AppUser)
 }
 
+/// Distinguishes the EC-05 reverse collision (Apple sign-in hitting an existing
+/// email/password account) from other Apple sign-in failures, so `signInWithApple`
+/// can show a purpose-built message instead of Firebase's raw one. `linkPending`
+/// is false when no credential could be safely stashed, so the message doesn't
+/// promise a connection that won't happen.
+private enum AppleSignInCollision: Error {
+    case accountExistsWithPassword(linkPending: Bool)
+}
+
 @MainActor
 class AuthService: NSObject, ObservableObject {
+    /// FR-01.5 / EC-05 — surfaced when `signUp` hits `.emailAlreadyInUse`. Email
+    /// enumeration protection means Firebase never tells the client which provider
+    /// already owns the email, so SignUpView offers "Continue with Apple/Google"
+    /// rather than a dead-end error message.
+    struct EmailCollision: Equatable {
+        let email: String
+    }
+
     @Published var authState: AuthState = .unauthenticated
     @Published var hasSeenOnboarding: Bool
     @Published var hasCompletedProfileSetup: Bool = false
@@ -58,6 +75,10 @@ class AuthService: NSObject, ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    /// FR-01.5 / EC-05 forward collision: set by `signUp` on `.emailAlreadyInUse`.
+    /// SignUpView reads this to switch to a "sign in with the other provider" prompt.
+    @Published private(set) var emailCollision: EmailCollision?
+
     private let onboardingKey = "marque_has_seen_onboarding"
     private let db = Firestore.firestore()
     private var stateListener: AuthStateDidChangeListenerHandle?
@@ -65,6 +86,28 @@ class AuthService: NSObject, ObservableObject {
     private var appleCompletion: CheckedContinuation<Void, Error>?
     private var appleSignInController: ASAuthorizationController?
     private var isReauthenticating = false
+
+    /// The email + password typed during a signup that collided with an existing
+    /// Apple/Google account (EC-05 forward case). Held only in memory, never
+    /// persisted, until the user completes sign-in with that other provider — at
+    /// which point it's linked onto that account, but ONLY if the emails match
+    /// (see `linkPendingPasswordCredentialIfNeeded`).
+    private struct PendingPasswordLink {
+        let email: String
+        let password: String
+    }
+    private var pendingPasswordLink: PendingPasswordLink?
+
+    /// The Apple/Google credential extracted from `.accountExistsWithDifferentCredential`
+    /// when that sign-in collides with an existing email/password account (EC-05
+    /// reverse case). Linked onto the account once the user proves ownership by
+    /// signing in with its password (see `linkPendingProviderCredentialIfNeeded`).
+    /// `email` is required: only stashed when Firebase reported which email collided.
+    private struct PendingProviderLink {
+        let credential: AuthCredential
+        let email: String
+    }
+    private var pendingProviderLink: PendingProviderLink?
 
     /// The Firebase provider ID for the current user's primary sign-in method.
     var signInProvider: String {
@@ -175,10 +218,22 @@ class AuthService: NSObject, ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            try await Auth.auth().signIn(withEmail: email, password: password)
+            let result = try await Auth.auth().signIn(withEmail: email, password: password)
+            // EC-05 reverse case: the user just proved ownership of this account
+            // via its password, so attach any Apple credential that previously
+            // collided with it.
+            await linkPendingProviderCredentialIfNeeded(to: result.user)
+            clearPendingLinkState()
         } catch {
             errorMessage = authErrorMessage(from: error)
         }
+    }
+
+    /// Dismisses the EC-05 collision prompt. Also drops the stashed password —
+    /// it must never outlive the moment the user backs out of (or resolves) the flow.
+    func clearEmailCollision() {
+        emailCollision = nil
+        pendingPasswordLink = nil
     }
 
     func signUp(displayName: String, username: String, email: String, password: String) async {
@@ -207,7 +262,18 @@ class AuthService: NSObject, ObservableObject {
             let resolved = !trimmedUsername.isEmpty ? trimmedUsername : trimmedName
             LocalProfile(username: resolved, bio: "", location: "", avatarFileName: nil).save(uid: result.user.uid)
         } catch {
-            errorMessage = authErrorMessage(from: error)
+            // FR-01.5 / EC-05 forward case: email enumeration protection means
+            // Firestore/Auth never tells us which provider owns this email, so
+            // there's nothing more specific to say than "pick a provider and
+            // we'll connect it" — stash the password for that connection instead
+            // of dead-ending on an error message.
+            if AuthErrorCode(_bridgedNSError: error as NSError) == .emailAlreadyInUse {
+                let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+                pendingPasswordLink = PendingPasswordLink(email: trimmedEmail, password: password)
+                emailCollision = EmailCollision(email: trimmedEmail)
+            } else {
+                errorMessage = authErrorMessage(from: error)
+            }
         }
     }
 
@@ -249,6 +315,11 @@ class AuthService: NSObject, ObservableObject {
         defer { isLoading = false }
         do {
             try await performAppleSignIn()
+        } catch AppleSignInCollision.accountExistsWithPassword(let linkPending) {
+            // EC-05 reverse case — see the delegate's didCompleteWithAuthorization
+            // catch block. Never surface Firebase's raw
+            // accountExistsWithDifferentCredential message here.
+            errorMessage = Self.providerCollisionMessage(provider: "Apple", linkPending: linkPending)
         } catch {
             let asError = error as? ASAuthorizationError
             if asError?.code != .canceled {
@@ -316,8 +387,21 @@ class AuthService: NSObject, ObservableObject {
             if authResult.additionalUserInfo?.isNewUser == true {
                 AnalyticsService.signupCompleted(method: .google)
             }
+
+            // EC-05 forward case: attach a previously-stashed signup password if
+            // the emails match. See linkPendingPasswordCredentialIfNeeded.
+            await linkPendingPasswordCredentialIfNeeded(to: authResult.user)
+            clearPendingLinkState()
         } catch {
             let nsError = error as NSError
+            // EC-05 reverse case for Google: Google is only a trusted provider for
+            // gmail addresses, so a Workspace/custom-domain email that already has
+            // a password account collides here exactly like Apple does.
+            if AuthErrorCode(_bridgedNSError: nsError) == .accountExistsWithDifferentCredential {
+                let linkPending = stashProviderCredential(from: nsError)
+                errorMessage = Self.providerCollisionMessage(provider: "Google", linkPending: linkPending)
+                return
+            }
             if nsError.domain != kGIDSignInErrorDomain || nsError.code != GIDSignInError.canceled.rawValue {
                 errorMessage = error.localizedDescription
             }
@@ -681,6 +765,7 @@ class AuthService: NSObject, ObservableObject {
 
     func signOut() {
         try? Auth.auth().signOut()
+        clearPendingLinkState()
     }
 
     // MARK: - Re-authentication
@@ -858,6 +943,86 @@ class AuthService: NSObject, ObservableObject {
         UserDefaults.standard.removeObject(forKey: "marque_pending_uploads_\(uid)")
     }
 
+    // MARK: - EC-05 Cross-Provider Collision Linking
+
+    /// EC-05 forward case: attaches the password stashed by `signUp` to the account
+    /// that just finished signing in via Apple/Google — but only when the emails
+    /// match. The match is the security gate: without it, someone could type a
+    /// victim's email plus their own password into the signup form, then sign in
+    /// with their OWN Apple/Google account and silently attach a password
+    /// credential to the victim's email.
+    private func linkPendingPasswordCredentialIfNeeded(to user: User) async {
+        guard let pending = pendingPasswordLink,
+              let signedInEmail = user.email,
+              pending.email.caseInsensitiveCompare(signedInEmail) == .orderedSame
+        else { return }
+
+        do {
+            let credential = EmailAuthProvider.credential(withEmail: pending.email, password: pending.password)
+            try await user.link(with: credential)
+        } catch {
+            if AuthErrorCode(_bridgedNSError: error as NSError) != .providerAlreadyLinked {
+                #if DEBUG
+                print("[AuthService] Non-fatal: could not link pending password credential: \(error.localizedDescription)")
+                #endif
+            }
+        }
+    }
+
+    /// EC-05 reverse case: attaches the Apple/Google credential stashed when that
+    /// sign-in previously collided with an existing email/password account, now
+    /// that the user has signed in with a password. The email match is required:
+    /// the password sign-in proves ownership of *that* account, not that the
+    /// stashed credential belongs to the same person — without the match, an
+    /// abandoned collision could attach someone's Apple/Google login to whatever
+    /// account signs in next on the device.
+    private func linkPendingProviderCredentialIfNeeded(to user: User) async {
+        guard let pending = pendingProviderLink,
+              let signedInEmail = user.email,
+              pending.email.caseInsensitiveCompare(signedInEmail) == .orderedSame
+        else { return }
+
+        do {
+            try await user.link(with: pending.credential)
+        } catch {
+            if AuthErrorCode(_bridgedNSError: error as NSError) != .providerAlreadyLinked {
+                #if DEBUG
+                print("[AuthService] Non-fatal: could not link pending provider credential: \(error.localizedDescription)")
+                #endif
+            }
+        }
+    }
+
+    /// Stashes the colliding credential from an `.accountExistsWithDifferentCredential`
+    /// error for later linking. Returns whether anything was stashed — nothing is
+    /// when Firebase omits the email, since linking without an email match is unsafe.
+    @discardableResult
+    private func stashProviderCredential(from error: NSError) -> Bool {
+        guard let credential = error.userInfo[AuthErrorUserInfoUpdatedCredentialKey] as? AuthCredential,
+              let email = error.userInfo[AuthErrorUserInfoEmailKey] as? String
+        else {
+            pendingProviderLink = nil
+            return false
+        }
+        pendingProviderLink = PendingProviderLink(credential: credential, email: email)
+        return true
+    }
+
+    private static func providerCollisionMessage(provider: String, linkPending: Bool) -> String {
+        linkPending
+            ? "You already have a Marque account with this email. Sign in with your email and password, and we'll connect \(provider) Sign-In to it."
+            : "You already have a Marque account with this email. Sign in with your email and password instead."
+    }
+
+    /// Clears all EC-05 in-memory state. Called after any successful sign-in
+    /// (whether or not it triggered a link above) and on sign-out, so stale state
+    /// from an abandoned collision flow never carries into an unrelated session.
+    private func clearPendingLinkState() {
+        pendingPasswordLink = nil
+        pendingProviderLink = nil
+        emailCollision = nil
+    }
+
     // MARK: - Helpers
 
     private func authErrorMessage(from error: Error) -> String {
@@ -929,12 +1094,34 @@ extension AuthService: ASAuthorizationControllerDelegate {
                     if authResult.additionalUserInfo?.isNewUser == true {
                         AnalyticsService.signupCompleted(method: .apple)
                     }
+
+                    // EC-05 forward case: attach a previously-stashed signup
+                    // password if the emails match. See
+                    // linkPendingPasswordCredentialIfNeeded.
+                    await self.linkPendingPasswordCredentialIfNeeded(to: authResult.user)
+                    await self.clearPendingLinkState()
                 }
                 await MainActor.run {
                     self.appleSignInController = nil
                     self.appleCompletion?.resume()
                 }
             } catch {
+                let code = AuthErrorCode(_bridgedNSError: error as NSError)
+                let nsError = error as NSError
+                let isReauth = await self.isReauthenticating
+                if !isReauth, code == .accountExistsWithDifferentCredential {
+                    // EC-05 reverse case: Apple isn't a trusted provider, so instead
+                    // of auto-linking, Firebase throws this with the colliding
+                    // credential attached. Stashing it grants nothing by itself —
+                    // linking (in signIn(email:password:)) still requires a password
+                    // sign-in to the account whose email matches the stash.
+                    await MainActor.run {
+                        let linkPending = self.stashProviderCredential(from: nsError)
+                        self.appleSignInController = nil
+                        self.appleCompletion?.resume(throwing: AppleSignInCollision.accountExistsWithPassword(linkPending: linkPending))
+                    }
+                    return
+                }
                 await MainActor.run {
                     self.appleSignInController = nil
                     self.appleCompletion?.resume(throwing: error)

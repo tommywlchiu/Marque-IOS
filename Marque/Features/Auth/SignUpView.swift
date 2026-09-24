@@ -9,6 +9,7 @@ struct SignUpView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var showingForgotPassword = false
     @FocusState private var focusedField: Field?
 
     private enum Field { case displayName, username, email, password, confirmPassword }
@@ -27,8 +28,16 @@ struct SignUpView: View {
                 VStack(spacing: 24) {
                     header
 
+                    // Not else-if: tapping Apple on the collision card can itself fail
+                    // (e.g. the existing account is password-based), and that message
+                    // must show alongside the card rather than be hidden by it.
                     if let error = authService.errorMessage {
                         MarqueErrorBanner(message: error)
+                            .padding(.horizontal, 24)
+                    }
+
+                    if let collision = authService.emailCollision {
+                        emailCollisionCard(collision)
                             .padding(.horizontal, 24)
                     }
 
@@ -50,6 +59,21 @@ struct SignUpView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingForgotPassword) {
+            ForgotPasswordView()
+        }
+        .onChange(of: email) { _, _ in
+            authService.clearEmailCollision()
+        }
+        // Covers every way out of this sheet (swipe-down, Cancel, "Sign in with
+        // password"), so the typed password never outlives the signup screen.
+        // Skipped when leaving because sign-in just succeeded: AuthService may
+        // still be about to link that password, and clears it itself afterward.
+        .onDisappear {
+            if !authService.isAuthenticated {
+                authService.clearEmailCollision()
+            }
+        }
     }
 
     // MARK: - Subviews
@@ -60,6 +84,40 @@ struct SignUpView: View {
             .foregroundColor(.secondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 40)
+    }
+
+    private func emailCollisionCard(_ collision: AuthService.EmailCollision) -> some View {
+        VStack(spacing: 16) {
+            VStack(spacing: 6) {
+                Text("You already have an account")
+                    .font(.headline)
+                Text("There's already a Marque account for \(collision.email). Sign in the way you did before.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            VStack(spacing: 12) {
+                SocialSignInButton(icon: "apple.logo", label: "Continue with Apple") {
+                    signInWithApple()
+                }
+                SocialSignInButton(icon: "g.circle.fill", label: "Continue with Google") {
+                    signInWithGoogle()
+                }
+            }
+
+            VStack(spacing: 8) {
+                Button("Sign in with password") { dismiss() }
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                Button("Forgot password?") { showingForgotPassword = true }
+                    .font(.subheadline)
+                    .foregroundColor(.accentColor)
+            }
+        }
+        .padding(16)
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var formSection: some View {
@@ -152,6 +210,20 @@ struct SignUpView: View {
                 email: email.trimmingCharacters(in: .whitespaces),
                 password: password
             )
+            if authService.isAuthenticated { dismiss() }
+        }
+    }
+
+    private func signInWithApple() {
+        Task {
+            await authService.signInWithApple()
+            if authService.isAuthenticated { dismiss() }
+        }
+    }
+
+    private func signInWithGoogle() {
+        Task {
+            await authService.signInWithGoogle()
             if authService.isAuthenticated { dismiss() }
         }
     }
