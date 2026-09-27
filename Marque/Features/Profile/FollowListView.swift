@@ -18,10 +18,15 @@ struct FollowListView: View {
 
     private var title: String { mode == .following ? "Following" : "Followers" }
 
+    // Hide blocked users from both Following and Followers lists.
+    private var visibleProfiles: [PublicUserProfile] {
+        profiles.filter { !blockStore.isBlocked($0.uid ?? "") }
+    }
+
     private var filtered: [PublicUserProfile] {
-        guard !searchText.isEmpty else { return profiles }
+        guard !searchText.isEmpty else { return visibleProfiles }
         let q = searchText.lowercased()
-        return profiles.filter {
+        return visibleProfiles.filter {
             $0.displayName.lowercased().contains(q) ||
             $0.username.lowercased().contains(q)
         }
@@ -33,7 +38,7 @@ struct FollowListView: View {
                 if isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if profiles.isEmpty {
+                } else if visibleProfiles.isEmpty {
                     MarqueEmptyState(
                         icon: "person.2",
                         title: "No \(title) Yet",

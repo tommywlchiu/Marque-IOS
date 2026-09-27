@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		6B0782D5E6B383B850DEDC2E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C453D62471A58941090CEEB8 /* FirebaseCrashlytics */; };
 		762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */; };
+		65B797A53B1D4533B9DFCDDE /* AuthTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */; };
+		1B445AF9F26D417AAE319543 /* GarageEntranceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9412D7442710420CB0A6B6F6 /* GarageEntranceView.swift */; };
 		9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */; };
 		A10001 /* Marque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque.swift */; };
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
@@ -94,6 +96,8 @@
 		000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceViews.swift; sourceTree = "<group>"; };
 		20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrashReportingService.swift; sourceTree = "<group>"; };
 		62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationEffects.swift; sourceTree = "<group>"; };
+		24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthTheme.swift; sourceTree = "<group>"; };
+		9412D7442710420CB0A6B6F6 /* GarageEntranceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GarageEntranceView.swift; sourceTree = "<group>"; };
 		8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceStore.swift; sourceTree = "<group>"; };
 		A20001 /* Marque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque.swift; sourceTree = "<group>"; };
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
@@ -325,6 +329,8 @@
 				A20022 /* ForgotPasswordView.swift */,
 				A20056 /* ProfileSetupView.swift */,
 				A20069 /* VerifyEmailView.swift */,
+				24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */,
+				9412D7442710420CB0A6B6F6 /* GarageEntranceView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -578,6 +584,8 @@
 				9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */,
 				E64384DAD01BCC101BC4750B /* ScanAllowanceViews.swift in Sources */,
 				762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */,
+				65B797A53B1D4533B9DFCDDE /* AuthTheme.swift in Sources */,
+				1B445AF9F26D417AAE319543 /* GarageEntranceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

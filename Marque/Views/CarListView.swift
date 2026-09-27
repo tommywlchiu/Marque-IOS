@@ -18,7 +18,7 @@ struct CarListView: View {
     private var user: AppUser { authService.currentUser ?? .preview }
 
     private var atCarLimit: Bool {
-        carStore.cars.count >= 3 && !subscriptionStore.isPro
+        carStore.cars.count >= CarStore.freeCarLimit && !subscriptionStore.isPro
     }
 
     var body: some View {

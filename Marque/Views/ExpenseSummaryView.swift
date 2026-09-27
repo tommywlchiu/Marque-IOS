@@ -124,11 +124,10 @@ struct ExpenseSummaryView: View {
 
     @ViewBuilder
     private func carIcon(for car: Car) -> some View {
-        if let fileName = car.primaryPhotoFileName,
-           let uiImage = ImageManager.loadImage(fileName: fileName) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
+        // CarPhotoImage decodes off-main and downsamples to this 36pt frame via
+        // ImageIO, instead of the previous synchronous full-resolution main-thread decode.
+        if let fileName = car.primaryPhotoFileName {
+            CarPhotoImage(fileName: fileName, storageURL: car.primaryPhotoStorageURL)
                 .frame(width: 36, height: 36)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         } else {

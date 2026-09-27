@@ -267,7 +267,7 @@ class AuthService: NSObject, ObservableObject {
             // there's nothing more specific to say than "pick a provider and
             // we'll connect it" — stash the password for that connection instead
             // of dead-ending on an error message.
-            if AuthErrorCode(_bridgedNSError: error as NSError) == .emailAlreadyInUse {
+            if Self.authErrorCode(error) == .emailAlreadyInUse {
                 let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
                 pendingPasswordLink = PendingPasswordLink(email: trimmedEmail, password: password)
                 emailCollision = EmailCollision(email: trimmedEmail)
@@ -397,7 +397,7 @@ class AuthService: NSObject, ObservableObject {
             // EC-05 reverse case for Google: Google is only a trusted provider for
             // gmail addresses, so a Workspace/custom-domain email that already has
             // a password account collides here exactly like Apple does.
-            if AuthErrorCode(_bridgedNSError: nsError) == .accountExistsWithDifferentCredential {
+            if Self.authErrorCode(nsError) == .accountExistsWithDifferentCredential {
                 let linkPending = stashProviderCredential(from: nsError)
                 errorMessage = Self.providerCollisionMessage(provider: "Google", linkPending: linkPending)
                 return
@@ -961,7 +961,7 @@ class AuthService: NSObject, ObservableObject {
             let credential = EmailAuthProvider.credential(withEmail: pending.email, password: pending.password)
             try await user.link(with: credential)
         } catch {
-            if AuthErrorCode(_bridgedNSError: error as NSError) != .providerAlreadyLinked {
+            if Self.authErrorCode(error) != .providerAlreadyLinked {
                 #if DEBUG
                 print("[AuthService] Non-fatal: could not link pending password credential: \(error.localizedDescription)")
                 #endif
@@ -985,7 +985,7 @@ class AuthService: NSObject, ObservableObject {
         do {
             try await user.link(with: pending.credential)
         } catch {
-            if AuthErrorCode(_bridgedNSError: error as NSError) != .providerAlreadyLinked {
+            if Self.authErrorCode(error) != .providerAlreadyLinked {
                 #if DEBUG
                 print("[AuthService] Non-fatal: could not link pending provider credential: \(error.localizedDescription)")
                 #endif
@@ -1025,8 +1025,21 @@ class AuthService: NSObject, ObservableObject {
 
     // MARK: - Helpers
 
+    /// The Firebase Auth code for `error`, or nil if it isn't an Auth error.
+    ///
+    /// Don't use `AuthErrorCode(_bridgedNSError:)`: `AuthErrorCode` is a Swift
+    /// `@objc` enum whose bridged domain is its own type name, not
+    /// `FIRAuthErrorDomain`, so it returns nil for every real Firebase error.
+    /// That silently disabled every branch below and every collision check that
+    /// compared against it (raw "credential is malformed" text on a wrong password).
+    nonisolated static func authErrorCode(_ error: Error) -> AuthErrorCode? {
+        let ns = error as NSError
+        guard ns.domain == AuthErrors.domain else { return nil }
+        return AuthErrorCode(rawValue: ns.code)
+    }
+
     private func authErrorMessage(from error: Error) -> String {
-        let code = AuthErrorCode(_bridgedNSError: error as NSError)
+        let code = Self.authErrorCode(error)
         switch code {
         case .wrongPassword, .invalidCredential:
             return "Incorrect email or password."
@@ -1106,7 +1119,7 @@ extension AuthService: ASAuthorizationControllerDelegate {
                     self.appleCompletion?.resume()
                 }
             } catch {
-                let code = AuthErrorCode(_bridgedNSError: error as NSError)
+                let code = Self.authErrorCode(error)
                 let nsError = error as NSError
                 let isReauth = await self.isReauthenticating
                 if !isReauth, code == .accountExistsWithDifferentCredential {

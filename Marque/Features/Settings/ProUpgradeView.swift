@@ -80,6 +80,24 @@ struct ProUpgradeView: View {
                         Button(subscriptionStore.isPro && !subscriptionStore.isFamilyShared ? "Done" : "Not Now") { dismiss() }
                             .foregroundColor(.secondary)
                     }
+                    // FR-08.5: Restore Purchases must be reachable without
+                    // scrolling. The footer button (legalFooter) already
+                    // covers the purchase paths once scrolled to, but this
+                    // toolbar button makes it visible immediately on open.
+                    // The already-Pro section has its own Restore button
+                    // (alreadyProSection) directly in its no-scroll layout,
+                    // so it's excluded here to avoid a redundant control.
+                    if !(subscriptionStore.isPro && !subscriptionStore.isFamilyShared) {
+                        // .topBarTrailing rather than .confirmationAction — this
+                        // isn't the screen's primary action (Subscribe is), so it
+                        // shouldn't pick up confirmationAction's bold "main CTA" styling.
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Restore") {
+                                Task { await subscriptionStore.restore() }
+                            }
+                            .disabled(subscriptionStore.isRestoring)
+                        }
+                    }
                 }
             }
             .task { await subscriptionStore.load() }
@@ -259,7 +277,7 @@ struct ProUpgradeView: View {
             let features: [(icon: String, title: String, subtitle: String)] = [
                 ("bubble.left.and.bubble.right.fill", "Marque Assistant", "500 messages a day, up from 10 free"),
                 ("doc.text.viewfinder",               "Document Scans",   "\(ScanAllowanceStore.proDailyCap) scans a day, up from \(ScanAllowanceStore.freeDailyCap) free"),
-                ("infinity",                          "Unlimited Cars",   "Free plan is limited to 3 vehicles"),
+                ("infinity",                          "Unlimited Cars",   "Free plan is limited to \(CarStore.freeCarLimit) vehicles"),
                 ("checkmark.seal.fill",               "Pro Badge",        "Shown next to your name in Garage and Settings"),
             ]
 

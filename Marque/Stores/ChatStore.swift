@@ -24,7 +24,16 @@ class ChatStore: ObservableObject {
     @Published var isSending: Bool = false
     @Published var sendError: SendError?
     @Published var todayMessageCount: Int = 0
-    @Published var isOffline: Bool = false
+    @Published var isOffline: Bool = false {
+        // A connection lost mid-answer otherwise leaves the stream waiting on a
+        // dead socket until the ~70s callable timeout. Cancel it as soon as the
+        // path monitor sees the drop, so the failure (and Try Again) shows now.
+        didSet { if isOffline { inFlightStream?.cancel() } }
+    }
+
+    /// The `askMarque` stream currently being consumed, so a network drop can
+    /// cancel it. Only set inside `performAskMarque`.
+    private var inFlightStream: Task<(String, StreamResult?), Error>?
 
     /// User-facing message for a failed delete or pin action the user asked for
     /// (or the pin limit). `nil` normally; the view shows it and calls
@@ -65,6 +74,7 @@ class ChatStore: ObservableObject {
         case capReached(cap: Int, isPro: Bool)
         case offline
         case authRequired
+        case deviceCheckFailed
         case service(String)
         case unknown(String)
 
@@ -80,6 +90,8 @@ class ChatStore: ObservableObject {
                 return "Marque needs a connection. Check your network and try again."
             case .authRequired:
                 return "Sign in to use Marque."
+            case .deviceCheckFailed:
+                return "Marque couldn't verify this device. Try again in a moment."
             case .service(let detail):
                 return detail.isEmpty ? "Marque couldn't answer right now. Try again." : detail
             case .unknown(let detail):
@@ -370,6 +382,73 @@ class ChatStore: ObservableObject {
             return
         }
 
+        // 4-6: streaming placeholder, the call itself, and finalization —
+        // shared with retryLastFailedMessage via performAskMarque.
+        await performAskMarque(
+            uid: uid,
+            convId: convId,
+            conversation: conversation,
+            userText: trimmed,
+            historyPayload: Array(historyPayload)
+        )
+    }
+
+    /// Re-runs the `askMarque` call for the conversation's last message, when
+    /// that message is a user message with no assistant reply after it — the
+    /// shape left behind when `sendMessage`'s stream fails after step 3 (the
+    /// user message is already persisted) but before step 6 (the assistant
+    /// reply is persisted). Unlike `sendMessage`, this does NOT write a new
+    /// user message doc: it replays the call for the one already on disk, so
+    /// a retry never duplicates the user's bubble. No-ops if the last message
+    /// isn't an unanswered user message (e.g. the retry affordance is stale).
+    func retryLastFailedMessage() async {
+        guard let uid = currentUID else {
+            sendError = .authRequired
+            return
+        }
+        guard let conversation = currentConversation, let convId = conversation.id else { return }
+        guard let last = currentMessages.last, last.role == "user" else { return }
+        if isOffline {
+            sendError = .offline
+            return
+        }
+        if isSending { return }
+
+        isSending = true
+        sendError = nil
+        defer { isSending = false }
+
+        // History is everything BEFORE the last (unanswered) user message —
+        // mirrors sendMessage's step 1, which captures history before the
+        // message being sent, so the same turn is never duplicated between
+        // `history` and `message` on the wire.
+        let historyPayload = currentMessages
+            .dropLast()
+            .filter { $0.isStreaming != true }
+            .suffix(maxContextTurns)
+            .map { RequestPayload.HistoryMessage(role: $0.role, content: $0.content) }
+
+        await performAskMarque(
+            uid: uid,
+            convId: convId,
+            conversation: conversation,
+            userText: last.content,
+            historyPayload: Array(historyPayload)
+        )
+    }
+
+    /// Shared by `sendMessage` and `retryLastFailedMessage`: streaming
+    /// placeholder, the `askMarque` call itself, and — on success — persisting
+    /// the assistant reply and bumping conversation metadata. Callers own
+    /// their own isSending/sendError/isOffline guards and are responsible for
+    /// the user message this call answers already being on disk.
+    private func performAskMarque(
+        uid: String,
+        convId: String,
+        conversation: Conversation,
+        userText: String,
+        historyPayload: [RequestPayload.HistoryMessage]
+    ) async {
         // 4. Streaming assistant placeholder — shown while the model responds.
         var assistantMessage = ChatMessage.assistantPlaceholder()
         assistantMessage.id = UUID().uuidString
@@ -377,8 +456,8 @@ class ChatStore: ObservableObject {
         let assistantLocalId = assistantMessage.id
 
         let payload = RequestPayload(
-            message: trimmed,
-            history: Array(historyPayload),
+            message: userText,
+            history: historyPayload,
             clientDate: Self.localDateFormatter.string(from: Date()),
             scopedCarId: conversation.scopedCarId
         )
@@ -392,23 +471,36 @@ class ChatStore: ObservableObject {
             responseAs: StreamResponse<StreamChunk, StreamResult>.self
         )
 
-        var accumulated = ""
-        var finalMeta: StreamResult?
+        let accumulated: String
+        let finalMeta: StreamResult?
 
-        do {
+        // Consumed in its own task so `isOffline` can cancel it (see its didSet).
+        let streamTask = Task { @MainActor () -> (String, StreamResult?) in
+            var text = ""
+            var meta: StreamResult?
             let stream = try callable.stream(payload)
             for try await event in stream {
                 switch event {
                 case .message(let chunk):
-                    accumulated += chunk.text
-                    updateStreamingMessage(id: assistantLocalId, content: accumulated)
+                    text += chunk.text
+                    updateStreamingMessage(id: assistantLocalId, content: text)
                 case .result(let final):
-                    finalMeta = final
+                    meta = final
                 }
             }
+            // A cancelled AsyncThrowingStream just ends, it doesn't throw, so a
+            // cut-off answer would otherwise be saved as if it were complete.
+            try Task.checkCancellation()
+            return (text, meta)
+        }
+        inFlightStream = streamTask
+        defer { inFlightStream = nil }
+
+        do {
+            (accumulated, finalMeta) = try await streamTask.value
         } catch {
             removeStreamingMessage(id: assistantLocalId)
-            sendError = translateSendError(error)
+            sendError = error is CancellationError ? .offline : translateSendError(error)
             return
         }
 
@@ -443,6 +535,11 @@ class ChatStore: ObservableObject {
             print("[ChatStore] Couldn't encode the assistant message for saving: \(error.localizedDescription)")
         }
 
+        // Bumps by 2 regardless of whether this is the first attempt or a
+        // retry: on the first attempt this call finalizes both the user
+        // message written in step 3 and this assistant message, and a prior
+        // FAILED attempt never reached this point, so neither message was
+        // counted yet — a retry's success is the first time either is.
         let convoRef = db.collection("users").document(uid)
             .collection("conversations").document(convId)
         do {
@@ -692,7 +789,9 @@ class ChatStore: ObservableObject {
                 let isPro = serverIsPro == true
                 return .capReached(cap: isPro ? Self.proDailyCap : Self.freeDailyCap, isPro: isPro)
             case .unauthenticated:
-                return .authRequired
+                // With a signed-in user this is App Check rejecting the device,
+                // not a missing sign-in (the server uses the same code for both).
+                return currentUID == nil ? .authRequired : .deviceCheckFailed
             case .deadlineExceeded:
                 return .offline
             case .invalidArgument, .failedPrecondition, .outOfRange:

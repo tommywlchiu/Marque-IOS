@@ -71,7 +71,44 @@ service cloud.firestore {
     // add its rule here.
 
     match /users/{userId}/cars/{carId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // FR-08.8 free-tier cap: 2 cars for a non-Pro, non-Family account
+      // (CarStore.freeCarLimit is the client's display copy — change both).
+      // Pro (users/{userId}.isPro, server-written only) and an active Family
+      // Sharing entitlement (usage/limits.familyProUntil, written by
+      // syncEntitlement) are both unlimited. usage/limits.carCount is
+      // maintained by the onCarWritten trigger, recomputed from scratch on
+      // every car write — both usage/limits fields are under
+      // users/{userId}/usage/{docId} below, so the client cannot forge
+      // either one. A missing limits doc (brand-new account, trigger hasn't
+      // run yet) is treated as 0/unset so the very first car is never
+      // blocked. Only CREATE is gated — update and delete stay open below so
+      // an account that's already over the limit (e.g. a Pro downgrade)
+      // keeps full control of the cars it already has.
+      function limitsExists() {
+        return exists(/databases/$(database)/documents/users/$(userId)/usage/limits);
+      }
+      function limits() {
+        return get(/databases/$(database)/documents/users/$(userId)/usage/limits).data;
+      }
+      function isServerPro() {
+        return exists(/databases/$(database)/documents/users/$(userId))
+          && get(/databases/$(database)/documents/users/$(userId)).data.isPro == true;
+      }
+      function hasActiveFamilyProUntil() {
+        return limitsExists()
+          && 'familyProUntil' in limits()
+          && limits().familyProUntil is timestamp
+          && limits().familyProUntil > request.time;
+      }
+      function underCarLimit() {
+        return !limitsExists()
+          || !('carCount' in limits())
+          || limits().carCount < 2;
+      }
+
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && (isServerPro() || hasActiveFamilyProUntil() || underCarLimit());
     }
 
     match /users/{userId}/blocked/{blockedUid} {
@@ -89,14 +126,31 @@ service cloud.firestore {
                     && resource.data.ownerUID == request.auth.uid;
     }
 
+    // FollowStore.follow() batches an identical setData({followedAt: ...})
+    // (an update if the edge already exists, so update carries the same guard)
+    // to both this doc and the mirror followers/ doc below; unfollow()
+    // batches a delete of both. Full blocking (owner decision) requires that
+    // a new follow can't be created in either direction once either party
+    // has blocked the other — checked against users/{a}/blocked/{b} in both
+    // directions, since either side could be the blocker. Deletes stay
+    // unrestricted so unfollow always works, including for an edge left
+    // over from before a block (the onUserBlocked trigger normally removes
+    // these itself, but the client must never be blocked from cleaning up
+    // its own state).
     match /users/{userId}/following/{followedId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId
+                    && !exists(/databases/$(database)/documents/users/$(userId)/blocked/$(followedId))
+                    && !exists(/databases/$(database)/documents/users/$(followedId)/blocked/$(userId));
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
     match /users/{userId}/followers/{followerId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == followerId;
+      allow create, update: if request.auth != null && request.auth.uid == followerId
+                    && !exists(/databases/$(database)/documents/users/$(userId)/blocked/$(followerId))
+                    && !exists(/databases/$(database)/documents/users/$(followerId)/blocked/$(userId));
+      allow delete: if request.auth != null && request.auth.uid == followerId;
     }
 
     match /reports/{reportId} {
@@ -113,7 +167,23 @@ service cloud.firestore {
     match /users/{userId}/notifications/{notificationId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+
+      // Previously `allow create: if request.auth != null` — any signed-in
+      // user could forge an arbitrary notification (any type, any actor)
+      // into any inbox. Restricted to exactly what
+      // NotificationStore.writeFollowNotification writes: a 'follow'
+      // notification self-attributed to the actor creating it, with no
+      // extra fields, and only if the recipient hasn't blocked the actor
+      // (full blocking silences the blocked party — see the
+      // users/{uid}/blocked/{blockedUid} cascade trigger, onUserBlocked).
+      allow create: if request.auth != null
+                    && request.resource.data.actorUID == request.auth.uid
+                    && request.resource.data.type == 'follow'
+                    && request.resource.data.keys().hasOnly([
+                         'type', 'actorUID', 'actorDisplayName', 'actorUsername',
+                         'actorAvatarURL', 'isRead', 'createdAt'
+                       ])
+                    && !exists(/databases/$(database)/documents/users/$(userId)/blocked/$(request.auth.uid));
     }
 
     match /users/{uid}/conversations/{convId} {
@@ -150,6 +220,12 @@ service cloud.firestore {
     // Read is denied as well: nothing client-side needs to read this, the
     // callable returns the token directly to its owner.
     match /appAccountTokens/{token} {
+      allow read, write: if false;
+    }
+
+    // Family Sharing car-limit claims, first-claim-wins per transaction.
+    // Written only by syncEntitlement (Admin SDK); swept by onAuthUserDeleted.
+    match /familyGrants/{transactionId} {
       allow read, write: if false;
     }
 

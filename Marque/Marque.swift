@@ -145,6 +145,15 @@ struct Marque_PrototypeApp: App {
                 .onChange(of: subscriptionStore.hasLoaded) { _, hasLoaded in
                     if hasLoaded { authService.setProStatus(subscriptionStore.isPro) }
                 }
+                // Cross-store coordination for full blocking: BlockStore
+                // doesn't know about FollowStore (stores stay decoupled), so
+                // this app-root observer bridges the two. The server-side
+                // cascade (onUserBlocked trigger) deletes the actual
+                // Firestore follow edges; this just makes this device's UI
+                // reflect the unfollow immediately instead of waiting on it.
+                .onChange(of: blockStore.lastBlockedUID) { _, uid in
+                    if let uid { followStore.removeLocal(uid: uid) }
+                }
         }
     }
 }
@@ -154,6 +163,23 @@ struct Marque_PrototypeApp: App {
 // Drives top-level navigation: Onboarding → Auth → Main App
 private struct RootView: View {
     @EnvironmentObject var authService: AuthService
+    // Observes the shared arm/consume flag set by LoginView/SignUpView on an
+    // active sign-in/sign-up tap this session (never inferred from
+    // `isAuthenticated`, which also flips on a cold-launch session restore).
+    @StateObject private var entrance = GarageEntranceCoordinator.shared
+    @State private var showEntranceAnimation = false
+    /// New per sign-in, and used as MainTabView's identity, so each signed-in
+    /// session starts on a fresh Garage root. Without it, signing out from
+    /// Settings and back in (as the same or a different account) reopened on
+    /// Settings: SwiftUI carried the tab/navigation state across the sign-out.
+    @State private var sessionID = UUID()
+
+    /// True when the routing below lands on MainTabView (the final else).
+    private var isShowingGarage: Bool {
+        authService.hasSeenOnboarding && authService.isAuthenticated && authService.isEmailVerified
+            && !authService.isResolvingProfile && authService.hasCompletedProfileSetup
+            && !authService.needsFirstCarStep
+    }
 
     var body: some View {
         Group {
@@ -186,9 +212,33 @@ private struct RootView: View {
                 ))
                 .transition(.opacity)
             } else {
+                // The user may have passed through VerifyEmail, profile setup or
+                // the first-car step since arming the entrance; only the first
+                // appearance of the garage itself consumes the arm and plays it.
                 MainTabView()
+                    .id(sessionID)
                     .transition(.opacity)
+                    .onAppear {
+                        if entrance.consumeIfArmed() {
+                            showEntranceAnimation = true
+                        }
+                    }
             }
+        }
+        // Outside the Group so the door isn't caught in the branch's opacity
+        // cross-fade (it must be solid from the first frame, not fade in with
+        // the garage). `entrance.isArmed` covers the frames before onAppear has
+        // consumed the arm, so the garage never flashes before the door.
+        .overlay {
+            if isShowingGarage && (entrance.isArmed || showEntranceAnimation) {
+                GarageEntranceView {
+                    showEntranceAnimation = false
+                }
+                .transition(.identity)
+            }
+        }
+        .onChange(of: authService.isAuthenticated) { _, isAuthenticated in
+            if !isAuthenticated { sessionID = UUID() }
         }
         .animation(.easeInOut(duration: 0.25), value: authService.hasSeenOnboarding)
         .animation(.easeInOut(duration: 0.25), value: authService.isAuthenticated)
@@ -231,7 +281,7 @@ private struct MainTabView: View {
     private enum Tab: Hashable { case garage, add, explore }
 
     private var atCarLimit: Bool {
-        carStore.cars.count >= 3 && !subscriptionStore.isPro
+        carStore.cars.count >= CarStore.freeCarLimit && !subscriptionStore.isPro
     }
 
     // Intercept selection of the center "+" tab — trigger the add-car flow
@@ -304,6 +354,21 @@ private struct MainTabView: View {
         }
         .sheet(isPresented: $showingPaywall) {
             ProUpgradeView(trigger: .carLimit)
+        }
+        // The server enforces the free car limit (FR-08.8). A car the client let
+        // through, e.g. because the device thinks it's Pro while the server
+        // doesn't, is rolled back by CarStore; tell the user why it vanished.
+        .alert("Car limit reached", isPresented: Binding(
+            get: { carStore.carLimitRejected },
+            set: { if !$0 { carStore.clearCarLimitRejected() } }
+        )) {
+            Button("See Marque Pro") {
+                carStore.clearCarLimitRejected()
+                showingPaywall = true
+            }
+            Button("OK", role: .cancel) { carStore.clearCarLimitRejected() }
+        } message: {
+            Text("Free accounts can have up to \(CarStore.freeCarLimit) cars, so your new car wasn't saved. Upgrade to Marque Pro for unlimited cars.")
         }
     }
 

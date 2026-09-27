@@ -2,6 +2,9 @@ import SwiftUI
 
 struct SearchResultsView: View {
     @EnvironmentObject var exploreStore: ExploreStore
+    // Injected ambiently from the root (Marque.swift) -- ExploreView doesn't need
+    // to attach it explicitly for this pushed destination to see it.
+    @EnvironmentObject var blockStore: BlockStore
     @State private var query = ""
     @State private var selectedScope: SearchScope = .cars
     @FocusState private var isSearchFocused: Bool
@@ -11,17 +14,26 @@ struct SearchResultsView: View {
         case people = "People"
     }
 
-    private var allResults: [PublicCar] { exploreStore.results(matching: query) }
+    // Blocked-user filtering applied at the base of both derived result lists,
+    // matching ExploreView's `visibleCars` pattern, so a blocked user's cars and
+    // profile never surface in either search scope.
+    private var visibleCars: [PublicCar] {
+        blockStore.filter(exploreStore.cars, ownerUID: \.ownerUID)
+    }
+
+    private var allResults: [PublicCar] {
+        blockStore.filter(exploreStore.results(matching: query), ownerUID: \.ownerUID)
+    }
 
     private var filteredCars: [PublicCar] {
-        guard !query.isEmpty else { return exploreStore.cars }
+        guard !query.isEmpty else { return visibleCars }
         return allResults
     }
 
     private var filteredPeople: [PublicCar] {
         guard !query.isEmpty else { return [] }
         let q = query.lowercased()
-        return exploreStore.cars.filter { $0.ownerUsername.lowercased().contains(q) }
+        return visibleCars.filter { $0.ownerUsername.lowercased().contains(q) }
     }
 
     // Deduplicated owners for the People tab

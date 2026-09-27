@@ -7,7 +7,6 @@ struct SettingsView: View {
     @State private var showingProUpgrade = false
     @State private var showingDeleteAccountAlert = false
     @State private var showingSignOutAlert = false
-    @State private var useMiles = true
     @State private var showingDeleteAccountSheet = false
     @State private var showingChangePassword = false
     @State private var showingEditProfile = false
@@ -19,19 +18,25 @@ struct SettingsView: View {
         UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
     }
 
+    // CFBundleShortVersionString (CFBundleVersion) — shared by the Support
+    // section's Version row and sendFeedback()'s debugging context below.
+    private var appVersionString: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
+        return "\(version) (\(build))"
+    }
+
     /// Opens Mail pre-addressed to support, with app/OS version and a truncated
     /// uid pre-filled so a reply-less bug report still carries useful debugging
     /// context. uid is truncated (not omitted) so it's still useful for looking
     /// up the account without reading like a full identifier in an email body.
     private func sendFeedback() {
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
         let uidSuffix = String(user.id.suffix(6))
         let body = """
 
 
         ---
-        App version: \(appVersion) (\(buildNumber))
+        App version: \(appVersionString)
         iOS version: \(UIDevice.current.systemVersion)
         Account: …\(uidSuffix)
         """
@@ -160,13 +165,6 @@ struct SettingsView: View {
 
     private var preferencesSection: some View {
         Section(header: Text("Preferences")) {
-            Picker(selection: $useMiles) {
-                Text("Miles").tag(true)
-                Text("Kilometers").tag(false)
-            } label: {
-                Label("Distance Unit", systemImage: "gauge.medium")
-            }
-
             NavigationLink(destination: NotificationsSettingsView()) {
                 Label("Notification Settings", systemImage: "bell.badge")
             }
@@ -199,7 +197,7 @@ struct SettingsView: View {
             HStack {
                 Label("Version", systemImage: "info.circle")
                 Spacer()
-                Text("1.0.0 (1)")
+                Text(appVersionString)
                     .foregroundColor(.secondary)
                     .font(.subheadline)
             }
@@ -245,7 +243,10 @@ private struct NotificationsSettingsView: View {
     @EnvironmentObject var authService: AuthService
     @AppStorage(NotificationManager.insuranceAlertsKey) private var insuranceAlerts = true
     @AppStorage(NotificationManager.registrationAlertsKey) private var registrationAlerts = true
-    @AppStorage(NotificationManager.maintenanceRemindersKey) private var maintenanceReminders = false
+    // NotificationManager treats an absent key as "on" (see its gates in
+    // scheduleAll), so the UI default here must match that, not read as off
+    // until the user has ever touched the toggle.
+    @AppStorage(NotificationManager.maintenanceRemindersKey) private var maintenanceReminders = true
 
     var body: some View {
         Form {

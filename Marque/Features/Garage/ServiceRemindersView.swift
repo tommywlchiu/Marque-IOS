@@ -6,6 +6,10 @@ struct ServiceRemindersView: View {
 
     @State private var showingAddReminder = false
     @State private var showingSuggestions = false
+    @State private var reminderToEdit: ServiceReminder?
+    @State private var reminderToLog: ServiceReminder?
+    @State private var showingMaintenanceLimitAlert = false
+    @State private var logConfirmation: LogConfirmation?
 
     private var car: Car? { carStore.cars.first { $0.id == carID } }
 
@@ -17,7 +21,11 @@ struct ServiceRemindersView: View {
     }
 
     private var completed: [ServiceReminder] {
-        car?.serviceReminders.filter(\.isCompleted) ?? []
+        // Most recently completed first; reminders completed before completedDate
+        // existed have no date and go last.
+        (car?.serviceReminders.filter(\.isCompleted) ?? []).sorted {
+            ($0.completedDate ?? .distantPast) > ($1.completedDate ?? .distantPast)
+        }
     }
 
     private var currentMileage: Int {
@@ -53,8 +61,73 @@ struct ServiceRemindersView: View {
         .sheet(isPresented: $showingAddReminder) {
             if let car { AddReminderView(carID: car.id) }
         }
+        .sheet(item: $reminderToEdit) { reminder in
+            AddReminderView(carID: carID, reminder: reminder)
+        }
+        .sheet(item: $reminderToLog) { reminder in
+            logSheet(for: reminder)
+        }
         .sheet(isPresented: $showingSuggestions) {
             if let car { SuggestedRemindersSheet(car: car) }
+        }
+        .alert("Record Limit Reached", isPresented: $showingMaintenanceLimitAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This car has reached the \(CarStore.maxMaintenanceRecords)-record limit. Delete an older record to add a new one.")
+        }
+        .overlay(alignment: .bottom) {
+            if let logConfirmation {
+                LogConfirmationBanner(message: logConfirmation.message) {
+                    guard let freshCar = car else { return }
+                    carStore.undoLogSideEffects(logConfirmation.outcome, for: freshCar)
+                    withAnimation { self.logConfirmation = nil }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+
+    // Same 5-second confirmation with Undo as the car page's Maintenance Log.
+    private func presentConfirmation(_ confirmation: LogConfirmation) {
+        withAnimation { logConfirmation = confirmation }
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            if logConfirmation?.id == confirmation.id {
+                withAnimation { logConfirmation = nil }
+            }
+        }
+    }
+
+    // Prefills service type / today's date / current mileage from the
+    // reminder being checked off; "Skip" completes it without logging a
+    // record. Both actions re-fetch the car fresh at call time (via `car`,
+    // a computed property) rather than capturing this closure's snapshot.
+    @ViewBuilder
+    private func logSheet(for reminder: ServiceReminder) -> some View {
+        if let carAtOpen = car {
+            AddMaintenanceView(
+                prefill: AddMaintenanceView.Prefill(
+                    serviceType: reminder.serviceType,
+                    date: Date(),
+                    mileage: carAtOpen.mileage.replacingOccurrences(of: ",", with: "")
+                ),
+                onSkip: {
+                    guard let freshCar = car else { return }
+                    let next = carStore.completeReminder(reminder, in: freshCar)
+                    presentConfirmation(LogConfirmation(markedDone: reminder, next: next))
+                },
+                onSave: { record, receiptImage in
+                    guard let freshCar = car else { return }
+                    guard freshCar.maintenanceRecords.count < CarStore.maxMaintenanceRecords else {
+                        showingMaintenanceLimitAlert = true
+                        return
+                    }
+                    let outcome = carStore.logService(record, for: freshCar, receiptImage: receiptImage)
+                    presentConfirmation(LogConfirmation(logged: record, outcome: outcome))
+                }
+            )
         }
     }
 
@@ -70,7 +143,8 @@ struct ServiceRemindersView: View {
                             ReminderRow(
                                 reminder: reminder,
                                 currentMileage: currentMileage,
-                                onComplete: { complete(reminder) }
+                                onComplete: { reminderToLog = reminder },
+                                onEdit: { reminderToEdit = reminder }
                             )
                             .transition(.opacity.combined(with: .scale(scale: 0.94)))
                         }
@@ -88,7 +162,12 @@ struct ServiceRemindersView: View {
                         Button {
                             showingSuggestions = true
                         } label: {
-                            Label("\(suggestions.count) suggested reminders", systemImage: "sparkles")
+                            // No count here — this is the rule-engine's local
+                            // estimate, but the sheet may load AI-generated
+                            // suggestions instead, which can be a different
+                            // number. Showing a number here risked promising
+                            // one count and then displaying another.
+                            Label("Suggested reminders available", systemImage: "sparkles")
                         }
                     }
                 }
@@ -100,6 +179,7 @@ struct ServiceRemindersView: View {
                                 reminder: reminder,
                                 currentMileage: currentMileage,
                                 onComplete: nil,
+                                onEdit: { reminderToEdit = reminder },
                                 onRestore: { restore(reminder) }
                             )
                             .opacity(0.7)
@@ -133,7 +213,7 @@ struct ServiceRemindersView: View {
                 Button {
                     showingSuggestions = true
                 } label: {
-                    Label("Show \(suggestions.count) suggestions", systemImage: "sparkles")
+                    Label("Show suggestions", systemImage: "sparkles")
                         .font(.subheadline)
                 }
             }
@@ -142,18 +222,6 @@ struct ServiceRemindersView: View {
     }
 
     // MARK: - Actions
-
-    private func complete(_ reminder: ServiceReminder) {
-        guard var car else { return }
-        if let idx = car.serviceReminders.firstIndex(where: { $0.id == reminder.id }) {
-            car.serviceReminders[idx].isCompleted = true
-            // Success haptic on completion only — restoring isn't a success moment.
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-            withAnimation(.easeInOut(duration: 0.3)) {
-                carStore.updateCar(car)
-            }
-        }
-    }
 
     // Un-completes a reminder — for when the user misclicked "done" and wants
     // to bring the reminder back into the Upcoming section.
@@ -179,12 +247,29 @@ struct ServiceRemindersView: View {
         carStore.updateCar(car)
     }
 
-    // Sort: overdue first, then by soonest due date or due mileage.
+    // Sort: overdue first, then by soonest trigger (whichever is set).
+    //
+    // The previous version keyed purely on `daysUntilDue() ?? <bucket
+    // fallback>`, so a mileage-only reminder (no dueDate, so daysUntilDue()
+    // is always nil) got the same fallback constant as every other
+    // mileage-only reminder in its bucket — they clumped together in
+    // whatever order the array happened to be in, and in .dueSoon/.upcoming
+    // that fallback (999) always sorted them after every date-based reminder
+    // regardless of how close their mileage actually was. Normalizing both
+    // triggers onto one "soonness" scale (100 miles ~= 1 day — a rough but
+    // reasonable stand-in, not meant to be physically exact) and using
+    // whichever trigger is set — or the sooner of the two, mirroring
+    // ServiceReminder.status()'s own whichever-comes-first semantics — means
+    // mileage-only reminders sort by their actual urgency instead.
     private func sortKey(_ r: ServiceReminder, currentMileage: Int) -> Double {
+        let dayValue = r.daysUntilDue().map(Double.init)
+        let mileValue = r.milesUntilDue(currentMileage: currentMileage).map { Double($0) / 100.0 }
+        let soonest = [dayValue, mileValue].compactMap { $0 }.min() ?? .greatestFiniteMagnitude
+
         switch r.status(currentMileage: currentMileage) {
-        case .overdue:  return -1_000_000 + Double(r.daysUntilDue() ?? 0)
-        case .dueSoon:  return Double(r.daysUntilDue() ?? 999)
-        case .upcoming: return 1_000 + Double(r.daysUntilDue() ?? 999)
+        case .overdue:  return -1_000_000 + soonest
+        case .dueSoon:  return soonest
+        case .upcoming: return 1_000 + soonest
         }
     }
 }
@@ -195,15 +280,8 @@ private struct ReminderRow: View {
     let reminder: ServiceReminder
     let currentMileage: Int
     let onComplete: (() -> Void)?
+    var onEdit: (() -> Void)? = nil
     var onRestore: (() -> Void)? = nil
-
-    // Optimistic, row-local "just completed" flag. Drives an immediate
-    // checkmark pop + strikethrough + fade the moment the user taps, rather
-    // than waiting on carStore.updateCar's async Firestore round trip before
-    // showing any feedback. The row itself is removed from "Upcoming" a
-    // moment later (see the `.animation(value: reminders)` on the List)
-    // once that write lands and `car.serviceReminders` actually updates.
-    @State private var isCompleting = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -212,8 +290,6 @@ private struct ReminderRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(reminder.serviceType)
                     .font(.subheadline).fontWeight(.semibold)
-                    .strikethrough(isCompleting, color: .secondary)
-                    .foregroundColor(isCompleting ? .secondary : .primary)
 
                 Text(detailText)
                     .font(.caption)
@@ -230,20 +306,17 @@ private struct ReminderRow: View {
             Spacer()
 
             if let onComplete, !reminder.isCompleted {
-                Button {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.62)) {
-                        isCompleting = true
-                    }
-                    onComplete()
-                } label: {
-                    Image(systemName: isCompleting ? "checkmark.circle.fill" : "checkmark.circle")
+                // Opens the log form (prefilled) rather than completing
+                // in place — the actual completion happens once that form is
+                // saved or explicitly skipped, so no optimistic local state
+                // here (a cancelled sheet must leave the row untouched).
+                Button(action: onComplete) {
+                    Image(systemName: "checkmark.circle")
                         .font(.title3)
-                        .foregroundColor(isCompleting ? .green : .accentColor)
-                        .scaleEffect(isCompleting ? 1.15 : 1.0)
+                        .foregroundColor(.accentColor)
                 }
                 .buttonStyle(.plain)
-                .disabled(isCompleting)
-                .accessibilityLabel("Mark \(reminder.serviceType) complete")
+                .accessibilityLabel("Log \(reminder.serviceType)")
             } else if let onRestore, reminder.isCompleted {
                 Button(action: onRestore) {
                     Image(systemName: "arrow.uturn.backward.circle")
@@ -255,7 +328,13 @@ private struct ReminderRow: View {
             }
         }
         .padding(.vertical, 4)
-        .opacity(isCompleting ? 0.55 : 1)
+        .contentShape(Rectangle())
+        // A Button inside this HStack (the check/restore control above)
+        // consumes its own taps first — SwiftUI hit-tests the deepest
+        // interactive view — so this only fires for taps elsewhere on the row.
+        .onTapGesture {
+            onEdit?()
+        }
     }
 
     private var status: ServiceReminder.Status {
@@ -281,6 +360,14 @@ private struct ReminderRow: View {
     }
 
     private var detailText: String {
+        // Completed reminders show when they were done, not a due/overdue
+        // countdown against a target that no longer applies. completedDate
+        // is nil for reminders completed before that field existed.
+        if reminder.isCompleted {
+            guard let completedDate = reminder.completedDate else { return "Done" }
+            return "Done \(completedDate.formatted(date: .abbreviated, time: .omitted))"
+        }
+
         var parts: [String] = []
 
         if let days = reminder.daysUntilDue() {

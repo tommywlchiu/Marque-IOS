@@ -189,10 +189,14 @@ class SubscriptionStore: ObservableObject {
         // (1) Is there ANY verified, non-revoked Pro entitlement? That alone
         //     unlocks the local paywall, so a Family Sharing member is Pro on
         //     this device exactly like the purchaser is.
-        // (2) Is there a DIRECT purchase we may hand to syncEntitlement? A
-        //     Family Sharing entitlement belongs to the purchaser, not to
-        //     whoever is signed in on this device, and must never be sent (see
-        //     the matching inAppOwnershipType check in functions/src/index.ts).
+        // (2) Which transaction, if any, should be handed to syncEntitlement?
+        //     A direct purchase always wins when one exists. A Family Sharing
+        //     transaction belongs to the purchaser, not to whoever is signed
+        //     in on this device, so it must never grant server-side isPro —
+        //     but it IS sent as a fallback so the server can record the
+        //     FR-08.8 unlimited-car-count flag for this account (see the
+        //     matching inAppOwnershipType check in functions/src/index.ts,
+        //     which enforces that isPro is never granted off it).
         //
         // These must stay decoupled: folding ownershipType into the single
         // value that drove `isPro` is what locked family members out of the
@@ -204,7 +208,13 @@ class SubscriptionStore: ObservableObject {
         var hasDirectPurchase = false
         // The JWS lives on the VerificationResult, not on Transaction itself,
         // so capture both: the ID de-duplicates the server call, the JWS is what
-        // the server re-verifies.
+        // the server re-verifies. A direct purchase always wins if one turns
+        // up — see the ownership check below — but a Family Sharing
+        // transaction is kept as a fallback candidate so the server still
+        // gets *something* to verify when no direct purchase exists. The
+        // server (syncEntitlement) is what actually decides what a
+        // Family-Shared JWS is allowed to grant (never isPro — only the
+        // FR-08.8 car-limit flag); this loop only decides which JWS to send.
         var syncCandidate: (id: UInt64, jws: String)?
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result,
@@ -219,6 +229,11 @@ class SubscriptionStore: ObservableObject {
                 // Both questions are now settled — nothing later in the
                 // sequence can change either answer.
                 break
+            } else if syncCandidate == nil {
+                // Family-Shared fallback — only kept if no direct purchase
+                // has been (or is later) found, since the guard above always
+                // overwrites this with a direct purchase and breaks.
+                syncCandidate = (transaction.id, result.jwsRepresentation)
             }
         }
         isPro = hasProEntitlement

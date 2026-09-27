@@ -73,6 +73,12 @@ struct MarqueChatView: View {
                     set: { if !$0 { chatStore.sendError = nil } }
                 )
             ) {
+                // draft already holds the restored text by the time this shows
+                // (send() restores it synchronously right after the failed await).
+                Button("Try Again") {
+                    chatStore.sendError = nil
+                    retry()
+                }
                 Button("OK", role: .cancel) { chatStore.sendError = nil }
             }
             .onAppear {
@@ -302,7 +308,38 @@ struct MarqueChatView: View {
         guard !text.isEmpty else { return }
         draft = ""
         inputFocused = false
-        Task { await chatStore.sendMessage(text) }
+        Task {
+            await chatStore.sendMessage(text)
+            // Restore the user's text on failure so they don't have to retype it
+            // (FR-10.14 / EC-19). Not restored on the cap-reached error: that state
+            // swaps the composer out for the cap bar entirely, so there's nowhere
+            // to put it, and the message that failed was never sent, so it isn't
+            // "one of today's messages" to begin with.
+            if let error = chatStore.sendError, !error.isCap {
+                draft = text
+            }
+        }
+    }
+
+    /// Try Again from the failure alert. When the failed message was already
+    /// saved (the usual case: sendMessage writes it before calling the server),
+    /// re-ask for that message instead of sending it again, which would show a
+    /// duplicate bubble. If it never got saved, fall back to a normal send.
+    private func retry() {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let last = chatStore.currentMessages.last, last.role == "user",
+              last.content.trimmingCharacters(in: .whitespacesAndNewlines) == text
+        else {
+            send()
+            return
+        }
+        draft = ""
+        Task {
+            await chatStore.retryLastFailedMessage()
+            if let error = chatStore.sendError, !error.isCap {
+                draft = text
+            }
+        }
     }
 }
 

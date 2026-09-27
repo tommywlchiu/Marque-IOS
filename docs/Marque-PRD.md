@@ -244,7 +244,7 @@ Not user-facing features. These exist because the document previously assumed th
 
 | ID | Story | Acceptance Criteria |
 |---|---|---|
-| US-19 | As a user with 4+ cars, I want to upgrade to Pro to add more | Paywall shown on 4th car add; purchase unlocks immediately |
+| US-19 | As a user with 3+ cars, I want to upgrade to Pro to add more | Paywall shown on 3rd car add; purchase unlocks immediately |
 | US-20 | As a Pro user, I want my subscription restored on a new device | Restore purchase link on paywall; Firestore updated on restore |
 | US-30 | As a heavy Assistant user, I want to keep asking questions after the free daily limit so my research isn't interrupted mid-task | Free tier caps at 10 messages/day; the cap notice states plainly what Pro raises it to; upgrading lifts the cap immediately without re-launching |
 | US-31 | As someone photographing a stack of maintenance receipts, I want to scan more than the free daily allowance in one sitting | Free tier caps document scans per day; the cap is shown before the scan is attempted, not after; Pro raises it |
@@ -338,7 +338,7 @@ Not user-facing features. These exist because the document previously assumed th
 
 ## FR-08: Pro Tier
 
-**Positioning (v1.2).** Pro anchors on **metered AI usage** — the Assistant and document scanning. This is deliberate: those are the only features with real recurring marginal cost per use (Anthropic API tokens), which makes charging for them economically honest rather than artificial gating. Car count and the badge remain Pro benefits but are secondary; neither costs anything to serve, and the 3-car limit only binds the minority of users with four or more vehicles.
+**Positioning (v1.2).** Pro anchors on **metered AI usage** — the Assistant and document scanning. This is deliberate: those are the only features with real recurring marginal cost per use (Anthropic API tokens), which makes charging for them economically honest rather than artificial gating. Car count and the badge remain Pro benefits but are secondary; neither costs anything to serve, and the 2-car limit only binds users with three or more vehicles. (Lowered from 3 to 2 on 2026-09-26, an owner decision.)
 
 What Pro is explicitly **not** anchored on, and why:
 
@@ -347,7 +347,7 @@ What Pro is explicitly **not** anchored on, and why:
 - **Social profile** — free; gating discovery would starve the social graph before it has any density (see R-02).
 - **Export** — see FR-15. Free, for the reasons given there.
 
-- **FR-08.1** Free tier is capped at 3 cars; the 4th add attempt surfaces the upgrade sheet
+- **FR-08.1** Free tier is capped at 2 cars; the 3rd add attempt surfaces the upgrade sheet
 - **FR-08.2** The upgrade sheet must offer both monthly ($2.99) and annual ($24.99) plans; annual shown first as recommended
 - **FR-08.3** Pro must be verified via Firestore (`user.isPro = true`), not StoreKit alone, to support cross-device unlock
 - **FR-08.4** When a subscription lapses, existing cars must remain readable; only new car additions are blocked. Likewise, Assistant conversation history and previously scanned documents must remain readable — lapsing reduces future allowance, it never destroys or hides data the user already created
@@ -512,7 +512,7 @@ Added in v1.2 to document a feature the iOS client already contained and this do
 | EC-01 | User adds a car, immediately goes offline before Firestore write completes | Write queued; car shows in UI immediately; syncs on reconnect; no data lost |
 | EC-02 | Two devices logged into same account simultaneously add a car | Firestore last-write-wins; both cars appear; no conflict |
 | EC-03 | VIN decode returns partial data (some fields missing) | Available fields pre-filled; empty fields left blank for manual entry |
-| EC-04 | User adds 3 cars, hits paywall, purchases Pro, then cancels subscription within 7 days (Apple refund) | Firestore updated via server notification; free limit reinstated; existing 3 cars unaffected |
+| EC-04 | User adds 2 cars, hits paywall, purchases Pro, adds more, then cancels subscription within 7 days (Apple refund) | Firestore updated via server notification; free limit reinstated; existing cars unaffected (only adding a new one is blocked) |
 | EC-05 | User attempts to sign up with email already linked to an Apple ID | "An account with this email exists. Sign in with Apple instead?" prompt with Apple button |
 | EC-06 | Photo upload fails after car is already saved | Car saved without photo; car detail shows "Photo didn't upload. [Retry]" |
 | EC-07 | User sets a registration expiry date in the past | Notification scheduled for the past silently dropped; expiry banner shows "Expired" in UI |
@@ -631,7 +631,7 @@ Supporting metrics below are diagnostic — they explain *why* the North Star mo
 - Follow / Unfollow
 - Following feed (chronological)
 - Explore tab (public garages, basic search)
-- Paywall at 3-car limit + Pro subscription (monthly + annual)
+- Paywall at 2-car limit + Pro subscription (monthly + annual)
 - Block and report (required for App Store social features approval)
 - Privacy policy + Terms of Service in-app
 
@@ -712,7 +712,7 @@ The MVP is complete when:
 1. Firebase free tier is sufficient for the first 1,000 active users without billing
 2. NHTSA VPIC API remains free and publicly available without an API key
 3. Apple's App Store review will not flag the social features if block/report is implemented
-4. Users will accept a 3-car free limit without significant churn if the value per car is high enough
+4. Users will accept a 2-car free limit without significant churn if the value per car is high enough
 5. The target demographic (car owners in the US) is sufficiently iOS-dominant to justify iOS-first
 6. **(v1.2)** Enough users will hit the free Assistant and document-scan allowances often enough to feel the limit, and will value crossing it at $2.99/month. This is the central monetization assumption after the FR-08 repositioning and it is unvalidated — the app has no real users yet. R-13 tracks it; `assistant_cap_reached`, `document_scan_cap_reached`, and `paywall_viewed.trigger` are the instruments that will confirm or refute it
 7. **(v1.2)** PostHog's free tier remains sufficient at the scale described in Section 9, and first-party product analytics continue not to require an App Tracking Transparency prompt (which holds only as long as FR-11.7's no-IDFA, no-cross-app-tracking constraint is respected)

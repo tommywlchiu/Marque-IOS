@@ -15,6 +15,14 @@ enum ReportReason: String, CaseIterable, Identifiable {
 class BlockStore: ObservableObject {
     @Published private(set) var blockedUIDs: Set<String> = []
     @Published private(set) var lastError: String?
+    // Set to the just-blocked uid on a successful block(), so
+    // Marque_PrototypeApp can tell FollowStore to drop any local follow
+    // state for that uid immediately, without BlockStore knowing about
+    // FollowStore directly (stores stay decoupled — see CLAUDE.md). The
+    // server-side cascade (onUserBlocked trigger) removes the actual
+    // Firestore edges; this only fixes up this device's local cache so the
+    // UI doesn't wait on that round trip.
+    @Published private(set) var lastBlockedUID: String?
 
     private var listener: ListenerRegistration?
     private var currentUID: String?
@@ -36,6 +44,7 @@ class BlockStore: ObservableObject {
         listener = nil
         currentUID = nil
         blockedUIDs = []
+        lastBlockedUID = nil
     }
 
     func isBlocked(_ uid: String) -> Bool {
@@ -49,6 +58,7 @@ class BlockStore: ObservableObject {
             try await db.collection("users").document(currentUID)
                 .collection("blocked").document(uid)
                 .setData(["blockedAt": FieldValue.serverTimestamp()])
+            lastBlockedUID = uid
         } catch {
             blockedUIDs.remove(uid)
         }

@@ -395,7 +395,9 @@ struct EditCarDetailView: View {
         HStack(spacing: 4) {
             Image(systemName: "arrow.up.and.down")
                 .font(.caption2)
-            Text("Drag to reposition cover photo")
+            Text(photoSlots.count > 1
+                 ? "Drag to reposition · tap ☆ on a photo to make it the cover"
+                 : "Drag to reposition cover photo")
                 .font(.caption)
         }
         .foregroundStyle(.secondary)
@@ -442,6 +444,21 @@ struct EditCarDetailView: View {
                         .background(Color.accentColor)
                         .clipShape(Capsule())
                         .padding(4)
+                } else {
+                    // Visible, not just in the long-press menu, which almost
+                    // nobody finds.
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) { makePrimary(slot: slot) }
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Image(systemName: "star")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 24, height: 24)
+                            .background(Circle().fill(.black.opacity(0.55)))
+                            .padding(3)
+                    }
+                    .accessibilityLabel("Set as cover photo")
                 }
             }
             .overlay(
@@ -612,6 +629,16 @@ struct EditCarDetailView: View {
         updated.registrationExpiryDate = hasRegistrationExpiry ? registrationExpiryDate : nil
         updated.notes = notes.trimmingCharacters(in: .whitespaces)
         updated.photoFileNames = newFileNames
+        // photoStorageURLs is parallel to photoFileNames. Carry each existing
+        // photo's URL to its new position; new photos start empty until their
+        // upload lands. Reordering only the names (as this used to) paired the
+        // cover with another photo's URL, so other devices and Explore showed
+        // the wrong one.
+        let urlByName = Dictionary(
+            zip(car.photoFileNames, car.photoStorageURLs),
+            uniquingKeysWith: { first, _ in first }
+        )
+        updated.photoStorageURLs = newFileNames.map { urlByName[$0] ?? "" }
         updated.photoOffsetY = photoOffsetY
 
         onSave(updated)

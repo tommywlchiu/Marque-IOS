@@ -111,6 +111,16 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — The first fix for the hardcoded-simulator pitfall used the inline-prefix one-liner. It looked correct, was committed to three files, and produced a help dump rather than a build on the first run.
 - **Detect** — `xcode-select -p`. If a build prints flag documentation instead of compiling, the destination is malformed — echo the resolved `$SIM` and check it isn't empty.
 
+### Image sizes are points until you multiply by scale
+- **Rule** — Any resize with a pixel budget must measure `image.size * image.scale` and render with a `UIGraphicsImageRendererFormat` whose `scale = 1`. `UIImage.size` is in points and `UIGraphicsImageRenderer` defaults to the screen scale (3x), so a points-based "max 2000" writes 6000px files. Verify a resize by reading the written file's pixel dimensions, not the code.
+- **Why** — `ImageManager.downscaled` shipped (through agent review and orchestrator review) writing 6000×4004 JPEGs for a 2000px cap, and its load-time "migration" re-saved them at 6000px on every load. Caught only by `sips` on the Simulator's `Documents/CarPhotos`.
+- **Detect** — `grep -rn "UIGraphicsImageRenderer(" Marque` — every call must pass a format with `scale = 1` when the target is a pixel size; then `sips -g pixelWidth -g pixelHeight` on a freshly saved file.
+
+### `AuthErrorCode(_bridgedNSError:)` returns nil for every real Firebase Auth error
+- **Rule** — Never map a Firebase Auth error with `AuthErrorCode(_bridgedNSError:)`. Use `AuthService.authErrorCode(_:)`, which checks `ns.domain == AuthErrors.domain` and then builds `AuthErrorCode(rawValue: ns.code)`. `AuthErrorCode` is a Swift `@objc` enum whose bridged domain is its own type name, not `FIRAuthErrorDomain`, so the bridging initializer never matches a real error.
+- **Why** — Every `switch`/`==` on the bridged code silently fell through: a wrong password showed Firebase's raw "The supplied auth credential is malformed or has expired", and the EC-05 collision checks (`emailAlreadyInUse`, `accountExistsWithDifferentCredential`) never fired from these paths. Found only by seeing the raw text on the redesigned login screen.
+- **Detect** — `grep -rn "_bridgedNSError" Marque` must return nothing (outside the comment on the helper).
+
 ### Firestore does not cascade subcollection deletes
 - **Rule** — Deleting a document orphans its subcollections; they stay queryable. Walk and delete children first, then the parent. Batches cap at 500 ops.
 - **Why** — `deleteAccount` left `conversations/` and `usage/` behind, violating FR-10.15 / EC-22 and leaving user data after deletion.
@@ -249,7 +259,7 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 
 ## Cloud Functions
 
-Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it. Nine functions are exported; the constants block at the top (`BUNDLE_ID`, `APP_STORE_APP_ID`, `PRO_PRODUCT_IDS`, `APPLE_ROOT_CA`) is shared across the entitlement functions.
+Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it. Eleven functions are exported; the constants block at the top (`BUNDLE_ID`, `APP_STORE_APP_ID`, `PRO_PRODUCT_IDS`, `APPLE_ROOT_CA`) is shared across the entitlement functions.
 
 **Assistant & AI**
 - **`askMarque`** (v2 callable) — Marque Assistant chat proxy to Anthropic (Sonnet 4.6) with server-side daily cap enforcement (10/day free, 500/day Pro), prompt caching on the garage context block and system prompt, and streaming responses. Model ID is a constant at the top of the file so it can be bumped in one place. Per FR-10.17 the context block must never include VIN, plate, insurance fields, driver license, per-record costs, notes, or photo names.
@@ -261,6 +271,11 @@ Callable and trigger functions live in `functions/src/index.ts`. The file uses a
 - **`getAppAccountToken`** (v2 callable) — mints or returns this uid's `appAccountToken`, persisted at `appAccountTokens/{token}` (rules: `allow read, write: if false` — server-only). The client attaches it to the StoreKit purchase so a transaction can be bound to an account. Minting is contention-safe: a concurrent second call loses the transaction, retries, and finds the first token rather than minting a duplicate.
 - **`appStoreNotifications`** (v1 HTTPS) — App Store Server Notifications V2 webhook. `SignedDataVerifier` **requires `appAppleId` for the PRODUCTION environment** — omitting it means production notifications never verify, which was a live bug that went unnoticed precisely because it only failed in production. Returns 500 only for `RETRYABLE_VERIFICATION_FAILURE`, so Apple redelivers on a transient OCSP failure instead of treating a swallowed error as success.
 - **`syncEntitlement`** (v2 callable) — client-initiated entitlement sync. Grants `isPro` **only** when the transaction's `appAccountToken` maps back to the calling uid. No token match means the write is skipped, not granted — that's either a replayed JWS or a Family Sharing member, and self-granting off another account's transaction is the entitlement-hijack this guard exists to stop. Family members still get local Pro from StoreKit; only the server flag is withheld.
+
+**Social & limits**
+- **`onUserBlocked`** (v2 Firestore trigger on `users/{blocker}/blocked/{blocked}` create) — deletes all four follow edges between the pair with the Admin SDK (the client can't: `followers/` binds the follower, `following/` the path owner). `retry: true`; idempotent.
+- **`onCarWritten`** (v2 Firestore trigger on `users/{uid}/cars/{carId}` writes) — recomputes `usage/limits.carCount` with a `count()` aggregate. Returns early if the Auth user no longer exists, because `onAuthUserDeleted`'s `recursiveDelete` fires it for every car and a late run would otherwise recreate `usage/limits` after the cascade.
+- `syncEntitlement` also writes `usage/limits.familyProUntil` (car-cap exemption only, never `isPro`) for a verified `FAMILY_SHARED` transaction, claimed first-come in `familyGrants/`.
 
 **Lifecycle**
 - **`onAuthUserDeleted`** (v1 auth trigger, imported as `functionsV1`) — the FR-10.15 / EC-08 / EC-22 deletion cascade, using the Admin SDK to reach the many paths `firestore.rules` denies to clients. Runs in six ordered phases behind a gate: **(1)** read what later phases need (username, `following[]`, `followers[]`) **(2)** reverse follow pointers **(3)** cross-user notifications **(4)** `publicCars`, then the Storage prefix, then `appAccountTokens` **(5)** username release **→ gate: throw if any error accumulated →** **(6)** `recursiveDelete(users/{uid})` **last**. The ordering is load-bearing: `recursiveDelete` destroys the data phases 2–5 read from, so running it early made every retry read an emptied graph and exit green while leaving orphans behind. See Known Pitfalls.
@@ -274,11 +289,14 @@ Live in `firestore.rules`. **Read the actual rule before assuming a path is writ
 - `users/{userId}` — grants `create, update` only. **`delete` is denied**, because Firestore decomposes `write` into create/update/delete and this rule never enumerates delete. Read is open to any authenticated user.
 - `users/{uid}/followers/{followerId}` — writes bind the **follower**, not the path owner. The account owner cannot delete their own followers subcollection.
 - `users/{uid}/following/{followedId}` — writes bind the **path owner**, so nobody can clean up a reverse pointer in someone else's `following`.
-- `users/{uid}/notifications/{id}` — grants `read, update, create`. No delete.
+- `users/{uid}/notifications/{id}` — owner `read, update, delete`. `create` is locked to a self-attributed `follow` notification (`actorUID == auth.uid`, `type == 'follow'`, a `hasOnly` key allowlist matching `NotificationStore.writeFollowNotification`) and denied if the recipient has blocked the actor. Adding a new notification type means widening this rule.
 - `users/{uid}/usage/{docId}` — `allow read` to the owner, `allow write: if false`. Writes are server-only, to prevent Assistant, document-scan and AI-suggestion daily-cap bypass. The owner **read** is load-bearing: `ScanAllowanceStore` (FR-14.4) listens on `scans_{date}`, so "locking down" `usage/` to match a write-only description would freeze the caption and gate silently.
-- `users/{uid}/cars`, `blocked`, `conversations/**` — genuinely owner-scoped read/write.
+- `users/{uid}/cars` — owner read/update/delete. **`create` enforces the FR-08.8 free 2-car cap**: allowed only if `users/{uid}.isPro`, or `usage/limits.familyProUntil` is in the future, or `usage/limits.carCount < 2` (missing doc = 0). The client's copy of the number is `CarStore.freeCarLimit` (gates and paywall/alert copy) — change both together. `carCount` is recomputed by the `onCarWritten` trigger, so a fast burst can briefly exceed 2. A rejected create is rolled back client-side and surfaces as `CarStore.carLimitRejected`.
+- `users/{uid}/following/{id}` and `followers/{id}` — `create, update` are also denied if either party has blocked the other; `delete` is unrestricted for the same principal.
+- `users/{uid}/blocked`, `conversations/**` — genuinely owner-scoped read/write.
 - `publicCars` — read-any-auth, write-owner. `reports` — create-only client-side. `usernames` — delete permitted to the owning uid.
 - **`purchases/` has no rule at all** (default deny) — see Known Pitfalls.
+- `familyGrants/{originalTransactionId}` — server-only (`allow read, write: if false`). First-claim-wins record binding a Family Sharing transaction to one uid, so a replayed Family-Shared JWS can't exempt other accounts from the car cap. Swept by `onAuthUserDeleted` phase 4d.
 
 Client-side deletes on any denied path fail with `PERMISSION_DENIED`, and the cascade swallows those with `try?`. Anything the client cannot delete must be handled server-side in `onAuthUserDeleted`, which uses the Admin SDK and bypasses rules. **Do not relax a rule to make a client delete work** — these grants are deliberately narrow.
 

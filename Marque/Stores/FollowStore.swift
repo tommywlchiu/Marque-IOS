@@ -56,6 +56,18 @@ class FollowStore: ObservableObject {
         followingUIDs.contains(uid)
     }
 
+    /// Optimistically drops `uid` from both local follow sets. Called from
+    /// Marque_PrototypeApp when BlockStore reports a fresh block, so a mutual
+    /// follow/follower relationship disappears from the UI immediately rather
+    /// than waiting on the server-side cascade (the `onUserBlocked` trigger,
+    /// which deletes the actual Firestore edges) and this store's own
+    /// listeners to catch up. Purely a local cache edit — the listeners
+    /// remain the source of truth and reconcile on their next snapshot.
+    func removeLocal(uid: String) {
+        followingUIDs.remove(uid)
+        followerUIDs.remove(uid)
+    }
+
     func follow(
         uid: String,
         actorDisplayName: String = "",

@@ -20,6 +20,14 @@ struct CarDetailView: View {
     @State private var showingReport = false
     @State private var showingOwnerProfile = false
     @State private var galleryStartIndex: Int?
+    @State private var editingMaintenanceRecord: MaintenanceRecord?
+    @State private var showingMaintenanceLimitAlert = false
+
+    // Post-log confirmation banner (see `logConfirmation`) and the "current
+    // mileage?" check-in card (see `dismissedMileageCheckIn`).
+    @State private var logConfirmation: LogConfirmation?
+    @State private var dismissedMileageCheckIn = false
+    @State private var mileageCheckInText = ""
 
     // Focused-sheet add/edit flows — one per section. Consolidated with the
     // above state to make it obvious that every "add/edit" surface here is a
@@ -82,6 +90,8 @@ struct CarDetailView: View {
                 expiryAlertBanner(for: car)
             }
 
+            mileageCheckInSection
+
             if liveCar != nil {
                 visibilitySection
             }
@@ -138,15 +148,29 @@ struct CarDetailView: View {
                 })
             }
         }
-        .sheet(isPresented: $showingAddMaintenance) {
-            AddMaintenanceView { record in
+        .modifier(MaintenanceLogPresenters(
+            showingAddMaintenance: $showingAddMaintenance,
+            editingMaintenanceRecord: $editingMaintenanceRecord,
+            showingMaintenanceLimitAlert: $showingMaintenanceLimitAlert,
+            onLogNew: { record, image in logNewRecord(record, receiptImage: image) },
+            onUpdate: { updated, image, removeReceipt in
                 guard let car = liveCar else { return }
-                ownCar = car
-                ownCar?.maintenanceRecords.append(record)
-                carStore.updateCar(ownCar!)
-                AnalyticsService.maintenanceRecordAdded()
+                var updated = updated
+                // The form holds the record as it was when opened. A receipt upload
+                // that finished since then set receiptStorageURL on the live record;
+                // keep it unless this save replaces or removes the receipt.
+                if image == nil, !removeReceipt,
+                   let live = car.maintenanceRecords.first(where: { $0.id == updated.id }) {
+                    updated.receiptFileName = live.receiptFileName
+                    updated.receiptStorageURL = live.receiptStorageURL
+                }
+                carStore.updateMaintenanceRecord(updated, in: car, newReceiptImage: image, removeReceipt: removeReceipt)
+            },
+            onDelete: { record in
+                guard let car = liveCar else { return }
+                carStore.deleteMaintenanceRecord(record, from: car)
             }
-        }
+        ))
         .modifier(FocusedEditPresenters(
             liveCar: liveCar,
             showingEditRegistration: $showingEditRegistration,
@@ -191,10 +215,51 @@ struct CarDetailView: View {
             Text("Are you sure you want to delete \(displayName)? This action cannot be undone.")
         }
         .overlay(alignment: .bottomTrailing) {
-            if let car = liveCar {
+            // Hidden while the log confirmation shows: they share the bottom edge,
+            // and the button was taking taps meant for the banner's Undo.
+            if let car = liveCar, logConfirmation == nil {
                 AskMarqueButton(scopedCarId: car.id.uuidString)
                     .padding(.trailing, 16)
                     .padding(.bottom, 16)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let logConfirmation {
+                LogConfirmationBanner(message: logConfirmation.message) {
+                    guard let car = liveCar else { return }
+                    carStore.undoLogSideEffects(logConfirmation.outcome, for: car)
+                    withAnimation { self.logConfirmation = nil }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+
+    // MARK: - Log a new service record (Add Maintenance)
+
+    /// Logs a new record via `CarStore.logService`, which also auto-completes
+    /// matching reminders, schedules the next occurrence, and bumps mileage —
+    /// then surfaces a brief confirmation with Undo for the reminder side
+    /// effects. `logService` fires `maintenanceRecordAdded` itself.
+    private func logNewRecord(_ record: MaintenanceRecord, receiptImage: UIImage?) {
+        guard let car = liveCar else { return }
+        guard car.maintenanceRecords.count < CarStore.maxMaintenanceRecords else {
+            showingMaintenanceLimitAlert = true
+            return
+        }
+        let outcome = carStore.logService(record, for: car, receiptImage: receiptImage)
+        presentLogConfirmation(record: record, outcome: outcome)
+    }
+
+    private func presentLogConfirmation(record: MaintenanceRecord, outcome: CarStore.ServiceLogOutcome) {
+        let confirmation = LogConfirmation(logged: record, outcome: outcome)
+        withAnimation { logConfirmation = confirmation }
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            if logConfirmation?.id == confirmation.id {
+                withAnimation { logConfirmation = nil }
             }
         }
     }
@@ -247,6 +312,8 @@ struct CarDetailView: View {
                 .frame(maxWidth: .infinity).frame(height: 200)
                 .offset(y: pc.photoOffsetY)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .contentShape(RoundedRectangle(cornerRadius: 12))
+                .onTapGesture { galleryStartIndex = 0 }
         } else {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
@@ -301,7 +368,12 @@ struct CarDetailView: View {
             PhotoGalleryView(
                 photoFileNames: car.photoFileNames,
                 photoStorageURLs: car.photoStorageURLs,
-                initialIndex: startIndex
+                initialIndex: startIndex,
+                onSetCover: { index in
+                    // Re-read the car at tap time; the gallery may have been open a while.
+                    guard let current = liveCar, index < current.photoFileNames.count else { return }
+                    carStore.setCoverPhoto(fileName: current.photoFileNames[index], for: current)
+                }
             )
         } else if let pc = publicCar, let url = pc.primaryPhotoURL {
             PhotoGalleryView(
@@ -347,6 +419,58 @@ struct CarDetailView: View {
                 }
             }
             .padding(.vertical, 4)
+        }
+    }
+
+    // MARK: - Mileage check-in (own only)
+
+    // Shown when the car has an open mileage-triggered reminder and its
+    // mileage hasn't been touched (or was touched over 30 days ago) — those
+    // reminders can never fire a local notification on their own, so this is
+    // the periodic nudge that keeps them accurate.
+    private var shouldShowMileageCheckIn: Bool {
+        guard !dismissedMileageCheckIn, let car = liveCar, car.hasOpenMileageReminders else { return false }
+        guard let updatedAt = car.mileageUpdatedAt else { return true }
+        return Date().timeIntervalSince(updatedAt) > 30 * 24 * 60 * 60
+    }
+
+    @ViewBuilder
+    private var mileageCheckInSection: some View {
+        if shouldShowMileageCheckIn, let car = liveCar {
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Current mileage?")
+                            .font(.subheadline).fontWeight(.semibold)
+                        Spacer()
+                        Button {
+                            withAnimation { dismissedMileageCheckIn = true }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary.opacity(0.5))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Dismiss")
+                    }
+
+                    HStack(spacing: 10) {
+                        TextField("Mileage", text: $mileageCheckInText)
+                            .keyboardType(.numberPad)
+                            .textFieldStyle(.roundedBorder)
+
+                        Button("Update") {
+                            let digitsOnly = mileageCheckInText.replacingOccurrences(of: ",", with: "")
+                            guard let value = Int(digitsOnly) else { return }
+                            carStore.updateMileage(value, for: car)
+                            mileageCheckInText = ""
+                            withAnimation { dismissedMileageCheckIn = true }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(Int(mileageCheckInText.replacingOccurrences(of: ",", with: "")) == nil)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
         }
     }
 
@@ -602,7 +726,18 @@ struct CarDetailView: View {
                     }
                 } else {
                     ForEach(car.sortedMaintenanceRecords) { record in
-                        MaintenanceRowView(record: record)
+                        Button {
+                            editingMaintenanceRecord = record
+                        } label: {
+                            HStack {
+                                MaintenanceRowView(record: record)
+                                Spacer(minLength: 8)
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary.opacity(0.4))
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
                     .onDelete { offsets in
                         let sorted = car.sortedMaintenanceRecords
@@ -659,6 +794,83 @@ private struct GalleryStart: Identifiable {
     var id: Int { index }
 }
 
+/// Post-log confirmation state (see `CarDetailView.presentLogConfirmation`).
+/// `id` is a fresh UUID per presentation so a delayed auto-dismiss Task from
+/// an earlier banner can't clear a newer one.
+/// A post-log confirmation: its message plus what Undo reverses. Shared by the
+/// car page's Maintenance Log and the Service Reminders check-off flow.
+struct LogConfirmation: Identifiable {
+    let id = UUID()
+    let message: String
+    let outcome: CarStore.ServiceLogOutcome
+
+    // Shows only the parts that actually happened, per the product spec:
+    // "Oil Change logged · Reminder completed · Next due Mar 2027 / 32,000 mi".
+    init(logged record: MaintenanceRecord, outcome: CarStore.ServiceLogOutcome) {
+        var parts = ["\(record.serviceType) logged"]
+        if !outcome.completedReminderIDs.isEmpty {
+            parts.append("Reminder completed")
+        }
+        if let next = outcome.scheduledNext {
+            parts.append("Next due \(Self.nextDueDescription(next))")
+        }
+        if outcome.previousMileage != nil, let mileageValue = record.mileageValue {
+            parts.append("Mileage updated to \(mileageValue.formatted())")
+        }
+        self.message = parts.joined(separator: " · ")
+        self.outcome = outcome
+    }
+
+    /// "Skip — just mark done": the reminder was completed without a record.
+    init(markedDone reminder: ServiceReminder, next: ServiceReminder?) {
+        var parts = ["\(reminder.serviceType) marked done"]
+        if let next {
+            parts.append("Next due \(Self.nextDueDescription(next))")
+        }
+        self.message = parts.joined(separator: " · ")
+        self.outcome = CarStore.ServiceLogOutcome(
+            completedReminderIDs: [reminder.id], scheduledNext: next, previousMileage: nil
+        )
+    }
+
+    private static func nextDueDescription(_ reminder: ServiceReminder) -> String {
+        var parts: [String] = []
+        if let date = reminder.dueDate {
+            parts.append(date.formatted(.dateTime.month(.abbreviated).year()))
+        }
+        if let miles = reminder.dueMileage {
+            parts.append("\(miles.formatted()) mi")
+        }
+        return parts.joined(separator: " / ")
+    }
+}
+
+/// Bottom-anchored toast shown after logging a service record. Auto-dismiss
+/// timing lives in the caller; this view only renders the message + Undo.
+struct LogConfirmationBanner: View {
+    let message: String
+    let onUndo: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+            Text(message)
+                .font(.subheadline)
+                .foregroundColor(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            Button("Undo", action: onUndo)
+                .font(.subheadline).fontWeight(.semibold)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+    }
+}
+
 struct ExpiryBannerItem: View {
     let icon: String
     let text: String
@@ -696,10 +908,13 @@ struct ExpiryRow: View {
         HStack {
             Text(label).foregroundColor(.secondary)
             Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(date, style: .date).foregroundColor(statusColor)
-                if isExpired || isExpiringSoon {
-                    Text(daysText).font(.caption).fontWeight(.medium).foregroundColor(statusColor)
+            // Copies the date as displayed, not the "Expires in N days" caption.
+            CopyableValue(label: label, copyText: date.formatted(date: .long, time: .omitted)) {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(date, style: .date).foregroundColor(statusColor)
+                    if isExpired || isExpiringSoon {
+                        Text(daysText).font(.caption).fontWeight(.medium).foregroundColor(statusColor)
+                    }
                 }
             }
         }
@@ -713,9 +928,16 @@ struct MaintenanceRowView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(record.serviceType).font(.subheadline).fontWeight(.medium)
+                if record.receiptFileName != nil || record.receiptStorageURL != nil {
+                    Image(systemName: "paperclip")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
                 Spacer()
-                if !record.cost.isEmpty {
-                    Text("$\(record.cost)")
+                // Parsed values, so "$49.99" or "25,000 mi" typed into the free-text
+                // fields don't render as "$$49.99" / "25,000 mi mi".
+                if let cost = record.costValue {
+                    Text(cost, format: .currency(code: "USD"))
                         .font(.subheadline).fontWeight(.semibold)
                         .foregroundColor(.accentColor)
                 }
@@ -723,8 +945,8 @@ struct MaintenanceRowView: View {
 
             HStack(spacing: 12) {
                 Text(record.date, style: .date).font(.caption).foregroundColor(.secondary)
-                if !record.mileage.isEmpty {
-                    Text("\(record.mileage) mi").font(.caption).foregroundColor(.secondary)
+                if let miles = record.mileageValue {
+                    Text("\(miles.formatted()) mi").font(.caption).foregroundColor(.secondary)
                 }
                 if !record.shop.isEmpty {
                     Text(record.shop).font(.caption).foregroundColor(.secondary)
@@ -749,9 +971,85 @@ struct DetailRow: View {
         HStack {
             Text(label).foregroundColor(.secondary)
             Spacer()
-            Text(value.isEmpty ? "—" : value)
-                .foregroundColor(value.isEmpty ? .secondary.opacity(0.5) : .primary)
+            if value.isEmpty {
+                Text("—").foregroundColor(.secondary.opacity(0.5))
+            } else {
+                CopyableValue(label: label, copyText: value) {
+                    Text(value)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
         }
+    }
+}
+
+/// Tap (or long-press > Copy) to copy `copyText`, with a haptic and a brief
+/// "Copied" confirmation swapped in for the content.
+private struct CopyableValue<Content: View>: View {
+    let label: String
+    let copyText: String
+    @ViewBuilder let content: Content
+
+    @State private var showingCopied = false
+
+    var body: some View {
+        Button(action: copy) {
+            if showingCopied {
+                Label("Copied", systemImage: "checkmark")
+                    .foregroundColor(.green)
+            } else {
+                content
+            }
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button { copy() } label: { Label("Copy", systemImage: "doc.on.doc") }
+        }
+        .accessibilityLabel("\(label), \(copyText)")
+        .accessibilityHint("Double-tap to copy")
+    }
+
+    private func copy() {
+        UIPasteboard.general.string = copyText
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        withAnimation(.easeInOut(duration: 0.15)) { showingCopied = true }
+        Task {
+            try? await Task.sleep(for: .seconds(1.2))
+            withAnimation(.easeInOut(duration: 0.15)) { showingCopied = false }
+        }
+    }
+}
+
+// Wraps the Add/Edit Maintenance sheets + the record-limit alert into one
+// modifier, alongside FocusedEditPresenters below, for the same type-checker
+// reason: a long, differently-typed modifier chain directly on `body` is what
+// previously triggered "unable to type-check in reasonable time" here.
+private struct MaintenanceLogPresenters: ViewModifier {
+    @Binding var showingAddMaintenance: Bool
+    @Binding var editingMaintenanceRecord: MaintenanceRecord?
+    @Binding var showingMaintenanceLimitAlert: Bool
+    let onLogNew: (MaintenanceRecord, UIImage?) -> Void
+    let onUpdate: (MaintenanceRecord, UIImage?, _ removeReceipt: Bool) -> Void
+    let onDelete: (MaintenanceRecord) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $showingAddMaintenance) {
+                AddMaintenanceView { record, image in onLogNew(record, image) }
+            }
+            .sheet(item: $editingMaintenanceRecord) { record in
+                AddMaintenanceView(
+                    record: record,
+                    onSave: { updated, newImage, removeReceipt in onUpdate(updated, newImage, removeReceipt) },
+                    onDelete: { onDelete(record) }
+                )
+            }
+            .alert("Record Limit Reached", isPresented: $showingMaintenanceLimitAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This car has reached the \(CarStore.maxMaintenanceRecords)-record limit. Delete an older record to add a new one.")
+            }
     }
 }
 

@@ -5,6 +5,7 @@ struct AddReminderView: View {
     @Environment(\.dismiss) var dismiss
 
     let carID: UUID
+    private let editingReminder: ServiceReminder?
 
     @State private var serviceType: String = MaintenanceRecord.serviceTypes.first ?? ""
     @State private var customServiceType = ""
@@ -13,6 +14,29 @@ struct AddReminderView: View {
     @State private var dueDate = Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date()
     @State private var useMileageTrigger = false
     @State private var dueMileageText = ""
+
+    private var isEditing: Bool { editingReminder != nil }
+
+    /// Add mode.
+    init(carID: UUID) {
+        self.carID = carID
+        self.editingReminder = nil
+    }
+
+    /// Edit mode — prefills every field from the existing reminder.
+    init(carID: UUID, reminder: ServiceReminder) {
+        self.carID = carID
+        self.editingReminder = reminder
+
+        let isPreset = MaintenanceRecord.serviceTypes.contains(reminder.serviceType)
+        _serviceType = State(initialValue: isPreset ? reminder.serviceType : "Other")
+        _customServiceType = State(initialValue: isPreset ? "" : reminder.serviceType)
+        _notes = State(initialValue: reminder.notes)
+        _useDateTrigger = State(initialValue: reminder.dueDate != nil)
+        _dueDate = State(initialValue: reminder.dueDate ?? Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date())
+        _useMileageTrigger = State(initialValue: reminder.dueMileage != nil)
+        _dueMileageText = State(initialValue: reminder.dueMileage.map(String.init) ?? "")
+    }
 
     private var car: Car? {
         carStore.cars.first(where: { $0.id == carID })
@@ -75,19 +99,25 @@ struct AddReminderView: View {
                         .lineLimit(2...4)
                 }
             }
-            .navigationTitle("Add Reminder")
+            .navigationTitle(isEditing ? "Edit Reminder" : "Add Reminder")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { save() }
+                    Button(isEditing ? "Save" : "Add") { save() }
                         .disabled(!canSave)
                         .fontWeight(.semibold)
                 }
             }
-            .onAppear { configureDefaults(for: serviceType) }
+            // Only auto-fill defaults on first appearance in Add mode — in
+            // Edit mode the initial values are the reminder's own saved
+            // values (set in `init(carID:reminder:)`), and this would
+            // otherwise clobber them the instant the sheet opens.
+            .onAppear {
+                if !isEditing { configureDefaults(for: serviceType) }
+            }
             .onChange(of: serviceType) { _, newType in configureDefaults(for: newType) }
         }
     }
@@ -148,17 +178,28 @@ struct AddReminderView: View {
     }
 
     private func save() {
-        guard var car = carStore.cars.first(where: { $0.id == carID }) else { return }
+        guard let car = carStore.cars.first(where: { $0.id == carID }) else { return }
 
-        let reminder = ServiceReminder(
-            serviceType: resolvedServiceType,
-            notes: notes.trimmingCharacters(in: .whitespacesAndNewlines),
-            dueDate: useDateTrigger ? dueDate : nil,
-            dueMileage: useMileageTrigger ? Int(dueMileageText.replacingOccurrences(of: ",", with: "")) : nil
-        )
+        let dueDateValue = useDateTrigger ? dueDate : nil
+        let dueMileageValue = useMileageTrigger ? Int(dueMileageText.replacingOccurrences(of: ",", with: "")) : nil
 
-        car.serviceReminders.append(reminder)
-        carStore.updateCar(car)
+        if var editingReminder {
+            editingReminder.serviceType = resolvedServiceType
+            editingReminder.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            editingReminder.dueDate = dueDateValue
+            editingReminder.dueMileage = dueMileageValue
+            carStore.updateReminder(editingReminder, in: car)
+        } else {
+            let reminder = ServiceReminder(
+                serviceType: resolvedServiceType,
+                notes: notes.trimmingCharacters(in: .whitespacesAndNewlines),
+                dueDate: dueDateValue,
+                dueMileage: dueMileageValue
+            )
+            var updated = car
+            updated.serviceReminders.append(reminder)
+            carStore.updateCar(updated)
+        }
         dismiss()
     }
 }

@@ -4,8 +4,15 @@ struct ForgotPasswordView: View {
     @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) var dismiss
 
-    @State private var email = ""
+    @State private var email: String
     @State private var didSend = false
+    @FocusState private var emailFocused: Bool
+
+    /// `prefillEmail` is whatever the presenting screen already has typed, so
+    /// the user doesn't enter the same address twice.
+    init(prefillEmail: String = "") {
+        _email = State(initialValue: prefillEmail.trimmingCharacters(in: .whitespaces))
+    }
 
     private var canSubmit: Bool {
         !email.trimmingCharacters(in: .whitespaces).isEmpty
@@ -13,17 +20,27 @@ struct ForgotPasswordView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
-                if didSend {
-                    successState
-                } else {
-                    inputState
-                }
+            ZStack {
+                ShowroomBackground()
 
-                Spacer()
+                ScrollView {
+                    VStack(spacing: 28) {
+                        if didSend {
+                            successState
+                                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        } else {
+                            inputState
+                                .transition(.opacity)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 32)
+                    .padding(.bottom, 40)
+                    .animation(.easeOut(duration: 0.3), value: didSend)
+                    .animation(.easeOut(duration: 0.25), value: authService.errorMessage)
+                }
+                .scrollDismissesKeyboard(.interactively)
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 40)
             .navigationTitle("Reset Password")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -32,35 +49,59 @@ struct ForgotPasswordView: View {
                 }
             }
         }
+        // Same scoped dark look as Login / Sign Up, which present this sheet.
+        .environment(\.colorScheme, .dark)
+        .onChange(of: authService.errorMessage) { _, newValue in
+            if newValue != nil { AuthHaptics.error() }
+        }
+        .onAppear {
+            // Clears any sign-in error left over from the presenting screen.
+            authService.errorMessage = nil
+            // Nothing to type when the email came prefilled; go straight to Send.
+            if email.isEmpty { emailFocused = true }
+        }
     }
 
     // MARK: - States
 
     private var inputState: some View {
         VStack(spacing: 24) {
-            VStack(spacing: 8) {
-                Image(systemName: "envelope.fill")
-                    .font(.system(size: 44))
-                    .foregroundColor(.accentColor)
+            VStack(spacing: 14) {
+                Image(systemName: "key.fill")
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 72, height: 72)
+                    .background(Circle().fill(.white.opacity(0.08)))
+                    .overlay(Circle().strokeBorder(.white.opacity(0.14), lineWidth: 1))
 
-                Text("Enter your email address and we'll send you a link to reset your password.")
+                Text("Enter your email and we'll send you a link to reset your password.")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
             }
 
-            TextField("Email address", text: $email)
-                .keyboardType(.emailAddress)
-                .textContentType(.emailAddress)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .submitLabel(.send)
-                .onSubmit { if canSubmit { sendReset() } }
+            if let error = authService.errorMessage {
+                AuthErrorBanner(message: error)
+            }
 
-            MarquePrimaryButton("Send Reset Link", isLoading: authService.isLoading) {
+            HStack(spacing: 10) {
+                Image(systemName: "envelope")
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 18)
+                TextField("Email", text: $email, prompt: Text("Email").foregroundStyle(.white.opacity(0.35)))
+                    .foregroundStyle(.white)
+                    .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .focused($emailFocused)
+                    .submitLabel(.send)
+                    .onSubmit { if canSubmit { sendReset() } }
+            }
+            .authFieldChrome(isFocused: emailFocused)
+
+            AuthPrimaryButton(title: "Send Reset Link", isLoading: authService.isLoading) {
+                AuthHaptics.tap()
                 sendReset()
             }
             .disabled(!canSubmit)
@@ -69,26 +110,24 @@ struct ForgotPasswordView: View {
 
     private var successState: some View {
         VStack(spacing: 20) {
-            ZStack {
-                Circle()
-                    .fill(Color.green.opacity(0.12))
-                    .frame(width: 100, height: 100)
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 52))
-                    .foregroundColor(.green)
-            }
+            Image(systemName: "checkmark")
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(.green)
+                .frame(width: 88, height: 88)
+                .background(Circle().fill(Color.green.opacity(0.14)))
+                .overlay(Circle().strokeBorder(Color.green.opacity(0.35), lineWidth: 1))
 
             VStack(spacing: 8) {
                 Text("Check Your Email")
                     .font(.title2).fontWeight(.bold)
+                    .foregroundStyle(.white)
                 Text("We sent a reset link to **\(email)**. Check your inbox and follow the instructions.")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
             }
 
-            Button("Done") { dismiss() }
-                .buttonStyle(.borderedProminent)
+            AuthPrimaryButton(title: "Done", isLoading: false) { dismiss() }
                 .padding(.top, 8)
         }
     }
@@ -98,7 +137,10 @@ struct ForgotPasswordView: View {
     private func sendReset() {
         Task {
             let success = await authService.resetPassword(email: email.trimmingCharacters(in: .whitespaces))
-            if success { didSend = true }
+            if success {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                didSend = true
+            }
         }
     }
 }

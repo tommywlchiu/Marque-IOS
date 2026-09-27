@@ -10,3 +10,7 @@ DerivedData/
 .DS_Store
 *.xcuserstate
 Marque.xcodeproj/project.xcworkspace/xcuserdata/tommychiu.xcuserdatad/UserInterfaceState.xcuserstate
+
+# Firebase emulator logs
+firestore-debug.log
+*-debug.log

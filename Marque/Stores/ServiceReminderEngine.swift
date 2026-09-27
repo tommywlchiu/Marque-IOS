@@ -1,5 +1,39 @@
 import Foundation
 
+// Shared tolerant numeric parsing for the free-text mileage/cost fields on
+// MaintenanceRecord and Car.mileage. Used by their `mileageValue`/`costValue`
+// computed properties, and by ServiceReminderEngine.mileage(from:) below —
+// every parse site in the app goes through one of these two functions so a
+// format change only needs to happen here.
+enum NumberParsing {
+    // Keeps digits only, discarding everything else (currency symbols, unit
+    // suffixes, thousands separators, whitespace). "25,000 mi" -> 25000,
+    // "" -> nil, "mi" -> nil.
+    static func mileage(from string: String) -> Int? {
+        let digits = string.filter(\.isNumber)
+        guard !digits.isEmpty else { return nil }
+        return Int(digits)
+    }
+
+    // Keeps digits and (at most) one decimal point, discarding currency
+    // symbols, thousands separators, and anything else. "$1,234.50" -> 1234.5,
+    // "" -> nil, a second "." is dropped rather than treated as a separator.
+    static func cost(from string: String) -> Double? {
+        var result = ""
+        var sawDecimalPoint = false
+        for ch in string {
+            if ch.isNumber {
+                result.append(ch)
+            } else if ch == "." && !sawDecimalPoint {
+                sawDecimalPoint = true
+                result.append(ch)
+            }
+        }
+        guard !result.isEmpty, result != "." else { return nil }
+        return Double(result)
+    }
+}
+
 // Suggests service reminders based on a car's maintenance history + industry-
 // standard intervals. Pure functions — easy to test.
 //
@@ -112,10 +146,12 @@ enum ServiceReminderEngine {
         return Array(all.prefix(6))
     }
 
-    // Parses "42,500" -> 42500. Returns 0 for empty/invalid.
+    // Parses "42,500" -> 42500, "25,000 mi" -> 25000. Returns 0 for
+    // empty/invalid (existing callers treat 0 as "no mileage anchor").
+    // Tolerant parsing lives in NumberParsing so every mileage parse site in
+    // the app (this one, MaintenanceRecord.mileageValue, Car.mileageValue)
+    // agrees on what counts as a valid number.
     static func mileage(from string: String) -> Int {
-        let cleaned = string.replacingOccurrences(of: ",", with: "")
-                            .trimmingCharacters(in: .whitespaces)
-        return Int(cleaned) ?? 0
+        NumberParsing.mileage(from: string) ?? 0
     }
 }

@@ -9,6 +9,11 @@ struct ServiceReminder: Identifiable, Codable, Equatable {
     var dueDate: Date?
     var dueMileage: Int?
     var isCompleted: Bool
+    // Set when a reminder is completed (either via CarStore.completeReminder
+    // or by logging a matching service). Optional so older Firestore docs
+    // without this field decode with it as nil (including completed ones
+    // logged before this field existed).
+    var completedDate: Date?
 
     init(
         id: UUID = UUID(),
@@ -16,7 +21,8 @@ struct ServiceReminder: Identifiable, Codable, Equatable {
         notes: String = "",
         dueDate: Date? = nil,
         dueMileage: Int? = nil,
-        isCompleted: Bool = false
+        isCompleted: Bool = false,
+        completedDate: Date? = nil
     ) {
         self.id = id
         self.serviceType = serviceType
@@ -24,6 +30,7 @@ struct ServiceReminder: Identifiable, Codable, Equatable {
         self.dueDate = dueDate
         self.dueMileage = dueMileage
         self.isCompleted = isCompleted
+        self.completedDate = completedDate
     }
 
     enum Status: String {

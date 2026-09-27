@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import FirebaseFunctions
+import FirebaseAuth
 
 // POC service: ships a driver-license photo to the parseDriverLicense Cloud
 // Function, which calls Claude with vision + a JSON-schema constraint and
@@ -159,7 +160,11 @@ struct DocumentScanService {
            let code = FunctionsErrorCode(rawValue: ns.code) {
             switch code {
             case .unauthenticated:
-                return .authRequired
+                // Signed in but rejected means App Check turned the device
+                // away (the server uses the same code for both), not sign-in.
+                return Auth.auth().currentUser == nil
+                    ? .authRequired
+                    : .serviceUnavailable("Couldn't verify this device. Try again in a moment.")
             case .resourceExhausted:
                 return .capReached(ns.localizedDescription)
             case .notFound,

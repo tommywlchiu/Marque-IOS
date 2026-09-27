@@ -2,10 +2,14 @@ import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var authService: AuthService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var email = ""
     @State private var password = ""
+    @State private var isPasswordVisible = false
     @State private var showingSignUp = false
     @State private var showingForgotPassword = false
+    @State private var headerAppeared = false
     @FocusState private var focusedField: Field?
 
     private enum Field { case email, password }
@@ -17,27 +21,50 @@ struct LoginView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 32) {
-                    header
-                    formFields
-                    signInButton
-                    dividerSection
-                    socialButtons
-                    signUpPrompt
+            ZStack {
+                ShowroomBackground()
+
+                ScrollView {
+                    VStack(spacing: 28) {
+                        header
+                        formFields
+                            .staggeredAppear(1)
+                        signInButton
+                            .staggeredAppear(2)
+                        dividerSection
+                            .staggeredAppear(3)
+                        socialButtons
+                            .staggeredAppear(4)
+                        signUpPrompt
+                            .staggeredAppear(5)
+                        footer
+                            .staggeredAppear(5)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 48)
+                    .padding(.bottom, 40)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 48)
-                .padding(.bottom, 40)
+                .scrollDismissesKeyboard(.interactively)
             }
-            .scrollDismissesKeyboard(.interactively)
             .navigationBarHidden(true)
         }
+        // Scoped to this subtree (not `.preferredColorScheme`, which would
+        // change the whole window) so the rest of the app is unaffected.
+        .environment(\.colorScheme, .dark)
         .sheet(isPresented: $showingSignUp) {
-            SignUpView()
+            // The collision card's "Sign in with password" hands back the
+            // email already typed, so it doesn't have to be entered again.
+            SignUpView(onSignInWithPassword: { typedEmail in
+                email = typedEmail
+                password = ""
+                focusedField = .password
+            })
         }
         .sheet(isPresented: $showingForgotPassword) {
-            ForgotPasswordView()
+            ForgotPasswordView(prefillEmail: email)
+        }
+        .onChange(of: authService.errorMessage) { _, newValue in
+            if newValue != nil { AuthHaptics.error() }
         }
         .onAppear {
             // Gated on isFreshOnboarding: this view is also reached by any
@@ -53,60 +80,93 @@ struct LoginView: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: "car.fill")
-                .font(.system(size: 48))
-                .foregroundColor(.accentColor)
+            LogoMarkWithShine()
+                .frame(width: 120)
 
-            Text("Marque")
-                .font(.largeTitle).fontWeight(.bold)
+            Text("MARQUE")
+                .font(.system(size: 20, weight: .semibold))
+                .tracking(7)
+                .foregroundStyle(.white.opacity(0.9))
 
             Text("Sign in to your garage")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.white.opacity(0.55))
+        }
+        .opacity(headerAppeared ? 1 : 0)
+        .scaleEffect(headerAppeared || reduceMotion ? 1 : 0.92)
+        .blur(radius: headerAppeared || reduceMotion ? 0 : 8)
+        .onAppear {
+            let animation: Animation = reduceMotion
+                ? .easeOut(duration: 0.3)
+                : .spring(response: 0.7, dampingFraction: 0.75)
+            withAnimation(animation) { headerAppeared = true }
         }
     }
 
     private var formFields: some View {
         VStack(spacing: 14) {
             if let error = authService.errorMessage {
-                MarqueErrorBanner(message: error)
+                AuthErrorBanner(message: error)
             }
 
-            TextField("Email", text: $email)
-                .keyboardType(.emailAddress)
-                .textContentType(.emailAddress)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .focused($focusedField, equals: .email)
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .submitLabel(.next)
-                .onSubmit { focusedField = .password }
+            HStack(spacing: 10) {
+                Image(systemName: "envelope")
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 18)
+                TextField("Email", text: $email, prompt: Text("Email").foregroundStyle(.white.opacity(0.35)))
+                    .foregroundStyle(.white)
+                    .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .focused($focusedField, equals: .email)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .password }
+            }
+            .authFieldChrome(isFocused: focusedField == .email)
 
-            SecureField("Password", text: $password)
+            HStack(spacing: 10) {
+                Image(systemName: "lock")
+                    .foregroundStyle(.white.opacity(0.5))
+                    .frame(width: 18)
+                Group {
+                    if isPasswordVisible {
+                        TextField("Password", text: $password, prompt: Text("Password").foregroundStyle(.white.opacity(0.35)))
+                    } else {
+                        SecureField("Password", text: $password, prompt: Text("Password").foregroundStyle(.white.opacity(0.35)))
+                    }
+                }
+                .foregroundStyle(.white)
                 .textContentType(.password)
                 .focused($focusedField, equals: .password)
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .submitLabel(.go)
                 .onSubmit {
-                    if canSubmit { Task { await authService.signIn(email: email, password: password) } }
+                    if canSubmit { submitSignIn() }
                 }
+
+                Button {
+                    isPasswordVisible.toggle()
+                } label: {
+                    Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .accessibilityLabel(isPasswordVisible ? "Hide password" : "Show password")
+            }
+            .authFieldChrome(isFocused: focusedField == .password)
 
             HStack {
                 Spacer()
                 Button("Forgot password?") { showingForgotPassword = true }
                     .font(.subheadline)
-                    .foregroundColor(.accentColor)
+                    .foregroundStyle(.white.opacity(0.7))
             }
         }
+        .animation(.easeOut(duration: 0.25), value: authService.errorMessage)
     }
 
     private var signInButton: some View {
-        MarquePrimaryButton("Sign In", isLoading: authService.isLoading) {
-            Task { await authService.signIn(email: email, password: password) }
+        AuthPrimaryButton(title: "Sign In", isLoading: authService.isLoading) {
+            submitSignIn()
         }
         .disabled(!canSubmit)
     }
@@ -117,10 +177,12 @@ struct LoginView: View {
 
     private var socialButtons: some View {
         VStack(spacing: 12) {
-            SocialSignInButton(icon: "apple.logo", label: "Continue with Apple") {
+            SocialSignInButton(icon: "apple.logo", label: "Continue with Apple", style: .apple) {
+                GarageEntranceCoordinator.shared.arm()
                 Task { await authService.signInWithApple() }
             }
-            SocialSignInButton(icon: "g.circle.fill", label: "Continue with Google") {
+            SocialSignInButton(icon: "g.circle.fill", label: "Continue with Google", style: .google) {
+                GarageEntranceCoordinator.shared.arm()
                 Task { await authService.signInWithGoogle() }
             }
         }
@@ -129,10 +191,39 @@ struct LoginView: View {
     private var signUpPrompt: some View {
         HStack(spacing: 4) {
             Text("Don't have an account?")
-                .foregroundColor(.secondary)
+                .foregroundStyle(.white.opacity(0.55))
             Button("Sign up") { showingSignUp = true }
                 .fontWeight(.semibold)
+                .foregroundStyle(.white)
         }
         .font(.subheadline)
+    }
+
+    private var footer: some View {
+        Text(legalText)
+            .font(.caption2)
+            .foregroundStyle(.white.opacity(0.4))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 16)
+    }
+
+    private var legalText: AttributedString {
+        var str = AttributedString("By continuing you agree to our ")
+        var tos = AttributedString("Terms of Service")
+        tos.link = AppLinks.termsOfService
+        tos.foregroundColor = .white.opacity(0.6)
+        var mid = AttributedString(" and ")
+        var pp = AttributedString("Privacy Policy")
+        pp.link = AppLinks.privacyPolicy
+        pp.foregroundColor = .white.opacity(0.6)
+        return str + tos + mid + pp + AttributedString(".")
+    }
+
+    // MARK: - Actions
+
+    private func submitSignIn() {
+        AuthHaptics.tap()
+        GarageEntranceCoordinator.shared.arm()
+        Task { await authService.signIn(email: email, password: password) }
     }
 }

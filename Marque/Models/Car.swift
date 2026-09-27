@@ -18,6 +18,10 @@ struct Car: Identifiable, Codable, Equatable {
     var vinNumber: String
     var color: String
     var mileage: String
+    // Set whenever `mileage` is bumped by CarStore (logService or
+    // updateMileage). nil means it has never been set this way (e.g. only
+    // ever edited by hand in EditCarDetailView, or a pre-existing car).
+    var mileageUpdatedAt: Date?
     var trim: String
     var bodyStyle: String
     var driveType: String
@@ -46,6 +50,7 @@ struct Car: Identifiable, Codable, Equatable {
         vinNumber: String = "",
         color: String = "",
         mileage: String = "",
+        mileageUpdatedAt: Date? = nil,
         trim: String = "",
         bodyStyle: String = "",
         driveType: String = "",
@@ -72,6 +77,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.vinNumber = vinNumber
         self.color = color
         self.mileage = mileage
+        self.mileageUpdatedAt = mileageUpdatedAt
         self.trim = trim
         self.bodyStyle = bodyStyle
         self.driveType = driveType
@@ -96,7 +102,7 @@ struct Car: Identifiable, Codable, Equatable {
         case legacyPhotoFileName = "photoFileName"
         case photoStorageURLs
         case photoOffsetY
-        case licensePlate, vinNumber, color, mileage, trim, bodyStyle, driveType, engine
+        case licensePlate, vinNumber, color, mileage, mileageUpdatedAt, trim, bodyStyle, driveType, engine
         case fuelType, transmission
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
@@ -125,6 +131,7 @@ struct Car: Identifiable, Codable, Equatable {
         vinNumber = try c.decode(String.self, forKey: .vinNumber)
         color = try c.decode(String.self, forKey: .color)
         mileage = try c.decode(String.self, forKey: .mileage)
+        mileageUpdatedAt = try c.decodeIfPresent(Date.self, forKey: .mileageUpdatedAt)
         trim = try c.decodeIfPresent(String.self, forKey: .trim) ?? ""
         bodyStyle = try c.decodeIfPresent(String.self, forKey: .bodyStyle) ?? ""
         driveType = try c.decodeIfPresent(String.self, forKey: .driveType) ?? ""
@@ -155,6 +162,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(vinNumber, forKey: .vinNumber)
         try c.encode(color, forKey: .color)
         try c.encode(mileage, forKey: .mileage)
+        try c.encodeIfPresent(mileageUpdatedAt, forKey: .mileageUpdatedAt)
         try c.encode(trim, forKey: .trim)
         try c.encode(bodyStyle, forKey: .bodyStyle)
         try c.encode(driveType, forKey: .driveType)
@@ -207,6 +215,16 @@ struct Car: Identifiable, Codable, Equatable {
         maintenanceRecords.sorted { $0.date > $1.date }
     }
 
+    // Tolerant parse of `mileage` (see NumberParsing in ServiceReminderEngine.swift).
+    var mileageValue: Int? { NumberParsing.mileage(from: mileage) }
+
+    // Drives NotificationManager's mileage check-in alert (FR-14-adjacent):
+    // a mileage-only reminder can never fire a date-based local notification,
+    // so instead we periodically nudge the user to update their mileage.
+    var hasOpenMileageReminders: Bool {
+        serviceReminders.contains { !$0.isCompleted && $0.dueMileage != nil }
+    }
+
     var isInsuranceExpiringSoon: Bool {
         guard let date = insuranceExpiryDate else { return false }
         let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
@@ -235,7 +253,7 @@ struct Car: Identifiable, Codable, Equatable {
     }
 
     var totalExpenses: Double {
-        maintenanceRecords.compactMap { Double($0.cost) }.reduce(0, +)
+        maintenanceRecords.compactMap { $0.costValue }.reduce(0, +)
     }
 
     func expenses(in period: ExpensePeriod) -> Double {
@@ -254,7 +272,7 @@ struct Car: Identifiable, Codable, Equatable {
         }
         return maintenanceRecords
             .filter { $0.date >= startDate }
-            .compactMap { Double($0.cost) }
+            .compactMap { $0.costValue }
             .reduce(0, +)
     }
 
@@ -278,7 +296,7 @@ struct Car: Identifiable, Codable, Equatable {
 
         var grouped: [String: Double] = [:]
         for record in filtered {
-            if let cost = Double(record.cost), cost > 0 {
+            if let cost = record.costValue, cost > 0 {
                 grouped[record.serviceType, default: 0] += cost
             }
         }

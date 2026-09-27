@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import * as functionsV1 from "firebase-functions/v1";
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { defineSecret } from "firebase-functions/params";
 import {
   Environment,
@@ -622,10 +623,54 @@ export const syncEntitlement = onCall(async (request: CallableRequest) => {
   // the purchaser and must never be repointed at whoever happens to call this
   // callable from a shared device/account.
   if (transaction.inAppOwnershipType !== InAppOwnershipType.PURCHASED) {
-    functions.logger.warn(
-      "syncEntitlement: transaction is Family Shared, not a direct purchase — skipping isPro write and token claim",
-      { uid, productId, ownershipType: transaction.inAppOwnershipType }
-    );
+    if (transaction.inAppOwnershipType === InAppOwnershipType.FAMILY_SHARED) {
+      // Not an isPro grant (that stays purchaser-only, above) — this is the
+      // FR-08.8 free-tier car-limit exemption only. The token on a
+      // Family-Shared transaction belongs to the purchaser, not to this uid,
+      // so it can't bind the grant the way isPro is bound. Instead the grant
+      // is bound first-claim-wins to this family member's own transaction:
+      // familyGrants/{originalTransactionId} records the first uid to present
+      // it, and any other uid presenting the same JWS is refused. Without
+      // that, one leaked Family-Shared JWS would exempt every account that
+      // replays it. Renewals keep the same originalTransactionId, so the
+      // claiming uid can re-sync to extend familyProUntil.
+      const grantKey = transaction.originalTransactionId ?? transaction.transactionId;
+      if (!grantKey) {
+        functions.logger.warn(
+          "syncEntitlement: Family Shared transaction has no transaction id — skipping car-limit exemption",
+          { uid, productId }
+        );
+        return { isPro: false, updated: false };
+      }
+      const grantRef = db.collection("familyGrants").doc(grantKey);
+      const claimedBy = await db.runTransaction(async (tx) => {
+        const existing = await tx.get(grantRef);
+        const owner = existing.exists ? existing.get("uid") : undefined;
+        if (typeof owner === "string" && owner !== uid) return owner;
+        tx.set(grantRef, { uid, expiresDate }, { merge: true });
+        return uid;
+      });
+      if (claimedBy !== uid) {
+        functions.logger.warn(
+          "syncEntitlement: Family Shared transaction already claimed by another account — no exemption",
+          { uid, productId }
+        );
+        return { isPro: false, updated: false };
+      }
+      await db.collection("users").doc(uid).collection("usage").doc("limits").set(
+        { familyProUntil: admin.firestore.Timestamp.fromMillis(expiresDate) },
+        { merge: true }
+      );
+      functions.logger.info(
+        "syncEntitlement: Family Shared — car-limit exemption set, isPro withheld",
+        { uid, productId, familyProUntil: expiresDate }
+      );
+    } else {
+      functions.logger.warn(
+        "syncEntitlement: transaction is Family Shared, not a direct purchase — skipping isPro write and token claim",
+        { uid, productId, ownershipType: transaction.inAppOwnershipType }
+      );
+    }
     return { isPro: false, updated: false };
   }
 
@@ -1821,6 +1866,15 @@ const FREE_DAILY_CAP = 10;
 const PRO_DAILY_CAP = 500;
 const MAX_CONTEXT_TURNS = 30;
 const MAX_USER_MESSAGE_CHARS = 4000;
+// History entries are client-supplied and replayed straight back to us.
+// trimHistory below bounds the ARRAY to MAX_CONTEXT_TURNS, but not any one
+// entry's length — a single oversized `content` (tampered client, corrupted
+// local cache) could still blow up the request/cost far past what the
+// per-message check on `data.message` enforces for the new turn. User turns
+// share that same bound; assistant turns get a separate, larger one, since
+// MARQUE_MAX_TOKENS (1024, roughly 4-6 chars/token) allows a reply longer
+// than a user would type.
+const MAX_ASSISTANT_HISTORY_CHARS = 8000;
 
 // System prompt is cached across all users and turns — it's identical every
 // call, so cache reads amortise its cost to near-zero. If this text changes,
@@ -2010,7 +2064,11 @@ function trimHistory(history: AskMarqueMessage[], maxTurns: number): AskMarqueMe
   const valid = history.filter(
     (m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
   );
-  return valid.length <= maxTurns ? valid : valid.slice(-maxTurns);
+  const bounded = valid.length <= maxTurns ? valid : valid.slice(-maxTurns);
+  return bounded.map((m) => {
+    const limit = m.role === "user" ? MAX_USER_MESSAGE_CHARS : MAX_ASSISTANT_HISTORY_CHARS;
+    return m.content.length > limit ? { ...m, content: m.content.slice(0, limit) } : m;
+  });
 }
 
 export const askMarque = onCall(
@@ -2192,7 +2250,13 @@ export const askMarque = onCall(
 //                                     follower, so every delete is denied (and
 //                                     because batches are atomic, one denial
 //                                     fails the whole batch).
-//   3. users/{uid}/notifications/** — rules grant read/update/create. No delete.
+//   3. users/{uid}/notifications/** — the account owner CAN delete their own
+//                                     inbox client-side (rules grant
+//                                     read/update/create/delete to
+//                                     request.auth.uid == userId); listed
+//                                     here only because recursiveDelete
+//                                     (phase 6) is what actually removes it,
+//                                     not a separate phase in this function.
 //   4. users/{followerUID}/following/{uid} — the reverse follow pointer. Rules
 //                                     bind the *path owner* (followerUID), not
 //                                     the deleting user. Left unhandled these
@@ -2598,6 +2662,47 @@ export const onAuthUserDeleted = functionsV1
         });
         errors.push(`appAccountTokens(uid=${uid}): ${message}`);
       }
+
+      // -------------------------------------------------------------------
+      // Phase 4d — familyGrants sweep. Same shape as 4c: familyGrants/{txId}
+      // is top-level (written by syncEntitlement's Family-Shared branch) and
+      // records the claiming uid, so recursiveDelete never reaches it.
+      // -------------------------------------------------------------------
+      try {
+        const grantsSnap = await db
+          .collection("familyGrants")
+          .where("uid", "==", uid)
+          .select()
+          .get();
+        const grantOps: Array<Promise<Error | null>> = [];
+        for (const grantDoc of grantsSnap.docs) {
+          grantOps.push(
+            preDeleteWriter.delete(grantDoc.ref).then(
+              () => null,
+              (err: unknown) => (err instanceof Error ? err : new Error(String(err)))
+            )
+          );
+        }
+        await preDeleteWriter.flush();
+        const grantErrors = (await Promise.all(grantOps)).filter(
+          (e): e is Error => e !== null
+        );
+        if (grantErrors.length > 0) {
+          functions.logger.error("onAuthUserDeleted familyGrants sweep failed", {
+            uid,
+            failed: grantErrors.length,
+            attempted: grantOps.length,
+          });
+          errors.push(
+            `${grantErrors.length}/${grantOps.length} familyGrants deletes failed; ` +
+            `last error: ${grantErrors[grantErrors.length - 1].message}`
+          );
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        functions.logger.error("onAuthUserDeleted familyGrants sweep failed", { uid, err: message });
+        errors.push(`familyGrants(uid=${uid}): ${message}`);
+      }
     } finally {
       // Never leave a BulkWriter open — close() resolves once every enqueued
       // write settles and never rejects.
@@ -2700,3 +2805,127 @@ export const onAuthUserDeleted = functionsV1
       );
     }
   });
+
+// ============================================================================
+// onUserBlocked — full-blocking cascade (owner decision: block removes any
+// existing follow relationship in both directions and prevents a new one).
+// ============================================================================
+//
+// Fires when users/{blockerUid}/blocked/{blockedUid} is CREATED (not on
+// update — block() only ever setData()s this doc once; a second block() call
+// on an already-blocked uid overwrites the same doc and is a no-op create-wise).
+//
+// The client cannot do this itself: `following/` writes bind the path owner
+// and `followers/` writes bind the follower (see firestore.rules), so neither
+// side of the four-edge graph below is fully deletable by the blocker alone —
+// specifically, the blocker has no delete permission on
+// blocked/{blockedUid}'s `following` entry for the blocker, nor on their own
+// `followers` entry for the blocked uid... concretely: a client CAN delete
+// users/{blocker}/following/{blocked} and users/{blocked}/followers/{blocker}
+// (BlockStore.block itself doesn't; see below), but CANNOT delete
+// users/{blocked}/following/{blocker} (bound to blocked, not blocker) or
+// users/{blocker}/followers/{blocked} (bound to blocked as the follower, not
+// blocker). The Admin SDK bypasses rules entirely, so this trigger is the only
+// place all four can be removed atomically regardless of who's on which side.
+//
+// No stored follower/following COUNT fields exist anywhere (FollowStore
+// derives counts client-side from listener snapshot size), so there's nothing
+// to keep in sync beyond the four documents themselves.
+//
+// IDEMPOTENT AND SAFE TO RETRY: every op is a delete of a specific, known
+// document path. Deleting a document that doesn't exist (because a previous,
+// since-failed attempt already removed it, or because that edge never
+// existed) is a no-op, not an error — so re-running this on the same event
+// after a partial failure converges to the same end state rather than
+// double-applying anything. `retry: true` lets Cloud Functions redeliver on a
+// thrown error.
+export const onUserBlocked = onDocumentCreated(
+  { document: "users/{blockerUid}/blocked/{blockedUid}", retry: true },
+  async (event) => {
+    const { blockerUid, blockedUid } = event.params;
+    if (blockerUid === blockedUid) return; // defensive; the client never writes this
+
+    const edges = [
+      db.collection("users").doc(blockerUid).collection("following").doc(blockedUid),
+      db.collection("users").doc(blockedUid).collection("followers").doc(blockerUid),
+      db.collection("users").doc(blockedUid).collection("following").doc(blockerUid),
+      db.collection("users").doc(blockerUid).collection("followers").doc(blockedUid),
+    ];
+
+    const results = await Promise.allSettled(edges.map((ref) => ref.delete()));
+    const failed = results.filter(
+      (r): r is PromiseRejectedResult => r.status === "rejected"
+    );
+    if (failed.length > 0) {
+      functions.logger.error("onUserBlocked: follow-edge cleanup incomplete", {
+        blockerUid,
+        blockedUid,
+        failedCount: failed.length,
+        totalCount: edges.length,
+      });
+      // Throwing triggers a retry (retry: true above); safe per the
+      // idempotency note — a retry only re-deletes whatever is still there.
+      throw new Error(
+        `onUserBlocked: ${failed.length}/${edges.length} follow-edge deletes failed ` +
+        `for blocker=${blockerUid} blocked=${blockedUid}`
+      );
+    }
+
+    functions.logger.info("onUserBlocked: follow-edge cascade complete", {
+      blockerUid,
+      blockedUid,
+    });
+  }
+);
+
+// ============================================================================
+// onCarWritten — maintains the FR-08.8 free-tier car count.
+// ============================================================================
+//
+// Fires on every create/update/delete under users/{uid}/cars/{carId} and
+// recomputes the count from scratch via a Firestore aggregate query, rather
+// than incrementing/decrementing per event — so a missed or double-delivered
+// event self-heals on the next write instead of permanently drifting the
+// counter. The result is written to users/{uid}/usage/limits, a server-only
+// document (see the users/{uid}/usage/{docId} rule) so the client cannot
+// forge its way past the cap by writing carCount directly; the
+// users/{uid}/cars/{carId} create rule reads it to decide whether a new car
+// is allowed.
+//
+// Recomputing on every write (including plain updates, where the count never
+// actually changes) costs one aggregate read per car write — accepted as the
+// cost of "self-heals unconditionally" rather than adding create/delete-only
+// branching that would need its own reasoning about missed events.
+//
+// IDEMPOTENT AND SAFE TO RETRY: recomputing and overwriting carCount is the
+// same operation no matter how many times or in what order it runs for a
+// given uid — the last write simply reflects whatever cars currently exist.
+// `retry: true` lets Cloud Functions redeliver on a thrown error (e.g. a
+// transient aggregate-query failure).
+//
+// KNOWN LAG: this runs asynchronously after the triggering write, so a burst
+// of near-simultaneous creates from a single account (e.g. two devices adding
+// a car within the same trigger-latency window) can briefly land more than 3
+// cars before the count catches up and the create rule starts denying further
+// ones. Accepted — FR-08.8 is an abuse/cost guard, not a hard invariant that
+// needs transactional enforcement across concurrent creates.
+export const onCarWritten = onDocumentWritten(
+  { document: "users/{uid}/cars/{carId}", retry: true },
+  async (event) => {
+    const { uid } = event.params;
+    // onAuthUserDeleted's recursiveDelete fires this trigger for every car it
+    // removes. The Auth user is already gone by then, so without this check a
+    // late invocation would recreate usage/limits after the cascade finished,
+    // leaving user data behind (FR-10.15 / EC-22).
+    try {
+      await admin.auth().getUser(uid);
+    } catch (err) {
+      if ((err as { code?: string }).code === "auth/user-not-found") return;
+      throw err;
+    }
+    const countSnap = await db.collection("users").doc(uid).collection("cars").count().get();
+    const carCount = countSnap.data().count;
+    await db.collection("users").doc(uid).collection("usage").doc("limits")
+      .set({ carCount }, { merge: true });
+  }
+);
