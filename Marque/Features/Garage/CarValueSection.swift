@@ -1,8 +1,10 @@
 import SwiftUI
 
 /// Owner's "Estimated Value" section on their car page. The exact value is
-/// private and shown only here; the public car only ever gets the rounded
-/// `Car.publicValueRange`, and only while "Show on public profile" is on.
+/// private and shown only here. The public car can only ever show a rounded
+/// range of the car's latest AI estimate (computed server-side from the
+/// server's own copy of it), and only while "Show on public profile" is on.
+/// A value the owner typed is never shown publicly, so it can't be inflated.
 struct CarValueSection: View {
     let car: Car
 
@@ -15,7 +17,7 @@ struct CarValueSection: View {
         // both states, so a sheet isn't torn down when the rows swap.
         Section(
             header: Text("Estimated Value").modifier(presenters),
-            footer: Text("An estimate, not an appraisal. Private unless you choose to show a rounded range publicly.")
+            footer: Text("An estimate, not an appraisal. Your value is private. Only an AI estimate can be shown publicly, as a rounded range.")
         ) {
             if let value = car.estimatedValue {
                 Button { showingManualEntry = true } label: { valueRow(value) }
@@ -71,7 +73,28 @@ struct CarValueSection: View {
         return "\(source) · Updated \(updated.formatted(date: .abbreviated, time: .omitted))"
     }
 
+    @ViewBuilder
     private var visibilityToggle: some View {
+        if carStore.canShowValuePublicly(car) {
+            publicToggle
+        } else {
+            // No applicable AI estimate: nothing can be shown publicly. A typed
+            // value never is (it's unverifiable), so offer the estimate instead.
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Show on public profile")
+                    .foregroundColor(.secondary)
+                Text(carStore.aiValuation(for: car) == nil
+                     ? "Get an AI estimate to show a range publicly. Your own value stays private."
+                     : "Details changed since the last AI estimate. Re-estimate to show a range publicly.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private var publicToggle: some View {
         Toggle(isOn: Binding(
             get: { car.showValuePublicly },
             set: { show in
@@ -90,9 +113,11 @@ struct CarValueSection: View {
     }
 
     private var visibilityCaption: String {
-        guard car.showValuePublicly, let value = car.estimatedValue,
-              let range = CarValueRange.publicLabel(for: value) else {
+        guard let range = carStore.publicValueRangePreview(for: car) else {
             return "Only you can see this value"
+        }
+        guard car.showValuePublicly else {
+            return "Would show your AI estimate as \u{201C}Est. value \(range)\u{201D}"
         }
         let shown = "Shown as \u{201C}Est. value \(range)\u{201D}"
         return car.isPublic ? shown : shown + " once this car is public"

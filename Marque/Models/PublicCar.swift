@@ -49,8 +49,10 @@ struct PublicCar: Identifiable, Codable {
     /// Every uploaded photo's Storage URL, cover first. Empty on docs written
     /// before the gallery existed (use `galleryURLs`, which falls back).
     let photoURLs: [String]
-    /// Rounded public value range ("$30k–$35k"), present only when the owner
-    /// opted in. Never an exact figure.
+    /// Rounded public value range ("$30k–$35k"). SERVER-OWNED: derived from
+    /// the owner's AI valuation only (never a typed value), present while "Show
+    /// on public profile" is on and the valuation still matches the car. Never
+    /// encoded by the client (firestore.rules rejects client writes to it).
     let valueRange: String?
     /// Engine sound clip download URL, present only while the car is public
     /// and has a clip.
@@ -160,7 +162,6 @@ struct PublicCar: Identifiable, Codable {
         try c.encode(photoOffsetY, forKey: .photoOffsetY)
         try c.encode(serviceHistory, forKey: .serviceHistory)
         try c.encode(photoURLs, forKey: .photoURLs)
-        try c.encodeIfPresent(valueRange, forKey: .valueRange)
         try c.encodeIfPresent(engineSoundURL, forKey: .engineSoundURL)
     }
 }
@@ -196,7 +197,7 @@ extension PublicCar {
         // Capped: firestore.rules accepts at most 12 (its per-request
         // evaluation budget). A car with more photos publishes the first 12.
         photoURLs = Array(car.uploadedPhotoURLStrings.prefix(PublicCar.maxGalleryPhotos))
-        valueRange = car.publicValueRange
+        valueRange = nil  // server-owned; see the property
         engineSoundURL = (car.engineSoundURL?.isEmpty == false) ? car.engineSoundURL : nil
         likeCount = 0
         weeklyLikeCount = 0

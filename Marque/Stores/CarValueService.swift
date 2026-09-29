@@ -5,8 +5,9 @@ import FirebaseFunctions
 // AIServiceSuggestionService (single struct, single method, typed error).
 // Reached through CarStore.estimateValue(for:condition:region:).
 //
-// Sends only year/make/model/trim/mileage/condition/region. Never the VIN,
-// plate, notes, insurance or photos; the server ignores anything else anyway.
+// Sends the car's ID plus condition and region. The server reads the car's
+// year/make/model/trim/mileage itself (never the VIN, plate, notes, insurance
+// or photos) and saves the result as the car's AI valuation.
 struct CarValueService {
 
     private let functions = Functions.functions()
@@ -21,6 +22,8 @@ struct CarValueService {
         /// couldn't produce an estimate for it. Not charged against the allowance.
         case cannotEstimate
         case malformedResponse
+        /// The car doesn't exist server-side yet (not synced). Try again once online.
+        case carNotSaved
         case unknown(String)
 
         var errorDescription: String? {
@@ -39,6 +42,8 @@ struct CarValueService {
                 return "Couldn't estimate a value for this car. Check the year, make and model."
             case .malformedResponse:
                 return "Unexpected response from the estimate service."
+            case .carNotSaved:
+                return "This car hasn't finished saving yet. Try again in a moment."
             case .unknown(let detail):
                 return detail.isEmpty ? "Something went wrong." : detail
             }
@@ -56,15 +61,13 @@ struct CarValueService {
     }()
 
     func estimate(for car: Car, condition: ValueCondition, region: String? = nil) async throws -> ValueEstimate {
+        // The server reads year/make/model/trim/mileage from the saved car
+        // (users/{uid}/cars/{carId}); unsaved edits aren't estimated.
         var payload: [String: Any] = [
-            "year": car.year,
-            "make": car.make,
-            "model": car.model,
+            "carId": car.id.uuidString,
             "condition": condition.rawValue,
             "clientDate": Self.clientDateFormatter.string(from: Date()),
         ]
-        if !car.trim.isEmpty { payload["trim"] = car.trim }
-        if let miles = car.mileageValue { payload["mileage"] = miles }
         if let region = region?.trimmingCharacters(in: .whitespacesAndNewlines), !region.isEmpty {
             payload["region"] = region
         }
@@ -124,7 +127,10 @@ struct CarValueService {
                 return .dailyLimit
             case .deadlineExceeded:
                 return .offline
-            case .notFound, .unavailable, .unimplemented, .internal:
+            case .notFound:
+                // The car isn't saved server-side yet (e.g. just added offline).
+                return .carNotSaved
+            case .unavailable, .unimplemented, .internal:
                 return .unavailable
             case .failedPrecondition:
                 return .cannotEstimate

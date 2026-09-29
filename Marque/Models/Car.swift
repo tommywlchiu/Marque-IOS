@@ -250,8 +250,10 @@ struct Car: Identifiable, Codable, Equatable {
         photoStorageURLs.prefix(photoFileNames.count).filter { !$0.isEmpty }
     }
 
-    /// The rounded public range for this car's value ("$30k–$35k"), or nil when
-    /// there's no value or the owner hasn't opted in. What publicCars.valueRange carries.
+    /// The rounded range of the OWNER'S value. NOT what Explore shows any more:
+    /// the public range comes only from an AI valuation, set server-side (owner
+    /// decision). Use `CarStore.publicValueRangePreview(for:)` for that.
+    @available(*, deprecated, message: "Public range is server-derived from the AI valuation; use CarStore.publicValueRangePreview(for:)")
     var publicValueRange: String? {
         guard showValuePublicly, let estimatedValue else { return nil }
         return CarValueRange.publicLabel(for: estimatedValue)

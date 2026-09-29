@@ -11,6 +11,7 @@ import { defineSecret } from "firebase-functions/params";
 // while the modular exports are always present. Never use the namespace forms.
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { containsBlockedTerm } from "./commentFilter";
+import { publicValueLabel, snapshotOf, valuationStillApplies, CarSnapshot } from "./valueRange";
 import {
   Environment,
   SignedDataVerifier,
@@ -1857,9 +1858,13 @@ export const suggestServiceReminders = onCall(
 // Claude -> release the slot on any throw. A flat per-user cap for everyone: an
 // abuse guard on Anthropic spend, not a Pro gate.
 //
-// Input never includes VIN, plate, notes, insurance, or photos — only what a
-// pricing guide would ask for. The result is an estimate, not an appraisal,
-// and the prompt says so.
+// Input: { carId, condition, region?, clientDate }. The car's year, make,
+// model, trim and mileage are read from the caller's own users/{uid}/cars/{carId}
+// server-side; any such fields in the request are ignored. Never VIN, plate,
+// notes, insurance, or photos. The result is an estimate, not an appraisal,
+// and the prompt says so. It's saved server-only at
+// users/{uid}/usage/valuation_{carId}, the ONLY source of the public value
+// range (owner decision; see syncPublicValueRange and valueRange.ts).
 
 const VALUATION_MODEL = "claude-haiku-4-5";
 const VALUATION_DAILY_CAP = 10;
@@ -1890,6 +1895,7 @@ interface EstimateCarValueResponse {
   currency: "USD";
   rationale: string;
   confidence: ValueConfidence;
+  condition: ValueCondition;
   valuationAllowance: { used: number; limit: number };
 }
 
@@ -1984,6 +1990,15 @@ interface ValuationContext {
   reserved: number;
 }
 
+// Car document IDs are UUID strings (CarStore: car.id.uuidString); accept
+// only that shape, so the value is safe as a path segment and a doc-ID suffix.
+const CAR_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
+
+/** users/{uid}/usage/valuation_{carId}: server-only (usage/ rule), owner-readable. */
+function valuationRef(uid: string, carId: string): FirebaseFirestore.DocumentReference {
+  return db.collection("users").doc(uid).collection("usage").doc(`valuation_${carId}`);
+}
+
 // Order matters: auth -> verified email -> sanitize -> clientDate bound ->
 // reserve. A request that fails validation never consumes a slot; any throw
 // from the handler (Claude failure, unparseable output, the model declining to
@@ -1997,19 +2012,115 @@ function withValuationCap(
     }
     await requireVerifiedEmail(request.auth);
     const uid = request.auth.uid;
-    const clean = sanitizeValuationInput(request.data);
-    const clientDate = assertPlausibleClientDate(
-      isPlainObject(request.data) ? request.data.clientDate : undefined
-    );
+    const data = isPlainObject(request.data) ? request.data : {};
+
+    // The car's identity and mileage come from the caller's OWN car doc,
+    // server-side, never from the request (owner decision: the public value
+    // range may only reflect an AI estimate of the car as it's actually
+    // recorded). Only condition and region come from the client. A missing
+    // or foreign car is rejected before any slot is reserved.
+    const carId = data.carId;
+    if (typeof carId !== "string" || !CAR_ID_PATTERN.test(carId)) {
+      throw new HttpsError("invalid-argument", "carId is required");
+    }
+    const carSnap = await db.collection("users").doc(uid).collection("cars").doc(carId).get();
+    if (!carSnap.exists) {
+      throw new HttpsError("not-found", "Car not found");
+    }
+    const carData = carSnap.data() ?? {};
+    const snapshot = snapshotOf(carData);
+    const clean = sanitizeValuationInput({
+      year: carData.year,
+      make: carData.make,
+      model: carData.model,
+      trim: carData.trim,
+      mileage: carData.mileage,
+      condition: data.condition,
+      region: data.region,
+    });
+    const clientDate = assertPlausibleClientDate(data.clientDate);
     const reserved = await reserveValuationSlot(uid, clientDate);
     try {
       const result = await handler({ uid, clean, clientDate, reserved });
+      await saveValuation(uid, carId, snapshot, result);
       return { ...result, valuationAllowance: { used: reserved, limit: VALUATION_DAILY_CAP } };
     } catch (err) {
       await releaseValuationSlot(uid, clientDate);
       throw err;
     }
   };
+}
+
+// Persists the estimate server-only and re-derives the public range. A
+// transaction checks the car still exists, so a call racing the car's (or
+// the account's) deletion can't recreate a valuation for a car that's gone.
+// Throwing here makes withValuationCap refund the slot.
+async function saveValuation(
+  uid: string,
+  carId: string,
+  snapshot: CarSnapshot,
+  result: Omit<EstimateCarValueResponse, "valuationAllowance">
+): Promise<void> {
+  const carRef = db.collection("users").doc(uid).collection("cars").doc(carId);
+  const saved = await db.runTransaction(async (tx) => {
+    if (!(await tx.get(carRef)).exists) return false;
+    tx.set(valuationRef(uid, carId), {
+      kind: "valuation",
+      uid,
+      carId,
+      low: result.low,
+      mid: result.mid,
+      high: result.high,
+      confidence: result.confidence,
+      condition: result.condition,
+      carSnapshot: snapshot,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
+  if (!saved) throw new HttpsError("not-found", "Car not found");
+  // Best-effort: the valuation is saved; the next car write re-syncs anyway.
+  try {
+    await syncPublicValueRange(uid, carId);
+  } catch (err) {
+    functions.logger.warn("valueRange sync after estimate failed", {
+      uid,
+      carId,
+      error_type: err instanceof Error ? err.name : typeof err,
+    });
+  }
+}
+
+// Sets publicCars/{carId}.valueRange = publicValueLabel(valuation.mid) when the
+// car is public AND showValuePublicly is on AND an AI valuation exists AND it
+// still applies to the car (valueRange.ts: same year/make/model/trim, not
+// driven 20k+ miles since, under a year old). Otherwise deletes it. Never
+// derived from the owner-typed estimatedValue. Transactional; only ever
+// UPDATES an existing public doc owned by `uid` (no recreate).
+async function syncPublicValueRange(uid: string, carId: string): Promise<void> {
+  const pubRef = db.collection("publicCars").doc(carId);
+  const carRef = db.collection("users").doc(uid).collection("cars").doc(carId);
+  await db.runTransaction(async (tx) => {
+    const [pub, car, val] = await Promise.all([tx.get(pubRef), tx.get(carRef), tx.get(valuationRef(uid, carId))]);
+    if (!pub.exists || pub.get("ownerUID") !== uid) return;
+    let label: string | null = null;
+    const c = car.data();
+    if (c && c.isPublic === true && c.showValuePublicly === true && val.exists) {
+      const createdAt = val.get("createdAt");
+      const applies = valuationStillApplies(
+        val.get("carSnapshot"),
+        createdAt instanceof Timestamp ? createdAt.toMillis() : null,
+        c
+      );
+      if (applies) label = publicValueLabel(val.get("mid"));
+    }
+    const current = pub.get("valueRange");
+    if (label === null) {
+      if (current !== undefined) tx.update(pubRef, { valueRange: FieldValue.delete() });
+    } else if (current !== label) {
+      tx.update(pubRef, { valueRange: label });
+    }
+  });
 }
 
 const VALUATION_SYSTEM_PROMPT = [
@@ -2148,7 +2259,7 @@ export const estimateCarValue = onCall(
         ? (parsed.confidence as ValueConfidence)
         : "low";
 
-    return { low, mid, high, currency: "USD", rationale, confidence };
+    return { low, mid, high, currency: "USD", rationale, confidence, condition: clean.condition };
   })
 );
 
@@ -3426,6 +3537,10 @@ export const onCarWritten = onDocumentWritten(
         await sweepPublicCarChildren(carId);
         await releasePublicCarClaim(carId, uid); // after the sweep; see onPublicCarDeleted
       }
+      // The car's AI valuation (users/{uid}/usage/valuation_{carId}) goes with
+      // it, unless the car doc was re-created under the same ID meanwhile.
+      // Path-scoped to this uid, so no claim check is needed. Delete-only.
+      if (!recreated) await valuationRef(uid, carId).delete();
     }
 
     // onAuthUserDeleted's recursiveDelete fires this trigger for every car it
@@ -3442,6 +3557,19 @@ export const onCarWritten = onDocumentWritten(
     const carCount = countSnap.data().count;
     await db.collection("users").doc(uid).collection("usage").doc("limits")
       .set({ carCount }, { merge: true });
+
+    // Re-derive the server-owned public value range when anything it depends
+    // on changed (visibility, the public toggle, identity, mileage), e.g. the
+    // owner edits the model -> the valuation no longer applies -> the range is
+    // cleared. Skipped for unrelated edits (service logs, photos) to save the
+    // three reads. After the Auth guard; the sync only ever updates an existing
+    // public doc, so it can't recreate one.
+    const before = event.data?.before.data() ?? {};
+    const after = event.data?.after.data() ?? {};
+    const relevant = ["isPublic", "showValuePublicly", "year", "make", "model", "trim", "mileage"];
+    if (relevant.some((k) => before[k] !== after[k])) {
+      await syncPublicValueRange(uid, carId);
+    }
   }
 );
 
@@ -3908,6 +4036,12 @@ export const onPublicCarCreated = onDocumentCreated(
       );
       if (Object.keys(changed).length > 0) tx.update(carRef, changed);
     });
+    // The value range is server-owned, so a freshly (re)published doc has
+    // none until it's derived from the owner's AI valuation.
+    const ownerUID = event.data?.get("ownerUID");
+    if (typeof ownerUID === "string" && ownerUID !== "") {
+      await syncPublicValueRange(ownerUID, event.params.carId);
+    }
   }
 );
 

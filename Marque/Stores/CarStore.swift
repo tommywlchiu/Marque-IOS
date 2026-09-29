@@ -30,6 +30,13 @@ class CarStore: ObservableObject {
     private let db = Firestore.firestore()
     private let storage = Storage.storage()
     private var listener: ListenerRegistration?
+    private var valuationsListener: ListenerRegistration?
+
+    /// The signed-in user's AI valuations, keyed by car ID
+    /// (`Car.id.uuidString`). Live: updates after every successful
+    /// `estimateValue`. Read-only mirror of the server-only
+    /// `users/{uid}/usage/valuation_{carId}` docs.
+    @Published private(set) var aiValuations: [String: CarValuation] = [:]
     private var currentUserId: String?
     private var pendingUploads: [PendingUpload] = []
 
@@ -112,6 +119,18 @@ class CarStore: ObservableObject {
             self.saveLocal()
         }
 
+        valuationsListener = db.collection("users").document(userId).collection("usage")
+            .whereField("kind", isEqualTo: "valuation")
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self, let snapshot, self.currentUserId == userId else { return }
+                var map: [String: CarValuation] = [:]
+                for doc in snapshot.documents {
+                    let created = (doc.data(with: .estimate)["createdAt"] as? Timestamp)?.dateValue()
+                    if let v = CarValuation(firestoreData: doc.data(), createdAt: created) { map[v.carId] = v }
+                }
+                self.aiValuations = map
+            }
+
         // Upload photos that live on-device but were never synced to Firebase Storage
         // (e.g. added before Storage was set up, or upload previously failed).
         // Uses the local cache — fast on re-launch, no-op on first install.
@@ -125,6 +144,9 @@ class CarStore: ObservableObject {
     func stopListening() {
         listener?.remove()
         listener = nil
+        valuationsListener?.remove()
+        valuationsListener = nil
+        aiValuations = [:]
         currentUserId = nil
         cars = []
         pendingUploads = []
@@ -279,7 +301,8 @@ class CarStore: ObservableObject {
     }
 
     /// Optional public fields that must be deleted, not just omitted, when nil.
-    private static let clearablePublicKeys = ["valueRange", "engineSoundURL"]
+    /// (valueRange is not here: it's server-owned and never written by the client.)
+    private static let clearablePublicKeys = ["engineSoundURL"]
 
     private func publicProjectionChanged(from old: Car, to new: Car) -> Bool {
         let encoder = Firestore.Encoder()
@@ -659,18 +682,22 @@ class CarStore: ObservableObject {
 
     // MARK: - Estimated value
 
-    /// Asks the `estimateCarValue` Cloud Function for an AI estimate. Doesn't
-    /// save anything: show the range, then call `updateValue` with whatever
-    /// the owner accepts (source `.ai`) or edits (source `.owner`).
+    /// Asks the `estimateCarValue` Cloud Function for an AI estimate of this
+    /// car as it's saved (the server reads year/make/model/trim/mileage from
+    /// the car doc; only `condition` and `region` come from here). The
+    /// server records the result as the car's AI valuation (`aiValuations`
+    /// updates), which is what drives the PUBLIC range. It does NOT change
+    /// the car's own value: call `updateValue` with whatever the owner accepts
+    /// (source `.ai`) or edits (source `.owner`). That value stays private.
     /// `region` is an optional zip or area ("94107", "Bay Area, CA").
     /// Throws `CarValueService.ValueError`.
     func estimateValue(for car: Car, condition: ValueCondition, region: String? = nil) async throws -> ValueEstimate {
         try await CarValueService().estimate(for: car, condition: condition, region: region)
     }
 
-    /// Saves the car's value and its public toggle, and re-syncs the public
-    /// copy: `valueRange` appears on Explore only while `showPublicly` is true
-    /// and a value exists, and is deleted from the public doc otherwise.
+    /// Saves the car's value (private to the owner; any source) and the
+    /// "Show on public profile" toggle. What Explore shows is decided
+    /// server-side from the AI valuation only; see `publicValueRangePreview`.
     /// Pass `value: nil` to clear the value (the source is cleared with it).
     func updateValue(_ value: Double?, source: CarValueSource, showPublicly: Bool, for car: Car) {
         var updated = car
@@ -685,6 +712,28 @@ class CarStore: ObservableObject {
         }
         updated.showValuePublicly = showPublicly
         updateCar(updated)
+    }
+
+    /// The car's AI valuation, if it has one.
+    func aiValuation(for car: Car) -> CarValuation? {
+        aiValuations[car.id.uuidString]
+    }
+
+    /// The range Explore will show for this car when it's public and "Show on
+    /// public profile" is on: the AI valuation's rounded range, or nil when
+    /// there's no valuation or it no longer applies (year/make/model/trim
+    /// edited, 20k+ miles driven since, over a year old). Mirrors the server's
+    /// rule, so the UI can say "Estimate to show a public range" / "Re-estimate:
+    /// details changed". The authoritative value is `PublicCar.valueRange`.
+    func publicValueRangePreview(for car: Car) -> String? {
+        guard let v = aiValuation(for: car), v.applies(to: car) else { return nil }
+        return v.publicLabel
+    }
+
+    /// Whether a public range can be shown for this car right now (an
+    /// applicable AI valuation exists), regardless of the toggle.
+    func canShowValuePublicly(_ car: Car) -> Bool {
+        publicValueRangePreview(for: car) != nil
     }
 
     /// Flips only the public toggle.

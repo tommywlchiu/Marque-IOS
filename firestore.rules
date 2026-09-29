@@ -204,7 +204,9 @@ service cloud.firestore {
       // The complete set of fields the owner's client writes (CarStore's
       // public-copy sync, the cover/photo pushes, AuthService.changeUsername's
       // ownerUsername backfill). Everything else is either server-maintained
-      // (likeCount, weeklyLikeCount, commentCount: the Admin SDK bypasses
+      // (likeCount, weeklyLikeCount, commentCount, and valueRange, which
+      // may only come from an AI valuation (owner decision), so the server
+      // derives it; see syncPublicValueRange in functions/src/index.ts. The Admin SDK bypasses
       // rules) or must never be public at all (VIN, plate, insurance,
       // registration, costs, the exact estimatedValue; FR-06.3). An
       // allowlist rather than a denylist, so a new private Car field can never
@@ -215,13 +217,10 @@ service cloud.firestore {
                 'make', 'model', 'year', 'color', 'mileage', 'trim', 'bodyStyle',
                 'driveType', 'engine', 'fuelType', 'transmission', 'notes',
                 'photoStorageURL', 'photoOffsetY', 'photoURLs', 'serviceHistory',
-                'valueRange', 'engineSoundURL', 'updatedAt'];
+                'engineSoundURL', 'updatedAt'];
       }
       // Validates the fields a write touches (`keys`: every key on create,
       // the affected keys on update); a removed optional key is fine.
-      //   valueRange:      a rounded range ("$30k–$35k", "Under $1k",
-      //                    "$1M–$1.025M"; CarValueRange.publicLabel). k amounts
-      //                    are whole numbers, so "$30.125k" can't leak the exact value.
       //   photoStorageURL: "" (cover not uploaded yet) or this car's own Storage file.
       //   photoURLs:       at most 12 (PublicCar.maxGalleryPhotos), each this
       //                    car's own Storage file. Rules can't loop, hence the
@@ -248,10 +247,7 @@ service cloud.firestore {
             && photoAt(l, 8, p) && photoAt(l, 9, p) && photoAt(l, 10, p) && photoAt(l, 11, p);
       }
       function validPublicFields(d, keys) {
-        return (!touches(keys, d, 'valueRange')
-                  || (d.valueRange is string && d.valueRange.size() <= 32
-                      && d.valueRange.matches('Under [$]1k|[$]([0-9]{1,3}k|[0-9]{1,4}([.][0-9]{1,3})?M)–[$]([0-9]{1,3}k|[0-9]{1,4}([.][0-9]{1,3})?M)')))
-            && (!touches(keys, d, 'photoStorageURL')
+        return (!touches(keys, d, 'photoStorageURL')
                   || d.photoStorageURL == '' || isCarMediaURL(d.photoStorageURL, request.auth.uid, carId))
             && (!touches(keys, d, 'photoURLs') || validPhotoURLs(d.photoURLs))
             && (!touches(keys, d, 'engineSoundURL') || isCarMediaURL(d.engineSoundURL, request.auth.uid, carId))
@@ -507,6 +503,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Server-only counters and records. Includes valuation_{carId}, the car's
+    // last AI estimate (estimateCarValue), which is the only source of the
+    // public value range; the owner can read it (CarStore previews whether the
+    // range will show), nobody can write it.
     match /users/{uid}/usage/{docId} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;  // server-only — only the Cloud Function may write

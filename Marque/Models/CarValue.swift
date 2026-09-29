@@ -83,3 +83,88 @@ enum CarValueRange {
         return "$\(Int((amount / 1_000).rounded()))k"
     }
 }
+
+/// The car's last AI valuation, saved server-only by `estimateCarValue` at
+/// `users/{uid}/usage/valuation_{carId}` (owner-readable, never
+/// client-writable). It's the ONLY source of the public value range (owner
+/// decision): the server sets `publicCars/{carId}.valueRange` to
+/// `CarValueRange.publicLabel(for: mid)` while the car is public, "Show on
+/// public profile" (`Car.showValuePublicly`) is on, and `applies(to:)` holds.
+/// A value the owner typed never appears publicly.
+struct CarValuation: Equatable {
+    struct Snapshot: Equatable {
+        var year: String
+        var make: String
+        var model: String
+        var trim: String
+        var mileage: String
+    }
+
+    let carId: String
+    let low: Double
+    let mid: Double
+    let high: Double
+    let confidence: ValueEstimate.Confidence
+    let condition: ValueCondition?
+    /// The car as it was recorded when estimated (read server-side).
+    let carSnapshot: Snapshot
+    let createdAt: Date?
+
+    /// Mirrors VALUATION_MAX_AGE_MS / VALUATION_MAX_MILEAGE_DRIFT in
+    /// functions/src/valueRange.ts. Change both together.
+    static let maxAge: TimeInterval = 365 * 24 * 60 * 60
+    static let maxMileageDrift = 20_000
+
+    /// The public range this valuation produces.
+    var publicLabel: String? { CarValueRange.publicLabel(for: mid) }
+
+    /// Mirrors `valuationStillApplies` on the server: the same year, make,
+    /// model and trim (case/whitespace-insensitive), not driven more than
+    /// `maxMileageDrift` miles since, and under `maxAge` old. When this turns
+    /// false (e.g. the owner edits the model), the server removes the public
+    /// range until the car is estimated again.
+    func applies(to car: Car, now: Date = Date()) -> Bool {
+        func norm(_ s: String) -> String {
+            s.trimmingCharacters(in: .whitespacesAndNewlines)
+                .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+                .lowercased()
+        }
+        guard norm(carSnapshot.year) == norm(car.year),
+              norm(carSnapshot.make) == norm(car.make),
+              norm(carSnapshot.model) == norm(car.model),
+              norm(carSnapshot.trim) == norm(car.trim)
+        else { return false }
+        if let then = Self.parseMileage(carSnapshot.mileage), let current = Self.parseMileage(car.mileage),
+           current - then > Self.maxMileageDrift {
+            return false
+        }
+        guard let createdAt, now.timeIntervalSince(createdAt) <= Self.maxAge else { return false }
+        return true
+    }
+
+    static func parseMileage(_ s: String) -> Int? {
+        let digits = s.filter { $0 != "," && !$0.isWhitespace }
+        guard (1...9).contains(digits.count), digits.allSatisfy(\.isASCII), digits.allSatisfy(\.isNumber) else { return nil }
+        return Int(digits)
+    }
+
+    /// Decodes a `valuation_{carId}` usage doc; nil if it isn't one.
+    init?(firestoreData d: [String: Any], createdAt: Date?) {
+        guard d["kind"] as? String == "valuation",
+              let carId = d["carId"] as? String,
+              let low = (d["low"] as? NSNumber)?.doubleValue,
+              let mid = (d["mid"] as? NSNumber)?.doubleValue,
+              let high = (d["high"] as? NSNumber)?.doubleValue
+        else { return nil }
+        let snap = d["carSnapshot"] as? [String: Any] ?? [:]
+        func str(_ k: String) -> String { snap[k] as? String ?? "" }
+        self.carId = carId
+        self.low = low
+        self.mid = mid
+        self.high = high
+        self.confidence = (d["confidence"] as? String).flatMap(ValueEstimate.Confidence.init(rawValue:)) ?? .low
+        self.condition = (d["condition"] as? String).flatMap(ValueCondition.init(rawValue:))
+        self.carSnapshot = Snapshot(year: str("year"), make: str("make"), model: str("model"), trim: str("trim"), mileage: str("mileage"))
+        self.createdAt = createdAt
+    }
+}
