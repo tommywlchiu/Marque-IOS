@@ -10,6 +10,12 @@ struct ExploreView: View {
     @State private var profileTarget: ProfileTarget?
     @State private var showingPushPrePrompt = false
     @AppStorage("marque_explore_sort") private var sortRaw: String = ExploreSort.newest.rawValue
+    /// Like counts captured when "Most liked" order was last computed. The
+    /// feed sorts on these, not the live counts, so a like anywhere in the
+    /// 100 cached cars can't reshuffle the feed under the user's thumb. Taken
+    /// on appear, on sort change, on pull-to-refresh, and when the set of
+    /// cars changes (a new or removed car, not a count change).
+    @State private var likeSnapshot: [String: Int] = [:]
 
     private struct ProfileTarget: Identifiable {
         let uid: String
@@ -39,7 +45,9 @@ struct ExploreView: View {
         case .newest:
             return filteredCars
         case .mostLiked:
-            return filteredCars.sorted { $0.likeCount > $1.likeCount }
+            return filteredCars.sorted {
+                (likeSnapshot[$0.carId] ?? $0.likeCount) > (likeSnapshot[$1.carId] ?? $1.likeCount)
+            }
         }
     }
 
@@ -68,14 +76,6 @@ struct ExploreView: View {
                                     onLiked: offerPushPrePrompt
                                 )
                             }
-                            if selectedCategory == .following && filteredCars.isEmpty {
-                                MarqueEmptyState(
-                                    icon: "person.2",
-                                    title: "No Cars Yet",
-                                    subtitle: "Follow people to see their public cars here."
-                                )
-                                .padding(.vertical, 40)
-                            }
                             feedSection
                         }
                         .padding(.top, 8)
@@ -83,6 +83,7 @@ struct ExploreView: View {
                     }
                     .refreshable {
                         await exploreStore.refresh()
+                        takeLikeSnapshot()
                         await exploreStore.loadTopCars(.thisWeek)
                         await exploreStore.loadTopCars(.allTime)
                     }
@@ -119,10 +120,20 @@ struct ExploreView: View {
                     .padding(.bottom, 16)
             }
             .pushPrePrompt(isPresented: $showingPushPrePrompt)
+            .onAppear(perform: takeLikeSnapshot)
+            .onChange(of: sortRaw) { _, _ in takeLikeSnapshot() }
+            .onChange(of: exploreStore.cars.map(\.carId)) { _, _ in takeLikeSnapshot() }
         }
         // On the stack, not its root, so it can present over a pushed car page.
         .modifier(LikeErrorAlert())
         .modifier(FollowPushRouter())
+    }
+
+    private func takeLikeSnapshot() {
+        likeSnapshot = Dictionary(
+            exploreStore.cars.map { ($0.carId, $0.likeCount) },
+            uniquingKeysWith: { first, _ in first }
+        )
     }
 
     private func offerPushPrePrompt() {
@@ -184,10 +195,13 @@ struct ExploreView: View {
             feedHeader
 
             if filteredCars.isEmpty {
+                let following = selectedCategory == .following
                 MarqueEmptyState(
-                    icon: "car.fill",
-                    title: "No \(selectedCategory.rawValue) Cars",
-                    subtitle: "No public cars in this category yet."
+                    icon: following ? "person.2" : "car.fill",
+                    title: following ? "No Cars Yet" : "No \(selectedCategory.rawValue) Cars",
+                    subtitle: following
+                        ? "Follow people to see their public cars here."
+                        : "No public cars in this category yet."
                 )
                 .padding(.vertical, 20)
             } else {

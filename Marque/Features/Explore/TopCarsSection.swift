@@ -201,7 +201,6 @@ private struct TopCarCard: View {
             if let url = car.primaryPhotoURL {
                 CachedRemoteImage(url: url)
                     .frame(width: Self.thumbWidth, height: Self.thumbHeight)
-                    .offset(y: car.photoOffsetY)
             } else {
                 ExploreNoPhotoPlaceholder(make: car.make, model: car.model, iconSize: 28, showsLabel: false)
                     .frame(width: Self.thumbWidth, height: Self.thumbHeight)

@@ -35,6 +35,7 @@ struct ExploreFeedCard: View {
                 Text("@\(car.ownerUsername)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.primary)
+                    .lineLimit(1)
                 Spacer(minLength: 0)
             }
         }
@@ -54,6 +55,7 @@ struct ExploreFeedCard: View {
             Text(car.displayName)
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(.primary)
+                .lineLimit(1)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(car.displayName) by @\(car.ownerUsername), \(likesAccessibilityText)")
@@ -86,7 +88,17 @@ struct ExploreFeedCard: View {
             ZStack(alignment: .bottom) {
                 TabView(selection: $pageIndex) {
                     ForEach(Array(urls.enumerated()), id: \.offset) { index, url in
-                        singlePhoto(url).tag(index)
+                        // A paged TabView builds every page, so only load the
+                        // photo on screen and its neighbours; the rest stay a
+                        // cheap placeholder until swiped near.
+                        Group {
+                            if abs(index - pageIndex) <= 1 {
+                                singlePhoto(url)
+                            } else {
+                                Color(.systemGray6)
+                            }
+                        }
+                        .tag(index)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
@@ -96,12 +108,12 @@ struct ExploreFeedCard: View {
         }
     }
 
-    /// Respects the car's saved crop: `photoOffsetY` shifts the filled image
-    /// within its frame before the outer `clipShape` crops it, same as
-    /// `PublicCarPhotoHeader`.
+    /// Center-cropped. `photoOffsetY` is a point offset tuned in the editor's
+    /// 180pt-tall banner; in this much taller 4:5 frame the same points shift
+    /// the image by a different amount (and a landscape photo has no vertical
+    /// overflow at all, so an offset would expose a blank strip).
     private func singlePhoto(_ url: URL) -> some View {
         CachedRemoteImage(url: url)
-            .offset(y: car.photoOffsetY)
     }
 
     private func pageIndicator(count: Int) -> some View {
