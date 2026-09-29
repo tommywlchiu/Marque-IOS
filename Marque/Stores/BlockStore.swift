@@ -11,6 +11,26 @@ enum ReportReason: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// `contentId` values for `reports/` (BlockStore.report / CommentStore.report):
+/// the Firestore path of the reported content, so a moderator can open it
+/// directly. `reportedUID` is always the content's author/owner.
+enum ReportContent {
+    /// A comment. reportedUID = the comment's authorUID.
+    static func comment(carId: String, commentId: String) -> String {
+        "publicCars/\(carId)/comments/\(commentId)"
+    }
+
+    /// A public car's engine sound clip. reportedUID = the car's ownerUID.
+    static func engineSound(carId: String) -> String {
+        "publicCars/\(carId)/engineSound"
+    }
+
+    /// A public car listing (photos, notes). reportedUID = the car's ownerUID.
+    static func car(carId: String) -> String {
+        "publicCars/\(carId)"
+    }
+}
+
 @MainActor
 class BlockStore: ObservableObject {
     @Published private(set) var blockedUIDs: Set<String> = []

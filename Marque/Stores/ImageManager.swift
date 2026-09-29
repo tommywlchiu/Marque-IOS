@@ -1,4 +1,5 @@
 import UIKit
+import FirebaseStorage
 
 // Static funcs only, no shared mutable state — safe to call from any thread,
 // including off-main decode work the frontend may do.
@@ -72,5 +73,18 @@ struct ImageManager {
 
     static func generateFileName() -> String {
         "\(UUID().uuidString).jpg"
+    }
+}
+
+extension StorageMetadata {
+    /// Upload metadata for every JPEG the app puts in Storage (car photos,
+    /// receipts, avatar). storage.rules requires image/* on those paths.
+    /// (It also still accepts application/octet-stream, which is what the SDK
+    /// sends when putData gets no metadata, i.e. builds before this one.) A
+    /// fresh instance each time: StorageMetadata is a mutable class.
+    static var jpegImage: StorageMetadata {
+        let meta = StorageMetadata()
+        meta.contentType = "image/jpeg"
+        return meta
     }
 }

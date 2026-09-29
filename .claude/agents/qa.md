@@ -45,7 +45,7 @@ Prioritize defect classes that builds and type-checkers do **not** catch:
 ```bash
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 SIM=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1)
-xcodebuild -project Marque-Prototype.xcodeproj -scheme Marque-Prototype \
+xcodebuild -project Marque.xcodeproj -scheme Marque \
   -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/marque-verify
 cd functions && npm run build
 ```

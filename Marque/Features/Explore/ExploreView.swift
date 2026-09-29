@@ -8,6 +8,7 @@ struct ExploreView: View {
 
     @State private var selectedCategory: ExploreCategory = .all
     @State private var profileTarget: ProfileTarget?
+    @State private var showingPushPrePrompt = false
 
     private struct ProfileTarget: Identifiable {
         let uid: String
@@ -45,6 +46,12 @@ struct ExploreView: View {
                             categoryPicker
                             if selectedCategory == .all && !visibleCars.isEmpty {
                                 featuredSection
+                                TopCarsSection(
+                                    onOwnerTap: { car in
+                                        profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
+                                    },
+                                    onLiked: offerPushPrePrompt
+                                )
                             }
                             if selectedCategory == .following && filteredCars.isEmpty {
                                 MarqueEmptyState(
@@ -61,6 +68,8 @@ struct ExploreView: View {
                     }
                     .refreshable {
                         await exploreStore.refresh()
+                        await exploreStore.loadTopCars(.thisWeek)
+                        await exploreStore.loadTopCars(.allTime)
                     }
                 }
             }
@@ -92,7 +101,15 @@ struct ExploreView: View {
                     .padding(.trailing, 16)
                     .padding(.bottom, 16)
             }
+            .pushPrePrompt(isPresented: $showingPushPrePrompt)
         }
+        // On the stack, not its root, so it can present over a pushed car page.
+        .modifier(LikeErrorAlert())
+        .modifier(FollowPushRouter())
+    }
+
+    private func offerPushPrePrompt() {
+        PushPrePrompt.offer { showingPushPrePrompt = true }
     }
 
     // MARK: - Search Bar
@@ -139,9 +156,9 @@ struct ExploreView: View {
                         NavigationLink(destination: CarDetailView(publicCar: car)
                             .environmentObject(exploreStore)
                             .environmentObject(blockStore)) {
-                            FeaturedCarCard(car: car) {
+                            FeaturedCarCard(car: car, onOwnerTap: {
                                 profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
-                            }
+                            }, onLiked: offerPushPrePrompt)
                         }
                         .buttonStyle(.plain)
                     }
@@ -176,9 +193,9 @@ struct ExploreView: View {
                         NavigationLink(destination: CarDetailView(publicCar: car)
                             .environmentObject(exploreStore)
                             .environmentObject(blockStore)) {
-                            ExploreCarCell(car: car) {
+                            ExploreCarCell(car: car, onOwnerTap: {
                                 profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
-                            }
+                            }, onLiked: offerPushPrePrompt)
                         }
                         .buttonStyle(.plain)
                     }
@@ -245,6 +262,7 @@ private struct CategoryChip: View {
 private struct FeaturedCarCard: View {
     let car: PublicCar
     var onOwnerTap: (() -> Void)? = nil
+    var onLiked: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -265,6 +283,10 @@ private struct FeaturedCarCard: View {
                 ownerRow.padding(10)
             }
             .frame(width: 200, height: 150)
+            .overlay(alignment: .topTrailing) {
+                LikeButton(car: car, style: .onPhoto, onLiked: onLiked)
+                    .padding(8)
+            }
         }
     }
 
@@ -302,6 +324,7 @@ private struct FeaturedCarCard: View {
 struct ExploreCarCell: View {
     let car: PublicCar
     var onOwnerTap: (() -> Void)? = nil
+    var onLiked: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -315,9 +338,12 @@ struct ExploreCarCell: View {
             .aspectRatio(1.4, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            ownerRow
-                .padding(.horizontal, 4)
-                .padding(.bottom, 4)
+            HStack(spacing: 4) {
+                ownerRow
+                LikeButton(car: car, style: .compact, onLiked: onLiked)
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 4)
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14))

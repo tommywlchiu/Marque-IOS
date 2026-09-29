@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D5FA62F117724D022A23592D /* CarValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 600BB66AA00BB37F3FA29F33 /* CarValue.swift */; };
+		79453226BB33D5D9700AC1E3 /* CarComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB586A35A4161F192DA3958 /* CarComment.swift */; };
+		74DBAFE5AAA034DC4F1FC9FC /* CommentFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FF6721A83D1C02383FB69 /* CommentFilter.swift */; };
+		D648EB831186D1CBC3DE3DF1 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5686F59A723EE5E2F08F0FD /* NotificationPreferences.swift */; };
+		1489DDA28A8A529A6872FB29 /* CarValueService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70462D0DA6364B648A4441D /* CarValueService.swift */; };
+		52F2FC92CEC1C5102E76F49A /* LikeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96132E4DCD59E5B6FE0C4014 /* LikeStore.swift */; };
+		F8FC762B6FC2DE7E9C70498F /* CommentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB8BECB49371D61BEB84B2F4 /* CommentStore.swift */; };
+		32C371DFB4E4D8C66823FA9D /* PushStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A4AF4B9E5F7A1D6F764D04 /* PushStore.swift */; };
+		635CE8E912A7EC3026262670 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = F309E4F1842A43140CB86B50 /* FirebaseMessaging */; };
 		6B0782D5E6B383B850DEDC2E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C453D62471A58941090CEEB8 /* FirebaseCrashlytics */; };
 		762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */; };
 		65B797A53B1D4533B9DFCDDE /* AuthTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */; };
@@ -90,9 +99,29 @@
 		F497CF263024459E001892AE /* AIServiceSuggestionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF253024459E001892AE /* AIServiceSuggestionService.swift */; };
 		F4A7C301A1B2C3D4E5F60718 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = F4A7C302A1B2C3D4E5F60719 /* FirebaseAppCheck */; };
 		F5B1000100000000B1000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F5B1000200000000B1000002 /* PrivacyInfo.xcprivacy */; };
+		FE50B1000000000000000001 /* LikeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000001 /* LikeButton.swift */; };
+		FE50B1000000000000000002 /* PushPermissionPrePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000002 /* PushPermissionPrePrompt.swift */; };
+		FE50B1000000000000000003 /* EngineSoundPlayback.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000003 /* EngineSoundPlayback.swift */; };
+		FE50B1000000000000000004 /* CarCommentsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000004 /* CarCommentsViews.swift */; };
+		FE50B1000000000000000005 /* CarDetailSocial.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000005 /* CarDetailSocial.swift */; };
+		FE50B1000000000000000006 /* FollowPushRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000006 /* FollowPushRouter.swift */; };
+		FE50B1000000000000000007 /* EngineSoundRecorderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000007 /* EngineSoundRecorderSheet.swift */; };
+		FE50B1000000000000000008 /* EngineSoundOwnerSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000008 /* EngineSoundOwnerSection.swift */; };
+		FE50B1000000000000000009 /* CarValueSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000009 /* CarValueSection.swift */; };
+		FE50B100000000000000000A /* EstimateValueSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000A /* EstimateValueSheet.swift */; };
+		FE50B100000000000000000B /* TopCarsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000B /* TopCarsSection.swift */; };
+		FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000C /* PushPreferencesSection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		600BB66AA00BB37F3FA29F33 /* CarValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarValue.swift; sourceTree = "<group>"; };
+		7AB586A35A4161F192DA3958 /* CarComment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarComment.swift; sourceTree = "<group>"; };
+		3C6FF6721A83D1C02383FB69 /* CommentFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentFilter.swift; sourceTree = "<group>"; };
+		E5686F59A723EE5E2F08F0FD /* NotificationPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPreferences.swift; sourceTree = "<group>"; };
+		A70462D0DA6364B648A4441D /* CarValueService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarValueService.swift; sourceTree = "<group>"; };
+		96132E4DCD59E5B6FE0C4014 /* LikeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeStore.swift; sourceTree = "<group>"; };
+		FB8BECB49371D61BEB84B2F4 /* CommentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentStore.swift; sourceTree = "<group>"; };
+		C5A4AF4B9E5F7A1D6F764D04 /* PushStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushStore.swift; sourceTree = "<group>"; };
 		000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceViews.swift; sourceTree = "<group>"; };
 		20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrashReportingService.swift; sourceTree = "<group>"; };
 		62DBACF0B818EB4BF765FCE0 /* CelebrationEffects.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CelebrationEffects.swift; sourceTree = "<group>"; };
@@ -169,6 +198,18 @@
 		F497CF2330244586001892AE /* AIServiceSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServiceSuggestion.swift; sourceTree = "<group>"; };
 		F497CF253024459E001892AE /* AIServiceSuggestionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServiceSuggestionService.swift; sourceTree = "<group>"; };
 		F5B1000200000000B1000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		FE50C1000000000000000001 /* LikeButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeButton.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000002 /* PushPermissionPrePrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPermissionPrePrompt.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000003 /* EngineSoundPlayback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundPlayback.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000004 /* CarCommentsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarCommentsViews.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000005 /* CarDetailSocial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarDetailSocial.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000006 /* FollowPushRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowPushRouter.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000007 /* EngineSoundRecorderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundRecorderSheet.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000008 /* EngineSoundOwnerSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundOwnerSection.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000009 /* CarValueSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarValueSection.swift; sourceTree = "<group>"; };
+		FE50C100000000000000000A /* EstimateValueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EstimateValueSheet.swift; sourceTree = "<group>"; };
+		FE50C100000000000000000B /* TopCarsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopCarsSection.swift; sourceTree = "<group>"; };
+		FE50C100000000000000000C /* PushPreferencesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPreferencesSection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -178,6 +219,7 @@
 			files = (
 				F497CF18301D5D1B001892AE /* FirebaseRemoteConfig in Frameworks */,
 				F4A7C301A1B2C3D4E5F60718 /* FirebaseAppCheck in Frameworks */,
+				635CE8E912A7EC3026262670 /* FirebaseMessaging in Frameworks */,
 				C3000001C3000001C3000001 /* FirebaseCore in Frameworks */,
 				C4000001C4000001C4000001 /* FirebaseAuth in Frameworks */,
 				C5000001C5000001C5000001 /* FirebaseFirestore in Frameworks */,
@@ -227,6 +269,10 @@
 			isa = PBXGroup;
 			children = (
 				F497CF2330244586001892AE /* AIServiceSuggestion.swift */,
+				600BB66AA00BB37F3FA29F33 /* CarValue.swift */,
+				7AB586A35A4161F192DA3958 /* CarComment.swift */,
+				3C6FF6721A83D1C02383FB69 /* CommentFilter.swift */,
+				E5686F59A723EE5E2F08F0FD /* NotificationPreferences.swift */,
 				F497CF0C300B0735001892AE /* ChatMessage.swift */,
 				F497CF0D300B0735001892AE /* Conversation.swift */,
 				A20002 /* Car.swift */,
@@ -266,6 +312,10 @@
 			isa = PBXGroup;
 			children = (
 				F497CF253024459E001892AE /* AIServiceSuggestionService.swift */,
+				A70462D0DA6364B648A4441D /* CarValueService.swift */,
+				96132E4DCD59E5B6FE0C4014 /* LikeStore.swift */,
+				FB8BECB49371D61BEB84B2F4 /* CommentStore.swift */,
+				C5A4AF4B9E5F7A1D6F764D04 /* PushStore.swift */,
 				F497CF10300B0749001892AE /* ChatStore.swift */,
 				A20003 /* CarStore.swift */,
 				A20058 /* ExploreStore.swift */,
@@ -351,6 +401,7 @@
 			isa = PBXGroup;
 			children = (
 				A20027 /* ExploreView.swift */,
+				FE50C100000000000000000B /* TopCarsSection.swift */,
 				A20028 /* SearchResultsView.swift */,
 			);
 			path = Explore;
@@ -360,6 +411,7 @@
 			isa = PBXGroup;
 			children = (
 				A20030 /* SettingsView.swift */,
+				FE50C100000000000000000C /* PushPreferencesSection.swift */,
 				A20031 /* ProUpgradeView.swift */,
 				A20065 /* DeleteAccountView.swift */,
 				A20067 /* ChangePasswordView.swift */,
@@ -373,6 +425,10 @@
 				F497CF213022AC1B001892AE /* EditVehicleDetailsSheet.swift */,
 				F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */,
 				F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */,
+				FE50C1000000000000000007 /* EngineSoundRecorderSheet.swift */,
+				FE50C1000000000000000008 /* EngineSoundOwnerSection.swift */,
+				FE50C1000000000000000009 /* CarValueSection.swift */,
+				FE50C100000000000000000A /* EstimateValueSheet.swift */,
 				A20034 /* ServiceRemindersView.swift */,
 				A20035 /* AddReminderView.swift */,
 				A20037 /* PhotoGalleryView.swift */,
@@ -392,6 +448,12 @@
 			isa = PBXGroup;
 			children = (
 				A20043 /* NotificationsInboxView.swift */,
+				FE50C1000000000000000001 /* LikeButton.swift */,
+				FE50C1000000000000000002 /* PushPermissionPrePrompt.swift */,
+				FE50C1000000000000000003 /* EngineSoundPlayback.swift */,
+				FE50C1000000000000000004 /* CarCommentsViews.swift */,
+				FE50C1000000000000000005 /* CarDetailSocial.swift */,
+				FE50C1000000000000000006 /* FollowPushRouter.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -431,6 +493,7 @@
 				C7000002C7000002C7000002 /* FirebaseFunctions */,
 				F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */,
 				F4A7C302A1B2C3D4E5F60719 /* FirebaseAppCheck */,
+				F309E4F1842A43140CB86B50 /* FirebaseMessaging */,
 				C453D62471A58941090CEEB8 /* FirebaseCrashlytics */,
 			);
 			productName = "Marque-Prototype";
@@ -517,6 +580,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FE50B1000000000000000001 /* LikeButton.swift in Sources */,
+				FE50B1000000000000000002 /* PushPermissionPrePrompt.swift in Sources */,
+				FE50B1000000000000000003 /* EngineSoundPlayback.swift in Sources */,
+				FE50B1000000000000000004 /* CarCommentsViews.swift in Sources */,
+				FE50B1000000000000000005 /* CarDetailSocial.swift in Sources */,
+				FE50B1000000000000000006 /* FollowPushRouter.swift in Sources */,
+				FE50B1000000000000000007 /* EngineSoundRecorderSheet.swift in Sources */,
+				FE50B1000000000000000008 /* EngineSoundOwnerSection.swift in Sources */,
+				FE50B1000000000000000009 /* CarValueSection.swift in Sources */,
+				FE50B100000000000000000A /* EstimateValueSheet.swift in Sources */,
+				FE50B100000000000000000B /* TopCarsSection.swift in Sources */,
+				FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */,
 				A10001 /* Marque.swift in Sources */,
 				A10066 /* AppDelegate.swift in Sources */,
 				A10002 /* Car.swift in Sources */,
@@ -530,6 +605,14 @@
 				A10065 /* DeleteAccountView.swift in Sources */,
 				A10067 /* ChangePasswordView.swift in Sources */,
 				F497CF263024459E001892AE /* AIServiceSuggestionService.swift in Sources */,
+				D5FA62F117724D022A23592D /* CarValue.swift in Sources */,
+				79453226BB33D5D9700AC1E3 /* CarComment.swift in Sources */,
+				74DBAFE5AAA034DC4F1FC9FC /* CommentFilter.swift in Sources */,
+				D648EB831186D1CBC3DE3DF1 /* NotificationPreferences.swift in Sources */,
+				1489DDA28A8A529A6872FB29 /* CarValueService.swift in Sources */,
+				52F2FC92CEC1C5102E76F49A /* LikeStore.swift in Sources */,
+				F8FC762B6FC2DE7E9C70498F /* CommentStore.swift in Sources */,
+				32C371DFB4E4D8C66823FA9D /* PushStore.swift in Sources */,
 				A10070 /* DocumentScanService.swift in Sources */,
 				A10071 /* DocumentScannerView.swift in Sources */,
 				A10061 /* BlockStore.swift in Sources */,
@@ -824,6 +907,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F309E4F1842A43140CB86B50 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
 		C1000001C1000001C1000001 /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F4915C1A2FA2C2D1000F9C9E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

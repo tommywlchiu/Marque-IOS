@@ -8,6 +8,7 @@ struct CarDetailView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var exploreStore: ExploreStore
     @EnvironmentObject var blockStore: BlockStore
+    @EnvironmentObject var commentStore: CommentStore
     @Environment(\.dismiss) var dismiss
 
     // Exactly one of these is non-nil. Own car is @State so mutations sync to UI.
@@ -17,7 +18,7 @@ struct CarDetailView: View {
     @State private var showingEditDetails = false
     @State private var showingDeleteConfirmation = false
     @State private var showingAddMaintenance = false
-    @State private var showingReport = false
+    @State private var reportTarget: CarReportTarget?
     @State private var showingOwnerProfile = false
     @State private var galleryStartIndex: Int?
     @State private var editingMaintenanceRecord: MaintenanceRecord?
@@ -37,14 +38,26 @@ struct CarDetailView: View {
     @State private var showingEditInsurance = false
     @State private var showingAddReminder = false
 
-    init(car: Car) {
+    // Social: comments sheet, push pre-prompt, going-private confirmation.
+    @State private var commentsRequest: CommentsSheetRequest?
+    @State private var showingPushPrePrompt = false
+    @State private var showingMakePrivateConfirmation = false
+    @State private var commentActionError: String?
+    @State private var blockTarget: UserRef?
+    @State private var commentProfileTarget: UserRef?
+    /// Opens the comments sheet once on appear (a comment push/notification).
+    @State private var openCommentsOnAppear: Bool
+
+    init(car: Car, openComments: Bool = false) {
         self._ownCar = State(initialValue: car)
         self.publicCar = nil
+        self._openCommentsOnAppear = State(initialValue: openComments)
     }
 
     init(publicCar: PublicCar) {
         self._ownCar = State(initialValue: nil)
         self.publicCar = publicCar
+        self._openCommentsOnAppear = State(initialValue: false)
     }
 
     // MARK: - Mode helpers
@@ -76,14 +89,76 @@ struct CarDetailView: View {
     private var transmission: String { liveCar?.transmission ?? publicCar?.transmission ?? "" }
     private var notes: String { liveCar?.notes ?? publicCar?.notes ?? "" }
 
+    // MARK: - Social accessors
+
+    /// The latest copy of the public car (Explore's live feed or Top Cars),
+    /// so like/comment counts update while the page is open.
+    private var livePublicCar: PublicCar? {
+        guard let pc = publicCar else { return nil }
+        return exploreStore.cars.first(where: { $0.carId == pc.carId }) ?? pc
+    }
+
+    /// The owner's own car as it appears publicly, if Explore has it loaded.
+    private var ownPublicCar: PublicCar? {
+        guard let car = liveCar, car.isPublic else { return nil }
+        let id = car.id.uuidString
+        return exploreStore.cars.first(where: { $0.carId == id })
+            ?? exploreStore.topCarsAllTime.first(where: { $0.carId == id })
+    }
+
+    /// publicCars doc id whose comments this page shows; nil for a private own car.
+    private var commentsCarId: String? {
+        if let pc = publicCar { return pc.carId }
+        guard let car = liveCar, car.isPublic else { return nil }
+        return car.id.uuidString
+    }
+
+    private var commentsOwnerUID: String {
+        publicCar?.ownerUID ?? authService.currentUser?.id ?? ""
+    }
+
+    private var serverCommentCount: Int {
+        (livePublicCar ?? ownPublicCar)?.commentCount ?? 0
+    }
+
+    /// Loaded, block-filtered count when the whole thread is loaded; the
+    /// server count otherwise.
+    private var displayedCommentCount: Int {
+        guard let id = commentsCarId, commentStore.carId == id, !commentStore.isLoading else {
+            return serverCommentCount
+        }
+        let visible = commentStore.visibleComments(hiding: blockStore.blockedUIDs).count
+        return commentStore.comments.count >= CommentStore.pageLimit ? max(serverCommentCount, visible) : visible
+    }
+
+    private func openComments(focusComposer: Bool) {
+        guard let id = commentsCarId else { return }
+        commentsRequest = CommentsSheetRequest(
+            carId: id,
+            carOwnerUID: commentsOwnerUID,
+            carName: displayName,
+            focusComposer: focusComposer
+        )
+    }
+
+    private func offerPushPrePrompt() {
+        PushPrePrompt.offer { showingPushPrePrompt = true }
+    }
+
     // MARK: - Body
 
     var body: some View {
         List {
             photoHeaderSection
 
-            if let pc = publicCar {
+            if let pc = livePublicCar {
                 ownerRowSection(for: pc)
+                PublicCarHighlightsSection(
+                    car: pc,
+                    commentCount: displayedCommentCount,
+                    onLiked: offerPushPrePrompt,
+                    onOpenComments: { openComments(focusComposer: false) }
+                )
             }
 
             if let car = liveCar, car.hasExpiryWarning {
@@ -98,10 +173,12 @@ struct CarDetailView: View {
 
             basicInfoSection
 
-            if liveCar != nil {
+            if let car = liveCar {
                 registrationSection
                 vehicleDetailsSection
                 insuranceSection
+                CarValueSection(car: car)
+                EngineSoundOwnerSection(car: car)
             } else {
                 publicVehicleDetailsSection
             }
@@ -123,6 +200,21 @@ struct CarDetailView: View {
                 publicServiceHistorySection(for: pc)
             }
 
+            if let id = commentsCarId {
+                CarCommentsSection(
+                    carId: id,
+                    carOwnerUID: commentsOwnerUID,
+                    serverCount: serverCommentCount,
+                    onOpenComments: { openComments(focusComposer: $0) },
+                    callbacks: CommentCallbacks(
+                        onReport: { reportTarget = .comment($0, carId: id) },
+                        onBlock: { blockTarget = $0 },
+                        onOpenProfile: { commentProfileTarget = $0 },
+                        onDeleteError: { commentActionError = $0 }
+                    )
+                )
+            }
+
             if isOwnCar {
                 deleteSection
             }
@@ -133,10 +225,20 @@ struct CarDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 if isOwnCar {
                     Button("Edit") { showingEditDetails = true }
-                } else {
-                    Button { showingReport = true } label: {
-                        Image(systemName: "flag")
+                } else if let pc = livePublicCar {
+                    Menu {
+                        Button(role: .destructive) { reportTarget = .car(pc) } label: {
+                            Label("Report Car", systemImage: "flag")
+                        }
+                        if pc.engineSoundPlaybackURL != nil {
+                            Button(role: .destructive) { reportTarget = .sound(pc) } label: {
+                                Label("Report Sound", systemImage: "waveform.badge.exclamationmark")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityLabel("More")
                 }
             }
         }
@@ -191,11 +293,21 @@ struct CarDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingReport) {
-            if let pc = publicCar {
-                ReportView(title: "Report Car", reportedUID: pc.ownerUID, contentId: pc.carId)
-                    .environmentObject(blockStore)
-            }
+        .modifier(CarSocialPresenters(
+            commentsRequest: $commentsRequest,
+            reportTarget: $reportTarget,
+            showingPushPrePrompt: $showingPushPrePrompt,
+            showingMakePrivateConfirmation: $showingMakePrivateConfirmation,
+            commentActionError: $commentActionError,
+            blockTarget: $blockTarget,
+            profileTarget: $commentProfileTarget,
+            onConfirmMakePrivate: { applyVisibility(false) }
+        ))
+        .modifier(CommentsListenerLifecycle(carId: commentsCarId))
+        .onAppear {
+            guard openCommentsOnAppear else { return }
+            openCommentsOnAppear = false
+            openComments(focusComposer: false)
         }
         .fullScreenCover(item: Binding(
             get: { galleryStartIndex.map(GalleryStart.init) },
@@ -307,13 +419,8 @@ struct CarDetailView: View {
             if car.hasMultiplePhotos {
                 photoThumbnailStrip(for: car)
             }
-        } else if let pc = publicCar, let url = pc.primaryPhotoURL {
-            CachedRemoteImage(url: url)
-                .frame(maxWidth: .infinity).frame(height: 200)
-                .offset(y: pc.photoOffsetY)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .contentShape(RoundedRectangle(cornerRadius: 12))
-                .onTapGesture { galleryStartIndex = 0 }
+        } else if let pc = livePublicCar {
+            PublicCarPhotoHeader(car: pc) { galleryStartIndex = $0 }
         } else {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
@@ -375,11 +482,11 @@ struct CarDetailView: View {
                     carStore.setCoverPhoto(fileName: current.photoFileNames[index], for: current)
                 }
             )
-        } else if let pc = publicCar, let url = pc.primaryPhotoURL {
+        } else if let pc = livePublicCar, !pc.galleryURLs.isEmpty {
             PhotoGalleryView(
                 photoFileNames: [],
-                photoStorageURLs: [url.absoluteString],
-                initialIndex: 0
+                photoStorageURLs: pc.galleryURLs.map(\.absoluteString),
+                initialIndex: startIndex
             )
         }
     }
@@ -481,11 +588,12 @@ struct CarDetailView: View {
             Toggle(isOn: Binding(
                 get: { liveCar?.isPublic ?? false },
                 set: { isPublic in
-                    guard let car = liveCar else { return }
-                    let username = authService.currentUser?.username ?? ""
-                    let avatarURL = authService.currentUser?.avatarURL
-                    carStore.setVisibility(isPublic, for: car, ownerUsername: username, ownerAvatarURL: avatarURL)
-                    AnalyticsService.carVisibilityChanged(isPublic: isPublic)
+                    // Going private hides likes and comments; confirm first.
+                    if isPublic {
+                        applyVisibility(true)
+                    } else {
+                        showingMakePrivateConfirmation = true
+                    }
                 }
             )) {
                 Label {
@@ -502,7 +610,24 @@ struct CarDetailView: View {
                         .foregroundColor(isPublic ? .accentColor : .secondary)
                 }
             }
+
+            if liveCar?.isPublic == true {
+                OwnCarEngagementRow(
+                    publicCar: ownPublicCar,
+                    commentCount: displayedCommentCount,
+                    onOpenComments: { openComments(focusComposer: false) }
+                )
+            }
         }
+    }
+
+    private func applyVisibility(_ isPublic: Bool) {
+        guard let car = liveCar, car.isPublic != isPublic else { return }
+        let username = authService.currentUser?.username ?? ""
+        let avatarURL = authService.currentUser?.avatarURL
+        carStore.setVisibility(isPublic, for: car, ownerUsername: username, ownerAvatarURL: avatarURL)
+        AnalyticsService.carVisibilityChanged(isPublic: isPublic)
+        if isPublic { offerPushPrePrompt() }
     }
 
     // MARK: - Basic Info (shared)

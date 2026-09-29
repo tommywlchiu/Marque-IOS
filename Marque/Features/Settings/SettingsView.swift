@@ -250,6 +250,8 @@ private struct NotificationsSettingsView: View {
 
     var body: some View {
         Form {
+            PushPreferencesSection()
+
             Section(header: Text("Vehicle Alerts")) {
                 Toggle("Insurance Expiry", isOn: $insuranceAlerts)
                     .onChange(of: insuranceAlerts) { _, _ in

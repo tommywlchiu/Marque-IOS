@@ -2,6 +2,9 @@ import SwiftUI
 import FirebaseAppCheck
 import FirebaseCore
 import FirebaseFirestore
+import FirebaseAuth
+import FirebaseStorage
+import FirebaseFunctions
 
 /// Process launch time, for `app_launch_completed` (FR-11.4). A Swift global is
 /// initialized lazily on first access; this is first touched in the App's init,
@@ -58,6 +61,9 @@ struct Marque_PrototypeApp: App {
     @StateObject private var chatStore = ChatStore()
     @StateObject private var scanAllowanceStore = ScanAllowanceStore()
     @StateObject private var featureFlagsStore = FeatureFlagsStore()
+    @StateObject private var likeStore = LikeStore()
+    @StateObject private var commentStore = CommentStore()
+    @StateObject private var pushStore = PushStore()
 
     init() {
         _ = launchStartedAt  // force the global's lazy init as early as possible
@@ -68,6 +74,20 @@ struct Marque_PrototypeApp: App {
 
         let settings = FirestoreSettings()
         settings.cacheSettings = PersistentCacheSettings(sizeBytes: NSNumber(value: 100 * 1024 * 1024))
+        #if DEBUG
+        // Launch with `-use_firebase_emulators YES` to run against the local
+        // Firebase Emulator Suite (`firebase emulators:start`) instead of
+        // production. Compiled out of Release. Memory cache so emulator data
+        // never mixes with the production offline cache on this device.
+        if UserDefaults.standard.bool(forKey: "use_firebase_emulators") {
+            Auth.auth().useEmulator(withHost: "127.0.0.1", port: 9099)
+            settings.host = "127.0.0.1:8080"
+            settings.isSSLEnabled = false
+            settings.cacheSettings = MemoryCacheSettings()
+            Storage.storage().useEmulator(withHost: "127.0.0.1", port: 9199)
+            Functions.functions().useEmulator(withHost: "127.0.0.1", port: 5001)
+        }
+        #endif
         Firestore.firestore().settings = settings
     }
 
@@ -82,6 +102,11 @@ struct Marque_PrototypeApp: App {
                     AnalyticsService.appLaunchCompleted(
                         durationMs: Int(Date().timeIntervalSince(launchStartedAt) * 1000)
                     )
+                    // Cross-store hook: the FCM token doc must be deleted while
+                    // the outgoing user is still signed in, i.e. before
+                    // AuthService.signOut() calls Auth.signOut(). The
+                    // authState observer below runs too late for that.
+                    authService.willSignOut = { [pushStore] in await pushStore.prepareForSignOut() }
                 }
                 .environmentObject(carStore)
                 .environmentObject(authService)
@@ -93,6 +118,9 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(chatStore)
                 .environmentObject(scanAllowanceStore)
                 .environmentObject(featureFlagsStore)
+                .environmentObject(likeStore)
+                .environmentObject(commentStore)
+                .environmentObject(pushStore)
                 .environmentObject(appDelegate)
                 .onChange(of: authService.authState) { _, newState in
                     if case .authenticated(let user) = newState {
@@ -109,6 +137,9 @@ struct Marque_PrototypeApp: App {
                         notificationStore.startListening(uid: user.id)
                         chatStore.startListening(uid: user.id)
                         scanAllowanceStore.startListening(uid: user.id)
+                        likeStore.startListening(uid: user.id)
+                        commentStore.startListening(uid: user.id)
+                        pushStore.startListening(uid: user.id)
                         Task { await subscriptionStore.load() }
                     } else {
                         carStore.stopListening()
@@ -118,6 +149,9 @@ struct Marque_PrototypeApp: App {
                         notificationStore.stopListening()
                         chatStore.stopListening()
                         scanAllowanceStore.stopListening()
+                        likeStore.stopListening()
+                        commentStore.stopListening()
+                        pushStore.stopListening()
                         subscriptionStore.reset()
                         // Issues a fresh anonymous ID so the next person to sign in
                         // on this device isn't merged into the previous identity.
@@ -151,6 +185,13 @@ struct Marque_PrototypeApp: App {
                 // cascade (onUserBlocked trigger) deletes the actual
                 // Firestore follow edges; this just makes this device's UI
                 // reflect the unfollow immediately instead of waiting on it.
+                // A brand-new account's first token registration is denied until
+                // its users/{uid} profile doc exists (the devices rule requires
+                // it, so a deleted account's live token can't write). Profile
+                // setup creates that doc, so register again once it's done.
+                .onChange(of: authService.hasCompletedProfileSetup) { _, done in
+                    if done { pushStore.refreshRegistration() }
+                }
                 .onChange(of: blockStore.lastBlockedUID) { _, uid in
                     if let uid { followStore.removeLocal(uid: uid) }
                 }

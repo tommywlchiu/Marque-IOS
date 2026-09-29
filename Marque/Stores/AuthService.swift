@@ -481,8 +481,8 @@ class AuthService: NSObject, ObservableObject {
         // Username and isPro are intentionally excluded: username needs the
         // atomic claim in completeProfileSetup, isPro is owned by SubscriptionStore.
         var firestorePayload: [String: Any] = [
-            "displayName": displayName,
-            "bio": bio,
+            "displayName": Self.clampedForProfile(displayName, max: Self.maxDisplayNameLength),
+            "bio": Self.clampedForProfile(bio, max: Self.maxBioLength),
         ]
         if avatarFileName == nil {
             firestorePayload["avatarURL"] = profile.avatarStorageURL ?? firebaseUser.photoURL?.absoluteString ?? ""
@@ -503,7 +503,7 @@ class AuthService: NSObject, ObservableObject {
               let data = image.jpegData(compressionQuality: 0.8) else { return }
         do {
             let ref = Storage.storage().reference().child("users/\(uid)/avatar.jpg")
-            _ = try await ref.putDataAsync(data)
+            _ = try await ref.putDataAsync(data, metadata: .jpegImage)
             let url = try await ref.downloadURL()
             let urlString = url.absoluteString
 
@@ -600,6 +600,13 @@ class AuthService: NSObject, ObservableObject {
         guard let firebaseUser = Auth.auth().currentUser else { return }
         let uid = firebaseUser.uid
 
+        // Same word filter as comments (App Store guideline 1.2). Profile names
+        // show up next to comments, in notifications and on Explore.
+        guard CommentFilter.isAllowed(username) else { throw ProfileSetupError.inappropriateName }
+        guard CommentFilter.isAllowed(displayName), CommentFilter.isAllowed(bio) else {
+            throw ProfileSetupError.inappropriateText
+        }
+
         // Check username availability BEFORE uploading anything to avoid orphaned Storage files.
         let usernameRef = usernameDocument(username)
         let existing = try await usernameRef.getDocument()
@@ -627,16 +634,17 @@ class AuthService: NSObject, ObservableObject {
 
         if let image = avatarImage, let data = image.jpegData(compressionQuality: 0.8) {
             let ref = Storage.storage().reference().child("users/\(uid)/avatar.jpg")
-            _ = try await ref.putDataAsync(data)
+            _ = try await ref.putDataAsync(data, metadata: .jpegImage)
             let url = try await ref.downloadURL()
             avatarStorageURL = url.absoluteString
             changeRequest.photoURL = url
         }
         try await changeRequest.commitChanges()
 
-        let resolvedDisplayName = !displayName.isEmpty
+        let resolvedDisplayName = Self.clampedForProfile(!displayName.isEmpty
             ? displayName
-            : (firebaseUser.displayName ?? (existingDisplayName.isEmpty ? "User" : existingDisplayName))
+            : (firebaseUser.displayName ?? (existingDisplayName.isEmpty ? "User" : existingDisplayName)),
+            max: Self.maxDisplayNameLength)
 
         let batch = db.batch()
         batch.setData(["uid": uid], forDocument: usernameRef)
@@ -660,7 +668,7 @@ class AuthService: NSObject, ObservableObject {
             profilePayload["avatarURL"] = firebaseUser.photoURL?.absoluteString ?? ""
         }
         // An empty field must not blank a bio that already exists.
-        if !preserveExistingBio { profilePayload["bio"] = bio }
+        if !preserveExistingBio { profilePayload["bio"] = Self.clampedForProfile(bio, max: Self.maxBioLength) }
         // Only stamp createdAt on first setup, never reset an existing one.
         if !hasCreatedAt { profilePayload["createdAt"] = FieldValue.serverTimestamp() }
         batch.setData(profilePayload, forDocument: userDocument(uid: uid), merge: true)
@@ -700,6 +708,7 @@ class AuthService: NSObject, ObservableObject {
               trimmed.unicodeScalars.allSatisfy({ allowed.contains($0) }) else {
             throw ProfileSetupError.invalidUsername
         }
+        guard CommentFilter.isAllowed(trimmed) else { throw ProfileSetupError.inappropriateName }
 
         let newRef = usernameDocument(trimmed)
         let existing = try await newRef.getDocument()
@@ -736,6 +745,22 @@ class AuthService: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Profile field bounds
+
+    /// firestore.rules bounds on users/{uid} (checked when the field is
+    /// written): displayName <= 50, bio <= 500, counted in Unicode code points.
+    /// The app clamps before writing, so a long sign-in-provider name (e.g. a
+    /// Google account name) can never make profile setup fail.
+    static let maxDisplayNameLength = 50
+    static let maxBioLength = 500
+
+    static func clampedForProfile(_ value: String, max: Int) -> String {
+        guard value.unicodeScalars.count > max else { return value }
+        var scalars = String.UnicodeScalarView()
+        scalars.append(contentsOf: value.unicodeScalars.prefix(max))
+        return String(scalars)
+    }
+
     // MARK: - Pro Status
 
     // Pro state is owned by StoreKit on each device. Firestore `users/{uid}.isPro`
@@ -763,7 +788,38 @@ class AuthService: NSObject, ObservableObject {
 
     // MARK: - Sign Out
 
+    /// Awaited at the start of sign-out, while the client is still
+    /// authenticated as the outgoing user. Marque.swift sets it to
+    /// `PushStore.prepareForSignOut`, which deletes this device's FCM token doc
+    /// under the old account's credentials and bounds itself to about 3 s.
+    /// AuthService doesn't know about PushStore (stores stay decoupled); the
+    /// hook is wired at the app root.
+    var willSignOut: (@MainActor () async -> Void)?
+
+    /// True from the moment sign-out starts until Firebase Auth has signed out
+    /// (at most about 3 s; see `willSignOut`). The UI may show progress or
+    /// disable the button; `authState` flips when it ends.
+    @Published private(set) var isSigningOut = false
+
+    /// Starts sign-out and returns immediately. Existing call sites are
+    /// unchanged. `authState` becomes unauthenticated once the push cleanup
+    /// finishes or times out. Repeated calls while one is running are ignored.
     func signOut() {
+        guard !isSigningOut else { return }
+        isSigningOut = true
+        Task { await performSignOut() }
+    }
+
+    /// The same, for callers that need to wait until the user is signed out.
+    func signOutAndWait() async {
+        guard !isSigningOut else { return }
+        isSigningOut = true
+        await performSignOut()
+    }
+
+    private func performSignOut() async {
+        defer { isSigningOut = false }
+        if let willSignOut { await willSignOut() }
         try? Auth.auth().signOut()
         clearPendingLinkState()
     }
@@ -929,6 +985,9 @@ class AuthService: NSObject, ObservableObject {
             let fileNames = (doc.data()["photoFileNames"] as? [String]) ?? []
             for fileName in fileNames {
                 storage.child("users/\(uid)/cars/\(carId)/\(fileName)").delete(completion: nil)
+            }
+            if doc.data()["engineSoundFileName"] is String {
+                storage.child("users/\(uid)/cars/\(carId)/sound.m4a").delete(completion: nil)
             }
         }
 
@@ -1237,11 +1296,17 @@ private struct LocalProfile: Codable {
 enum ProfileSetupError: LocalizedError {
     case usernameTaken
     case invalidUsername
+    /// The username contains language that isn't allowed (CommentFilter).
+    case inappropriateName
+    /// The display name or bio contains language that isn't allowed.
+    case inappropriateText
 
     var errorDescription: String? {
         switch self {
         case .usernameTaken:    return "That username is already taken. Please choose another."
         case .invalidUsername:  return "Username must be 3–30 characters, letters, numbers and underscores only."
+        case .inappropriateName: return "That username isn't allowed. Please choose another."
+        case .inappropriateText: return "Your name or bio contains language that isn't allowed."
         }
     }
 }

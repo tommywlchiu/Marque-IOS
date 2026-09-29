@@ -35,6 +35,23 @@ struct Car: Identifiable, Codable, Equatable {
     var notes: String
     var isPublic: Bool
 
+    // Estimated market value (USD). Private: only `CarValueRange.publicLabel`
+    // of it ever reaches publicCars, and only when `showValuePublicly` is on.
+    var estimatedValue: Double?
+    // Who produced `estimatedValue`: the owner typing it, or an accepted AI
+    // estimate (CarStore.estimateValue). nil when there's no value.
+    var valueSource: CarValueSource?
+    var valueUpdatedAt: Date?
+    var showValuePublicly: Bool
+
+    // Engine sound clip (AAC .m4a, <= 5 s). `engineSoundFileName` is the local
+    // file under Documents/CarPhotos (ImageManager.fileURL); `engineSoundURL`
+    // is the Storage download URL of users/{uid}/cars/{carId}/sound.m4a, nil
+    // until the upload lands.
+    var engineSoundFileName: String?
+    var engineSoundURL: String?
+    var engineSoundDuration: Double?
+
     var maintenanceRecords: [MaintenanceRecord]
     var serviceReminders: [ServiceReminder]
 
@@ -63,6 +80,13 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate: Date? = nil,
         notes: String = "",
         isPublic: Bool = false,
+        estimatedValue: Double? = nil,
+        valueSource: CarValueSource? = nil,
+        valueUpdatedAt: Date? = nil,
+        showValuePublicly: Bool = false,
+        engineSoundFileName: String? = nil,
+        engineSoundURL: String? = nil,
+        engineSoundDuration: Double? = nil,
         maintenanceRecords: [MaintenanceRecord] = [],
         serviceReminders: [ServiceReminder] = []
     ) {
@@ -90,6 +114,13 @@ struct Car: Identifiable, Codable, Equatable {
         self.registrationExpiryDate = registrationExpiryDate
         self.notes = notes
         self.isPublic = isPublic
+        self.estimatedValue = estimatedValue
+        self.valueSource = valueSource
+        self.valueUpdatedAt = valueUpdatedAt
+        self.showValuePublicly = showValuePublicly
+        self.engineSoundFileName = engineSoundFileName
+        self.engineSoundURL = engineSoundURL
+        self.engineSoundDuration = engineSoundDuration
         self.maintenanceRecords = maintenanceRecords
         self.serviceReminders = serviceReminders
     }
@@ -107,6 +138,8 @@ struct Car: Identifiable, Codable, Equatable {
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
         case notes, isPublic
+        case estimatedValue, valueSource, valueUpdatedAt, showValuePublicly
+        case engineSoundFileName, engineSoundURL, engineSoundDuration
         case maintenanceRecords, serviceReminders
     }
 
@@ -144,6 +177,16 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
         notes = try c.decode(String.self, forKey: .notes)
         isPublic = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
+        // All optional/defaulted: every car saved before these fields existed
+        // has none of them. `try?` on the enum so an unknown future source
+        // string degrades to nil instead of failing the whole car's decode.
+        estimatedValue = try c.decodeIfPresent(Double.self, forKey: .estimatedValue)
+        valueSource = (try? c.decodeIfPresent(CarValueSource.self, forKey: .valueSource)) ?? nil
+        valueUpdatedAt = try c.decodeIfPresent(Date.self, forKey: .valueUpdatedAt)
+        showValuePublicly = try c.decodeIfPresent(Bool.self, forKey: .showValuePublicly) ?? false
+        engineSoundFileName = try c.decodeIfPresent(String.self, forKey: .engineSoundFileName)
+        engineSoundURL = try c.decodeIfPresent(String.self, forKey: .engineSoundURL)
+        engineSoundDuration = try c.decodeIfPresent(Double.self, forKey: .engineSoundDuration)
         maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
     }
@@ -175,6 +218,13 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encodeIfPresent(registrationExpiryDate, forKey: .registrationExpiryDate)
         try c.encode(notes, forKey: .notes)
         try c.encode(isPublic, forKey: .isPublic)
+        try c.encodeIfPresent(estimatedValue, forKey: .estimatedValue)
+        try c.encodeIfPresent(valueSource, forKey: .valueSource)
+        try c.encodeIfPresent(valueUpdatedAt, forKey: .valueUpdatedAt)
+        try c.encode(showValuePublicly, forKey: .showValuePublicly)
+        try c.encodeIfPresent(engineSoundFileName, forKey: .engineSoundFileName)
+        try c.encodeIfPresent(engineSoundURL, forKey: .engineSoundURL)
+        try c.encodeIfPresent(engineSoundDuration, forKey: .engineSoundDuration)
         try c.encode(maintenanceRecords, forKey: .maintenanceRecords)
         try c.encode(serviceReminders, forKey: .serviceReminders)
     }
@@ -192,6 +242,19 @@ struct Car: Identifiable, Codable, Equatable {
         guard index < photoStorageURLs.count else { return nil }
         let str = photoStorageURLs[index]
         return str.isEmpty ? nil : URL(string: str)
+    }
+
+    /// Every uploaded photo's Storage URL, cover first, skipping photos whose
+    /// upload hasn't landed. What publicCars.photoURLs carries.
+    var uploadedPhotoURLStrings: [String] {
+        photoStorageURLs.prefix(photoFileNames.count).filter { !$0.isEmpty }
+    }
+
+    /// The rounded public range for this car's value ("$30k–$35k"), or nil when
+    /// there's no value or the owner hasn't opted in. What publicCars.valueRange carries.
+    var publicValueRange: String? {
+        guard showValuePublicly, let estimatedValue else { return nil }
+        return CarValueRange.publicLabel(for: estimatedValue)
     }
 
     var hasMultiplePhotos: Bool {

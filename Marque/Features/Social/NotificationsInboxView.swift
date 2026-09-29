@@ -2,6 +2,12 @@ import SwiftUI
 
 struct NotificationsInboxView: View {
     @EnvironmentObject var notificationStore: NotificationStore
+    @EnvironmentObject var carStore: CarStore
+    @EnvironmentObject var authService: AuthService
+
+    /// Actor profile opened from a row's avatar (the row itself opens the car).
+    @State private var actorProfile: UserRef?
+    @State private var blockTarget: UserRef?
 
     var body: some View {
         Group {
@@ -12,6 +18,10 @@ struct NotificationsInboxView: View {
             }
         }
         .onAppear { notificationStore.clearBadge() }
+        .navigationDestination(item: $actorProfile) { user in
+            PublicProfileView(ownerUID: user.uid, ownerUsername: user.username)
+        }
+        .modifier(BlockUserConfirmation(target: $blockTarget))
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -55,19 +65,47 @@ struct NotificationsInboxView: View {
         .animation(.easeInOut(duration: 0.25), value: notificationStore.notifications)
     }
 
-    private func row(for note: AppNotification) -> some View {
-        NavigationLink {
+    /// The recipient's own car a like/comment is about, if it's still in the garage.
+    private func car(for note: AppNotification) -> Car? {
+        guard note.type == .like || note.type == .comment, let id = note.carID else { return nil }
+        return carStore.cars.first(where: { $0.id.uuidString == id })
+    }
+
+    @ViewBuilder
+    private func destination(for note: AppNotification) -> some View {
+        if let car = car(for: note) {
+            CarDetailView(car: car, openComments: note.type == .comment)
+        } else {
             PublicProfileView(
                 ownerUID: note.actorUID,
                 ownerUsername: note.actorUsername
             )
+        }
+    }
+
+    private func row(for note: AppNotification) -> some View {
+        NavigationLink {
+            destination(for: note)
             // Marking read here is cleaner than a simultaneous gesture on the
             // NavigationLink — a competing TapGesture on the link suppresses the
             // link's own push recogniser, causing the avatar (and row body) to
             // appear unresponsive to navigation.
             .onAppear { notificationStore.markRead(note) }
         } label: {
-            NotificationRow(notification: note)
+            NotificationRow(notification: note) {
+                notificationStore.markRead(note)
+                actorProfile = actorRef(for: note)
+            }
+        }
+        .contextMenu {
+            Button { actorProfile = actorRef(for: note) } label: {
+                Label("View @\(note.actorUsername)", systemImage: "person.crop.circle")
+            }
+            if note.actorUID != authService.currentUser?.id {
+                Button(role: .destructive) { blockTarget = actorRef(for: note) } label: {
+                    Label("Block @\(note.actorUsername)", systemImage: "person.crop.circle.badge.minus")
+                }
+            }
         }
         .listRowBackground(note.isRead ? Color.clear : Color.accentColor.opacity(0.07))
         .listRowSeparator(.hidden)
@@ -79,6 +117,10 @@ struct NotificationsInboxView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+
+    private func actorRef(for note: AppNotification) -> UserRef {
+        UserRef(uid: note.actorUID, username: note.actorUsername)
     }
 
     // MARK: - Empty state
@@ -132,6 +174,9 @@ private enum NotificationTimeGroup: CaseIterable, Identifiable {
 
 private struct NotificationRow: View {
     let notification: AppNotification
+    /// Opens the actor's profile. Separate from the row's own tap, which
+    /// opens the car for likes and comments.
+    let onActorTap: () -> Void
 
     @EnvironmentObject var followStore: FollowStore
     @EnvironmentObject var authService: AuthService
@@ -139,16 +184,23 @@ private struct NotificationRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            avatar
+            // A button inside the NavigationLink label takes its own tap
+            // (like FollowButton below), so the row still opens the car.
+            Button(action: onActorTap) { avatar }
+                .buttonStyle(.borderless)
+                .accessibilityHidden(true)  // the name button below covers it
 
             VStack(alignment: .leading, spacing: 3) {
-                Group {
-                    Text(notification.actorDisplayName).fontWeight(.semibold) +
-                    Text(" ") +
-                    Text(notification.body)
-                }
-                .font(.subheadline)
-                .fixedSize(horizontal: false, vertical: true)
+                // Display name, then the @username, always shown so a display
+                // name can't pass as someone else.
+                Button(action: onActorTap) { actorName }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("\(notification.actorDisplayName) @\(notification.actorUsername)")
+                    .accessibilityHint("Opens their profile")
+
+                Text(bodyText)
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(relativeLabel(for: notification.createdAt))
                     .font(.caption)
@@ -195,6 +247,38 @@ private struct NotificationRow: View {
             Circle()
                 .fill(Color.accentColor)
                 .frame(width: 8, height: 8)
+        }
+    }
+
+    private var actorName: some View {
+        let displayName = notification.actorDisplayName.trimmingCharacters(in: .whitespaces)
+        return HStack(spacing: 4) {
+            if !displayName.isEmpty {
+                Text(displayName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            Text("@\(notification.actorUsername)")
+                .font(displayName.isEmpty ? .subheadline.weight(.semibold) : .subheadline)
+                .foregroundColor(displayName.isEmpty ? .primary : .secondary)
+                .lineLimit(1)
+                .layoutPriority(1)
+        }
+    }
+
+    // Like: "liked your 2015 BMW M3" (caption is the car's name).
+    // Comment: "commented: “Clean build!”" (caption is a comment preview).
+    private var bodyText: String {
+        let caption = notification.caption?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        switch notification.type {
+        case .like:
+            return caption.isEmpty ? "liked your car." : "liked your \(caption)"
+        case .comment:
+            return caption.isEmpty ? "commented on your car." : "commented: \u{201C}\(caption)\u{201D}"
+        case .follow, .mention:
+            return notification.body
         }
     }
 

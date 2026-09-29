@@ -45,6 +45,12 @@ class CarStore: ObservableObject {
         storage.reference().child("users/\(userId)/cars/\(carId)/\(fileName)")
     }
 
+    // Fixed object name: a replacement overwrites the previous clip. storage.rules
+    // limits this one path to audio/* under 500 KB.
+    private func soundStorageRef(userId: String, carId: String) -> StorageReference {
+        storage.reference().child("users/\(userId)/cars/\(carId)/sound.m4a")
+    }
+
     private func receiptStorageRef(userId: String, carId: String, fileName: String) -> StorageReference {
         storage.reference().child("users/\(userId)/cars/\(carId)/receipts/\(fileName)")
     }
@@ -122,6 +128,7 @@ class CarStore: ObservableObject {
         currentUserId = nil
         cars = []
         pendingUploads = []
+        claimedPublicCarIDs = []
     }
 
     // MARK: - Car CRUD
@@ -219,13 +226,16 @@ class CarStore: ObservableObject {
         }
         let previous = cars.first(where: { $0.id == car.id })
         try? carRef(userId: userId, carId: car.id.uuidString).setData(from: car)
-        // Explore shows the cover photo and its crop from publicCars, which only
-        // setVisibility and finished uploads used to write. A cover change or a
-        // re-crop from the edit screen never reached it.
-        if car.isPublic,
-           previous?.primaryPhotoStorageURL != car.primaryPhotoStorageURL
-            || previous?.photoOffsetY != car.photoOffsetY {
-            pushPublicCover(of: car)
+        // Keep the public copy in step with any edit that changes what Explore
+        // shows: cover/crop, the photo gallery (reorder, removal), specs,
+        // notes, service history, the public value range, the engine sound.
+        // Only when the car was ALREADY public: a car that just became public
+        // is written in full by setVisibility → syncPublicCar, and a private
+        // car must never get a public copy. Edits that change nothing public
+        // (VIN, insurance, costs, reminders) write nothing here.
+        if car.isPublic, previous?.isPublic ?? true,
+           previous.map({ publicProjectionChanged(from: $0, to: car) }) ?? true {
+            pushPublicFields(of: car)
         }
     }
 
@@ -245,14 +255,49 @@ class CarStore: ObservableObject {
         updateCar(updated)
     }
 
-    /// Mirrors the cover photo's URL and crop onto the public copy. An empty URL
-    /// (cover not uploaded yet) is fine: applyStorageURLs pushes it on upload.
-    private func pushPublicCover(of car: Car) {
-        db.collection("publicCars").document(car.id.uuidString).setData([
-            "photoStorageURL": car.primaryPhotoStorageURL?.absoluteString ?? "",
-            "photoOffsetY": car.photoOffsetY,
-        ], merge: true) { error in
-            if let error { print("[CarStore] Couldn't update the public cover photo: \(error.localizedDescription)") }
+    // MARK: - Public copy (publicCars/{carId})
+    //
+    // Every write here is a MERGE, never a full overwrite: the doc also carries
+    // server-maintained counts (likeCount, weeklyLikeCount, commentCount) that
+    // a non-merge setData would wipe (and firestore.rules now rejects any write
+    // that touches them). Because Firestore's encoder omits nil optionals, a
+    // merge alone can't clear a field that became nil, so publicPayload maps
+    // those to FieldValue.delete() explicitly.
+
+    /// The owner-written public fields for `car`, minus the owner's identity
+    /// (ownerUsername/ownerAvatarURL: only setVisibility and
+    /// AuthService.changeUsername write those). nil optionals become deletes.
+    private func publicPayload(of car: Car, ownerUID: String) -> [String: Any]? {
+        let publicCar = PublicCar(from: car, ownerUID: ownerUID, ownerUsername: "", ownerAvatarURL: nil)
+        guard var data = try? Firestore.Encoder().encode(publicCar) else { return nil }
+        data.removeValue(forKey: "ownerUsername")
+        data.removeValue(forKey: "ownerAvatarURL")
+        for key in Self.clearablePublicKeys where data[key] == nil {
+            data[key] = FieldValue.delete()
+        }
+        return data
+    }
+
+    /// Optional public fields that must be deleted, not just omitted, when nil.
+    private static let clearablePublicKeys = ["valueRange", "engineSoundURL"]
+
+    private func publicProjectionChanged(from old: Car, to new: Car) -> Bool {
+        let encoder = Firestore.Encoder()
+        guard let a = try? encoder.encode(PublicCar(from: old, ownerUID: "", ownerUsername: "", ownerAvatarURL: nil)),
+              let b = try? encoder.encode(PublicCar(from: new, ownerUID: "", ownerUsername: "", ownerAvatarURL: nil))
+        else { return true }
+        return !NSDictionary(dictionary: a).isEqual(to: b)
+    }
+
+    /// Merges every public field of `car` onto its public copy. An empty cover
+    /// URL (not uploaded yet) is fine: applyStorageURLs pushes again on upload.
+    /// Deliberately doesn't bump `updatedAt`, which orders the Explore feed:
+    /// logging a service shouldn't move a car to the top.
+    private func pushPublicFields(of car: Car) {
+        guard let userId = currentUserId,
+              let data = publicPayload(of: car, ownerUID: userId) else { return }
+        db.collection("publicCars").document(car.id.uuidString).setData(data, merge: true) { error in
+            if let error { print("[CarStore] Couldn't update the public copy: \(error.localizedDescription)") }
         }
     }
 
@@ -269,10 +314,17 @@ class CarStore: ObservableObject {
         for fileName in receiptFileNames {
             ImageManager.deleteImage(fileName: fileName)
         }
+        if let soundFile = car.engineSoundFileName {
+            ImageManager.deleteImage(fileName: soundFile)
+        }
         guard let userId = currentUserId else {
             cars.removeAll { $0.id == car.id }
             saveLocal()
             return
+        }
+        soundStorageRef(userId: userId, carId: car.id.uuidString).delete(completion: nil)
+        if let soundFile = car.engineSoundFileName {
+            removePendingUpload(carId: car.id.uuidString, fileName: soundFile, kind: .sound)
         }
         deleteAllPhotosFromStorage(carId: car.id.uuidString, userId: userId, fileNames: car.photoFileNames)
         // Receipts live under a `receipts/` subpath, not `photoFileNames`, so
@@ -292,6 +344,11 @@ class CarStore: ObservableObject {
         // fire-and-forget calls) so both succeed or fail together and there's
         // a single completion to log against, instead of the public copy
         // silently lingering if only its delete failed.
+        // The car's likes/ and comments/ (under publicCars/{carId}, kept even
+        // while the car is private) are other users' docs, which this client
+        // may not delete (the likes rule binds the liker). Server-side sweeps
+        // remove them once the car doc is gone: onPublicCarDeleted for a public
+        // car, onCarWritten's delete branch for a private one.
         let batch = db.batch()
         if car.isPublic {
             batch.deleteDocument(db.collection("publicCars").document(car.id.uuidString))
@@ -573,7 +630,7 @@ class CarStore: ObservableObject {
         let ref = receiptStorageRef(userId: userId, carId: carId, fileName: fileName)
         Task {
             do {
-                _ = try await ref.putDataAsync(data)
+                _ = try await ref.putDataAsync(data, metadata: .jpegImage)
                 let url = try await ref.downloadURL()
                 applyReceiptStorageURL(carId: carId, recordId: recordId, urlString: url.absoluteString)
                 removePendingUpload(carId: carId, fileName: fileName, kind: .receipt)
@@ -600,6 +657,183 @@ class CarStore: ObservableObject {
         receiptStorageRef(userId: userId, carId: carId, fileName: fileName).delete(completion: nil)
     }
 
+    // MARK: - Estimated value
+
+    /// Asks the `estimateCarValue` Cloud Function for an AI estimate. Doesn't
+    /// save anything: show the range, then call `updateValue` with whatever
+    /// the owner accepts (source `.ai`) or edits (source `.owner`).
+    /// `region` is an optional zip or area ("94107", "Bay Area, CA").
+    /// Throws `CarValueService.ValueError`.
+    func estimateValue(for car: Car, condition: ValueCondition, region: String? = nil) async throws -> ValueEstimate {
+        try await CarValueService().estimate(for: car, condition: condition, region: region)
+    }
+
+    /// Saves the car's value and its public toggle, and re-syncs the public
+    /// copy: `valueRange` appears on Explore only while `showPublicly` is true
+    /// and a value exists, and is deleted from the public doc otherwise.
+    /// Pass `value: nil` to clear the value (the source is cleared with it).
+    func updateValue(_ value: Double?, source: CarValueSource, showPublicly: Bool, for car: Car) {
+        var updated = car
+        if let value, value.isFinite, value > 0 {
+            updated.estimatedValue = value
+            updated.valueSource = source
+            updated.valueUpdatedAt = Date()
+        } else {
+            updated.estimatedValue = nil
+            updated.valueSource = nil
+            updated.valueUpdatedAt = nil
+        }
+        updated.showValuePublicly = showPublicly
+        updateCar(updated)
+    }
+
+    /// Flips only the public toggle.
+    func setValueVisibility(_ showPublicly: Bool, for car: Car) {
+        var updated = car
+        updated.showValuePublicly = showPublicly
+        updateCar(updated)
+    }
+
+    // MARK: - Engine sound
+
+    /// Max clip length the store accepts. The recorder should stop at 5 s; the
+    /// extra 0.2 s absorbs encoder rounding.
+    static let maxEngineSoundDuration: Double = 5.2
+    /// Must stay under storage.rules' `500 * 1024` byte cap for sound.m4a.
+    static let maxEngineSoundBytes = 500 * 1024
+
+    enum EngineSoundError: LocalizedError, Equatable {
+        case tooLong
+        case tooLarge
+        case unreadable
+
+        var errorDescription: String? {
+            switch self {
+            case .tooLong: return "Engine sound clips can be at most 5 seconds."
+            case .tooLarge: return "That clip is too large. Keep it under 5 seconds."
+            case .unreadable: return "Couldn't read that audio file."
+            }
+        }
+    }
+
+    private func engineSoundFileName(for carId: UUID) -> String {
+        "sound_\(carId.uuidString).m4a"
+    }
+
+    /// Sets (or replaces) the car's engine sound. `fileURL` is an AAC .m4a
+    /// the frontend recorded or imported; `duration` is its length in
+    /// seconds. Validates, copies it into the app's own storage (so the
+    /// caller's temp file can go away), saves the car, then uploads in the
+    /// background. The upload goes through the pending-upload retry queue if it
+    /// fails. `engineSoundURL` stays nil until the upload lands, then the public
+    /// copy (if the car is public) picks it up.
+    func setEngineSound(fileURL: URL, duration: Double, for car: Car) throws {
+        guard duration.isFinite, duration > 0, duration <= Self.maxEngineSoundDuration else {
+            throw EngineSoundError.tooLong
+        }
+        guard let data = try? Data(contentsOf: fileURL), !data.isEmpty else {
+            throw EngineSoundError.unreadable
+        }
+        guard data.count < Self.maxEngineSoundBytes else { throw EngineSoundError.tooLarge }
+
+        let fileName = engineSoundFileName(for: car.id)
+        let localURL = ImageManager.fileURL(for: fileName)
+        do {
+            try data.write(to: localURL, options: .atomic)
+        } catch {
+            throw EngineSoundError.unreadable
+        }
+
+        var updated = car
+        updated.engineSoundFileName = fileName
+        updated.engineSoundDuration = duration
+        // The old URL points at the object this upload is about to overwrite.
+        updated.engineSoundURL = nil
+        updateCar(updated)
+
+        uploadEngineSound(data, fileName: fileName, carId: car.id.uuidString)
+    }
+
+    /// Removes the car's engine sound locally, from Storage, and from the
+    /// public copy.
+    func removeEngineSound(for car: Car) {
+        let carId = car.id.uuidString
+        if let fileName = car.engineSoundFileName {
+            ImageManager.deleteImage(fileName: fileName)
+            removePendingUpload(carId: carId, fileName: fileName, kind: .sound)
+        }
+        if let userId = currentUserId {
+            soundStorageRef(userId: userId, carId: carId).delete(completion: nil)
+        }
+        var updated = car
+        updated.engineSoundFileName = nil
+        updated.engineSoundURL = nil
+        updated.engineSoundDuration = nil
+        updateCar(updated)
+    }
+
+    /// Local file for the car's engine sound, for playback before (or
+    /// without) the upload. nil if there's no clip on this device.
+    func localEngineSoundURL(for car: Car) -> URL? {
+        guard let fileName = car.engineSoundFileName else { return nil }
+        let url = ImageManager.fileURL(for: fileName)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    private static let soundMetadata: StorageMetadata = {
+        let meta = StorageMetadata()
+        meta.contentType = "audio/mp4"  // storage.rules requires audio/*
+        return meta
+    }()
+
+    private func uploadEngineSound(_ data: Data, fileName: String, carId: String) {
+        guard let userId = currentUserId else { return }
+        let ref = soundStorageRef(userId: userId, carId: carId)
+        Task {
+            do {
+                _ = try await ref.putDataAsync(data, metadata: Self.soundMetadata)
+                let url = try await ref.downloadURL()
+                applyEngineSoundURL(url.absoluteString, fileName: fileName, carId: carId)
+                removePendingUpload(carId: carId, fileName: fileName, kind: .sound)
+            } catch {
+                addPendingUpload(carId: carId, fileName: fileName, kind: .sound)
+            }
+        }
+    }
+
+    private func retryEngineSoundUpload(_ pending: PendingUpload, userId: String) async {
+        let localURL = ImageManager.fileURL(for: pending.fileName)
+        guard let data = try? Data(contentsOf: localURL),
+              cars.contains(where: { $0.id.uuidString == pending.carId && $0.engineSoundFileName == pending.fileName })
+        else {
+            removePendingUpload(carId: pending.carId, fileName: pending.fileName, kind: .sound)
+            return
+        }
+        let ref = soundStorageRef(userId: userId, carId: pending.carId)
+        do {
+            _ = try await ref.putDataAsync(data, metadata: Self.soundMetadata)
+            let url = try await ref.downloadURL()
+            applyEngineSoundURL(url.absoluteString, fileName: pending.fileName, carId: pending.carId)
+            removePendingUpload(carId: pending.carId, fileName: pending.fileName, kind: .sound)
+        } catch {
+            // Still offline or transient error. Leave it queued.
+        }
+    }
+
+    private func applyEngineSoundURL(_ urlString: String, fileName: String, carId: String) {
+        guard let userId = currentUserId,
+              let i = cars.firstIndex(where: { $0.id.uuidString == carId }),
+              // Removed (or replaced by a different file) while uploading.
+              cars[i].engineSoundFileName == fileName
+        else { return }
+        cars[i].engineSoundURL = urlString
+        saveLocal()
+        carRef(userId: userId, carId: carId).updateData(["engineSoundURL": urlString])
+        if cars[i].isPublic {
+            pushPublicFields(of: cars[i])
+        }
+    }
+
     // MARK: - Visibility
 
     func setVisibility(_ isPublic: Bool, for car: Car, ownerUsername: String, ownerAvatarURL: String? = nil) {
@@ -609,6 +843,10 @@ class CarStore: ObservableObject {
         if isPublic {
             syncPublicCar(updated, ownerUID: currentUserId ?? "", ownerUsername: ownerUsername, ownerAvatarURL: ownerAvatarURL)
         } else {
+            // Deleting the public doc HIDES the car's likes and comments; it
+            // doesn't delete them (owner decision). The rules make them
+            // unreadable while the doc is absent, and onPublicCarCreated
+            // restores the counts if the car is made public again.
             // If this delete fails, the public copy lingers and contradicts the local state.
             // Log so it surfaces in dev; production should retry via a queue similar to pendingUploads.
             db.collection("publicCars").document(car.id.uuidString).delete { error in
@@ -619,15 +857,74 @@ class CarStore: ObservableObject {
         }
     }
 
+    // MARK: - publicCars ID registry (publicCarOwners/{carId})
+    //
+    // firestore.rules only lets you create or edit publicCars/{carId} while
+    // you hold the claim publicCarOwners/{carId} = { uid, createdAt }. Claims
+    // are first-come and create-only, and they survive the car going private,
+    // so nobody else can ever publish under a car ID once it's been public.
+    // The first publish creates the claim and the public doc in ONE batch;
+    // later publishes find the claim already ours and just merge the doc.
+
+    /// Car IDs this session has confirmed (or just made) our claim on.
+    private var claimedPublicCarIDs: Set<String> = []
+
+    private enum ClaimState { case mine, unknown }
+
+    /// `.mine` only when this user's claim is confirmed. The rules allow
+    /// reading ONLY your own claim (no existence oracle), so a missing claim,
+    /// someone else's claim and being offline all read as `.unknown`, and
+    /// the publish goes through the claim batch.
+    private func claimState(carId: String, uid: String) async -> ClaimState {
+        if claimedPublicCarIDs.contains(carId) { return .mine }
+        guard let snap = try? await db.collection("publicCarOwners").document(carId).getDocument(),
+              snap.exists, (snap.data()?["uid"] as? String) == uid
+        else { return .unknown }
+        claimedPublicCarIDs.insert(carId)
+        return .mine
+    }
+
+    // Merge, not a full overwrite. See "Public copy" above.
     private func syncPublicCar(_ car: Car, ownerUID: String, ownerUsername: String, ownerAvatarURL: String? = nil) {
-        let publicCar = PublicCar(from: car, ownerUID: ownerUID, ownerUsername: ownerUsername, ownerAvatarURL: ownerAvatarURL)
-        let ref = db.collection("publicCars").document(car.id.uuidString)
-        do {
-            var data = try Firestore.Encoder().encode(publicCar)
-            data["updatedAt"] = FieldValue.serverTimestamp()
-            ref.setData(data)
-        } catch {
-            print("[Firestore] Failed to encode PublicCar: \(error.localizedDescription)")
+        guard var data = publicPayload(of: car, ownerUID: ownerUID) else {
+            print("[Firestore] Failed to encode PublicCar")
+            return
+        }
+        data["ownerUsername"] = ownerUsername
+        if let ownerAvatarURL { data["ownerAvatarURL"] = ownerAvatarURL }
+        data["updatedAt"] = FieldValue.serverTimestamp()
+        let carId = car.id.uuidString
+        let publicRef = db.collection("publicCars").document(carId)
+        let claimRef = db.collection("publicCarOwners").document(carId)
+
+        Task {
+            let plainWrite = {
+                publicRef.setData(data, merge: true) { error in
+                    if let error { print("[Firestore] Failed to publish car: \(error.localizedDescription)") }
+                }
+            }
+            switch await claimState(carId: carId, uid: ownerUID) {
+            case .mine:
+                plainWrite()
+            case .unknown:
+                let batch = db.batch()
+                batch.setData(["uid": ownerUID, "createdAt": FieldValue.serverTimestamp()], forDocument: claimRef)
+                batch.setData(data, forDocument: publicRef, merge: true)
+                batch.commit { [weak self] error in
+                    Task { @MainActor [weak self] in
+                        if error == nil {
+                            self?.claimedPublicCarIDs.insert(carId)
+                        } else {
+                            // The claim already existed: creating it again is an
+                            // update, which is denied and fails the batch. If
+                            // it's ours (another device, or it just couldn't be
+                            // read), the plain write succeeds. If it's someone
+                            // else's (a car-ID collision), the rules deny that too.
+                            plainWrite()
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -676,7 +973,7 @@ class CarStore: ObservableObject {
                     let ref = storageRef(userId: userId, carId: carId, fileName: fileName)
                     group.addTask {
                         do {
-                            _ = try await ref.putDataAsync(data)
+                            _ = try await ref.putDataAsync(data, metadata: .jpegImage)
                             let url = try await ref.downloadURL()
                             return (fileName, url.absoluteString)
                         } catch {
@@ -708,14 +1005,11 @@ class CarStore: ObservableObject {
         if let i = cars.firstIndex(where: { $0.id == car.id }) {
             cars[i].photoStorageURLs = updatedURLs
             saveLocal()
-            // If this car is public, push the new primary photo URL to publicCars
-            // so Explore reflects it without requiring a re-toggle of visibility.
-            if cars[i].isPublic, let primaryURL = cars[i].primaryPhotoStorageURL {
-                // Use setData(merge:) rather than updateData so this succeeds even if
-                // the publicCars doc doesn't exist yet (e.g. upload completed before
-                // the user toggled visibility).
-                db.collection("publicCars").document(car.id.uuidString)
-                    .setData(["photoStorageURL": primaryURL.absoluteString], merge: true)
+            // If this car is public, push the new cover and gallery URLs to
+            // publicCars so Explore reflects them without a visibility re-toggle.
+            // A merge, so it also works before the public doc exists.
+            if cars[i].isPublic {
+                pushPublicFields(of: cars[i])
             }
         }
     }
@@ -759,6 +1053,10 @@ class CarStore: ObservableObject {
         guard let userId = currentUserId, !pendingUploads.isEmpty else { return }
         let queue = pendingUploads
         for pending in queue {
+            if pending.kind == .sound {
+                await retryEngineSoundUpload(pending, userId: userId)
+                continue
+            }
             guard let image = ImageManager.loadImage(fileName: pending.fileName) else {
                 removePendingUpload(carId: pending.carId, fileName: pending.fileName, kind: pending.kind)
                 continue
@@ -771,7 +1069,7 @@ class CarStore: ObservableObject {
                 guard let data = ImageManager.downscaled(image).jpegData(compressionQuality: 0.8) else { continue }
                 let ref = storageRef(userId: userId, carId: pending.carId, fileName: pending.fileName)
                 do {
-                    _ = try await ref.putDataAsync(data)
+                    _ = try await ref.putDataAsync(data, metadata: .jpegImage)
                     let url = try await ref.downloadURL()
                     if let car = cars.first(where: { $0.id.uuidString == pending.carId }) {
                         applyStorageURLs([pending.fileName: url.absoluteString], for: car)
@@ -780,6 +1078,8 @@ class CarStore: ObservableObject {
                 } catch {
                     // Still offline or transient error — leave in queue for next retry
                 }
+            case .sound:
+                continue  // handled above, before the image load
             case .receipt:
                 guard let data = image.jpegData(compressionQuality: Self.receiptJPEGQuality) else { continue }
                 // Receipt filenames are deterministic (`{recordId}.jpg`), so the
@@ -791,7 +1091,7 @@ class CarStore: ObservableObject {
                 }
                 let ref = receiptStorageRef(userId: userId, carId: pending.carId, fileName: pending.fileName)
                 do {
-                    _ = try await ref.putDataAsync(data)
+                    _ = try await ref.putDataAsync(data, metadata: .jpegImage)
                     let url = try await ref.downloadURL()
                     applyReceiptStorageURL(carId: pending.carId, recordId: recordId, urlString: url.absoluteString)
                     removePendingUpload(carId: pending.carId, fileName: pending.fileName, kind: .receipt)
@@ -894,6 +1194,7 @@ private struct PendingUpload: Codable, Equatable {
     enum Kind: String, Codable {
         case photo
         case receipt
+        case sound
     }
 
     let carId: String

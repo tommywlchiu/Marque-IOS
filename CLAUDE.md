@@ -229,9 +229,14 @@ All stores are `@MainActor` classes. Firestore listeners are started/stopped in 
 | `BlockStore` | Blocked users. |
 | `NotificationStore` | In-app notification inbox (Firestore). |
 | `ScanAllowanceStore` | FR-14.4 read-only listeners on `users/{uid}/usage/scans_{date}` (today's count) and `users/{uid}` (the **server-side** `isPro`, deliberately not StoreKit's — a Family Sharing member has local Pro but the server withholds the flag and enforces the free cap, so the caption must show the server's number). Drives the "n of M scans left today" caption and the pre-scan paywall gate; both hide/fail open while the plan is unknown. Display only; the parsers enforce. The usage listener re-attaches when the local day rolls over; the plan listener only if it died. |
+| `LikeStore` | Current user's likes (collection-group listener on `likes` where `uid == me`); optimistic `toggleLike` with rollback. `likeCount`/`weeklyLikeCount` on `publicCars` are server-maintained. |
+| `CommentStore` | One car's comments listener (newest 100), `post`/`delete`/`report`. Retries on permission-denied (a car just made public races its own public doc). Client `CommentFilter` mirrors `functions/src/commentFilter.ts` — the server is authoritative; edit both together. |
+| `PushStore` | FCM token at `users/{uid}/devices/{token}` and per-type preferences at `users/{uid}/settings/notifications`. Sign-out awaits the token delete (≤3 s) via `AuthService.willSignOut`. |
 | `FeatureFlagsStore` | Firebase Remote Config gate (e.g. `marque_assistant_enabled`, default false). DEBUG builds only: launching with `-marque_assistant_enabled_override YES` (or `NO`) forces the flag locally without touching production config — compiled out of Release. |
 
 ## Firebase
+
+**Local emulator suite (Debug only).** Launch a Debug build with `-use_firebase_emulators YES` and it talks to `firebase emulators:start --only auth,firestore,storage,functions` on 127.0.0.1 (ports in `firebase.json`). Functions need `functions/.secret.local` with a placeholder `ANTHROPIC_API_KEY` (gitignored). The rules suites live outside the repo (see memory). A macOS "SimulatorTrampoline wants the Microphone" dialog sits over the Simulator window and silently eats clicks until answered.
 
 Firebase iOS SDK is a required build dependency. `FirebaseApp.configure()` runs unguarded in `Marque_PrototypeApp.init()`; Firestore offline persistence is enabled with a 100MB cache.
 
@@ -243,7 +248,7 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 
 - `Car` embeds `[MaintenanceRecord]` and `[ServiceReminder]` directly (not normalized).
 - `Car.photoFileNames: [String]` — filenames managed by `ImageManager` locally under `Documents/CarPhotos/` and mirrored to Firebase Storage at `users/{userId}/cars/{carId}/{fileName}`. The first entry is the cover photo. Custom `Codable` handles migration from the legacy single-photo `photoFileName` key.
-- `PublicCar` is the read-only projection of `Car` exposed via the `publicCars` collection — VIN, license plate, insurance fields, per-record costs, and notes are stripped per FR-06.3.
+- `PublicCar` is the read-only projection of `Car` exposed via the `publicCars` collection — VIN, license plate, insurance fields and per-record costs are stripped per FR-06.3; owner notes ARE public per FR-06.4.
 - `AppUser` includes fields backed by Firestore (`username`, `bio`, `location`) and fields backed by UserDefaults only (`driverLicenseNumber`, `driverLicenseState`, `driverLicenseExpiry`).
 
 ## Service Layer
@@ -259,7 +264,7 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 
 ## Cloud Functions
 
-Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it. Eleven functions are exported; the constants block at the top (`BUNDLE_ID`, `APP_STORE_APP_ID`, `PRO_PRODUCT_IDS`, `APPLE_ROOT_CA`) is shared across the entitlement functions.
+Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it. Twenty functions are exported; the constants block at the top (`BUNDLE_ID`, `APP_STORE_APP_ID`, `PRO_PRODUCT_IDS`, `APPLE_ROOT_CA`) is shared across the entitlement functions.
 
 **Assistant & AI**
 - **`askMarque`** (v2 callable) — Marque Assistant chat proxy to Anthropic (Sonnet 4.6) with server-side daily cap enforcement (10/day free, 500/day Pro), prompt caching on the garage context block and system prompt, and streaming responses. Model ID is a constant at the top of the file so it can be bumped in one place. Per FR-10.17 the context block must never include VIN, plate, insurance fields, driver license, per-record costs, notes, or photo names.
@@ -273,6 +278,11 @@ Callable and trigger functions live in `functions/src/index.ts`. The file uses a
 - **`syncEntitlement`** (v2 callable) — client-initiated entitlement sync. Grants `isPro` **only** when the transaction's `appAccountToken` maps back to the calling uid. No token match means the write is skipped, not granted — that's either a replayed JWS or a Family Sharing member, and self-granting off another account's transaction is the entitlement-hijack this guard exists to stop. Family members still get local Pro from StoreKit; only the server flag is withheld.
 
 **Social & limits**
+- **`estimateCarValue`** (v2 callable) — AI value range (Haiku); same wrapper order as the parsers (auth → verified email → sanitize → clientDate → reserve `usage/valuations_{date}`, 10/day, refunded on throw). Never sees VIN/plate/notes. Public display is only `PublicCar.valueRange` (rounded; `CarValueRange.publicLabel`).
+- **`onCarLikeWritten` / `onCarCommentWritten`** — recompute counts transactionally, write like/comment notifications server-side (deterministic like ID; comment push throttled 1 per actor per car per 10 min via server-only `pushThrottle/`), and delete comments whose text or author name fails the word filter. **`onUserProfileWritten`** neutralizes filtered display names/bios.
+- **`onPublicCarCreated` / `onPublicCarDeleted`** — a car made private keeps its `likes/` and `comments/` hidden (rules deny reads while `publicCars/{id}` is absent) and restores counts on re-publish; a real delete sweeps them. **The ownership proof for every sweep is the `publicCarOwners/{carId}` claim**, never a query over `users/*/cars` (client-chosen IDs are spoofable).
+- **`onFollowerCreated`, `onDeviceTokenCreated`, `recomputeWeeklyLikes`** (hourly) — follow push, token de-dup across accounts, weekly Top Cars count. `sendPush` honors preferences and prunes dead tokens.
+- Use the modular `import { FieldValue, Timestamp } from "firebase-admin/firestore"` — `admin.firestore.FieldValue/Timestamp` are undefined in the Functions runtime (crashed triggers under the emulator).
 - **`onUserBlocked`** (v2 Firestore trigger on `users/{blocker}/blocked/{blocked}` create) — deletes all four follow edges between the pair with the Admin SDK (the client can't: `followers/` binds the follower, `following/` the path owner). `retry: true`; idempotent.
 - **`onCarWritten`** (v2 Firestore trigger on `users/{uid}/cars/{carId}` writes) — recomputes `usage/limits.carCount` with a `count()` aggregate. Returns early if the Auth user no longer exists, because `onAuthUserDeleted`'s `recursiveDelete` fires it for every car and a late run would otherwise recreate `usage/limits` after the cascade.
 - `syncEntitlement` also writes `usage/limits.familyProUntil` (car-cap exemption only, never `isPro`) for a verified `FAMILY_SHARED` transaction, claimed first-come in `familyGrants/`.
@@ -294,7 +304,9 @@ Live in `firestore.rules`. **Read the actual rule before assuming a path is writ
 - `users/{uid}/cars` — owner read/update/delete. **`create` enforces the FR-08.8 free 2-car cap**: allowed only if `users/{uid}.isPro`, or `usage/limits.familyProUntil` is in the future, or `usage/limits.carCount < 2` (missing doc = 0). The client's copy of the number is `CarStore.freeCarLimit` (gates and paywall/alert copy) — change both together. `carCount` is recomputed by the `onCarWritten` trigger, so a fast burst can briefly exceed 2. A rejected create is rolled back client-side and surfaces as `CarStore.carLimitRejected`.
 - `users/{uid}/following/{id}` and `followers/{id}` — `create, update` are also denied if either party has blocked the other; `delete` is unrestricted for the same principal.
 - `users/{uid}/blocked`, `conversations/**` — genuinely owner-scoped read/write.
-- `publicCars` — read-any-auth, write-owner. `reports` — create-only client-side. `usernames` — delete permitted to the owning uid.
+- `publicCars` — read-any-auth; owner writes only an allowlist of fields (counts are server-only; URL fields must point at the car's own Storage folder; `photoURLs` ≤ 12 for the rules' 1,000-expression budget). Create/update/delete also require the caller's `publicCarOwners/{carId}` claim, written in the same batch on first publish (first-come; prevents car-ID squatting). `likes/` and `comments/` subcollections: see the rules header comments; comment author fields must match the author's own profile and reserved username.
+- `users/{uid}/cars/{carId}` also requires `id == carId` and denies an ID claimed by another uid.
+- `storage.rules` (now in the repo) — owner-only; writes limited to the app's real paths: images (`image/*` or `application/octet-stream`, < 10 MB), `sound.m4a` (`audio/*`, < 500 KB). `reports` — create-only client-side. `usernames` — delete permitted to the owning uid.
 - **`purchases/` has no rule at all** (default deny) — see Known Pitfalls.
 - `familyGrants/{originalTransactionId}` — server-only (`allow read, write: if false`). First-claim-wins record binding a Family Sharing transaction to one uid, so a replayed Family-Shared JWS can't exempt other accounts from the car cap. Swept by `onAuthUserDeleted` phase 4d.
 
@@ -312,7 +324,7 @@ Reusable components used across views: `MarquePrimaryButton`, `MarqueEmptyState`
 Marque/
   Models/          — Car, AppUser, AppNotification, ServiceReminder, MaintenanceRecord,
                      CarData, PublicCar, ChatMessage, Conversation, AIServiceSuggestion, AppLinks
-  Stores/          — CarStore, AuthService, ChatStore, ExploreStore, FollowStore,
+  Stores/          — CarStore, AuthService, ChatStore, ExploreStore, FollowStore, LikeStore, CommentStore, PushStore, CarValueService,
                      BlockStore, NotificationStore, SubscriptionStore,
                      ImageManager, NotificationManager, VINDecodeService, ServiceReminderEngine,
                      AIServiceSuggestionService, DocumentScanService, AnalyticsService,

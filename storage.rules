@@ -1,0 +1,76 @@
+rules_version = '2';
+
+// Owner-only under users/{uid}/, as the rules live in the console before this
+// file existed:
+//
+//   match /users/{userId}/{allPaths=**} {
+//     allow read, write: if request.auth != null && request.auth.uid == userId;
+//   }
+//
+// READ and DELETE keep exactly that behavior for every object, including any
+// legacy object at a path the app no longer writes. CREATE/UPDATE are now
+// limited to the paths the app actually writes (checked against every
+// Storage write in the iOS code: CarStore photos/receipts/sound,
+// AuthService avatar), each with a content-type and size cap. Anything else
+// under users/{uid}/ can no longer be written (QA F6: it accepted e.g. a
+// 20 MB text/html file).
+//
+// Content type for images: image/* OR application/octet-stream. The iOS
+// SDK's putData sends application/octet-stream when no metadata is passed
+// (StorageUploadTask: MIMETypeForExtension(nil)), which is how every photo,
+// receipt and avatar was uploaded before this build, including by TestFlight
+// build 3 still in testers' hands. Current code sends image/jpeg
+// (StorageMetadata.jpegImage). Accepting octet-stream keeps old builds
+// working; it's served as a download, never rendered as HTML.
+//
+// Public photos and sound clips are viewed through tokenized download URLs,
+// which bypass these rules entirely. That's the intended sharing model, so
+// nothing here grants public read.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isImageUpload() {
+      return request.resource.size < 10 * 1024 * 1024
+          && (request.resource.contentType.matches('image/.*')
+              || request.resource.contentType == 'application/octet-stream');
+    }
+
+    match /users/{userId}/{allPaths=**} {
+      allow read, delete: if isOwner(userId);
+    }
+
+    // Profile photo (AuthService: users/{uid}/avatar.jpg).
+    match /users/{userId}/avatar.jpg {
+      allow create, update: if isOwner(userId) && isImageUpload();
+    }
+
+    // Car photos (CarStore.storageRef: users/{uid}/cars/{carId}/{UUID}.jpg).
+    // Any name starting with "sound" (any case) is excluded, so the
+    // engine-sound limits below can't be sidestepped with "sound.M4A",
+    // "sound2.m4a" and the like. Photo names are UUIDs
+    // (ImageManager.generateFileName), which never start with "sound".
+    match /users/{userId}/cars/{carId}/{fileName} {
+      allow create, update: if isOwner(userId)
+                            && !fileName.lower().matches('sound.*')
+                            && isImageUpload();
+    }
+
+    // Receipts (CarStore.receiptStorageRef: .../cars/{carId}/receipts/{recordId}.jpg).
+    match /users/{userId}/cars/{carId}/receipts/{fileName} {
+      allow create, update: if isOwner(userId) && isImageUpload();
+    }
+
+    // Engine sound clip (CarStore.setEngineSound): exactly "sound.m4a",
+    // case-sensitive. AAC, at most 5 seconds, about 500 KB. The duration can't
+    // be checked here; the size cap bounds it (5 s of AAC is well under it).
+    match /users/{userId}/cars/{carId}/sound.m4a {
+      allow create, update: if isOwner(userId)
+                            && request.resource.size < 500 * 1024
+                            && request.resource.contentType.matches('audio/.*');
+    }
+  }
+}

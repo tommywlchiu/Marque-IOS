@@ -14,6 +14,8 @@ struct CarListView: View {
     @State private var showingEditProfile = false
     @State private var showingFollowers = false
     @State private var showingFollowing = false
+    /// Car opened from a comment push; its page opens the comments sheet.
+    @State private var commentsDeepLinkCarID: UUID?
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
@@ -45,7 +47,7 @@ struct CarListView: View {
             }
             .navigationDestination(for: UUID.self) { carId in
                 if let car = carStore.cars.first(where: { $0.id == carId }) {
-                    CarDetailView(car: car)
+                    CarDetailView(car: car, openComments: commentsDeepLinkCarID == carId)
                 }
             }
             .sheet(isPresented: $showingAddCar) {
@@ -66,12 +68,16 @@ struct CarListView: View {
             }
             .onChange(of: appDelegate.pendingCarID) { _, _ in tryDeepLinkNavigation() }
             .onChange(of: carStore.cars) { _, _ in tryDeepLinkNavigation() }
+            .onChange(of: navigationPath) { _, path in
+                if let id = commentsDeepLinkCarID, !path.contains(id) { commentsDeepLinkCarID = nil }
+            }
             .overlay(alignment: .bottomTrailing) {
                 AskMarqueButton()
                     .padding(.trailing, 16)
                     .padding(.bottom, 16)
             }
         }
+        .modifier(FollowPushRouter())
     }
 
     // Navigate to the pending car ID, if it's already in the local store.
@@ -80,6 +86,12 @@ struct CarListView: View {
     private func tryDeepLinkNavigation() {
         guard let carID = appDelegate.pendingCarID,
               carStore.cars.contains(where: { $0.id == carID }) else { return }
+        // A like/comment push carries the same car in `pendingPush`; consume
+        // it here, and for a comment open the car's comments too.
+        if let push = appDelegate.pendingPush, push.kind != .follow {
+            commentsDeepLinkCarID = push.kind == .comment ? carID : nil
+            appDelegate.pendingPush = nil
+        }
         navigationPath = [carID]
         appDelegate.pendingCarID = nil
     }

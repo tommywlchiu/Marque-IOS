@@ -17,6 +17,12 @@ struct AppNotification: Identifiable, Codable, Equatable {
         case follow, like, comment, mention
     }
 
+    /// For `.like` / `.comment` notifications (written server-side by
+    /// onCarLikeWritten / onCarCommentWritten): the id of the recipient's own
+    /// car that was liked or commented on (`Car.id.uuidString`). `caption` is
+    /// the car's name for a like, and an 80-character preview of the comment.
+    var carID: String? { postID }
+
     static func == (lhs: AppNotification, rhs: AppNotification) -> Bool {
         lhs.id == rhs.id
     }

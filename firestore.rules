@@ -2,6 +2,48 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---- Shared validators for URLs the client stores in public places ----
+    // Firebase Storage download URLs as StorageReference.downloadURL() builds
+    // them (firebase-ios-sdk StorageGetDownloadURLTask):
+    //   https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<GCS-escaped path>?alt=media&token=<token>
+    // with "/" in the object path escaped as %2F. The loopback host is the
+    // local Storage emulator (Marque.swift's DEBUG emulator hook); a URL
+    // pointing at 127.0.0.1 can only ever reach the viewer's own machine, so
+    // allowing it in production is harmless.
+    function storageObjectPrefix() {
+      return '(https://firebasestorage[.]googleapis[.]com|http://127[.]0[.]0[.]1:9199)/v0/b/marque-173c3[.]firebasestorage[.]app/o/users%2F';
+    }
+    // A photo or sound file of `carId`, in `uid`'s own Storage folder.
+    function carMediaPattern(uid, carId) {
+      return storageObjectPrefix() + uid + '%2Fcars%2F' + carId
+             + '%2F[A-Za-z0-9._-]+[?]alt=media&token=[A-Za-z0-9-]+';
+    }
+    function matchesURL(u, pattern) {
+      return u is string && u.size() <= 2048 && u.matches(pattern);
+    }
+    function isCarMediaURL(u, uid, carId) {
+      return matchesURL(u, carMediaPattern(uid, carId));
+    }
+    // What AuthService actually stores as a profile photo: empty, the user's
+    // own users/{uid}/avatar.jpg, or the sign-in provider's photo
+    // (Firebase Auth photoURL; Google serves it from lh3.googleusercontent.com,
+    // Apple provides none).
+    function isAvatarURL(u, uid) {
+      return u is string && u.size() <= 2048
+          && (u == ''
+              || u.matches(storageObjectPrefix() + uid + '%2Favatar[.]jpg[?]alt=media&token=[A-Za-z0-9-]+')
+              || u.matches('https://lh3[.]googleusercontent[.]com/[A-Za-z0-9/_=.-]+'));
+    }
+    // True if `username` (any case) is reserved in usernames/ by `uid`. The
+    // reservation is the proof of a handle: users/{uid}.username is only a
+    // copy. usernames/ doc IDs are lowercased (AuthService.usernameDocument).
+    // getAfter, so a batch that claims the handle and writes it together passes.
+    function ownsUsername(username, uid) {
+      return username is string && username.size() > 0 && username.size() <= 30
+          && existsAfter(/databases/$(database)/documents/usernames/$(username.lower()))
+          && getAfter(/databases/$(database)/documents/usernames/$(username.lower())).data.uid == uid;
+    }
+
     match /usernames/{username} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -42,6 +84,25 @@ service cloud.firestore {
         return ['username', 'displayName', 'bio', 'avatarURL', 'createdAt'];
       }
 
+      // Field checks, applied only to the keys a write touches (`keys`), so an
+      // existing profile with an older, longer value can still edit other
+      // fields. Without these, users/{uid} was free text that surfaces in
+      // comments, notifications and Explore: anyone could set another user's
+      // username (impersonation), a 900 KB displayName, or a tracking-pixel
+      // avatar.
+      //   username:    must be reserved by this uid in usernames/ (completeProfileSetup
+      //                and changeUsername claim it in the same batch).
+      //   displayName: at most 50 characters.
+      //   bio:         at most 500 (the UI caps it at 160 characters; this is
+      //                the sanity bound, in code points).
+      //   avatarURL:   see isAvatarURL.
+      function validProfile(d, keys) {
+        return (!keys.hasAny(['username']) || ownsUsername(d.username, userId))
+            && (!keys.hasAny(['displayName']) || (d.displayName is string && d.displayName.size() <= 50))
+            && (!keys.hasAny(['bio']) || (d.bio is string && d.bio.size() <= 500))
+            && (!keys.hasAny(['avatarURL']) || isAvatarURL(d.avatarURL, userId));
+      }
+
       allow read: if request.auth != null;
 
       // hasOnly(clientOwnedUserFields()) — not just !hasAny(serverOwned...) —
@@ -53,14 +114,17 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.auth.uid == userId
                     && !request.resource.data.keys().hasAny(serverOwnedUserFields())
-                    && request.resource.data.keys().hasOnly(clientOwnedUserFields());
+                    && request.resource.data.keys().hasOnly(clientOwnedUserFields())
+                    && validProfile(request.resource.data, request.resource.data.keys());
 
       // diff().affectedKeys() covers additions, changes AND removals, so a
       // non-merge setData() that would drop isPro is denied too.
       allow update: if request.auth != null
                     && request.auth.uid == userId
                     && request.resource.data.diff(resource.data)
-                         .affectedKeys().hasOnly(clientOwnedUserFields());
+                         .affectedKeys().hasOnly(clientOwnedUserFields())
+                    && validProfile(request.resource.data,
+                                    request.resource.data.diff(resource.data).affectedKeys());
     }
 
     // NOTE: previously this was a wildcard `match /users/{userId}/{document=**}`
@@ -106,8 +170,23 @@ service cloud.firestore {
           || limits().carCount < 2;
       }
 
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // The `id` field must equal the document ID (CarStore writes
+      // users/{uid}/cars/{car.id.uuidString}, and Car encodes `id` as that same
+      // uuidString), and a car can't be created under an ID another user has
+      // claimed in publicCarOwners/. Car IDs are client-chosen, so without
+      // these anyone could file a victim's (publicly visible) car ID in their
+      // own garage.
+      function claimedByOther() {
+        return exists(/databases/$(database)/documents/publicCarOwners/$(carId))
+            && get(/databases/$(database)/documents/publicCarOwners/$(carId)).data.uid != request.auth.uid;
+      }
+
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.id == carId;
       allow create: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.id == carId
+                    && !claimedByOther()
                     && (isServerPro() || hasActiveFamilyProUntil() || underCarLimit());
     }
 
@@ -115,15 +194,212 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Either party has blocked the other (full blocking, both directions).
+    function eitherBlocked(a, b) {
+      return exists(/databases/$(database)/documents/users/$(a)/blocked/$(b))
+          || exists(/databases/$(database)/documents/users/$(b)/blocked/$(a));
+    }
+
     match /publicCars/{carId} {
+      // The complete set of fields the owner's client writes (CarStore's
+      // public-copy sync, the cover/photo pushes, AuthService.changeUsername's
+      // ownerUsername backfill). Everything else is either server-maintained
+      // (likeCount, weeklyLikeCount, commentCount: the Admin SDK bypasses
+      // rules) or must never be public at all (VIN, plate, insurance,
+      // registration, costs, the exact estimatedValue; FR-06.3). An
+      // allowlist rather than a denylist, so a new private Car field can never
+      // leak here by accident. A new public field must be added here, or the
+      // write is denied.
+      function ownerWrittenFields() {
+        return ['carId', 'ownerUID', 'ownerUsername', 'ownerAvatarURL',
+                'make', 'model', 'year', 'color', 'mileage', 'trim', 'bodyStyle',
+                'driveType', 'engine', 'fuelType', 'transmission', 'notes',
+                'photoStorageURL', 'photoOffsetY', 'photoURLs', 'serviceHistory',
+                'valueRange', 'engineSoundURL', 'updatedAt'];
+      }
+      // Validates the fields a write touches (`keys`: every key on create,
+      // the affected keys on update); a removed optional key is fine.
+      //   valueRange:      a rounded range ("$30k–$35k", "Under $1k",
+      //                    "$1M–$1.025M"; CarValueRange.publicLabel). k amounts
+      //                    are whole numbers, so "$30.125k" can't leak the exact value.
+      //   photoStorageURL: "" (cover not uploaded yet) or this car's own Storage file.
+      //   photoURLs:       at most 12 (PublicCar.maxGalleryPhotos), each this
+      //                    car's own Storage file. Rules can't loop, hence the
+      //                    unrolled index checks. 12, not more: the rules engine
+      //                    stops at 1,000 evaluated expressions per request, and a
+      //                    first publish with every URL field set measured over
+      //                    budget at 20 photos and under it at 15 (emulator).
+      //   engineSoundURL:  this car's own Storage file.
+      //   ownerUsername:   "" or a handle the caller has reserved.
+      //   ownerAvatarURL:  see isAvatarURL.
+      function touches(keys, d, k) {
+        return keys.hasAny([k]) && (k in d);
+      }
+      // The pattern is built once (let) and shared by all 20 index checks,
+      // which keeps this under the rules engine's 1,000-expression limit (see photoURLs above).
+      function photoAt(l, i, p) {
+        return l.size() <= i || matchesURL(l[i], p);
+      }
+      function validPhotoURLs(l) {
+        let p = carMediaPattern(request.auth.uid, carId);
+        return l is list && l.size() <= 12
+            && photoAt(l, 0, p) && photoAt(l, 1, p) && photoAt(l, 2, p) && photoAt(l, 3, p)
+            && photoAt(l, 4, p) && photoAt(l, 5, p) && photoAt(l, 6, p) && photoAt(l, 7, p)
+            && photoAt(l, 8, p) && photoAt(l, 9, p) && photoAt(l, 10, p) && photoAt(l, 11, p);
+      }
+      function validPublicFields(d, keys) {
+        return (!touches(keys, d, 'valueRange')
+                  || (d.valueRange is string && d.valueRange.size() <= 32
+                      && d.valueRange.matches('Under [$]1k|[$]([0-9]{1,3}k|[0-9]{1,4}([.][0-9]{1,3})?M)–[$]([0-9]{1,3}k|[0-9]{1,4}([.][0-9]{1,3})?M)')))
+            && (!touches(keys, d, 'photoStorageURL')
+                  || d.photoStorageURL == '' || isCarMediaURL(d.photoStorageURL, request.auth.uid, carId))
+            && (!touches(keys, d, 'photoURLs') || validPhotoURLs(d.photoURLs))
+            && (!touches(keys, d, 'engineSoundURL') || isCarMediaURL(d.engineSoundURL, request.auth.uid, carId))
+            && (!touches(keys, d, 'ownerUsername')
+                  || d.ownerUsername == '' || ownsUsername(d.ownerUsername, request.auth.uid))
+            && (!touches(keys, d, 'ownerAvatarURL') || isAvatarURL(d.ownerAvatarURL, request.auth.uid));
+      }
+
+      // The caller must hold the publicCarOwners/{carId} claim (see that rule
+      // below). getAfter, so the FIRST publish can create the claim and the
+      // doc in one batch. On update/delete it's defense in depth: the
+      // ownerUID check already binds the existing doc to its creator.
+      function claimedByCaller() {
+        return existsAfter(/databases/$(database)/documents/publicCarOwners/$(carId))
+            && getAfter(/databases/$(database)/documents/publicCarOwners/$(carId)).data.uid == request.auth.uid;
+      }
+
       allow read: if request.auth != null;
       allow create: if request.auth != null
-                    && request.resource.data.ownerUID == request.auth.uid;
+                    && request.resource.data.ownerUID == request.auth.uid
+                    && claimedByCaller()
+                    && request.resource.data.keys().hasOnly(ownerWrittenFields())
+                    && validPublicFields(request.resource.data, request.resource.data.keys());
+      // diff().affectedKeys() covers additions, changes AND removals, so an
+      // owner can neither set nor wipe a server-maintained count (a non-merge
+      // setData that drops likeCount is denied too).
       allow update: if request.auth != null
                     && resource.data.ownerUID == request.auth.uid
-                    && request.resource.data.ownerUID == resource.data.ownerUID;
+                    && request.resource.data.ownerUID == resource.data.ownerUID
+                    && claimedByCaller()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(ownerWrittenFields())
+                    && validPublicFields(request.resource.data,
+                                         request.resource.data.diff(resource.data).affectedKeys());
       allow delete: if request.auth != null
-                    && resource.data.ownerUID == request.auth.uid;
+                    && resource.data.ownerUID == request.auth.uid
+                    && claimedByCaller();
+
+      function carOwner() {
+        return get(/databases/$(database)/documents/publicCars/$(carId)).data.ownerUID;
+      }
+      function carExists() {
+        return exists(/databases/$(database)/documents/publicCars/$(carId));
+      }
+
+      // Likes: one doc per liker, doc ID = the liker's uid, so a user can like
+      // a car at most once. likeCount is recomputed by onCarLikeWritten.
+      // Nobody can like their own car, and a like is denied when either party
+      // has blocked the other. Delete stays open to the liker so an unlike
+      // always works, even across a block.
+      match /likes/{likerUid} {
+        allow get: if request.auth != null && request.auth.uid == likerUid;
+        allow create: if request.auth != null
+                      && request.auth.uid == likerUid
+                      && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+                      && request.resource.data.uid == likerUid
+                      && request.resource.data.createdAt == request.time
+                      // A deleted account's still-valid ID token (up to 1 h)
+                      // must not recreate data after onAuthUserDeleted swept it.
+                      && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                      && carExists()
+                      && carOwner() != likerUid
+                      && !eitherBlocked(carOwner(), likerUid);
+        allow delete: if request.auth != null && request.auth.uid == likerUid;
+      }
+
+      // Comments (App Store guideline 1.2: onCarCommentWritten filters, the
+      // reports rule below takes reports, and blocking is enforced here).
+      // Identity: authorUsername must be a handle the author has RESERVED in
+      // usernames/ (the profile doc's username is only a copy and used to be
+      // freely writable), and author* must still equal the author's profile.
+      // Bounds: username <= 30, displayName <= 50, avatar per isAvatarURL.
+      // Text: 1-500 characters; no zero-width/bidi-control characters (U+200B,
+      // 200C, 200E, 200F, 202A-202E, 2060-2064, FEFF), which hide text or
+      // reverse it on screen; and at least one character that is not
+      // whitespace (incl. NBSP and the other Unicode spaces) or U+200D.
+      // U+200D (zero-width joiner) is deliberately ALLOWED: every multi-person
+      // emoji (e.g. a family) contains it. The server filter strips it
+      // before matching, so "f<ZWJ>uck" is still caught.
+      // No updates. The author or the car's owner may delete.
+      match /comments/{commentId} {
+        // Hidden while the car is private: making a car private deletes its
+        // public doc but KEEPS its comments (owner decision), so they must be
+        // unreadable until the car is public again. Likes need no equivalent:
+        // their only reads are your own like doc and your own collection-group
+        // query.
+        allow read: if request.auth != null && carExists();
+        allow create: if request.auth != null
+                      && request.resource.data.keys().hasOnly(
+                           ['authorUID', 'authorUsername', 'authorDisplayName',
+                            'authorAvatarURL', 'text', 'createdAt'])
+                      && request.resource.data.keys().hasAll(
+                           ['authorUID', 'authorUsername', 'authorDisplayName',
+                            'authorAvatarURL', 'text', 'createdAt'])
+                      && request.resource.data.authorUID == request.auth.uid
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() >= 1
+                      && request.resource.data.text.size() <= 500
+                      && !request.resource.data.text.matches('(?s).*[\\x{200B}\\x{200C}\\x{200E}\\x{200F}\\x{202A}-\\x{202E}\\x{2060}-\\x{2064}\\x{FEFF}].*')
+                      && request.resource.data.text.matches('(?s).*[^\\s\\x{00A0}\\x{1680}\\x{2000}-\\x{200D}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}].*')
+                      && request.resource.data.createdAt == request.time
+                      && ownsUsername(request.resource.data.authorUsername, request.auth.uid)
+                      && request.resource.data.authorDisplayName is string
+                      && request.resource.data.authorDisplayName.size() <= 50
+                      && isAvatarURL(request.resource.data.authorAvatarURL, request.auth.uid)
+                      && request.resource.data.authorUsername
+                           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.username
+                      && request.resource.data.authorDisplayName
+                           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('displayName', '')
+                      && request.resource.data.authorAvatarURL
+                           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('avatarURL', '')
+                      && carExists()
+                      && !eitherBlocked(carOwner(), request.auth.uid);
+        allow delete: if request.auth != null
+                      && (resource.data.authorUID == request.auth.uid
+                          || (carExists() && carOwner() == request.auth.uid));
+      }
+    }
+
+    // publicCars ID registry: publicCarOwners/{carId} = { uid, createdAt }.
+    // Car IDs are client-chosen and a public car's ID is visible to everyone,
+    // so without this anyone who saw a car's ID could create
+    // publicCars/{thatId} while the car is private: they'd surface its hidden
+    // comments, gain "owner" delete rights over them, and lock the real
+    // owner out of re-publishing. The claim is first-come, made atomically
+    // with the first publish (CarStore.syncPublicCar batches both), and
+    // SURVIVES the car going private, so a published ID can never be
+    // claimed by anyone else. Create-only: a setData on an existing claim is
+    // an update and is denied, which is what makes it first-come. No client
+    // update or delete: the server removes it only when the car is really
+    // deleted (onPublicCarDeleted, onCarWritten, onAuthUserDeleted).
+    // get: your own claim only. A missing doc and another user's claim both
+    // read as permission-denied, so the registry can't be used as an oracle
+    // for which car IDs exist. CarStore treats a denied read as "unknown" and
+    // publishes through the claim batch.
+    match /publicCarOwners/{carId} {
+      allow get: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.createdAt == request.time;
+    }
+
+    // Collection-group read of a user's OWN likes (LikeStore's listener:
+    // collectionGroup('likes').where('uid', '==', me)). The resource.data
+    // constraint makes any query that isn't filtered to the caller's own
+    // uid fail.
+    match /{path=**}/likes/{likerUid} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
     // FollowStore.follow() batches an identical setData({followedAt: ...})
@@ -165,7 +441,11 @@ service cloud.firestore {
     }
 
     match /users/{userId}/notifications/{notificationId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // NotificationStore only ever flips isRead. Anything else would let a
+      // recipient rewrite a server-written like/comment notification's actor.
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
       allow delete: if request.auth != null && request.auth.uid == userId;
 
       // Previously `allow create: if request.auth != null` — any signed-in
@@ -192,6 +472,39 @@ service cloud.firestore {
       match /messages/{msgId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
+    }
+
+    // FCM device tokens (PushStore). Doc ID is the token. Owner-only; nobody
+    // else can read another user's tokens. Deleted on sign-out; also swept by
+    // onAuthUserDeleted's recursiveDelete and onDeviceTokenCreated (a token
+    // re-registered under another account), and pruned by sendPush when FCM
+    // reports it dead.
+    match /users/{userId}/devices/{token} {
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId
+                    && exists(/databases/$(database)/documents/users/$(userId))
+                    && request.resource.data.keys().hasOnly(['token', 'platform', 'updatedAt'])
+                    && request.resource.data.token == token
+                    && request.resource.data.platform == 'ios'
+                    && request.resource.data.updatedAt == request.time;
+    }
+
+    // Push preferences (PushStore). Read by the server's sendPush; a missing
+    // doc or field means "on". Only this one settings doc is writable.
+    match /users/{userId}/settings/notifications {
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId
+                    && exists(/databases/$(database)/documents/users/$(userId))
+                    && request.resource.data.keys().hasOnly(['follows', 'likes', 'comments', 'updatedAt'])
+                    && (!('follows' in request.resource.data) || request.resource.data.follows is bool)
+                    && (!('likes' in request.resource.data) || request.resource.data.likes is bool)
+                    && (!('comments' in request.resource.data) || request.resource.data.comments is bool);
+    }
+
+    // Comment-push throttle (onCarCommentWritten): pushThrottle/{carId}_{actorUID}.
+    // Server-only; swept by onAuthUserDeleted.
+    match /pushThrottle/{id} {
+      allow read, write: if false;
     }
 
     match /users/{uid}/usage/{docId} {

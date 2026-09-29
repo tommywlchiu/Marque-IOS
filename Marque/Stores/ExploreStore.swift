@@ -9,10 +9,53 @@ struct PublicUserProfile: Codable {
     let avatarURL: String
 }
 
+/// The two Top Cars lists in Explore.
+enum TopCarsPeriod: String, CaseIterable, Identifiable {
+    case thisWeek
+    case allTime
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .thisWeek: return "This Week"
+        case .allTime: return "All Time"
+        }
+    }
+
+    /// Server-maintained count on publicCars this list is ordered by.
+    /// weeklyLikeCount is recomputed hourly (recomputeWeeklyLikes), so "This
+    /// Week" can lag real likes by up to an hour; likeCount updates within
+    /// seconds of a like (onCarLikeWritten).
+    var countField: String {
+        switch self {
+        case .thisWeek: return "weeklyLikeCount"
+        case .allTime: return "likeCount"
+        }
+    }
+
+    func count(of car: PublicCar) -> Int {
+        switch self {
+        case .thisWeek: return car.weeklyLikeCount
+        case .allTime: return car.likeCount
+        }
+    }
+}
+
 @MainActor
 class ExploreStore: ObservableObject {
     @Published var cars: [PublicCar] = []
     @Published var isLoading = false
+
+    /// Top Cars, most-liked first, at most `topCarsLimit`. Only cars with at
+    /// least one like in the period appear. NOT block-filtered: run the
+    /// result through `BlockStore.filter(_:ownerUID: \.ownerUID)` like the
+    /// main feed.
+    @Published private(set) var topCarsThisWeek: [PublicCar] = []
+    @Published private(set) var topCarsAllTime: [PublicCar] = []
+    @Published private(set) var isLoadingTopCars = false
+
+    static let topCarsLimit = 50
 
     private var listener: ListenerRegistration?
     private let db = Firestore.firestore()
@@ -72,6 +115,38 @@ class ExploreStore: ObservableObject {
         listener = nil
         cars = []
         profileCache = [:]
+        topCarsThisWeek = []
+        topCarsAllTime = []
+    }
+
+    // MARK: - Top Cars
+
+    func topCars(_ period: TopCarsPeriod) -> [PublicCar] {
+        switch period {
+        case .thisWeek: return topCarsThisWeek
+        case .allTime: return topCarsAllTime
+        }
+    }
+
+    /// One-shot fetch of a Top Cars list (not a listener: the ranking changes
+    /// slowly, and a live listener on 50 docs would re-bill on every like).
+    /// Call on appear and on pull-to-refresh. Single-field range + order on
+    /// the same field: served by Firestore's automatic index, no composite
+    /// index needed. On failure the previous list is kept.
+    func loadTopCars(_ period: TopCarsPeriod) async {
+        isLoadingTopCars = true
+        defer { isLoadingTopCars = false }
+        guard let snapshot = try? await db.collection("publicCars")
+            .whereField(period.countField, isGreaterThan: 0)
+            .order(by: period.countField, descending: true)
+            .limit(to: Self.topCarsLimit)
+            .getDocuments()
+        else { return }
+        let cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
+        switch period {
+        case .thisWeek: topCarsThisWeek = cars
+        case .allTime: topCarsAllTime = cars
+        }
     }
 
     func cars(for ownerUID: String) -> [PublicCar] {
