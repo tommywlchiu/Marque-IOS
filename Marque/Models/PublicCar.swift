@@ -64,6 +64,11 @@ struct PublicCar: Identifiable, Codable {
     let likeCount: Int
     let weeklyLikeCount: Int
     let commentCount: Int
+    /// When the car was made public: `updatedAt` is only set by the publish
+    /// sync (later edits deliberately don't bump it, see CarStore.updateCar),
+    /// so it doubles as the publish time. nil on the client's own projection.
+    /// Read-only here, never encoded.
+    let publishedAt: Date?
 
     /// Most photos a public gallery carries (firestore.rules validates each
     /// URL, and the rules engine's evaluation budget caps it at 12).
@@ -104,6 +109,7 @@ struct PublicCar: Identifiable, Codable {
         case photoStorageURL, photoOffsetY, serviceHistory
         case photoURLs, valueRange, engineSoundURL
         case likeCount, weeklyLikeCount, commentCount
+        case publishedAt = "updatedAt"
     }
 
     init(from decoder: Decoder) throws {
@@ -133,6 +139,13 @@ struct PublicCar: Identifiable, Codable {
         likeCount = (try? c.decodeIfPresent(Int.self, forKey: .likeCount)) ?? 0
         weeklyLikeCount = (try? c.decodeIfPresent(Int.self, forKey: .weeklyLikeCount)) ?? 0
         commentCount = (try? c.decodeIfPresent(Int.self, forKey: .commentCount)) ?? 0
+        publishedAt = try? c.decodeIfPresent(Date.self, forKey: .publishedAt)
+    }
+
+    /// Made public in the last 7 days, for Explore's "New" badge.
+    var isNew: Bool {
+        guard let publishedAt else { return false }
+        return Date().timeIntervalSince(publishedAt) < 7 * 24 * 3600
     }
 
     /// Encodes ONLY the owner-written fields (the `ownerWrittenFields()`
@@ -202,5 +215,6 @@ extension PublicCar {
         likeCount = 0
         weeklyLikeCount = 0
         commentCount = 0
+        publishedAt = nil
     }
 }

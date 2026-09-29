@@ -16,6 +16,12 @@ struct TopCarsSection: View {
     @EnvironmentObject private var blockStore: BlockStore
     @State private var selectedPeriod: TopCarsPeriod = .thisWeek
     @State private var hasLoadedOnce = false
+    /// Bumped on reappear to retry `loadTopCars` once more when both lists
+    /// are still empty after the first load — see the `.task(id:)` below.
+    /// `ExploreStore.loadTopCars` swallows its own errors (`try?`), so a
+    /// genuinely-empty result and a dropped request are indistinguishable
+    /// here; this is a best-effort retry, not a real error path.
+    @State private var reloadToken = 0
 
     static let displayLimit = 10
 
@@ -49,7 +55,7 @@ struct TopCarsSection: View {
                 content
             }
         }
-        .task {
+        .task(id: reloadToken) {
             // Load both up front (not just the selected period): needed to
             // know whether This Week is empty (for the fallback) and to make
             // switching periods with the header control instant.
@@ -58,6 +64,15 @@ struct TopCarsSection: View {
             _ = await (week, allTime)
             hasLoadedOnce = true
         }
+        .onAppear {
+            // Retry once per reappearance if the first load came back with
+            // nothing at all (not just "no likes yet this week" — both
+            // periods empty). Guards against a dropped request rather than a
+            // genuinely quiet week; see `reloadToken`'s doc comment.
+            if hasLoadedOnce && thisWeekRanked.isEmpty && allTimeRanked.isEmpty {
+                reloadToken += 1
+            }
+        }
     }
 
     private var content: some View {
@@ -65,9 +80,7 @@ struct TopCarsSection: View {
             header
 
             if !hasLoadedOnce {
-                ProgressView()
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 130)
+                TopCarsSkeleton()
             } else {
                 if isAutoFallback {
                     Text("No likes this week yet — showing all-time")

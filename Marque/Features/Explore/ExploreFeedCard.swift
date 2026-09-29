@@ -75,6 +75,11 @@ struct ExploreFeedCard: View {
             .aspectRatio(car.galleryURLs.isEmpty ? 16.0 / 9.0 : 4.0 / 5.0, contentMode: .fit)
             .overlay { photoContent }
             .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
+            .overlay(alignment: .topLeading) {
+                if car.isNew {
+                    ExploreNewBadge().padding(10)
+                }
+            }
     }
 
     @ViewBuilder
@@ -160,6 +165,21 @@ struct ExploreFeedCard: View {
             }
         }
         .padding(.horizontal, 2)
+    }
+}
+
+/// Small accent-colored "NEW" capsule for a car made public in the last 7
+/// days (`PublicCar.isNew`). Shared by `ExploreFeedCard` and
+/// `CarOfTheWeekHero`, pinned to the photo's top-leading corner in both.
+struct ExploreNewBadge: View {
+    var body: some View {
+        Text("NEW")
+            .font(.caption2.weight(.heavy))
+            .kerning(0.4)
+            .foregroundColor(.white)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Capsule().fill(Color.accentColor))
+            .accessibilityHidden(true)
     }
 }
 
