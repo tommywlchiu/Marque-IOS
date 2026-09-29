@@ -169,6 +169,11 @@ final class PushStore: NSObject, ObservableObject {
     }
 
     private func register(token: String, uid: String) {
+        #if DEBUG
+        // For sending a test push from the Firebase console (Messaging →
+        // "Send test message"). Debug only; the token is a device secret.
+        print("[PushStore] FCM token: \(token)")
+        #endif
         guard token != registeredToken else { return }
         if let old = registeredToken {
             devicesRef(uid).document(old).delete(completion: nil)

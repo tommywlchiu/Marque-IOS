@@ -1,5 +1,8 @@
 import SwiftUI
 import UserNotifications
+#if DEBUG
+import FirebaseMessaging
+#endif
 
 /// "Push Notifications" section of Settings > Notifications: per-type
 /// switches the server's `sendPush` honors (`PushStore.setPreference`), plus
@@ -11,6 +14,7 @@ struct PushPreferencesSection: View {
 
     @State private var authorizationStatus: UNAuthorizationStatus?
     @State private var saveError: String?
+    @State private var debugTokenStatus: String?
 
     var body: some View {
         Section(
@@ -31,6 +35,25 @@ struct PushPreferencesSection: View {
                 }
                 .accessibilityElement(children: .combine)
             }
+
+            #if DEBUG
+            // For sending a test push from the Firebase console
+            // (Messaging → "Send test message"). Debug builds only.
+            Button {
+                Messaging.messaging().token { token, error in
+                    let value = token ?? "No token: \(error?.localizedDescription ?? "unknown error")"
+                    UIPasteboard.general.string = value
+                    debugTokenStatus = token == nil ? value : "Copied (\(token!.prefix(12))…)"
+                }
+            } label: {
+                Label("Copy Push Token (debug)", systemImage: "doc.on.doc")
+            }
+            if let debugTokenStatus {
+                Text(debugTokenStatus)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            #endif
         }
         .task { await refreshStatus() }
         .onChange(of: scenePhase) { _, phase in
