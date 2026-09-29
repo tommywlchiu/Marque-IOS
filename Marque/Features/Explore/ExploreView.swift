@@ -9,12 +9,15 @@ struct ExploreView: View {
     @State private var selectedCategory: ExploreCategory = .all
     @State private var profileTarget: ProfileTarget?
     @State private var showingPushPrePrompt = false
+    @AppStorage("marque_explore_sort") private var sortRaw: String = ExploreSort.newest.rawValue
 
     private struct ProfileTarget: Identifiable {
         let uid: String
         let username: String
         var id: String { uid }
     }
+
+    private var sort: ExploreSort { ExploreSort(rawValue: sortRaw) ?? .newest }
 
     private var visibleCars: [PublicCar] {
         blockStore.filter(exploreStore.cars, ownerUID: \.ownerUID)
@@ -25,6 +28,19 @@ struct ExploreView: View {
             return followStore.followingFeed(from: visibleCars)
         }
         return selectedCategory.filter(visibleCars)
+    }
+
+    // ExploreStore.cars is already ordered newest-first (`updatedAt`
+    // descending), and every filter above preserves order, so "Newest" is
+    // just `filteredCars`. "Most liked" re-sorts on likeCount, falling back
+    // to that same newest-first order on ties (Array.sorted is stable).
+    private var sortedFilteredCars: [PublicCar] {
+        switch sort {
+        case .newest:
+            return filteredCars
+        case .mostLiked:
+            return filteredCars.sorted { $0.likeCount > $1.likeCount }
+        }
     }
 
     var body: some View {
@@ -45,7 +61,6 @@ struct ExploreView: View {
                             searchBar
                             categoryPicker
                             if selectedCategory == .all && !visibleCars.isEmpty {
-                                featuredSection
                                 TopCarsSection(
                                     onOwnerTap: { car in
                                         profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
@@ -61,7 +76,7 @@ struct ExploreView: View {
                                 )
                                 .padding(.vertical, 40)
                             }
-                            gridSection
+                            feedSection
                         }
                         .padding(.top, 8)
                         .padding(.bottom, 24)
@@ -143,39 +158,28 @@ struct ExploreView: View {
             }
             .padding(.horizontal, 16)
         }
-    }
-
-    // MARK: - Featured
-
-    private var featuredSection: some View {
-        VStack(spacing: 12) {
-            MarqueSectionHeader(title: "Recently Added").padding(.horizontal, 16)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(visibleCars.prefix(10)) { car in
-                        NavigationLink(destination: CarDetailView(publicCar: car)
-                            .environmentObject(exploreStore)
-                            .environmentObject(blockStore)) {
-                            FeaturedCarCard(car: car, onOwnerTap: {
-                                profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
-                            }, onLiked: offerPushPrePrompt)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 16)
-            }
-        }
-    }
-
-    // MARK: - Grid
-
-    private var gridSection: some View {
-        VStack(spacing: 12) {
-            MarqueSectionHeader(
-                title: selectedCategory == .all ? "All Cars" : selectedCategory.rawValue
+        // Fades the trailing edge so it's obvious the row scrolls further,
+        // rather than looking like it's cut off (Explore redesign issue #5).
+        .mask(
+            LinearGradient(
+                stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black, location: 0.94),
+                    .init(color: .clear, location: 1),
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
             )
-            .padding(.horizontal, 16)
+        )
+    }
+
+    // MARK: - Feed
+
+    /// The main feed: one full-width card per car (Explore redesign — replaces
+    /// the old two-column grid, which overlapped and had uneven row heights).
+    private var feedSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            feedHeader
 
             if filteredCars.isEmpty {
                 MarqueEmptyState(
@@ -185,23 +189,58 @@ struct ExploreView: View {
                 )
                 .padding(.vertical, 20)
             } else {
-                LazyVGrid(
-                    columns: [GridItem(.flexible()), GridItem(.flexible())],
-                    spacing: 14
-                ) {
-                    ForEach(filteredCars) { car in
+                LazyVStack(spacing: 28) {
+                    ForEach(sortedFilteredCars) { car in
                         NavigationLink(destination: CarDetailView(publicCar: car)
                             .environmentObject(exploreStore)
                             .environmentObject(blockStore)) {
-                            ExploreCarCell(car: car, onOwnerTap: {
+                            ExploreFeedCard(car: car, onOwnerTap: {
                                 profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
                             }, onLiked: offerPushPrePrompt)
                         }
                         .buttonStyle(.plain)
+                        .padding(.horizontal, 16)
                     }
                 }
-                .padding(.horizontal, 16)
             }
+        }
+    }
+
+    private var feedHeader: some View {
+        HStack {
+            Text(selectedCategory == .all ? "All Cars" : selectedCategory.rawValue)
+                .font(.headline).fontWeight(.semibold)
+            Spacer(minLength: 0)
+            Menu {
+                Picker("Sort", selection: $sortRaw) {
+                    Text(ExploreSort.newest.label).tag(ExploreSort.newest.rawValue)
+                    Text(ExploreSort.mostLiked.label).tag(ExploreSort.mostLiked.rawValue)
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(sort.label)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2)
+                }
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            }
+            .accessibilityLabel("Sort: \(sort.label)")
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+// MARK: - Sort
+
+enum ExploreSort: String {
+    case newest
+    case mostLiked
+
+    var label: String {
+        switch self {
+        case .newest: return "Newest"
+        case .mostLiked: return "Most liked"
         }
     }
 }
@@ -253,73 +292,19 @@ private struct CategoryChip: View {
                 .background(isSelected ? Color.accentColor : Color(.systemGray6))
                 .foregroundColor(isSelected ? .white : .primary)
                 .clipShape(Capsule())
+                .overlay(
+                    Capsule().stroke(Color.primary.opacity(isSelected ? 0 : 0.06), lineWidth: 1)
+                )
+                .shadow(color: isSelected ? Color.accentColor.opacity(0.35) : .clear, radius: 6, x: 0, y: 3)
         }
-    }
-}
-
-// MARK: - Featured Card
-
-private struct FeaturedCarCard: View {
-    let car: PublicCar
-    var onOwnerTap: (() -> Void)? = nil
-    var onLiked: (() -> Void)? = nil
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ZStack(alignment: .bottomLeading) {
-                Group {
-                    if car.primaryPhotoURL != nil {
-                        CachedRemoteImage(url: car.primaryPhotoURL)
-                    } else {
-                        noPhotoPlaceholder
-                    }
-                }
-                .frame(width: 200, height: 150)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-
-                LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-
-                ownerRow.padding(10)
-            }
-            .frame(width: 200, height: 150)
-            .overlay(alignment: .topTrailing) {
-                LikeButton(car: car, style: .onPhoto, onLiked: onLiked)
-                    .padding(8)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var ownerRow: some View {
-        if let onOwnerTap {
-            Button(action: onOwnerTap) { ownerRowContent }
-                .buttonStyle(.plain)
-        } else {
-            ownerRowContent
-        }
-    }
-
-    private var ownerRowContent: some View {
-        HStack(spacing: 6) {
-            OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 20)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(car.displayName)
-                    .font(.caption).fontWeight(.semibold).foregroundColor(.white)
-                Text("@\(car.ownerUsername)")
-                    .font(.caption2).foregroundColor(.white.opacity(0.8))
-            }
-        }
-    }
-
-    private var noPhotoPlaceholder: some View {
-        Rectangle()
-            .fill(Color.accentColor.opacity(0.1))
-            .overlay(Image(systemName: "car.fill").font(.system(size: 40)).foregroundColor(.accentColor.opacity(0.3)))
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
 
 // MARK: - Grid Cell
+//
+// Still used by `PublicProfileView`'s own car grid; the main Explore feed
+// no longer uses this (see `ExploreFeedCard`).
 
 struct ExploreCarCell: View {
     let car: PublicCar

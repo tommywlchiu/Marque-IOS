@@ -1,87 +1,137 @@
 import SwiftUI
 
-/// Explore's "Top Cars": most-liked public cars, This Week / All Time, as
-/// ranked cards. `ExploreStore`'s lists aren't block-filtered, so they go
-/// through `BlockStore.filter` here, and ranks are positions in the
-/// filtered list.
+/// Explore's "Top Cars": a compact horizontal carousel of the most-liked
+/// public cars, This Week / All Time. `ExploreStore`'s lists aren't
+/// block-filtered, so they go through `BlockStore.filter` here, and ranks
+/// are positions in the filtered list.
+///
+/// If This Week has no cars (after filtering) it falls back to All Time
+/// automatically, with a caption explaining why. If both are empty, the
+/// whole section renders as nothing.
 struct TopCarsSection: View {
     var onOwnerTap: (PublicCar) -> Void
     var onLiked: () -> Void
 
     @EnvironmentObject private var exploreStore: ExploreStore
     @EnvironmentObject private var blockStore: BlockStore
-    @State private var period: TopCarsPeriod = .thisWeek
+    @State private var selectedPeriod: TopCarsPeriod = .thisWeek
+    @State private var hasLoadedOnce = false
 
     static let displayLimit = 10
 
-    private var ranked: [PublicCar] {
+    private func ranked(_ period: TopCarsPeriod) -> [PublicCar] {
         Array(blockStore.filter(exploreStore.topCars(period), ownerUID: \.ownerUID).prefix(Self.displayLimit))
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            MarqueSectionHeader(title: "Top Cars")
-                .padding(.horizontal, 16)
+    private var thisWeekRanked: [PublicCar] { ranked(.thisWeek) }
+    private var allTimeRanked: [PublicCar] { ranked(.allTime) }
 
-            Picker("Period", selection: $period) {
-                ForEach(TopCarsPeriod.allCases) { p in
-                    Text(p.displayName).tag(p)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-
-            content
+    /// Falls back to All Time when This Week is selected but empty and All
+    /// Time has cars; otherwise honors the user's explicit choice.
+    private var effectivePeriod: TopCarsPeriod {
+        if selectedPeriod == .thisWeek && thisWeekRanked.isEmpty && !allTimeRanked.isEmpty {
+            return .allTime
         }
-        .task(id: period) {
-            await exploreStore.loadTopCars(period)
+        return selectedPeriod
+    }
+
+    private var isAutoFallback: Bool {
+        selectedPeriod == .thisWeek && effectivePeriod == .allTime
+    }
+
+    private var displayedCars: [PublicCar] { ranked(effectivePeriod) }
+
+    var body: some View {
+        Group {
+            if hasLoadedOnce && thisWeekRanked.isEmpty && allTimeRanked.isEmpty {
+                EmptyView()
+            } else {
+                content
+            }
+        }
+        .task {
+            // Load both up front (not just the selected period): needed to
+            // know whether This Week is empty (for the fallback) and to make
+            // switching periods with the header control instant.
+            async let week: () = exploreStore.loadTopCars(.thisWeek)
+            async let allTime: () = exploreStore.loadTopCars(.allTime)
+            _ = await (week, allTime)
+            hasLoadedOnce = true
         }
     }
 
-    @ViewBuilder
     private var content: some View {
-        let cars = ranked
-        if cars.isEmpty && exploreStore.isLoadingTopCars {
-            ProgressView()
-                .frame(maxWidth: .infinity)
-                .frame(height: 150)
-        } else if cars.isEmpty {
-            HStack(spacing: 12) {
-                Image(systemName: "heart")
-                    .font(.title2)
-                    .foregroundColor(.secondary)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(period == .thisWeek ? "No likes yet this week" : "No likes yet")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Tap the heart on a car you love to put it on the board.")
+        VStack(alignment: .leading, spacing: 10) {
+            header
+
+            if !hasLoadedOnce {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 130)
+            } else {
+                if isAutoFallback {
+                    Text("No likes this week yet — showing all-time")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .padding(.horizontal, 16)
                 }
-                Spacer(minLength: 0)
+                carousel
             }
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color(.systemGray6)))
-            .padding(.horizontal, 16)
-        } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 14) {
-                    ForEach(Array(cars.enumerated()), id: \.element.carId) { index, car in
-                        NavigationLink(destination: CarDetailView(publicCar: car)) {
-                            TopCarCard(
-                                car: car,
-                                rank: index + 1,
-                                period: period,
-                                onOwnerTap: { onOwnerTap(car) },
-                                onLiked: onLiked
-                            )
-                        }
-                        .buttonStyle(.plain)
+        }
+    }
+
+    private var header: some View {
+        HStack {
+            Text("Top Cars")
+                .font(.headline).fontWeight(.semibold)
+            Spacer(minLength: 0)
+            periodControl
+        }
+        .padding(.horizontal, 16)
+    }
+
+    /// Compact in-header This Week / All Time switch (not a full-width bar).
+    private var periodControl: some View {
+        HStack(spacing: 2) {
+            ForEach(TopCarsPeriod.allCases) { period in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { selectedPeriod = period }
+                } label: {
+                    Text(period.displayName)
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(
+                            selectedPeriod == period ? Color(.systemBackground) : Color.clear,
+                            in: Capsule()
+                        )
+                        .foregroundColor(selectedPeriod == period ? .primary : .secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selectedPeriod == period ? [.isSelected] : [])
+            }
+        }
+        .padding(3)
+        .background(Capsule().fill(Color(.systemGray6)))
+    }
+
+    private var carousel: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 12) {
+                ForEach(Array(displayedCars.enumerated()), id: \.element.carId) { index, car in
+                    NavigationLink(destination: CarDetailView(publicCar: car)) {
+                        TopCarCard(
+                            car: car,
+                            rank: index + 1,
+                            period: effectivePeriod,
+                            onOwnerTap: { onOwnerTap(car) },
+                            onLiked: onLiked
+                        )
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 4)
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 4)
         }
     }
 }
@@ -92,6 +142,9 @@ private struct TopCarCard: View {
     let period: TopCarsPeriod
     let onOwnerTap: () -> Void
     let onLiked: () -> Void
+
+    private static let thumbWidth: CGFloat = 122
+    private static let thumbHeight: CGFloat = thumbWidth * 5 / 4
 
     private var rankColor: Color {
         switch rank {
@@ -105,46 +158,32 @@ private struct TopCarCard: View {
     private var periodCount: Int { period.count(of: car) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topLeading) {
-                Group {
-                    if let url = car.primaryPhotoURL {
-                        CachedRemoteImage(url: url)
-                    } else {
-                        Rectangle()
-                            .fill(Color.accentColor.opacity(0.1))
-                            .overlay(
-                                Image(systemName: "car.fill")
-                                    .font(.system(size: 36))
-                                    .foregroundColor(.accentColor.opacity(0.3))
-                            )
-                    }
-                }
-                .frame(width: 220, height: 140)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                photoThumb
 
                 Text("#\(rank)")
-                    .font(.subheadline.weight(.heavy))
+                    .font(.caption2.weight(.heavy))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Capsule().fill(rankColor))
-                    .padding(8)
+                    .padding(6)
                     .accessibilityHidden(true)
             }
             .overlay(alignment: .topTrailing) {
                 LikeButton(car: car, style: .onPhoto, onLiked: onLiked)
-                    .padding(8)
+                    .padding(6)
             }
 
             Button(action: onOwnerTap) {
-                HStack(spacing: 6) {
-                    OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 20)
-                    VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 5) {
+                    OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 16)
+                    VStack(alignment: .leading, spacing: 0) {
                         Text(car.displayName)
-                            .font(.caption.weight(.semibold))
+                            .font(.caption2.weight(.semibold))
                             .foregroundColor(.primary)
                             .lineLimit(1)
-                        Text(subtitle)
+                        Text(countText)
                             .font(.caption2)
                             .foregroundColor(.secondary)
                             .lineLimit(1)
@@ -154,15 +193,25 @@ private struct TopCarCard: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Rank \(rank), \(car.displayName) by @\(car.ownerUsername), \(countText)")
         }
-        .frame(width: 220)
+        .frame(width: Self.thumbWidth)
+    }
+
+    private var photoThumb: some View {
+        Group {
+            if let url = car.primaryPhotoURL {
+                CachedRemoteImage(url: url)
+                    .frame(width: Self.thumbWidth, height: Self.thumbHeight)
+                    .offset(y: car.photoOffsetY)
+            } else {
+                ExploreNoPhotoPlaceholder(make: car.make, model: car.model, iconSize: 28, showsLabel: false)
+                    .frame(width: Self.thumbWidth, height: Self.thumbHeight)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var countText: String {
         let noun = periodCount == 1 ? "like" : "likes"
         return period == .thisWeek ? "\(periodCount) \(noun) this week" : "\(periodCount) \(noun)"
-    }
-
-    private var subtitle: String {
-        "@\(car.ownerUsername) · \(countText)"
     }
 }

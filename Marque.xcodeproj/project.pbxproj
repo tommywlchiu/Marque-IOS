@@ -110,6 +110,7 @@
 		FE50B1000000000000000009 /* CarValueSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000009 /* CarValueSection.swift */; };
 		FE50B100000000000000000A /* EstimateValueSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000A /* EstimateValueSheet.swift */; };
 		FE50B100000000000000000B /* TopCarsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000B /* TopCarsSection.swift */; };
+		FE50B200000000000000000C /* ExploreFeedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C200000000000000000C /* ExploreFeedCard.swift */; };
 		FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000C /* PushPreferencesSection.swift */; };
 /* End PBXBuildFile section */
 
@@ -209,6 +210,7 @@
 		FE50C1000000000000000009 /* CarValueSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarValueSection.swift; sourceTree = "<group>"; };
 		FE50C100000000000000000A /* EstimateValueSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EstimateValueSheet.swift; sourceTree = "<group>"; };
 		FE50C100000000000000000B /* TopCarsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopCarsSection.swift; sourceTree = "<group>"; };
+		FE50C200000000000000000C /* ExploreFeedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreFeedCard.swift; sourceTree = "<group>"; };
 		FE50C100000000000000000C /* PushPreferencesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPreferencesSection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -402,6 +404,7 @@
 			children = (
 				A20027 /* ExploreView.swift */,
 				FE50C100000000000000000B /* TopCarsSection.swift */,
+				FE50C200000000000000000C /* ExploreFeedCard.swift */,
 				A20028 /* SearchResultsView.swift */,
 			);
 			path = Explore;
@@ -591,6 +594,7 @@
 				FE50B1000000000000000009 /* CarValueSection.swift in Sources */,
 				FE50B100000000000000000A /* EstimateValueSheet.swift in Sources */,
 				FE50B100000000000000000B /* TopCarsSection.swift in Sources */,
+				FE50B200000000000000000C /* ExploreFeedCard.swift in Sources */,
 				FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */,
 				A10001 /* Marque.swift in Sources */,
 				A10066 /* AppDelegate.swift in Sources */,
