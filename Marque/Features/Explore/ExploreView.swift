@@ -111,8 +111,10 @@ struct ExploreView: View {
                     PublicProfileView(ownerUID: target.uid, ownerUsername: target.username)
                 }
             }
+            // Not offered on Explore: the Garage tab's button folds away here
+            // as the user switches tabs (see AskMarqueDock).
             .overlay(alignment: .bottomTrailing) {
-                AskMarqueButton()
+                AskMarqueDock(mode: .tuckAway)
                     .padding(.trailing, 16)
                     .padding(.bottom, 16)
             }

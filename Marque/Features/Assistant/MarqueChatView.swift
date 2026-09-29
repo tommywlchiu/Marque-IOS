@@ -532,6 +532,9 @@ struct AskMarqueButton: View {
     @State private var showingChat = false
 
     var scopedCarId: String? = nil
+    /// Sparkle-only circle instead of the full pill. Driven by
+    /// `AskMarqueDock` for its fold/unfold animation.
+    var isCollapsed: Bool = false
 
     var body: some View {
         if featureFlagsStore.assistantEnabled {
@@ -546,14 +549,18 @@ struct AskMarqueButton: View {
             }
             showingChat = true
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: isCollapsed ? 0 : 6) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 15, weight: .semibold))
-                Text("Ask Marque")
-                    .font(.subheadline).fontWeight(.semibold)
+                if !isCollapsed {
+                    Text("Ask Marque")
+                        .font(.subheadline).fontWeight(.semibold)
+                        .fixedSize()
+                        .transition(.opacity.combined(with: .scale(scale: 0.6, anchor: .leading)))
+                }
             }
             .foregroundColor(.white)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, isCollapsed ? 10 : 14)
             .padding(.vertical, 10)
             .background(Capsule().fill(Color.accentColor))
             .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
@@ -561,6 +568,83 @@ struct AskMarqueButton: View {
         .sheet(isPresented: $showingChat) {
             MarqueChatView(scopedCarId: scopedCarId)
                 .presentationDetents([.large])
+        }
+    }
+}
+
+// MARK: - Tab-switch choreography for the floating button
+
+/// The floating Ask Marque button for a tab root, animated as the user switches
+/// tabs. Each tab has its own button instance at the same bottom-trailing spot,
+/// so animating the arriving tab's instance reads as one button reacting:
+/// - `.present` (Garage): rises out of the tab bar as a spinning sparkle, then
+///   unfolds into the "Ask Marque" pill.
+/// - `.tuckAway` (Explore): starts as the pill, folds into the sparkle, then
+///   spins and sinks into the tab bar and is removed, so it can't be tapped.
+/// Reduce Motion gets a plain fade.
+struct AskMarqueDock: View {
+    enum Mode { case present, tuckAway }
+    let mode: Mode
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isCollapsed = false
+    @State private var isSunk = false
+    @State private var isRemoved = false
+    /// Bumped on every appearance so a stale sequence from a quick tab
+    /// switch back and forth can't finish after a newer one.
+    @State private var generation = 0
+
+    var body: some View {
+        Group {
+            if !isRemoved {
+                AskMarqueButton(isCollapsed: isCollapsed)
+                    .scaleEffect(isSunk ? 0.25 : 1, anchor: .bottom)
+                    .rotationEffect(.degrees(isSunk ? 140 : 0))
+                    .offset(y: isSunk ? 70 : 0)
+                    .opacity(isSunk ? 0 : 1)
+                    .blur(radius: isSunk ? 4 : 0)
+                    .allowsHitTesting(!isSunk)
+            }
+        }
+        .onAppear(perform: run)
+    }
+
+    private func run() {
+        generation += 1
+        let token = generation
+        switch mode {
+        case .present:
+            // Start folded and sunk (no animation), then rise and unfold.
+            var t = Transaction(); t.disablesAnimations = true
+            withTransaction(t) { isCollapsed = true; isSunk = true; isRemoved = false }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(30))
+                guard token == generation else { return }
+                withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.45, dampingFraction: 0.72)) {
+                    isSunk = false
+                }
+                try? await Task.sleep(for: .seconds(reduceMotion ? 0 : 0.28))
+                guard token == generation else { return }
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { isCollapsed = false }
+            }
+        case .tuckAway:
+            var t = Transaction(); t.disablesAnimations = true
+            withTransaction(t) { isCollapsed = false; isSunk = false; isRemoved = false }
+            Task { @MainActor in
+                if reduceMotion {
+                    withAnimation(.easeOut(duration: 0.2)) { isSunk = true }
+                } else {
+                    try? await Task.sleep(for: .seconds(0.12))
+                    guard token == generation else { return }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isCollapsed = true }
+                    try? await Task.sleep(for: .seconds(0.22))
+                    guard token == generation else { return }
+                    withAnimation(.easeIn(duration: 0.32)) { isSunk = true }
+                }
+                try? await Task.sleep(for: .seconds(0.35))
+                guard token == generation else { return }
+                isRemoved = true
+            }
         }
     }
 }

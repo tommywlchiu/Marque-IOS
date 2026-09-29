@@ -72,7 +72,7 @@ struct CarListView: View {
                 if let id = commentsDeepLinkCarID, !path.contains(id) { commentsDeepLinkCarID = nil }
             }
             .overlay(alignment: .bottomTrailing) {
-                AskMarqueButton()
+                AskMarqueDock(mode: .present)
                     .padding(.trailing, 16)
                     .padding(.bottom, 16)
             }
