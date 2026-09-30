@@ -14,3 +14,6 @@ Marque.xcodeproj/project.xcworkspace/xcuserdata/tommychiu.xcuserdatad/UserInterf
 # Firebase emulator logs
 firestore-debug.log
 *-debug.log
+
+# Rules test dependencies
+tests/rules/node_modules/

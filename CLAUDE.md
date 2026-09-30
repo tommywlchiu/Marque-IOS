@@ -176,7 +176,7 @@ Learned the hard way. Each one cost real debugging time.
 
 # Build & Run
 
-Build and run through **Xcode** — open `Marque.xcodeproj`. One native target, no test harness (no XCTest bundle, no `test` script in `functions/`). Three SPM packages: `firebase-ios-sdk` (linked products `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, `FirebaseRemoteConfig`, `FirebaseCrashlytics`), `GoogleSignIn-iOS` (`GoogleSignIn`, `GoogleSignInSwift`), and `posthog-ios` @ 3.77.0 (`PostHog`).
+Build and run through **Xcode** — open `Marque.xcodeproj`. One native target, no XCTest bundle, no `test` script in `functions/`. The only automated tests are the **security-rules suites** in `tests/rules/` (Firestore + Storage, run against the emulators; needs Java, e.g. `export PATH=/opt/homebrew/opt/openjdk@21/bin:$PATH`): `cd tests/rules && npm install && npm test`. Run them after any change to `firestore.rules` or `storage.rules`, and add cases for every new rule. They use their own emulator ports (8180/9189), so they don't clash with a running dev emulator. Three SPM packages: `firebase-ios-sdk` (linked products `FirebaseCore`, `FirebaseAuth`, `FirebaseFirestore`, `FirebaseStorage`, `FirebaseFunctions`, `FirebaseRemoteConfig`, `FirebaseCrashlytics`), `GoogleSignIn-iOS` (`GoogleSignIn`, `GoogleSignInSwift`), and `posthog-ios` @ 3.77.0 (`PostHog`).
 
 The target has one Run Script build phase beyond the standard ones: **"Upload Crashlytics Symbols"**, which invokes the SPM-vendored `Crashlytics/run` script to upload dSYMs. It guards on `$CONFIGURATION` internally and exits immediately for anything but `Release` — Debug builds (including the `xcodebuild` command below) never make the network call. Don't remove that guard without confirming CI/local Debug builds still work offline. In `Release`, it redirects the underlying tool's own output to `${TEMP_DIR}/crashlytics-upload.log` and only echoes a `note:`-prefixed line on failure — never let that tool's raw output reach the build log directly. That's load-bearing, not cosmetic: `firebase-ios-sdk` has a known, open, unresolved bug (issues/11836) where this script can print `error: Could not get GOOGLE_APP_ID...` on an actual archive even with `GoogleService-Info.plist` correctly bundled, and Xcode fails the **whole archive** on any `error:`-prefixed line anywhere in a Run Script phase's output — independent of that phase's own exit code. Fixing only the exit code (`|| echo "warning: ..."`) is not enough; the raw text has to be kept out of the log entirely.
 
@@ -241,7 +241,7 @@ All stores are `@MainActor` classes. Firestore listeners are started/stopped in 
 
 ## Firebase
 
-**Local emulator suite (Debug only).** Launch a Debug build with `-use_firebase_emulators YES` and it talks to `firebase emulators:start --only auth,firestore,storage,functions` on 127.0.0.1 (ports in `firebase.json`). Functions need `functions/.secret.local` with a placeholder `ANTHROPIC_API_KEY` (gitignored). The rules suites live outside the repo (see memory). A macOS "SimulatorTrampoline wants the Microphone" dialog sits over the Simulator window and silently eats clicks until answered.
+**Local emulator suite (Debug only).** Launch a Debug build with `-use_firebase_emulators YES` and it talks to `firebase emulators:start --only auth,firestore,storage,functions` on 127.0.0.1 (ports in `firebase.json`). Functions need `functions/.secret.local` with a placeholder `ANTHROPIC_API_KEY` (gitignored). A macOS "SimulatorTrampoline wants the Microphone" dialog sits over the Simulator window and silently eats clicks until answered.
 
 Firebase iOS SDK is a required build dependency. `FirebaseApp.configure()` runs unguarded in `Marque_PrototypeApp.init()`; Firestore offline persistence is enabled with a 100MB cache.
 
@@ -344,6 +344,7 @@ Marque/
 functions/         — TypeScript Cloud Functions (askMarque, appStoreNotifications, onAuthUserDeleted, ...)
 firestore.rules    — Firestore security rules
 firebase.json      — Firebase project + emulator config
+tests/rules/       — security-rules suites for firestore.rules + storage.rules (`npm test`)
 docs/              — Product docs (Marque-PRD.md)
 scripts/           — Dev tooling: check-anthropic-schemas.js (lint / --live check of every Anthropic output_config schema)
 ```

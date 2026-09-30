@@ -1,0 +1,18 @@
+{
+  "storage": {
+    "rules": "emulator-boot.storage.rules"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8180
+    },
+    "storage": {
+      "port": 9189
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true
+  },
+  "firestore": {}
+}

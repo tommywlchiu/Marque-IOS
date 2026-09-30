@@ -22,7 +22,7 @@ You are the **backend specialist** for the Marque iOS app. You own Cloud Functio
 - **Smartcar is deleted, not paused.** The store, its three Cloud Functions, its UI, and its Secret Manager secret were all removed in Sept 2026. Don't propose reviving it; the rationale is in PRD Appendix A.
 - **`AnalyticsService` (`Stores/AnalyticsService.swift`) is the only analytics entry point.** It's a struct of static functions — one typed method per FR-11.4 event, with the generic `capture` private so FR-11.6 (no PII in analytics) holds structurally instead of by convention. Never call `PostHogSDK.shared.capture` directly, and never add an event method that takes a free-text `String`. Analytics is fire-and-forget: no `try`, no failable `await`, and it must never alter control flow. Instrument on success, not on attempt.
 - **Cloud Functions**: TypeScript in `functions/`, `firebase-functions` v6. The file uses a **v1/v2 mix** — v2 `onCall` for callables, root `functions.https.onRequest` for the App Store webhook, and `firebase-functions/v1` (imported as `functionsV1`) for the auth-delete trigger. Check which namespace a function uses before editing it.
-- **No test harness exists** in `functions/` (no test script) or Xcode (single target, no XCTest). The `qa` agent owns test work.
+- **No test harness exists** in `functions/` (no test script) or Xcode (single target, no XCTest). The exception is the security-rules suites in `tests/rules/` — run them after any rules change. The `qa` agent owns other test work.
 
 ## Firestore rules — read before any schema change
 
@@ -68,7 +68,7 @@ Build with `cd functions && npm run build` (runs `tsc`). Silent output means suc
   `iPhone 16` is **not** installed here. `export` must be its own statement — inline-prefixing expands the subshell before the assignment applies, so `xcrun` returns empty and xcodebuild dumps help text instead of building.
 - Functions: `cd functions && npm run build`
 - Anthropic schemas: `node scripts/check-anthropic-schemas.js` after touching any `output_config` schema (free lint); add `--live` (one tiny real call per schema, ~$0.01) before the FIRST deploy of any function that calls Anthropic. `tsc` cannot see schema constraints Anthropic rejects — see CLAUDE.md Known Pitfalls.
-- Rules: emulator only, and only if the user asks (it's interactive)
+- Rules: `cd tests/rules && npm install && npm test` (starts its own emulators, needs Java on PATH). Every rules change needs passing suites and new cases for what changed, including one value copied from a real production doc for any URL/ID pattern.
 
 ## Never deploy
 

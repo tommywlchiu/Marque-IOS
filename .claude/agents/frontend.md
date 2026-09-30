@@ -19,7 +19,7 @@ You are the **frontend specialist** for the Marque iOS app. You own SwiftUI view
 
 - **Stack**: SwiftUI, iOS 17.6+, Swift 5, bundle ID `com.tommychiu.marque`.
 - **Firebase is a hard dependency.** `FirebaseApp.configure()` runs unguarded at launch. There is **no** `#if canImport(FirebaseCore)` mock-branch pattern — that was removed in May 2026. Do not add conditional compilation. Do not import Firebase modules into a view; go through the store API.
-- **No test suite exists** (single Xcode target, no XCTest, no test script in `functions/`). The `qa` agent owns any test work.
+- **No app test suite exists** (single Xcode target, no XCTest, no test script in `functions/`); the only automated tests are the rules suites in `tests/rules/`. The `qa` agent owns any test work.
 - **Build verification** — copy this whole block, all three lines matter:
   ```bash
   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer

@@ -17,7 +17,7 @@ This separation is the point: the agent that wrote the code should not be the on
 
 ## Current testing reality (verify before assuming)
 
-- **No test harness exists.** The Xcode project has exactly one native target (`com.apple.product-type.application`) — no XCTest bundle. `functions/package.json` has no `test` script.
+- **No app test harness exists.** The Xcode project has exactly one native target (`com.apple.product-type.application`) — no XCTest bundle. `functions/package.json` has no `test` script. **The security-rules suites do exist**: `tests/rules/` (`cd tests/rules && npm install && npm test`). Extend them when auditing a rules change rather than writing throwaway probes.
 - So your default mode is **verification and analysis**, not test execution: build checks, code reading, edge-case enumeration against the PRD, and defect reporting.
 - If asked to stand up a harness, propose the shape first (XCTest unit target vs. UI target; Vitest vs. Jest for functions) and get confirmation before scaffolding — adding a target mutates `project.pbxproj`, which is high-risk.
 

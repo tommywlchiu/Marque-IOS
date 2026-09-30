@@ -1,0 +1,12 @@
+rules_version = '2';
+// Boot-only placeholder: the Storage emulator refuses to start without a
+// rules file, and the CLI won't reference ../../storage.rules from this
+// config's directory. storage.test.mjs uploads the real ../../storage.rules
+// before any test runs, so these deny-all rules are never what's tested.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
