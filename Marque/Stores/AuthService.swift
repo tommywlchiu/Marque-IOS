@@ -512,6 +512,7 @@ class AuthService: NSObject, ObservableObject {
             stored.save(uid: uid)
 
             try? await userDocument(uid: uid).setData(["avatarURL": urlString], merge: true)
+            await updateOwnPublicCars(uid: uid, fields: ["ownerAvatarURL": urlString])
 
             if let firebaseUser = Auth.auth().currentUser, firebaseUser.uid == uid {
                 let change = firebaseUser.createProfileChangeRequest()
@@ -733,15 +734,26 @@ class AuthService: NSObject, ObservableObject {
         user.username = trimmed
         authState = .authenticated(user)
 
-        // Backfill ownerUsername in all public cars (eventually consistent — separate batch)
-        if let snapshot = try? await db.collection("publicCars")
+        await updateOwnPublicCars(uid: uid, fields: ["ownerUsername": trimmed])
+    }
+
+    /// Copies denormalized owner fields (`ownerUsername`, `ownerAvatarURL`)
+    /// onto every publicCars doc this user owns. Eventually consistent: a
+    /// separate batch after the profile write, best-effort. Only the owner
+    /// can do this (firestore.rules binds publicCars writes to the owner), so
+    /// it runs from the owner's own profile changes, never from a viewer.
+    private func updateOwnPublicCars(uid: String, fields: [String: Any]) async {
+        guard let snapshot = try? await db.collection("publicCars")
             .whereField("ownerUID", isEqualTo: uid)
-            .getDocuments(), !snapshot.documents.isEmpty {
-            let publicBatch = db.batch()
-            for doc in snapshot.documents {
-                publicBatch.updateData(["ownerUsername": trimmed], forDocument: doc.reference)
-            }
-            try? await publicBatch.commit()
+            .getDocuments(), !snapshot.documents.isEmpty else { return }
+        let batch = db.batch()
+        for doc in snapshot.documents {
+            batch.updateData(fields, forDocument: doc.reference)
+        }
+        do {
+            try await batch.commit()
+        } catch {
+            print("[AuthService] Updating public cars' owner fields failed: \(error.localizedDescription)")
         }
     }
 

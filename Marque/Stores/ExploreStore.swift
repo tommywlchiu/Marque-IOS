@@ -90,26 +90,7 @@ class ExploreStore: ObservableObject {
                 self.isLoading = false
                 self.feedLoadFailed = false
                 self.cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
-                Task { await self.patchMissingOwnerAvatars() }
             }
-    }
-
-    // Back-fills ownerAvatarURL on any publicCars documents that predate the field.
-    // Runs after every snapshot; no-ops immediately once all cars have the field.
-    private func patchMissingOwnerAvatars() async {
-        let carsNeedingAvatar = cars.filter { ($0.ownerAvatarURL ?? "").isEmpty }
-        guard !carsNeedingAvatar.isEmpty else { return }
-
-        let uniqueUIDs = Set(carsNeedingAvatar.map { $0.ownerUID })
-        for uid in uniqueUIDs {
-            guard let profile = await fetchUserProfile(uid: uid),
-                  !profile.avatarURL.isEmpty else { continue }
-            let carIds = carsNeedingAvatar.filter { $0.ownerUID == uid }.map { $0.carId }
-            for carId in carIds {
-                try? await db.collection("publicCars").document(carId)
-                    .setData(["ownerAvatarURL": profile.avatarURL], merge: true)
-            }
-        }
     }
 
     // Manual pull-to-refresh. The live listener in startListening() already
@@ -127,7 +108,6 @@ class ExploreStore: ObservableObject {
         else { return }
         cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
         if feedLoadFailed { retryFeed() }
-        await patchMissingOwnerAvatars()
     }
 
     /// Restarts the feed after `feedLoadFailed`.
