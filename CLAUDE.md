@@ -162,6 +162,11 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — A local scheme with an absolute `.storekit` path passed `xcodebuild -list`, but crashed the user's Xcode on every open (five crash reports in three minutes) with `dvt_stringByMakingAbsolutePathWithBasePath:` asserting inside `IDESchemeOptionReference.resolvedReference`. It was invisible while their already-running Xcode session hadn't rescanned, and fatal on the restart.
 - **Detect** — `ls -t ~/Library/Logs/DiagnosticReports | grep '^Xcode'`; an `.ips` whose crashed thread has `IDESchemeOptionReference` is this. Removing the scheme file from `<project>.xcodeproj/xcuserdata/*/xcschemes/` restores the project. Note a user scheme also hides the auto-generated default `Marque` scheme from `xcodebuild -list`, breaking the build command above.
 
+### Rules tests must use values copied from production, not hand-typed ones
+- **Rule** — Any rule that pattern-matches a URL or ID needs at least one test whose value is copied verbatim from a real production document. The iOS SDK's Storage `downloadURL()` includes `:443` (`https://firebasestorage.googleapis.com:443/...`); an emulator URL (`127.0.0.1:9199`) or a hand-typed one does not.
+- **Why** — `storageObjectPrefix()` matched only the portless host. 203 emulator tests passed, and after the deploy every production publish carrying an avatar or photo URL was denied.
+- **Detect** — Read one real `publicCars` doc (Firebase MCP `firestore_get_document`) and check its URL fields against each `matches(` pattern in `firestore.rules`.
+
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.
 - **Why** — Both this file and both agent definitions asserted a `#if canImport(FirebaseCore)` mock-branch pattern for ~4 months after it was removed. Agents were being briefed with a false architecture.
