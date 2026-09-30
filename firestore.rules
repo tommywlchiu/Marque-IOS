@@ -217,7 +217,7 @@ service cloud.firestore {
                 'make', 'model', 'year', 'color', 'mileage', 'trim', 'bodyStyle',
                 'driveType', 'engine', 'fuelType', 'transmission', 'notes',
                 'photoStorageURL', 'photoOffsetY', 'photoURLs', 'serviceHistory',
-                'engineSoundURL', 'updatedAt'];
+                'engineSoundURL', 'updatedAt', 'mods'];
       }
       // Validates the fields a write touches (`keys`: every key on create,
       // the affected keys on update); a removed optional key is fine.
@@ -246,6 +246,19 @@ service cloud.firestore {
             && photoAt(l, 4, p) && photoAt(l, 5, p) && photoAt(l, 6, p) && photoAt(l, 7, p)
             && photoAt(l, 8, p) && photoAt(l, 9, p) && photoAt(l, 10, p) && photoAt(l, 11, p);
       }
+      // Shallow only: mods.size() <= 30, no per-element shape/content check.
+      // PublicCarMod's own fields (category/name/brand) are free text the
+      // owner controls on their own car, same trust level as make/model/notes
+      // above, none of which are validated element-by-element either — and
+      // the 1,000-expression budget that forced photoURLs down to 12 unrolled
+      // checks doesn't have room for 30 more per-element mod checks anyway
+      // (see the worst-case budget test in rulestest). Word-filtering is a
+      // client-side gate (CarStore.addMod) plus a server backstop
+      // (onPublicCarModsWritten) that strips bad entries after the write,
+      // not a rules-time rejection.
+      function validMods(l) {
+        return l is list && l.size() <= 30;
+      }
       function validPublicFields(d, keys) {
         return (!touches(keys, d, 'photoStorageURL')
                   || d.photoStorageURL == '' || isCarMediaURL(d.photoStorageURL, request.auth.uid, carId))
@@ -253,7 +266,8 @@ service cloud.firestore {
             && (!touches(keys, d, 'engineSoundURL') || isCarMediaURL(d.engineSoundURL, request.auth.uid, carId))
             && (!touches(keys, d, 'ownerUsername')
                   || d.ownerUsername == '' || ownsUsername(d.ownerUsername, request.auth.uid))
-            && (!touches(keys, d, 'ownerAvatarURL') || isAvatarURL(d.ownerAvatarURL, request.auth.uid));
+            && (!touches(keys, d, 'ownerAvatarURL') || isAvatarURL(d.ownerAvatarURL, request.auth.uid))
+            && (!touches(keys, d, 'mods') || validMods(d.mods));
       }
 
       // The caller must hold the publicCarOwners/{carId} claim (see that rule

@@ -177,10 +177,14 @@ struct CarDetailView: View {
                 registrationSection
                 vehicleDetailsSection
                 insuranceSection
+                CarModsSection(car: car)
                 CarValueSection(car: car)
                 EngineSoundOwnerSection(car: car)
             } else {
                 publicVehicleDetailsSection
+                if let pc = publicCar, !pc.mods.isEmpty {
+                    PublicCarModsSection(mods: pc.mods)
+                }
             }
 
             if !notes.isEmpty {
@@ -393,6 +397,11 @@ struct CarDetailView: View {
                 Text(displayName)
                     .font(.title2).fontWeight(.bold)
                     .multilineTextAlignment(.center)
+                // Public page only (FR ask): the owner already sees their mod
+                // count in the Mods section header just below.
+                if let pc = publicCar, pc.isModified {
+                    ModifiedPill()
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)

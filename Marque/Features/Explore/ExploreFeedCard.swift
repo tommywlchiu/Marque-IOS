@@ -52,19 +52,39 @@ struct ExploreFeedCard: View {
     private var photoAndName: some View {
         VStack(alignment: .leading, spacing: 8) {
             photoSection
-            Text(car.displayName)
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(.primary)
-                .lineLimit(1)
+            HStack(spacing: 6) {
+                Text(car.displayName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                if car.isModified {
+                    modifiedTag
+                }
+            }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(car.displayName) by @\(car.ownerUsername), \(likesAccessibilityText)")
+        .accessibilityLabel("\(car.displayName) by @\(car.ownerUsername), \(likesAccessibilityText)\(car.isModified ? ", modified" : "")")
         .accessibilityAddTraits(.isButton)
         .accessibilityHint("Opens car details")
     }
 
     private var likesAccessibilityText: String {
         car.likeCount == 1 ? "1 like" : "\(car.likeCount) likes"
+    }
+
+    /// Subtle "🔧 N mods" tag next to the name — deliberately not a loud
+    /// badge like `ExploreNewBadge`, since being modified is common rather
+    /// than a rare highlight. Hidden from VoiceOver: folded into
+    /// `photoAndName`'s own combined accessibility label above.
+    private var modifiedTag: some View {
+        Text("🔧 \(car.mods.count) mod\(car.mods.count == 1 ? "" : "s")")
+            .font(.caption2.weight(.semibold))
+            .foregroundColor(.secondary)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(Capsule().fill(Color(.systemGray6)))
+            .lineLimit(1)
+            .layoutPriority(1)
+            .accessibilityHidden(true)
     }
 
     /// Fixed 4:5 frame for every photo card so they line up. A car with no

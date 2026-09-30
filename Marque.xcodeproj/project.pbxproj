@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		D5FA62F117724D022A23592D /* CarValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 600BB66AA00BB37F3FA29F33 /* CarValue.swift */; };
+		00E4C4A4AC3047AB5D23C524 /* CarMod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE1EA3597AC9528E98F8622 /* CarMod.swift */; };
 		79453226BB33D5D9700AC1E3 /* CarComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB586A35A4161F192DA3958 /* CarComment.swift */; };
 		74DBAFE5AAA034DC4F1FC9FC /* CommentFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C6FF6721A83D1C02383FB69 /* CommentFilter.swift */; };
 		D648EB831186D1CBC3DE3DF1 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5686F59A723EE5E2F08F0FD /* NotificationPreferences.swift */; };
@@ -114,10 +115,15 @@
 		FE50B200000000000000000D /* CarOfTheWeekHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C200000000000000000D /* CarOfTheWeekHero.swift */; };
 		FE50B200000000000000000E /* ExploreSkeletons.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C200000000000000000E /* ExploreSkeletons.swift */; };
 		FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000C /* PushPreferencesSection.swift */; };
+		FE50B300000000000000000F /* CarTaxonomy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D200000000000000000F /* CarTaxonomy.swift */; };
+		FE50B300000000000000001F /* PopularModelsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D200000000000000001F /* PopularModelsRow.swift */; };
+		FE50B1000000000000000010 /* CarModsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000010 /* CarModsSection.swift */; };
+		FE50B1000000000000000011 /* EditModSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000011 /* EditModSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		600BB66AA00BB37F3FA29F33 /* CarValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarValue.swift; sourceTree = "<group>"; };
+		8EE1EA3597AC9528E98F8622 /* CarMod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarMod.swift; sourceTree = "<group>"; };
 		7AB586A35A4161F192DA3958 /* CarComment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarComment.swift; sourceTree = "<group>"; };
 		3C6FF6721A83D1C02383FB69 /* CommentFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentFilter.swift; sourceTree = "<group>"; };
 		E5686F59A723EE5E2F08F0FD /* NotificationPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPreferences.swift; sourceTree = "<group>"; };
@@ -216,6 +222,10 @@
 		FE50C200000000000000000D /* CarOfTheWeekHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarOfTheWeekHero.swift; sourceTree = "<group>"; };
 		FE50C200000000000000000E /* ExploreSkeletons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreSkeletons.swift; sourceTree = "<group>"; };
 		FE50C100000000000000000C /* PushPreferencesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPreferencesSection.swift; sourceTree = "<group>"; };
+		FE50D200000000000000000F /* CarTaxonomy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarTaxonomy.swift; sourceTree = "<group>"; };
+		FE50D200000000000000001F /* PopularModelsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopularModelsRow.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000010 /* CarModsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarModsSection.swift; sourceTree = "<group>"; };
+		FE50C1000000000000000011 /* EditModSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditModSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -276,6 +286,7 @@
 			children = (
 				F497CF2330244586001892AE /* AIServiceSuggestion.swift */,
 				600BB66AA00BB37F3FA29F33 /* CarValue.swift */,
+				8EE1EA3597AC9528E98F8622 /* CarMod.swift */,
 				7AB586A35A4161F192DA3958 /* CarComment.swift */,
 				3C6FF6721A83D1C02383FB69 /* CommentFilter.swift */,
 				E5686F59A723EE5E2F08F0FD /* NotificationPreferences.swift */,
@@ -412,6 +423,8 @@
 				FE50C200000000000000000D /* CarOfTheWeekHero.swift */,
 				FE50C200000000000000000E /* ExploreSkeletons.swift */,
 				A20028 /* SearchResultsView.swift */,
+				FE50D200000000000000000F /* CarTaxonomy.swift */,
+				FE50D200000000000000001F /* PopularModelsRow.swift */,
 			);
 			path = Explore;
 			sourceTree = "<group>";
@@ -438,6 +451,8 @@
 				FE50C1000000000000000008 /* EngineSoundOwnerSection.swift */,
 				FE50C1000000000000000009 /* CarValueSection.swift */,
 				FE50C100000000000000000A /* EstimateValueSheet.swift */,
+				FE50C1000000000000000010 /* CarModsSection.swift */,
+				FE50C1000000000000000011 /* EditModSheet.swift */,
 				A20034 /* ServiceRemindersView.swift */,
 				A20035 /* AddReminderView.swift */,
 				A20037 /* PhotoGalleryView.swift */,
@@ -604,6 +619,10 @@
 				FE50B200000000000000000D /* CarOfTheWeekHero.swift in Sources */,
 				FE50B200000000000000000E /* ExploreSkeletons.swift in Sources */,
 				FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */,
+				FE50B300000000000000000F /* CarTaxonomy.swift in Sources */,
+				FE50B300000000000000001F /* PopularModelsRow.swift in Sources */,
+				FE50B1000000000000000010 /* CarModsSection.swift in Sources */,
+				FE50B1000000000000000011 /* EditModSheet.swift in Sources */,
 				A10001 /* Marque.swift in Sources */,
 				A10066 /* AppDelegate.swift in Sources */,
 				A10002 /* Car.swift in Sources */,
@@ -618,6 +637,7 @@
 				A10067 /* ChangePasswordView.swift in Sources */,
 				F497CF263024459E001892AE /* AIServiceSuggestionService.swift in Sources */,
 				D5FA62F117724D022A23592D /* CarValue.swift in Sources */,
+				00E4C4A4AC3047AB5D23C524 /* CarMod.swift in Sources */,
 				79453226BB33D5D9700AC1E3 /* CarComment.swift in Sources */,
 				74DBAFE5AAA034DC4F1FC9FC /* CommentFilter.swift in Sources */,
 				D648EB831186D1CBC3DE3DF1 /* NotificationPreferences.swift in Sources */,

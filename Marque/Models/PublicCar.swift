@@ -23,6 +23,36 @@ struct PublicServiceRecord: Identifiable, Codable, Equatable {
     }
 }
 
+/// The public projection of `CarMod`: category, name and brand only — never
+/// `notes` (private-only per the model) or `installedAt` (a date the owner
+/// didn't ask to publish). Not `Identifiable` by a stored id (PublicCarMod
+/// carries none, matching the "3 fields only" projection); `id` below is a
+/// derived, non-persisted convenience for SwiftUI lists.
+struct PublicCarMod: Codable, Equatable, Identifiable {
+    let category: ModCategory
+    let name: String
+    let brand: String?
+
+    var id: String { "\(category.rawValue)|\(name)|\(brand ?? "")" }
+
+    private enum CodingKeys: String, CodingKey {
+        case category, name, brand
+    }
+
+    init(category: ModCategory, name: String, brand: String?) {
+        self.category = category
+        self.name = name
+        self.brand = brand
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        category = (try? c.decode(ModCategory.self, forKey: .category)) ?? .other
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        brand = try c.decodeIfPresent(String.self, forKey: .brand)
+    }
+}
+
 struct PublicCar: Identifiable, Codable {
     let carId: String
     let ownerUID: String
@@ -45,6 +75,9 @@ struct PublicCar: Identifiable, Codable {
     let photoStorageURL: String?
     let photoOffsetY: Double
     let serviceHistory: [PublicServiceRecord]
+    /// Category/name/brand only, capped at `maxMods`. Empty on docs written
+    /// before mods existed.
+    let mods: [PublicCarMod]
 
     /// Every uploaded photo's Storage URL, cover first. Empty on docs written
     /// before the gallery existed (use `galleryURLs`, which falls back).
@@ -74,7 +107,14 @@ struct PublicCar: Identifiable, Codable {
     /// URL, and the rules engine's evaluation budget caps it at 12).
     static let maxGalleryPhotos = 12
 
+    /// Most mods a public car carries. Mirrors Car.maxMods and the
+    /// `mods.size() <= 30` check in firestore.rules — change all three together.
+    static let maxMods = 30
+
     var id: String { carId }
+
+    /// A car with at least one mod — drives the Explore "Modified" filter.
+    var isModified: Bool { !mods.isEmpty }
     var displayName: String { [year, make, model].filter { !$0.isEmpty }.joined(separator: " ") }
     var primaryPhotoURL: URL? {
         guard let str = photoStorageURL, !str.isEmpty else { return nil }
@@ -108,6 +148,7 @@ struct PublicCar: Identifiable, Codable {
         case fuelType, transmission, notes
         case photoStorageURL, photoOffsetY, serviceHistory
         case photoURLs, valueRange, engineSoundURL
+        case mods
         case likeCount, weeklyLikeCount, commentCount
         case publishedAt = "updatedAt"
     }
@@ -133,6 +174,7 @@ struct PublicCar: Identifiable, Codable {
         photoStorageURL = try c.decodeIfPresent(String.self, forKey: .photoStorageURL)
         photoOffsetY = try c.decodeIfPresent(Double.self, forKey: .photoOffsetY) ?? 0
         serviceHistory = try c.decodeIfPresent([PublicServiceRecord].self, forKey: .serviceHistory) ?? []
+        mods = try c.decodeIfPresent([PublicCarMod].self, forKey: .mods) ?? []
         photoURLs = try c.decodeIfPresent([String].self, forKey: .photoURLs) ?? []
         valueRange = try c.decodeIfPresent(String.self, forKey: .valueRange)
         engineSoundURL = try c.decodeIfPresent(String.self, forKey: .engineSoundURL)
@@ -174,6 +216,7 @@ struct PublicCar: Identifiable, Codable {
         try c.encodeIfPresent(photoStorageURL, forKey: .photoStorageURL)
         try c.encode(photoOffsetY, forKey: .photoOffsetY)
         try c.encode(serviceHistory, forKey: .serviceHistory)
+        try c.encode(mods, forKey: .mods)
         try c.encode(photoURLs, forKey: .photoURLs)
         try c.encodeIfPresent(engineSoundURL, forKey: .engineSoundURL)
     }
@@ -206,6 +249,13 @@ extension PublicCar {
         // across syncs and CarStore can tell whether anything public changed.
         serviceHistory = car.maintenanceRecords.map {
             PublicServiceRecord(id: $0.id, serviceType: $0.serviceType, date: $0.date)
+        }
+        // Category/name/brand only — never notes or installedAt. Capped at
+        // maxMods, same reasoning as photoURLs below (car.mods is already
+        // capped at Car.maxMods == PublicCar.maxMods by CarStore.addMod, but
+        // this projection caps independently so it never depends on that).
+        mods = car.mods.prefix(PublicCar.maxMods).map {
+            PublicCarMod(category: $0.category, name: $0.name, brand: $0.brand)
         }
         // Capped: firestore.rules accepts at most 12 (its per-request
         // evaluation budget). A car with more photos publishes the first 12.

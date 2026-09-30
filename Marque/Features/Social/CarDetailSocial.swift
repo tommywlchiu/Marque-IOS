@@ -120,6 +120,62 @@ struct PublicCarHighlightsSection: View {
     }
 }
 
+// MARK: - Public mods
+
+/// Small "Modified" pill for a public car with at least one mod — shown near
+/// the title on the public car page (`PublicCar.isModified`).
+struct ModifiedPill: View {
+    var body: some View {
+        Label("Modified", systemImage: "wrench.and.screwdriver.fill")
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .background(Capsule().fill(Color.accentColor.opacity(0.14)))
+            .foregroundColor(.accentColor)
+            .accessibilityLabel("Modified")
+    }
+}
+
+/// Read-only "Mods" section for a public car: category/name/brand only —
+/// `PublicCarMod` never carries `notes` or `installedAt` (the owner didn't
+/// publish either), so there's nothing to hide here beyond what's already
+/// absent from the model. The caller (`CarDetailView`) hides this section
+/// entirely when `mods` is empty.
+struct PublicCarModsSection: View {
+    let mods: [PublicCarMod]
+
+    var body: some View {
+        Section(header: Text("Mods · \(mods.count)")) {
+            ForEach(mods) { mod in
+                PublicModRow(mod: mod)
+            }
+        }
+    }
+}
+
+private struct PublicModRow: View {
+    let mod: PublicCarMod
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: ModIcon.symbolName(for: mod.category))
+                .font(.body)
+                .foregroundColor(.accentColor)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(mod.name).foregroundColor(.primary)
+                if let brand = mod.brand, !brand.isEmpty {
+                    Text(brand).font(.caption).foregroundColor(.secondary)
+                }
+            }
+            Spacer(minLength: 8)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ModIcon.accessibilityLabel(for: mod.category, name: mod.name, brand: mod.brand))
+    }
+}
+
 /// "Est. value $30k–$35k". Only ever the rounded public range.
 struct PublicValueRangeRow: View {
     let range: String

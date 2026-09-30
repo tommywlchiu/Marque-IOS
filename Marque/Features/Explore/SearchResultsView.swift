@@ -21,13 +21,39 @@ struct SearchResultsView: View {
         blockStore.filter(exploreStore.cars, ownerUID: \.ownerUID)
     }
 
-    private var allResults: [PublicCar] {
-        blockStore.filter(exploreStore.results(matching: query), ownerUID: \.ownerUID)
-    }
-
+    /// Model-aware car search, ranked exact-model-match first, then
+    /// make match, then other text matches (`CarTaxonomy.matchTier`).
+    /// Intentionally bypasses `ExploreStore.results(matching:)` (plain
+    /// text `contains`) in favor of `CarTaxonomy`, which understands
+    /// punctuation-insensitive model text ("gtr"/"GT-R"/"gt r") and the
+    /// nickname alias table (R35, Vette, Lambo, ...). "Supercars" as a
+    /// literal search term returns the Supercars set instead of going
+    /// through ranking.
     private var filteredCars: [PublicCar] {
         guard !query.isEmpty else { return visibleCars }
-        return allResults
+
+        if CarTaxonomy.supercarsSearchTerms.contains(CarTaxonomy.squash(query)) {
+            return visibleCars.filter { CarTaxonomy.isSupercar(make: $0.make, model: $0.model, trim: $0.trim) }
+        }
+
+        if CarTaxonomy.modifiedSearchTerms.contains(CarTaxonomy.squash(query)) {
+            return visibleCars.filter { $0.isModified }
+        }
+
+        // `sorted` is stable (Swift 5+), so cars tied on tier keep
+        // `visibleCars`' existing order.
+        return visibleCars
+            .compactMap { car -> (car: PublicCar, tier: CarTaxonomy.SearchMatchTier)? in
+                guard let tier = CarTaxonomy.matchTier(
+                    query: query,
+                    make: car.make, model: car.model, trim: car.trim,
+                    year: car.year, ownerUsername: car.ownerUsername,
+                    mods: car.mods.map { (name: $0.name, brand: $0.brand) }
+                ) else { return nil }
+                return (car, tier)
+            }
+            .sorted { $0.tier < $1.tier }
+            .map(\.car)
     }
 
     private var filteredPeople: [PublicCar] {

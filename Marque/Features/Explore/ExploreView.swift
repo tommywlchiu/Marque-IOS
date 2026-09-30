@@ -20,6 +20,10 @@ struct ExploreView: View {
     /// "Following" default-category logic never runs again this session —
     /// see `applyDefaultCategoryOnce()`.
     @State private var defaultCategoryDecided = false
+    /// Temporary "popular now" model filter, set by tapping a
+    /// `PopularModelsRow` chip and cleared via `ActiveModelFilterChip`.
+    /// Applied on top of the category filter in `filteredCars`.
+    @State private var modelFilter: CarTaxonomy.PopularModelGroup?
 
     private struct ProfileTarget: Identifiable {
         let uid: String
@@ -51,19 +55,32 @@ struct ExploreView: View {
         heroCandidates.sorted { $0.weeklyLikeCount > $1.weeklyLikeCount }.first
     }
 
+    /// Cars currently loaded, block-filtered, grouped into ≥2-car "popular
+    /// now" models (see `PopularModelsRow`). Computed from `visibleCars`
+    /// directly — independent of `selectedCategory` — so the row reflects
+    /// the whole feed, not just the currently selected chip.
+    private var popularModelGroups: [CarTaxonomy.PopularModelGroup] {
+        CarTaxonomy.popularModelGroups(from: visibleCars)
+    }
+
     private var filteredCars: [PublicCar] {
+        let base: [PublicCar]
         if selectedCategory == .following {
-            return followStore.followingFeed(from: visibleCars)
+            base = followStore.followingFeed(from: visibleCars)
+        } else {
+            let categoryFiltered = selectedCategory.filter(visibleCars)
+            // The hero already features this car above the feed; always leave
+            // it out of the "All" list rather than only when sort/category
+            // are at their defaults, so it can never appear twice on screen
+            // regardless of how the user has the feed sorted.
+            if selectedCategory == .all, let heroCar {
+                base = categoryFiltered.filter { $0.carId != heroCar.carId }
+            } else {
+                base = categoryFiltered
+            }
         }
-        let base = selectedCategory.filter(visibleCars)
-        // The hero already features this car above the feed; always leave it
-        // out of the "All" list rather than only when sort/category are at
-        // their defaults, so it can never appear twice on screen regardless
-        // of how the user has the feed sorted.
-        if selectedCategory == .all, let heroCar {
-            return base.filter { $0.carId != heroCar.carId }
-        }
-        return base
+        guard let modelFilter else { return base }
+        return base.filter { CarTaxonomy.squash($0.make) + CarTaxonomy.squash($0.model) == modelFilter.id }
     }
 
     // ExploreStore.cars is already ordered newest-first (`updatedAt`
@@ -108,6 +125,15 @@ struct ExploreView: View {
                         VStack(spacing: 24) {
                             searchBar
                             categoryPicker
+                            if let modelFilter {
+                                ActiveModelFilterChip(group: modelFilter) {
+                                    withAnimation(.spring(duration: 0.25)) { self.modelFilter = nil }
+                                }
+                            } else {
+                                PopularModelsRow(groups: popularModelGroups) { group in
+                                    withAnimation(.spring(duration: 0.25)) { modelFilter = group }
+                                }
+                            }
                             if selectedCategory == .all, let heroCar {
                                 NavigationLink(destination: CarDetailView(publicCar: heroCar)
                                     .environmentObject(exploreStore)
@@ -271,10 +297,14 @@ struct ExploreView: View {
                 let following = selectedCategory == .following
                 MarqueEmptyState(
                     icon: following ? "person.2" : "car.fill",
-                    title: following ? "No Cars Yet" : "No \(selectedCategory.rawValue) Cars",
-                    subtitle: following
-                        ? "Follow people to see their public cars here."
-                        : "No public cars in this category yet."
+                    title: modelFilter != nil
+                        ? "No \(modelFilter!.model) Cars"
+                        : (following ? "No Cars Yet" : selectedCategory.emptyStateTitle),
+                    subtitle: modelFilter != nil
+                        ? "No public \(modelFilter!.model) in this category right now."
+                        : (following
+                            ? "Follow people to see their public cars here."
+                            : "No public cars in this category yet.")
                 )
                 .padding(.vertical, 20)
             } else {
@@ -339,29 +369,55 @@ enum ExploreSort: String {
 enum ExploreCategory: String, CaseIterable {
     case following = "Following"
     case all = "All"
+    // Ordered right after "All", before JDM, per the Explore redesign spec.
+    case supercars = "Supercars"
+    case modified = "Modified"
     case jdm = "JDM"
     case european = "European"
     case american = "American"
     case electric = "Electric"
     case classic = "Classic"
 
+    // All categorization logic (make lists, supercar rules, the classic
+    // year cutoff) lives in `CarTaxonomy` now, so this is just wiring.
+    // Categories are independent of each other on purpose — a Ferrari can
+    // be both Supercars and European; nothing here excludes Supercars from
+    // another category's results.
     func filter(_ cars: [PublicCar]) -> [PublicCar] {
         switch self {
         case .following: return cars // handled in ExploreView directly via followStore
         case .all: return cars
+        case .supercars:
+            return cars.filter { CarTaxonomy.isSupercar(make: $0.make, model: $0.model, trim: $0.trim) }
+        case .modified:
+            return cars.filter { $0.isModified }
         case .electric:
             return cars.filter { $0.fuelType.lowercased().contains("electric") }
         case .jdm:
-            let makes = ["toyota","honda","nissan","mazda","subaru","mitsubishi","lexus","acura","infiniti","suzuki","isuzu","daihatsu"]
-            return cars.filter { makes.contains($0.make.lowercased()) }
+            return cars.filter { CarTaxonomy.isJDM(make: $0.make) }
         case .european:
-            let makes = ["bmw","mercedes","audi","volkswagen","porsche","ferrari","lamborghini","maserati","fiat","alfa romeo","volvo","peugeot","renault","citroen","mini","bentley","rolls-royce","bugatti"]
-            return cars.filter { makes.contains($0.make.lowercased()) }
+            return cars.filter { CarTaxonomy.isEuropean(make: $0.make) }
         case .american:
-            let makes = ["ford","chevrolet","dodge","jeep","cadillac","gmc","lincoln","chrysler","ram","buick","tesla"]
-            return cars.filter { makes.contains($0.make.lowercased()) }
+            return cars.filter { CarTaxonomy.isAmerican(make: $0.make) }
         case .classic:
-            return cars.filter { (Int($0.year) ?? 2000) < 1990 }
+            return cars.filter { CarTaxonomy.isClassic(year: $0.year) }
+        }
+    }
+
+    /// The feed's empty-state title for this category (`following` isn't
+    /// used here -- `ExploreView` special-cases it to "No Cars Yet"). Reads
+    /// naturally per category rather than the old generic "No \(rawValue)
+    /// Cars", which produced "No Supercars Cars".
+    var emptyStateTitle: String {
+        switch self {
+        case .following, .all: return "No Cars Yet"
+        case .supercars: return "No Supercars Yet"
+        case .modified: return "No Modified Cars Yet"
+        case .jdm: return "No JDM Cars Yet"
+        case .european: return "No European Cars Yet"
+        case .american: return "No American Cars Yet"
+        case .electric: return "No Electric Cars Yet"
+        case .classic: return "No Classic Cars Yet"
         }
     }
 }

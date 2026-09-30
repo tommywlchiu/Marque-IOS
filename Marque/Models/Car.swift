@@ -54,6 +54,15 @@ struct Car: Identifiable, Codable, Equatable {
 
     var maintenanceRecords: [MaintenanceRecord]
     var serviceReminders: [ServiceReminder]
+    var mods: [CarMod]
+
+    /// The most modifications a car can carry. Enforced client-side by
+    /// `CarStore.addMod` (the private `users/{uid}/cars` doc has no deep
+    /// rules validation, same as maintenanceRecords/serviceReminders); the
+    /// number here MUST match the `mods.size() <= 30` check in
+    /// firestore.rules' publicCars validation, or a car at the cap could
+    /// fail to publish.
+    static let maxMods = 30
 
     init(
         id: UUID = UUID(),
@@ -88,7 +97,8 @@ struct Car: Identifiable, Codable, Equatable {
         engineSoundURL: String? = nil,
         engineSoundDuration: Double? = nil,
         maintenanceRecords: [MaintenanceRecord] = [],
-        serviceReminders: [ServiceReminder] = []
+        serviceReminders: [ServiceReminder] = [],
+        mods: [CarMod] = []
     ) {
         self.id = id
         self.make = make
@@ -123,6 +133,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.engineSoundDuration = engineSoundDuration
         self.maintenanceRecords = maintenanceRecords
         self.serviceReminders = serviceReminders
+        self.mods = mods
     }
 
     // Includes a legacy `photoFileName` key so previously-saved single-photo
@@ -141,6 +152,7 @@ struct Car: Identifiable, Codable, Equatable {
         case estimatedValue, valueSource, valueUpdatedAt, showValuePublicly
         case engineSoundFileName, engineSoundURL, engineSoundDuration
         case maintenanceRecords, serviceReminders
+        case mods
     }
 
     init(from decoder: Decoder) throws {
@@ -189,6 +201,7 @@ struct Car: Identifiable, Codable, Equatable {
         engineSoundDuration = try c.decodeIfPresent(Double.self, forKey: .engineSoundDuration)
         maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
+        mods = try c.decodeIfPresent([CarMod].self, forKey: .mods) ?? []
     }
 
     // Skip writing the legacy key — new data is written under photoFileNames.
@@ -227,6 +240,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encodeIfPresent(engineSoundDuration, forKey: .engineSoundDuration)
         try c.encode(maintenanceRecords, forKey: .maintenanceRecords)
         try c.encode(serviceReminders, forKey: .serviceReminders)
+        try c.encode(mods, forKey: .mods)
     }
 
     var primaryPhotoFileName: String? {
@@ -261,6 +275,12 @@ struct Car: Identifiable, Codable, Equatable {
 
     var hasMultiplePhotos: Bool {
         photoFileNames.count > 1
+    }
+
+    /// A car with at least one mod counts as "Modified" — drives the Explore
+    /// filter (PublicCar.isModified mirrors this).
+    var isModified: Bool {
+        !mods.isEmpty
     }
 
     var displayName: String {

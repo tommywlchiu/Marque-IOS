@@ -246,7 +246,7 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 
 ## Data Model Relationships
 
-- `Car` embeds `[MaintenanceRecord]` and `[ServiceReminder]` directly (not normalized).
+- `Car` embeds `[MaintenanceRecord]`, `[ServiceReminder]` and `[CarMod]` directly (not normalized). `CarMod.notes` is private; `PublicCarMod` carries only category/name/brand. `Car.maxMods`, `PublicCar.maxMods` and the rules' `validMods` (`size() <= 30`) must change together.
 - `Car.photoFileNames: [String]` — filenames managed by `ImageManager` locally under `Documents/CarPhotos/` and mirrored to Firebase Storage at `users/{userId}/cars/{carId}/{fileName}`. The first entry is the cover photo. Custom `Codable` handles migration from the legacy single-photo `photoFileName` key.
 - `PublicCar` is the read-only projection of `Car` exposed via the `publicCars` collection — VIN, license plate, insurance fields and per-record costs are stripped per FR-06.3; owner notes ARE public per FR-06.4.
 - `AppUser` includes fields backed by Firestore (`username`, `bio`, `location`) and fields backed by UserDefaults only (`driverLicenseNumber`, `driverLicenseState`, `driverLicenseExpiry`).
@@ -264,7 +264,7 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 
 ## Cloud Functions
 
-Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it. Twenty functions are exported; the constants block at the top (`BUNDLE_ID`, `APP_STORE_APP_ID`, `PRO_PRODUCT_IDS`, `APPLE_ROOT_CA`) is shared across the entitlement functions.
+Callable and trigger functions live in `functions/src/index.ts`. The file uses a **v1/v2 mix** — check which namespace a function uses before editing it. Twenty-one functions are exported; the constants block at the top (`BUNDLE_ID`, `APP_STORE_APP_ID`, `PRO_PRODUCT_IDS`, `APPLE_ROOT_CA`) is shared across the entitlement functions.
 
 **Assistant & AI**
 - **`askMarque`** (v2 callable) — Marque Assistant chat proxy to Anthropic (Sonnet 4.6) with server-side daily cap enforcement (10/day free, 500/day Pro), prompt caching on the garage context block and system prompt, and streaming responses. Model ID is a constant at the top of the file so it can be bumped in one place. Per FR-10.17 the context block must never include VIN, plate, insurance fields, driver license, per-record costs, notes, or photo names.
@@ -279,7 +279,7 @@ Callable and trigger functions live in `functions/src/index.ts`. The file uses a
 
 **Social & limits**
 - **`estimateCarValue`** (v2 callable) — AI value range (Haiku); same wrapper order as the parsers (auth → verified email → sanitize → clientDate → reserve `usage/valuations_{date}`, 10/day, refunded on throw). Never sees VIN/plate/notes. Public display is only `PublicCar.valueRange` (rounded; `CarValueRange.publicLabel`).
-- **`onCarLikeWritten` / `onCarCommentWritten`** — recompute counts transactionally, write like/comment notifications server-side (deterministic like ID; comment push throttled 1 per actor per car per 10 min via server-only `pushThrottle/`), and delete comments whose text or author name fails the word filter. **`onUserProfileWritten`** neutralizes filtered display names/bios.
+- **`onCarLikeWritten` / `onCarCommentWritten`** — recompute counts transactionally, write like/comment notifications server-side (deterministic like ID; comment push throttled 1 per actor per car per 10 min via server-only `pushThrottle/`), and delete comments whose text or author name fails the word filter. **`onPublicCarModsWritten`** strips public mods whose name/brand fails it (the rules only check `mods` is a list of ≤ 30; the client gate is `CarStore.addMod`/`updateMod`). **`onUserProfileWritten`** neutralizes filtered display names/bios.
 - **`onPublicCarCreated` / `onPublicCarDeleted`** — a car made private keeps its `likes/` and `comments/` hidden (rules deny reads while `publicCars/{id}` is absent) and restores counts on re-publish; a real delete sweeps them. **The ownership proof for every sweep is the `publicCarOwners/{carId}` claim**, never a query over `users/*/cars` (client-chosen IDs are spoofable).
 - **`onFollowerCreated`, `onDeviceTokenCreated`, `recomputeWeeklyLikes`** (hourly) — follow push, token de-dup across accounts, weekly Top Cars count. `sendPush` honors preferences and prunes dead tokens.
 - Use the modular `import { FieldValue, Timestamp } from "firebase-admin/firestore"` — `admin.firestore.FieldValue/Timestamp` are undefined in the Functions runtime (crashed triggers under the emulator).

@@ -444,6 +444,81 @@ class CarStore: ObservableObject {
         }
     }
 
+    // MARK: - Mods
+
+    enum ModError: LocalizedError, Equatable {
+        case nameRequired
+        case notAllowed
+        case limitReached
+        case notFound
+
+        var errorDescription: String? {
+            switch self {
+            case .nameRequired: return "Give this mod a name."
+            case .notAllowed: return "That name or brand contains language that isn't allowed."
+            case .limitReached: return "You can add up to \(Car.maxMods) mods per car."
+            case .notFound: return "That mod could not be found."
+            }
+        }
+    }
+
+    /// Appends `mod` to `car.mods`. `mod` is clamped first (`CarMod.clamped()`:
+    /// name/brand/notes trimmed and length-capped, empty brand/notes -> nil),
+    /// so callers never need to pre-trim. Throws `.nameRequired` if the
+    /// trimmed name is empty, `.notAllowed` if the (already-clamped) name or
+    /// brand fails the word filter — App Store guideline 1.2, since both are
+    /// public free text once the car and mod list are public (same
+    /// client-side gate as CommentStore.post; the server backstop is
+    /// `onPublicCarModsWritten`) — and `.limitReached` at `Car.maxMods` (30).
+    /// `notes` is never filtered: it's private-only, same as
+    /// MaintenanceRecord.notes.
+    func addMod(_ mod: CarMod, to car: Car) throws {
+        guard car.mods.count < Car.maxMods else { throw ModError.limitReached }
+        let clamped = mod.clamped()
+        guard !clamped.name.isEmpty else { throw ModError.nameRequired }
+        guard CommentFilter.isAllowed(clamped.name), clamped.brand.map(CommentFilter.isAllowed) ?? true else {
+            throw ModError.notAllowed
+        }
+        var updated = car
+        updated.mods.append(clamped)
+        updateCar(updated)
+    }
+
+    /// Replaces the mod matching `mod.id` in `car.mods` with a clamped copy of
+    /// `mod`. Same validation as `addMod`; throws `.notFound` if `car` no
+    /// longer has a mod with that id (e.g. deleted from another device).
+    func updateMod(_ mod: CarMod, in car: Car) throws {
+        guard car.mods.contains(where: { $0.id == mod.id }) else { throw ModError.notFound }
+        let clamped = mod.clamped()
+        guard !clamped.name.isEmpty else { throw ModError.nameRequired }
+        guard CommentFilter.isAllowed(clamped.name), clamped.brand.map(CommentFilter.isAllowed) ?? true else {
+            throw ModError.notAllowed
+        }
+        var updated = car
+        guard let idx = updated.mods.firstIndex(where: { $0.id == mod.id }) else { return }
+        updated.mods[idx] = clamped
+        updateCar(updated)
+    }
+
+    /// Removes the mod matching `mod.id`. A no-op (not an error) if it's
+    /// already gone, matching `deleteMaintenanceRecord`.
+    func deleteMod(_ mod: CarMod, from car: Car) {
+        var updated = car
+        updated.mods.removeAll { $0.id == mod.id }
+        updateCar(updated)
+    }
+
+    /// Reorders `car.mods` to `mods`. Cheap: no clamping or word-filter re-run
+    /// (nothing about the reordered content changed), just a permutation
+    /// check — `mods` must carry exactly the same set of ids as `car.mods` or
+    /// this silently no-ops rather than risk dropping or duplicating a mod.
+    func reorderMods(_ mods: [CarMod], in car: Car) {
+        guard mods.count == car.mods.count, Set(mods.map(\.id)) == Set(car.mods.map(\.id)) else { return }
+        var updated = car
+        updated.mods = mods
+        updateCar(updated)
+    }
+
     // MARK: - Maintenance <-> reminders integration
 
     struct ServiceLogOutcome: Equatable {

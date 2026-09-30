@@ -2445,6 +2445,21 @@ async function buildGarageContext(
         // Deliberately NO notes per record (FR-10.17)
       }));
 
+    // Category + name only (e.g. so the assistant can answer "what should I
+    // upgrade next?"). Deliberately NO brand, installedAt or notes — notes is
+    // FR-10.17-excluded everywhere else in this block, and brand/installedAt
+    // just aren't useful enough here to be worth widening the excluded-field
+    // surface. Defensively capped at Car.maxMods even though the private car
+    // doc itself has no server-side cap (only the publicCars copy does).
+    const mods = (Array.isArray(data.mods) ? data.mods : [])
+      .filter((m: unknown): m is Record<string, unknown> => typeof m === "object" && m !== null)
+      .slice(0, 30)
+      .map((m) => ({
+        category: typeof m.category === "string" ? m.category : "other",
+        name: typeof m.name === "string" ? m.name : "",
+      }))
+      .filter((m) => m.name !== "");
+
     return {
       carId: doc.id,
       make: data.make ?? "",
@@ -2465,6 +2480,7 @@ async function buildGarageContext(
       expenseYTDByCategory: Object.fromEntries(
         Object.entries(ytdByCategory).map(([k, v]) => [k, Math.round(v * 100) / 100])
       ),
+      mods,
     };
     // Deliberately excluded: vinNumber, licensePlate, insuranceProvider,
     // insurancePolicyNumber, notes, photoFileNames, photoStorageURLs.
@@ -4041,6 +4057,52 @@ export const onPublicCarCreated = onDocumentCreated(
     const ownerUID = event.data?.get("ownerUID");
     if (typeof ownerUID === "string" && ownerUID !== "") {
       await syncPublicValueRange(ownerUID, event.params.carId);
+    }
+  }
+);
+
+// ----------------------------------------------------------------------------
+// onPublicCarModsWritten — word filter on mod name/brand (guideline 1.2).
+// ----------------------------------------------------------------------------
+// firestore.rules validates publicCars.mods only shallowly (list, <= 30
+// entries — the 1,000-expression budget has no room for per-element checks,
+// see the rule comment), and CarStore.addMod/updateMod run the same word
+// filter client-side before ever writing. This is the server backstop for a
+// modified client that skips it, mirroring onUserProfileWritten: strip the
+// offending entries rather than reject the whole doc, since one bad mod name
+// shouldn't unpublish the entire car. Only category/name/brand are public
+// (PublicCarMod carries no notes/dates), so that's all that's checked here —
+// notes stays unfiltered on the car doc itself, same as Car.notes.
+// No loop: the stripped array passes the filter, so the re-fired event is a
+// no-op. update(), never set(), so a late run after the car (or account) is
+// deleted can't recreate the doc (NOT_FOUND is ignored).
+export const onPublicCarModsWritten = onDocumentWritten(
+  { document: "publicCars/{carId}", retry: true },
+  async (event) => {
+    const after = event.data?.after;
+    if (!after?.exists) return;
+    const mods = after.get("mods");
+    if (!Array.isArray(mods) || mods.length === 0) return;
+
+    let changed = false;
+    const cleaned = mods.filter((m: unknown) => {
+      if (typeof m !== "object" || m === null) return false;
+      const rec = m as Record<string, unknown>;
+      const name = typeof rec.name === "string" ? rec.name : "";
+      const brand = typeof rec.brand === "string" ? rec.brand : "";
+      const bad = containsBlockedTerm(name) || (brand !== "" && containsBlockedTerm(brand));
+      if (bad) changed = true;
+      return !bad;
+    });
+    if (!changed) return;
+
+    const { carId } = event.params;
+    try {
+      await after.ref.update({ mods: cleaned });
+      functions.logger.warn("public mod stripped by filter", { carId });
+    } catch (err) {
+      if ((err as { code?: unknown }).code === 5) return; // NOT_FOUND: car deleted meanwhile
+      throw err;
     }
   }
 );
