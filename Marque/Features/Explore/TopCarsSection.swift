@@ -7,7 +7,8 @@ import SwiftUI
 ///
 /// If This Week has no cars (after filtering) it falls back to All Time
 /// automatically, with a caption explaining why. If both are empty, the
-/// whole section renders as nothing.
+/// whole section renders as nothing, unless a load failed, in which case
+/// it shows a "Couldn't load" card with Retry.
 struct TopCarsSection: View {
     var onOwnerTap: (PublicCar) -> Void
     var onLiked: () -> Void
@@ -16,11 +17,8 @@ struct TopCarsSection: View {
     @EnvironmentObject private var blockStore: BlockStore
     @State private var selectedPeriod: TopCarsPeriod = .thisWeek
     @State private var hasLoadedOnce = false
-    /// Bumped on reappear to retry `loadTopCars` once more when both lists
-    /// are still empty after the first load — see the `.task(id:)` below.
-    /// `ExploreStore.loadTopCars` swallows its own errors (`try?`), so a
-    /// genuinely-empty result and a dropped request are indistinguishable
-    /// here; this is a best-effort retry, not a real error path.
+    /// Bumped to re-run the `.task(id:)` load below: by the Retry button,
+    /// and on reappear when a previous load failed.
     @State private var reloadToken = 0
 
     static let displayLimit = 10
@@ -45,11 +43,20 @@ struct TopCarsSection: View {
         selectedPeriod == .thisWeek && effectivePeriod == .allTime
     }
 
+    /// Nothing to show and at least one period's load failed: an error, not
+    /// a genuinely quiet ranking.
+    private var showsLoadError: Bool {
+        hasLoadedOnce && thisWeekRanked.isEmpty && allTimeRanked.isEmpty
+            && !exploreStore.topCarsFailedPeriods.isEmpty
+    }
+
     private var displayedCars: [PublicCar] { ranked(effectivePeriod) }
 
     var body: some View {
         Group {
-            if hasLoadedOnce && thisWeekRanked.isEmpty && allTimeRanked.isEmpty {
+            if showsLoadError {
+                loadErrorCard
+            } else if hasLoadedOnce && thisWeekRanked.isEmpty && allTimeRanked.isEmpty {
                 EmptyView()
             } else {
                 content
@@ -65,11 +72,8 @@ struct TopCarsSection: View {
             hasLoadedOnce = true
         }
         .onAppear {
-            // Retry once per reappearance if the first load came back with
-            // nothing at all (not just "no likes yet this week" — both
-            // periods empty). Guards against a dropped request rather than a
-            // genuinely quiet week; see `reloadToken`'s doc comment.
-            if hasLoadedOnce && thisWeekRanked.isEmpty && allTimeRanked.isEmpty {
+            // Quietly retry on reappearance if the last load failed.
+            if hasLoadedOnce && !exploreStore.topCarsFailedPeriods.isEmpty {
                 reloadToken += 1
             }
         }
@@ -83,13 +87,41 @@ struct TopCarsSection: View {
                 TopCarsSkeleton()
             } else {
                 if isAutoFallback {
-                    Text("No likes this week yet — showing all-time")
+                    Text(exploreStore.topCarsFailedPeriods.contains(.thisWeek)
+                         ? "Couldn't load this week — showing all-time"
+                         : "No likes this week yet — showing all-time")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
                 }
                 carousel
             }
+        }
+    }
+
+    private var loadErrorCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Top Cars")
+                .font(.headline).fontWeight(.semibold)
+                .padding(.horizontal, 16)
+            HStack(spacing: 12) {
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .accessibilityHidden(true)
+                Text("Couldn't load Top Cars.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Spacer(minLength: 0)
+                Button("Retry") {
+                    hasLoadedOnce = false
+                    reloadToken += 1
+                }
+                .font(.subheadline.weight(.semibold))
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+            .padding(.horizontal, 16)
         }
     }
 

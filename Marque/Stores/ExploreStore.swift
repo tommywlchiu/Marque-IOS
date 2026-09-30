@@ -54,8 +54,16 @@ class ExploreStore: ObservableObject {
     @Published private(set) var topCarsThisWeek: [PublicCar] = []
     @Published private(set) var topCarsAllTime: [PublicCar] = []
     @Published private(set) var isLoadingTopCars = false
+    /// Periods whose most recent `loadTopCars` failed (the previous list is
+    /// kept). Lets the UI tell a failed load from a genuinely empty ranking.
+    @Published private(set) var topCarsFailedPeriods: Set<TopCarsPeriod> = []
 
     static let topCarsLimit = 50
+
+    /// Set when the feed listener fails (Firestore then terminates it), so
+    /// the UI can show an error with Retry instead of loading forever.
+    /// Cleared by the next successful snapshot or refresh.
+    @Published private(set) var feedLoadFailed = false
 
     private var listener: ListenerRegistration?
     private let db = Firestore.firestore()
@@ -67,9 +75,20 @@ class ExploreStore: ObservableObject {
         listener = db.collection("publicCars")
             .order(by: "updatedAt", descending: true)
             .limit(to: 100)
-            .addSnapshotListener { [weak self] snapshot, _ in
-                guard let self, let snapshot else { return }
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self else { return }
+                guard let snapshot else {
+                    // A listener that errors is already terminated; drop it
+                    // so retryFeed() can start a fresh one.
+                    print("[ExploreStore] Feed listener failed: \(error?.localizedDescription ?? "unknown")")
+                    self.listener?.remove()
+                    self.listener = nil
+                    self.isLoading = false
+                    self.feedLoadFailed = true
+                    return
+                }
                 self.isLoading = false
+                self.feedLoadFailed = false
                 self.cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
                 Task { await self.patchMissingOwnerAvatars() }
             }
@@ -107,16 +126,27 @@ class ExploreStore: ObservableObject {
             .getDocuments(source: .server)
         else { return }
         cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
+        if feedLoadFailed { retryFeed() }
         await patchMissingOwnerAvatars()
+    }
+
+    /// Restarts the feed after `feedLoadFailed`.
+    func retryFeed() {
+        listener?.remove()
+        listener = nil
+        feedLoadFailed = false
+        startListening()
     }
 
     func stopListening() {
         listener?.remove()
         listener = nil
+        feedLoadFailed = false
         cars = []
         profileCache = [:]
         topCarsThisWeek = []
         topCarsAllTime = []
+        topCarsFailedPeriods = []
     }
 
     // MARK: - Top Cars
@@ -132,16 +162,24 @@ class ExploreStore: ObservableObject {
     /// slowly, and a live listener on 50 docs would re-bill on every like).
     /// Call on appear and on pull-to-refresh. Single-field range + order on
     /// the same field: served by Firestore's automatic index, no composite
-    /// index needed. On failure the previous list is kept.
+    /// index needed. On failure the previous list is kept and `period` is
+    /// added to `topCarsFailedPeriods`.
     func loadTopCars(_ period: TopCarsPeriod) async {
         isLoadingTopCars = true
         defer { isLoadingTopCars = false }
-        guard let snapshot = try? await db.collection("publicCars")
-            .whereField(period.countField, isGreaterThan: 0)
-            .order(by: period.countField, descending: true)
-            .limit(to: Self.topCarsLimit)
-            .getDocuments()
-        else { return }
+        let snapshot: QuerySnapshot
+        do {
+            snapshot = try await db.collection("publicCars")
+                .whereField(period.countField, isGreaterThan: 0)
+                .order(by: period.countField, descending: true)
+                .limit(to: Self.topCarsLimit)
+                .getDocuments()
+        } catch {
+            print("[ExploreStore] Top Cars (\(period.rawValue)) failed: \(error.localizedDescription)")
+            topCarsFailedPeriods.insert(period)
+            return
+        }
+        topCarsFailedPeriods.remove(period)
         let cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
         switch period {
         case .thisWeek: topCarsThisWeek = cars

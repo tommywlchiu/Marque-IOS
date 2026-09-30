@@ -380,6 +380,156 @@ enum CarTaxonomy {
             .prefix(limit)
             .map { $0 }
     }
+
+    // MARK: - Body style (Filters sheet)
+
+    /// Fixed body-style buckets for `ExploreFiltersSheet`, matched by
+    /// case-insensitive containment against the raw `bodyStyle` text
+    /// (VIN-decoded via NHTSA, so it often carries synonyms/parentheticals
+    /// like "Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)" or
+    /// "Hatchback/Liftback/Notchback" rather than one clean word).
+    enum BodyStyleCategory: String, CaseIterable, Identifiable, Hashable {
+        case coupe = "Coupe"
+        case sedan = "Sedan"
+        case hatchback = "Hatchback"
+        case suv = "SUV"
+        case truck = "Truck"
+        case convertible = "Convertible"
+        case wagon = "Wagon"
+        case van = "Van"
+
+        var id: String { rawValue }
+
+        func matches(_ bodyStyle: String) -> Bool {
+            let s = bodyStyle.lowercased()
+            guard !s.isEmpty else { return false }
+            switch self {
+            case .coupe: return s.contains("coupe")
+            case .sedan: return s.contains("sedan") || s.contains("saloon")
+            case .hatchback: return s.contains("hatchback") || s.contains("liftback") || s.contains("notchback")
+            case .suv: return s.contains("suv") || s.contains("sport utility") || s.contains("crossover")
+            case .truck: return s.contains("pickup") || s.contains("truck")
+            case .convertible:
+                return s.contains("convertible") || s.contains("cabriolet") || s.contains("roadster") || s.contains("spyder") || s.contains("spider")
+            case .wagon: return s.contains("wagon")
+            case .van: return s.contains("van")
+            }
+        }
+    }
+
+    // MARK: - Era (Filters sheet)
+
+    /// Four fixed year buckets. `.classic` reuses `isClassic`'s own cutoff
+    /// (<1990) rather than duplicating the `1990` literal, so the two never
+    /// drift apart if the cutoff ever moves.
+    enum EraCategory: String, CaseIterable, Identifiable, Hashable {
+        case classic = "Classic"
+        case nineties = "90s"
+        case twoThousands = "2000s"
+        case modern = "Modern"
+
+        var id: String { rawValue }
+
+        func matches(year: String) -> Bool {
+            switch self {
+            case .classic: return CarTaxonomy.isClassic(year: year)
+            case .nineties: return (1990...1999).contains(Int(year) ?? 0)
+            case .twoThousands: return (2000...2009).contains(Int(year) ?? 0)
+            case .modern: return (Int(year) ?? 0) >= 2010
+            }
+        }
+    }
+
+    // MARK: - Powertrain (Filters sheet)
+
+    /// Fixed powertrain buckets, matched by case-insensitive containment
+    /// against `fuelType`.
+    enum PowertrainCategory: String, CaseIterable, Identifiable, Hashable {
+        case electric = "Electric"
+        case hybrid = "Hybrid"
+        case gas = "Gas"
+        case diesel = "Diesel"
+
+        var id: String { rawValue }
+
+        func matches(_ fuelType: String) -> Bool {
+            CarTaxonomy.powertrainCategory(fuelType: fuelType) == self
+        }
+    }
+
+    /// Single-category classifier backing `PowertrainCategory.matches` --
+    /// centralized (rather than one independent `contains` check per case)
+    /// so the priority order can't drift between cases: "hybrid" is checked
+    /// before "electric" so a "Plug-in Hybrid Electric Vehicle" fuelType
+    /// (which contains both words) buckets as Hybrid, not Electric, per the
+    /// task spec.
+    static func powertrainCategory(fuelType: String) -> PowertrainCategory? {
+        let s = fuelType.lowercased()
+        guard !s.isEmpty else { return nil }
+        if s.contains("hybrid") { return .hybrid }
+        if s.contains("electric") { return .electric }
+        if s.contains("diesel") { return .diesel }
+        if s.contains("gas") || s.contains("petrol") || s.contains("gasoline") { return .gas }
+        return nil
+    }
+
+    // MARK: - Make grouping (Filters sheet)
+
+    /// Squashed spelling variants that must canonicalize to the same make
+    /// for the Filters sheet's Make section -- `squash` alone only removes
+    /// spacing/punctuation/casing ("BMW" vs "bmw"), it doesn't merge pairs
+    /// that differ in their letters too ("chevy" vs "chevrolet").
+    static let makeSquashAliases: [String: String] = [
+        "chevy": "chevrolet",
+        "vw": "volkswagen",
+    ]
+
+    /// Canonical grouping key for a make -- `squash` plus `makeSquashAliases`.
+    static func makeGroupKey(_ make: String) -> String {
+        let s = squash(make)
+        return makeSquashAliases[s] ?? s
+    }
+
+    struct MakeGroup: Identifiable, Equatable {
+        /// Canonical grouping key (`makeGroupKey`) -- the filter value.
+        let id: String
+        /// The most common original-cased spelling within this group (ties
+        /// broken by longer text, e.g. preferring "Chevrolet" over "chevy"),
+        /// so the chip label reads naturally even when the feed mixes
+        /// casings/spellings for the same make.
+        let displayName: String
+        let count: Int
+    }
+
+    /// Groups `cars` by `makeGroupKey`, sorted by count descending (ties
+    /// keep input order -- same stability note as `popularModelGroups`).
+    /// Unlike `popularModelGroups` this has no `minCount`/`limit`: the
+    /// Filters sheet shows every make that appears at all, capping the
+    /// *displayed* list itself (top ~12 + "Show all").
+    static func makeGroups(from cars: [PublicCar]) -> [MakeGroup] {
+        var order: [String] = []
+        var counts: [String: Int] = [:]
+        var nameCounts: [String: [String: Int]] = [:]
+
+        for car in cars {
+            let make = car.make.trimmingCharacters(in: .whitespaces)
+            guard !make.isEmpty else { continue }
+            let key = makeGroupKey(make)
+            guard !key.isEmpty else { continue }
+            if counts[key] == nil { order.append(key) }
+            counts[key, default: 0] += 1
+            nameCounts[key, default: [:]][make, default: 0] += 1
+        }
+
+        return order.compactMap { key -> MakeGroup? in
+            guard let count = counts[key], let names = nameCounts[key] else { return nil }
+            let displayName = names.max { a, b in
+                a.value != b.value ? a.value < b.value : a.key.count < b.key.count
+            }?.key ?? key
+            return MakeGroup(id: key, displayName: displayName, count: count)
+        }
+        .sorted { $0.count > $1.count }
+    }
 }
 
 // MARK: - Self-check
@@ -461,6 +611,42 @@ extension CarTaxonomy {
         ]
         let groups = popularModelGroups(from: cars, minCount: 2)
         assert(groups.count == 1 && groups.first?.count == 2 && groups.first?.model == "GT-R")
+
+        // Filters sheet: body style (NHTSA-shaped strings).
+        assert(BodyStyleCategory.suv.matches("Sport Utility Vehicle (SUV)/Multi-Purpose Vehicle (MPV)"))
+        assert(BodyStyleCategory.hatchback.matches("Hatchback/Liftback/Notchback"))
+        assert(BodyStyleCategory.truck.matches("Pickup"))
+        assert(BodyStyleCategory.sedan.matches("Sedan/Saloon"))
+        assert(!BodyStyleCategory.coupe.matches("Sedan/Saloon"))
+        assert(!BodyStyleCategory.van.matches(""))
+
+        // Filters sheet: era buckets, `.classic` sharing `isClassic`'s cutoff.
+        assert(EraCategory.classic.matches(year: "1985"))
+        assert(!EraCategory.nineties.matches(year: "1989"))
+        assert(EraCategory.nineties.matches(year: "1995"))
+        assert(EraCategory.twoThousands.matches(year: "2005"))
+        assert(EraCategory.modern.matches(year: "2024"))
+        assert(!EraCategory.modern.matches(year: "2009"))
+
+        // Filters sheet: powertrain -- "hybrid" beats "electric" on a
+        // Plug-in Hybrid string that contains both words.
+        assert(powertrainCategory(fuelType: "Plug-in Hybrid Electric Vehicle") == .hybrid)
+        assert(powertrainCategory(fuelType: "Battery Electric Vehicle (BEV)") == .electric)
+        assert(powertrainCategory(fuelType: "Diesel") == .diesel)
+        assert(powertrainCategory(fuelType: "Gasoline") == .gas)
+        assert(powertrainCategory(fuelType: "") == nil)
+
+        // Filters sheet: make grouping merges spellings that squash differently.
+        assert(makeGroupKey("chevy") == makeGroupKey("Chevrolet"))
+        assert(makeGroupKey("BMW") == makeGroupKey("bmw"))
+        let makeCars = [
+            PublicCar.previewStub(make: "Chevrolet", model: "Camaro"),
+            PublicCar.previewStub(make: "chevy", model: "Corvette"),
+            PublicCar.previewStub(make: "BMW", model: "M3"),
+        ]
+        let makeGroupsResult = makeGroups(from: makeCars)
+        let chevyGroup = makeGroupsResult.first { $0.id == makeGroupKey("Chevrolet") }
+        assert(chevyGroup?.count == 2 && chevyGroup?.displayName == "Chevrolet")
     }
 }
 

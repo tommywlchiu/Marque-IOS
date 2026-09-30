@@ -117,6 +117,7 @@
 		FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C100000000000000000C /* PushPreferencesSection.swift */; };
 		FE50B300000000000000000F /* CarTaxonomy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D200000000000000000F /* CarTaxonomy.swift */; };
 		FE50B300000000000000001F /* PopularModelsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D200000000000000001F /* PopularModelsRow.swift */; };
+		FE50B3000000000000000020 /* ExploreFiltersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D2000000000000000020 /* ExploreFiltersSheet.swift */; };
 		FE50B1000000000000000010 /* CarModsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000010 /* CarModsSection.swift */; };
 		FE50B1000000000000000011 /* EditModSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000011 /* EditModSheet.swift */; };
 /* End PBXBuildFile section */
@@ -224,6 +225,7 @@
 		FE50C100000000000000000C /* PushPreferencesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPreferencesSection.swift; sourceTree = "<group>"; };
 		FE50D200000000000000000F /* CarTaxonomy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarTaxonomy.swift; sourceTree = "<group>"; };
 		FE50D200000000000000001F /* PopularModelsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopularModelsRow.swift; sourceTree = "<group>"; };
+		FE50D2000000000000000020 /* ExploreFiltersSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreFiltersSheet.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000010 /* CarModsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarModsSection.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000011 /* EditModSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditModSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -425,6 +427,7 @@
 				A20028 /* SearchResultsView.swift */,
 				FE50D200000000000000000F /* CarTaxonomy.swift */,
 				FE50D200000000000000001F /* PopularModelsRow.swift */,
+				FE50D2000000000000000020 /* ExploreFiltersSheet.swift */,
 			);
 			path = Explore;
 			sourceTree = "<group>";
@@ -621,6 +624,7 @@
 				FE50B100000000000000000C /* PushPreferencesSection.swift in Sources */,
 				FE50B300000000000000000F /* CarTaxonomy.swift in Sources */,
 				FE50B300000000000000001F /* PopularModelsRow.swift in Sources */,
+				FE50B3000000000000000020 /* ExploreFiltersSheet.swift in Sources */,
 				FE50B1000000000000000010 /* CarModsSection.swift in Sources */,
 				FE50B1000000000000000011 /* EditModSheet.swift in Sources */,
 				A10001 /* Marque.swift in Sources */,

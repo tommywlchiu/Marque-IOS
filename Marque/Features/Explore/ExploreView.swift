@@ -24,6 +24,11 @@ struct ExploreView: View {
     /// `PopularModelsRow` chip and cleared via `ActiveModelFilterChip`.
     /// Applied on top of the category filter in `filteredCars`.
     @State private var modelFilter: CarTaxonomy.PopularModelGroup?
+    /// Combinable Filters sheet state (Make/Body Style/Era/Powertrain +
+    /// toggles) -- see `ExploreFiltersSheet`. Session-only, applied on top
+    /// of the category chip and `modelFilter` in `filteredCars`.
+    @State private var filters = ExploreFilters()
+    @State private var showingFiltersSheet = false
 
     private struct ProfileTarget: Identifiable {
         let uid: String
@@ -63,24 +68,31 @@ struct ExploreView: View {
         CarTaxonomy.popularModelGroups(from: visibleCars)
     }
 
-    private var filteredCars: [PublicCar] {
+    /// Category chip + "popular now" model chip applied, but NOT the
+    /// Filters sheet -- this is what `ExploreFiltersSheet` computes its
+    /// Make options and live "Show N cars" count against, so both reflect
+    /// exactly what the sheet would add on top of the current chip.
+    private var categoryFilteredCars: [PublicCar] {
         let base: [PublicCar]
         if selectedCategory == .following {
             base = followStore.followingFeed(from: visibleCars)
         } else {
-            let categoryFiltered = selectedCategory.filter(visibleCars)
-            // The hero already features this car above the feed; always leave
-            // it out of the "All" list rather than only when sort/category
-            // are at their defaults, so it can never appear twice on screen
-            // regardless of how the user has the feed sorted.
-            if selectedCategory == .all, let heroCar {
-                base = categoryFiltered.filter { $0.carId != heroCar.carId }
-            } else {
-                base = categoryFiltered
-            }
+            base = selectedCategory.filter(visibleCars)
         }
         guard let modelFilter else { return base }
         return base.filter { CarTaxonomy.squash($0.make) + CarTaxonomy.squash($0.model) == modelFilter.id }
+    }
+
+    private var filteredCars: [PublicCar] {
+        // The hero already features this car above the feed; leave it out
+        // of the "All" list whenever the hero is actually shown (see
+        // `heroCar` gating in `body`), so it can never appear twice on
+        // screen. Done here, not in `categoryFilteredCars`, so the Filters
+        // sheet's makes and count still include the featured car.
+        if selectedCategory == .all, filters.isEmpty, let heroCar {
+            return categoryFilteredCars.filter { $0.carId != heroCar.carId }
+        }
+        return filters.apply(categoryFilteredCars)
     }
 
     // ExploreStore.cars is already ordered newest-first (`updatedAt`
@@ -114,6 +126,19 @@ struct ExploreView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 24)
                     }
+                } else if exploreStore.feedLoadFailed && exploreStore.cars.isEmpty {
+                    // A load failure with nothing cached -- the skeleton
+                    // above would otherwise spin forever, since isLoading
+                    // is false and cars stays empty. A failure with stale
+                    // cars already loaded instead falls through to the feed
+                    // below unchanged; no banner, per the coordinator note.
+                    MarqueEmptyState(
+                        icon: "wifi.exclamationmark",
+                        title: "Couldn't Load Explore",
+                        subtitle: "Check your connection and try again.",
+                        actionTitle: "Try Again",
+                        action: { exploreStore.retryFeed() }
+                    )
                 } else if exploreStore.cars.isEmpty {
                     MarqueEmptyState(
                         icon: "globe",
@@ -134,7 +159,11 @@ struct ExploreView: View {
                                     withAnimation(.spring(duration: 0.25)) { modelFilter = group }
                                 }
                             }
-                            if selectedCategory == .all, let heroCar {
+                            // Both the hero and Top Cars are global (unfiltered)
+                            // rankings, so an active Filters sheet selection
+                            // hides them -- they'd otherwise contradict the
+                            // "N cars" count directly below.
+                            if selectedCategory == .all, filters.isEmpty, let heroCar {
                                 NavigationLink(destination: CarDetailView(publicCar: heroCar)
                                     .environmentObject(exploreStore)
                                     .environmentObject(blockStore)) {
@@ -143,7 +172,7 @@ struct ExploreView: View {
                                 .buttonStyle(.plain)
                                 .padding(.horizontal, 16)
                             }
-                            if selectedCategory == .all && !visibleCars.isEmpty {
+                            if selectedCategory == .all && filters.isEmpty && !visibleCars.isEmpty {
                                 TopCarsSection(
                                     onOwnerTap: { car in
                                         profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
@@ -186,6 +215,9 @@ struct ExploreView: View {
                 NavigationStack {
                     PublicProfileView(ownerUID: target.uid, ownerUsername: target.username)
                 }
+            }
+            .sheet(isPresented: $showingFiltersSheet) {
+                ExploreFiltersSheet(cars: categoryFilteredCars, filters: $filters)
             }
             // Not offered on Explore: the Garage tab's button folds away here
             // as the user switches tabs (see AskMarqueDock).
@@ -237,20 +269,56 @@ struct ExploreView: View {
 
     // MARK: - Search Bar
 
+    // Filters button sits trailing of the search bar rather than inside the
+    // scrolling chip row: the chip row already scrolls (and fades at the
+    // trailing edge), so a filter icon dropped into it would either scroll
+    // out of reach or need to be pinned separately from the chips it looks
+    // like it belongs with. Anchored next to search, it's always visible
+    // and reads as "refine what you're browsing", distinct from the chips'
+    // "switch category".
     private var searchBar: some View {
-        NavigationLink(destination: SearchResultsView().environmentObject(exploreStore)) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").foregroundColor(.secondary)
-                Text("Search cars, makes, or people…").foregroundColor(.secondary)
-                Spacer()
+        HStack(spacing: 10) {
+            NavigationLink(destination: SearchResultsView().environmentObject(exploreStore)) {
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass").foregroundColor(.secondary)
+                    Text("Search cars or people").foregroundColor(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 42)
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .padding(.horizontal, 14)
-            .frame(height: 42)
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal, 16)
+            .buttonStyle(.plain)
+
+            filtersButton
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+    }
+
+    private var filtersButton: some View {
+        Button {
+            showingFiltersSheet = true
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: filters.isEmpty ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(filters.isEmpty ? .secondary : .accentColor)
+                    .frame(width: 42, height: 42)
+                    .background(Color(.systemGray6))
+                    .clipShape(Circle())
+                if filters.activeCount > 0 {
+                    Text("\(filters.activeCount)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(minWidth: 16, minHeight: 16)
+                        .background(Color.accentColor)
+                        .clipShape(Circle())
+                        .offset(x: 4, y: -4)
+                }
+            }
+        }
+        .accessibilityLabel("Filters, \(filters.activeCount) active")
     }
 
     // MARK: - Category Picker
@@ -294,19 +362,34 @@ struct ExploreView: View {
             feedHeader
 
             if filteredCars.isEmpty {
-                let following = selectedCategory == .following
-                MarqueEmptyState(
-                    icon: following ? "person.2" : "car.fill",
-                    title: modelFilter != nil
-                        ? "No \(modelFilter!.model) Cars"
-                        : (following ? "No Cars Yet" : selectedCategory.emptyStateTitle),
-                    subtitle: modelFilter != nil
-                        ? "No public \(modelFilter!.model) in this category right now."
-                        : (following
-                            ? "Follow people to see their public cars here."
-                            : "No public cars in this category yet.")
-                )
-                .padding(.vertical, 20)
+                if !filters.isEmpty {
+                    // Filters-specific empty state takes priority over the
+                    // category/model-chip ones below: the category or model
+                    // chip may well have matches, it's the added Filters
+                    // sheet selection narrowing it to zero.
+                    MarqueEmptyState(
+                        icon: "line.3.horizontal.decrease.circle",
+                        title: "No Cars Match These Filters",
+                        subtitle: "Try adjusting or clearing your filters.",
+                        actionTitle: "Clear Filters",
+                        action: { withAnimation(.spring(duration: 0.25)) { filters = ExploreFilters() } }
+                    )
+                    .padding(.vertical, 20)
+                } else {
+                    let following = selectedCategory == .following
+                    MarqueEmptyState(
+                        icon: following ? "person.2" : "car.fill",
+                        title: modelFilter != nil
+                            ? "No \(modelFilter!.model) Cars"
+                            : (following ? "No Cars Yet" : selectedCategory.emptyStateTitle),
+                        subtitle: modelFilter != nil
+                            ? "No public \(modelFilter!.model) in this category right now."
+                            : (following
+                                ? "Follow people to see their public cars here."
+                                : "No public cars in this category yet.")
+                    )
+                    .padding(.vertical, 20)
+                }
             } else {
                 LazyVStack(spacing: 28) {
                     ForEach(sortedFilteredCars) { car in
@@ -327,9 +410,23 @@ struct ExploreView: View {
 
     private var feedHeader: some View {
         HStack {
-            Text(selectedCategory == .all ? "All Cars" : selectedCategory.rawValue)
+            // With filters active, the header reads as a result count +
+            // "Clear Filters" (per the task spec) instead of the category
+            // name -- the category name is still implied by the selected
+            // chip above. Sort stays available either way; filtering and
+            // sorting aren't mutually exclusive.
+            Text(filters.isEmpty
+                ? (selectedCategory == .all ? "All Cars" : selectedCategory.rawValue)
+                : "\(filteredCars.count) Car\(filteredCars.count == 1 ? "" : "s")")
                 .font(.headline).fontWeight(.semibold)
             Spacer(minLength: 0)
+            if !filters.isEmpty {
+                Button("Clear Filters") {
+                    withAnimation(.spring(duration: 0.25)) { filters = ExploreFilters() }
+                }
+                .font(.subheadline)
+                .padding(.trailing, 4)
+            }
             Menu {
                 Picker("Sort", selection: $sortRaw) {
                     Text(ExploreSort.newest.label).tag(ExploreSort.newest.rawValue)
@@ -375,14 +472,17 @@ enum ExploreCategory: String, CaseIterable {
     case jdm = "JDM"
     case european = "European"
     case american = "American"
-    case electric = "Electric"
-    case classic = "Classic"
+    // Electric and Classic were chips here; both moved into the
+    // combinable Filters sheet (Powertrain / Era) instead, so the row
+    // doesn't grow unbounded as more facets are added. Their matching
+    // logic (`CarTaxonomy.isClassic`, `CarTaxonomy.powertrainCategory`) is
+    // unchanged and still lives in `CarTaxonomy` -- see `ExploreFilters`.
 
-    // All categorization logic (make lists, supercar rules, the classic
-    // year cutoff) lives in `CarTaxonomy` now, so this is just wiring.
-    // Categories are independent of each other on purpose — a Ferrari can
-    // be both Supercars and European; nothing here excludes Supercars from
-    // another category's results.
+    // All categorization logic (make lists, supercar rules) lives in
+    // `CarTaxonomy` now, so this is just wiring. Categories are independent
+    // of each other on purpose — a Ferrari can be both Supercars and
+    // European; nothing here excludes Supercars from another category's
+    // results.
     func filter(_ cars: [PublicCar]) -> [PublicCar] {
         switch self {
         case .following: return cars // handled in ExploreView directly via followStore
@@ -391,16 +491,12 @@ enum ExploreCategory: String, CaseIterable {
             return cars.filter { CarTaxonomy.isSupercar(make: $0.make, model: $0.model, trim: $0.trim) }
         case .modified:
             return cars.filter { $0.isModified }
-        case .electric:
-            return cars.filter { $0.fuelType.lowercased().contains("electric") }
         case .jdm:
             return cars.filter { CarTaxonomy.isJDM(make: $0.make) }
         case .european:
             return cars.filter { CarTaxonomy.isEuropean(make: $0.make) }
         case .american:
             return cars.filter { CarTaxonomy.isAmerican(make: $0.make) }
-        case .classic:
-            return cars.filter { CarTaxonomy.isClassic(year: $0.year) }
         }
     }
 
@@ -416,8 +512,6 @@ enum ExploreCategory: String, CaseIterable {
         case .jdm: return "No JDM Cars Yet"
         case .european: return "No European Cars Yet"
         case .american: return "No American Cars Yet"
-        case .electric: return "No Electric Cars Yet"
-        case .classic: return "No Classic Cars Yet"
         }
     }
 }
