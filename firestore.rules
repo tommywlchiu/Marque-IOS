@@ -11,7 +11,10 @@ service cloud.firestore {
     // pointing at 127.0.0.1 can only ever reach the viewer's own machine, so
     // allowing it in production is harmless.
     function storageObjectPrefix() {
-      return '(https://firebasestorage[.]googleapis[.]com|http://127[.]0[.]0[.]1:9199)/v0/b/marque-173c3[.]firebasestorage[.]app/o/users%2F';
+      // `(:443)?`: the iOS SDK's downloadURL() includes the default port
+      // (https://firebasestorage.googleapis.com:443/...), which is what the
+      // app stores; without it every real avatar/photo URL was denied.
+      return '(https://firebasestorage[.]googleapis[.]com(:443)?|http://127[.]0[.]0[.]1:9199)/v0/b/marque-173c3[.]firebasestorage[.]app/o/users%2F';
     }
     // A photo or sound file of `carId`, in `uid`'s own Storage folder.
     function carMediaPattern(uid, carId) {
