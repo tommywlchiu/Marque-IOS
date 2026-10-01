@@ -226,7 +226,16 @@ extension PublicCar {
     /// The public projection of `car` (FR-06.3: no VIN, plate, insurance,
     /// registration, costs, exact value or per-record notes). Server counts
     /// start at 0 here; they are never written from the client.
+    ///
+    /// THE PRIVACY-CRITICAL PART: also honors `car.publicSharing`. A group
+    /// that's off produces an EMPTY value for every field it owns ("" for
+    /// strings, [] for arrays, nil for the optionals), never the real data.
+    /// Year/make/model/owner identity are never gated — always shared (owner
+    /// decision). This is the only place that must apply these toggles: every
+    /// `publicCars` write goes through `PublicCar(from:)` (see CarStore's
+    /// "Public copy" section), so gating here is sufficient everywhere.
     init(from car: Car, ownerUID: String, ownerUsername: String, ownerAvatarURL: String?) {
+        let sharing = car.publicSharing
         carId = car.id.uuidString
         self.ownerUID = ownerUID
         self.ownerUsername = ownerUsername
@@ -234,37 +243,109 @@ extension PublicCar {
         make = car.make
         model = car.model
         year = car.year
-        color = car.color
-        mileage = car.mileage
-        trim = car.trim
-        bodyStyle = car.bodyStyle
-        driveType = car.driveType
-        engine = car.engine
-        fuelType = car.fuelType
-        transmission = car.transmission
-        notes = car.notes
-        photoStorageURL = car.primaryPhotoStorageURL?.absoluteString ?? ""
-        photoOffsetY = car.photoOffsetY
+        // "specs" group: trim/engine/bodyStyle/driveType/transmission/fuelType/color.
+        color = sharing.specs ? car.color : ""
+        trim = sharing.specs ? car.trim : ""
+        bodyStyle = sharing.specs ? car.bodyStyle : ""
+        driveType = sharing.specs ? car.driveType : ""
+        engine = sharing.specs ? car.engine : ""
+        fuelType = sharing.specs ? car.fuelType : ""
+        transmission = sharing.specs ? car.transmission : ""
+        mileage = sharing.mileage ? car.mileage : ""
+        notes = sharing.notes ? car.notes : ""
+        if sharing.photos {
+            photoStorageURL = car.primaryPhotoStorageURL?.absoluteString ?? ""
+            photoOffsetY = car.photoOffsetY
+            // Capped: firestore.rules accepts at most 12 (its per-request
+            // evaluation budget). A car with more photos publishes the first 12.
+            photoURLs = Array(car.uploadedPhotoURLStrings.prefix(PublicCar.maxGalleryPhotos))
+        } else {
+            // nil (not ""), so CarStore.publicPayload's clearablePublicKeys
+            // mechanism deletes the field from an existing doc entirely.
+            photoStorageURL = nil
+            photoOffsetY = 0
+            photoURLs = []
+        }
         // The record's own id (not a fresh UUID) so the projection is stable
         // across syncs and CarStore can tell whether anything public changed.
-        serviceHistory = car.maintenanceRecords.map {
-            PublicServiceRecord(id: $0.id, serviceType: $0.serviceType, date: $0.date)
-        }
+        serviceHistory = sharing.serviceHistory
+            ? car.maintenanceRecords.map { PublicServiceRecord(id: $0.id, serviceType: $0.serviceType, date: $0.date) }
+            : []
         // Category/name/brand only — never notes or installedAt. Capped at
-        // maxMods, same reasoning as photoURLs below (car.mods is already
+        // maxMods, same reasoning as photoURLs above (car.mods is already
         // capped at Car.maxMods == PublicCar.maxMods by CarStore.addMod, but
         // this projection caps independently so it never depends on that).
-        mods = car.mods.prefix(PublicCar.maxMods).map {
-            PublicCarMod(category: $0.category, name: $0.name, brand: $0.brand)
-        }
-        // Capped: firestore.rules accepts at most 12 (its per-request
-        // evaluation budget). A car with more photos publishes the first 12.
-        photoURLs = Array(car.uploadedPhotoURLStrings.prefix(PublicCar.maxGalleryPhotos))
+        mods = sharing.mods
+            ? car.mods.prefix(PublicCar.maxMods).map { PublicCarMod(category: $0.category, name: $0.name, brand: $0.brand) }
+            : []
         valueRange = nil  // server-owned; see the property
-        engineSoundURL = (car.engineSoundURL?.isEmpty == false) ? car.engineSoundURL : nil
+        engineSoundURL = (sharing.engineSound && car.engineSoundURL?.isEmpty == false) ? car.engineSoundURL : nil
         likeCount = 0
         weeklyLikeCount = 0
         commentCount = 0
         publishedAt = nil
     }
 }
+
+// MARK: - Self-check
+
+#if DEBUG
+extension PublicCar {
+    /// No XCTest target exists in this project (see CLAUDE.md); this is the
+    /// documented substitute. Call manually from a debug entry point if
+    /// needed -- nothing in the app invokes this automatically.
+    static func _selfCheck() {
+        var sample = Car()
+        sample.make = "Toyota"
+        sample.model = "Supra"
+        sample.year = "2022"
+        sample.color = "Red"
+        sample.trim = "A91"
+        sample.mileage = "12000"
+        sample.notes = "Track-only on weekends"
+        sample.photoFileNames = ["a.jpg"]
+        sample.photoStorageURLs = ["https://example.com/a.jpg"]
+        sample.photoOffsetY = 0.3
+        sample.maintenanceRecords = [MaintenanceRecord(serviceType: "Oil Change", date: Date())]
+        sample.mods = [CarMod(category: .wheels, name: "Forged 19s", brand: "BBS")]
+        sample.engineSoundURL = "https://example.com/sound.m4a"
+        sample.isPublic = true
+
+        // privacyFirst: photos/specs/mods kept, mileage/notes/serviceHistory/
+        // engineSoundURL emptied.
+        sample.publicSharing = .privacyFirst
+        let privacyProjection = PublicCar(from: sample, ownerUID: "u", ownerUsername: "u", ownerAvatarURL: nil)
+        assert(privacyProjection.mileage.isEmpty)
+        assert(privacyProjection.notes.isEmpty)
+        assert(privacyProjection.serviceHistory.isEmpty)
+        assert(privacyProjection.engineSoundURL == nil)
+        assert(!privacyProjection.color.isEmpty && !privacyProjection.trim.isEmpty)
+        assert(!privacyProjection.photoURLs.isEmpty && privacyProjection.photoStorageURL?.isEmpty == false)
+        assert(!privacyProjection.mods.isEmpty)
+
+        // legacyAllOn: everything kept.
+        sample.publicSharing = .legacyAllOn
+        let legacyProjection = PublicCar(from: sample, ownerUID: "u", ownerUsername: "u", ownerAvatarURL: nil)
+        assert(!legacyProjection.mileage.isEmpty)
+        assert(!legacyProjection.notes.isEmpty)
+        assert(!legacyProjection.serviceHistory.isEmpty)
+        assert(legacyProjection.engineSoundURL != nil)
+        assert(!legacyProjection.color.isEmpty && !legacyProjection.trim.isEmpty)
+        assert(!legacyProjection.photoURLs.isEmpty && !legacyProjection.mods.isEmpty)
+
+        // Decoding a car JSON without `publicSharing`: legacyAllOn when
+        // isPublic=true, privacyFirst when isPublic=false.
+        func decodedCar(isPublic: Bool) -> Car {
+            let encoder = JSONEncoder()
+            var data = try! encoder.encode(sample)
+            var obj = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+            obj.removeValue(forKey: "publicSharing")
+            obj["isPublic"] = isPublic
+            data = try! JSONSerialization.data(withJSONObject: obj)
+            return try! JSONDecoder().decode(Car.self, from: data)
+        }
+        assert(decodedCar(isPublic: true).publicSharing == .legacyAllOn)
+        assert(decodedCar(isPublic: false).publicSharing == .privacyFirst)
+    }
+}
+#endif

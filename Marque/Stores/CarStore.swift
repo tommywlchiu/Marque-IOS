@@ -302,7 +302,7 @@ class CarStore: ObservableObject {
 
     /// Optional public fields that must be deleted, not just omitted, when nil.
     /// (valueRange is not here: it's server-owned and never written by the client.)
-    private static let clearablePublicKeys = ["engineSoundURL"]
+    private static let clearablePublicKeys = ["engineSoundURL", "photoStorageURL"]
 
     private func publicProjectionChanged(from old: Car, to new: Car) -> Bool {
         let encoder = Firestore.Encoder()
@@ -960,9 +960,32 @@ class CarStore: ObservableObject {
 
     // MARK: - Visibility
 
-    func setVisibility(_ isPublic: Bool, for car: Car, ownerUsername: String, ownerAvatarURL: String? = nil) {
+    /// Flips `car.isPublic`. `sharing`/`showValuePublicly`, when provided,
+    /// are applied in the SAME private-car write as `isPublic` (so the very
+    /// first publish already respects them, instead of publishing with
+    /// whatever defaults the car happened to carry and re-syncing a moment
+    /// later). `sharing.hasReviewed` is forced true, since passing it here
+    /// only happens from the owner's "Make Public"/"Save" confirmation.
+    /// Only meaningful while going public; ignored when going private.
+    func setVisibility(
+        _ isPublic: Bool,
+        for car: Car,
+        ownerUsername: String,
+        ownerAvatarURL: String? = nil,
+        sharing: PublicSharingSettings? = nil,
+        showValuePublicly: Bool? = nil
+    ) {
         var updated = car
         updated.isPublic = isPublic
+        if isPublic {
+            if var sharing {
+                sharing.hasReviewed = true
+                updated.publicSharing = sharing
+            }
+            if let showValuePublicly {
+                updated.showValuePublicly = showValuePublicly
+            }
+        }
         updateCar(updated)
         if isPublic {
             syncPublicCar(updated, ownerUID: currentUserId ?? "", ownerUsername: ownerUsername, ownerAvatarURL: ownerAvatarURL)
@@ -979,6 +1002,21 @@ class CarStore: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Saves new sharing-group toggles (and the value-range toggle) for
+    /// `car`, marking them reviewed. If the car is public, `updateCar`'s own
+    /// diffing (`publicProjectionChanged`) detects the settings change and
+    /// re-syncs `publicCars` immediately — so a group switched OFF is
+    /// actually removed from the live doc, not just withheld from future
+    /// writes. For the FIRST publish, use `setVisibility`'s `sharing`
+    /// parameter instead, so the initial write already reflects it.
+    func updatePublicSharing(_ sharing: PublicSharingSettings, showValuePublicly: Bool, for car: Car) {
+        var updated = car
+        updated.publicSharing = sharing
+        updated.publicSharing.hasReviewed = true
+        updated.showValuePublicly = showValuePublicly
+        updateCar(updated)
     }
 
     // MARK: - publicCars ID registry (publicCarOwners/{carId})

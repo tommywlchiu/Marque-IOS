@@ -254,7 +254,8 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 
 - `Car` embeds `[MaintenanceRecord]`, `[ServiceReminder]` and `[CarMod]` directly (not normalized). `CarMod.notes` is private; `PublicCarMod` carries only category/name/brand. `Car.maxMods`, `PublicCar.maxMods` and the rules' `validMods` (`size() <= 30`) must change together.
 - `Car.photoFileNames: [String]` — filenames managed by `ImageManager` locally under `Documents/CarPhotos/` and mirrored to Firebase Storage at `users/{userId}/cars/{carId}/{fileName}`. The first entry is the cover photo. Custom `Codable` handles migration from the legacy single-photo `photoFileName` key.
-- `PublicCar` is the read-only projection of `Car` exposed via the `publicCars` collection — VIN, license plate, insurance fields and per-record costs are stripped per FR-06.3; owner notes ARE public per FR-06.4.
+- `PublicCar` is the read-only projection of `Car` exposed via the `publicCars` collection — VIN, license plate, insurance fields and per-record costs are stripped per FR-06.3; owner notes CAN be public per FR-06.4, gated like everything else below by `Car.publicSharing`. **Every write to `publicCars` must go through `PublicCar(from:)`** (directly or via `CarStore.publicPayload`) — it's the one place that enforces the sharing toggles, so a second hand-rolled projection would bypass them.
+- `Car.publicSharing: PublicSharingSettings` (`Models/PublicSharingSettings.swift`) — per-car Explore sharing toggles: `photos`, `specs` (trim/engine/bodyStyle/driveType/transmission/fuelType/color), `mileage`, `notes`, `serviceHistory`, `mods`, `engineSound`. Year/make/model, owner identity (@username + avatar) and likes/comments are always shared and have no toggle. Estimated value stays on the pre-existing `Car.showValuePublicly`, not duplicated here. A car made public for the first time defaults to `.privacyFirst` (photos/specs/mods on; mileage/notes/serviceHistory/engineSound off); a car that predates this feature and is already public decodes to `.legacyAllOn` (everything on, `hasReviewed` false) so Explore shows no change until the owner reviews and saves — `CarStore.setVisibility`'s `sharing`/`showValuePublicly` params (first publish) and `CarStore.updatePublicSharing` (editing an already-public car) both set `hasReviewed = true`. New `Car`s default to `.privacyFirst`.
 - `AppUser` includes fields backed by Firestore (`username`, `bio`, `location`) and fields backed by UserDefaults only (`driverLicenseNumber`, `driverLicenseState`, `driverLicenseExpiry`).
 
 ## Service Layer
@@ -332,7 +333,8 @@ Reusable components used across views: `MarquePrimaryButton`, `MarqueEmptyState`
 ```
 Marque/
   Models/          — Car, AppUser, AppNotification, ServiceReminder, MaintenanceRecord,
-                     CarData, PublicCar, ChatMessage, Conversation, AIServiceSuggestion, AppLinks
+                     CarData, PublicCar, PublicSharingSettings, ChatMessage, Conversation, AIServiceSuggestion, AppLinks
+                     (also CarMod, CarComment, CommentFilter, CarValue, NotificationPreferences — list above is stale/incomplete, not re-audited here)
   Stores/          — CarStore, AuthService, ChatStore, ExploreStore, FollowStore, LikeStore, CommentStore, PushStore, CarValueService,
                      BlockStore, NotificationStore, SubscriptionStore,
                      ImageManager, NotificationManager, VINDecodeService, ServiceReminderEngine,

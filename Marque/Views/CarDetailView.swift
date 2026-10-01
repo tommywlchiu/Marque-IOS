@@ -42,6 +42,8 @@ struct CarDetailView: View {
     @State private var commentsRequest: CommentsSheetRequest?
     @State private var showingPushPrePrompt = false
     @State private var showingMakePrivateConfirmation = false
+    @State private var showingSharingSheet = false
+    @State private var sharingSheetMode: PublicSharingSheetMode = .goingPublic
     @State private var commentActionError: String?
     @State private var blockTarget: UserRef?
     @State private var commentProfileTarget: UserRef?
@@ -205,7 +207,9 @@ struct CarDetailView: View {
                 CarValueSection(car: car)
                 EngineSoundOwnerSection(car: car)
             } else {
-                publicVehicleDetailsSection
+                if hasPublicVehicleDetailsData {
+                    publicVehicleDetailsSection
+                }
                 if let pc = publicCar, !pc.mods.isEmpty {
                     PublicCarModsSection(mods: pc.mods)
                 }
@@ -293,6 +297,17 @@ struct CarDetailView: View {
                     ownCar = updatedCar
                     carStore.updateCar(updatedCar)
                 })
+            }
+        }
+        .sheet(isPresented: $showingSharingSheet) {
+            if let car = liveCar {
+                PublicSharingSheet(car: car, mode: sharingSheetMode) { sharing, showValuePublicly in
+                    if sharingSheetMode == .goingPublic {
+                        applyVisibility(true, sharing: sharing, showValuePublicly: showValuePublicly)
+                    } else {
+                        carStore.updatePublicSharing(sharing, showValuePublicly: showValuePublicly, for: car)
+                    }
+                }
             }
         }
         .modifier(MaintenanceLogPresenters(
@@ -639,8 +654,13 @@ struct CarDetailView: View {
                 get: { liveCar?.isPublic ?? false },
                 set: { isPublic in
                     // Going private hides likes and comments; confirm first.
+                    // Going public opens the sharing review sheet instead of
+                    // publishing immediately; this binding's `get` still reads
+                    // `liveCar?.isPublic` (unchanged here), so the switch
+                    // snaps back to off on its own if the sheet is cancelled.
                     if isPublic {
-                        applyVisibility(true)
+                        sharingSheetMode = .goingPublic
+                        showingSharingSheet = true
                     } else {
                         showingMakePrivateConfirmation = true
                     }
@@ -667,15 +687,89 @@ struct CarDetailView: View {
                     commentCount: displayedCommentCount,
                     onOpenComments: { openComments(focusComposer: false) }
                 )
+                if let car = liveCar, !car.publicSharing.hasReviewed {
+                    reviewPromptBanner
+                }
+                publicSharingRow
             }
         }
     }
 
-    private func applyVisibility(_ isPublic: Bool) {
+    /// One-time, non-blocking prompt for a public car that predates this
+    /// feature (`isPublic && !publicSharing.hasReviewed` — see
+    /// `PublicSharingSettings.legacyAllOn`). Reviewing (Save in the sheet)
+    /// sets `hasReviewed` via `updatePublicSharing`.
+    private var reviewPromptBanner: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "eye.trianglebadge.exclamationmark")
+                .foregroundColor(.accentColor)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Choose what's shared")
+                    .font(.subheadline.weight(.semibold))
+                Text("You can now hide mileage, notes and more from your public car page.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Review") {
+                    sharingSheetMode = .editing
+                    showingSharingSheet = true
+                }
+                .font(.caption.weight(.semibold))
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Opens the sharing sheet in `.editing` mode. Summary mirrors the
+    /// currently saved `publicSharing`/`showValuePublicly` (not any draft).
+    private var publicSharingRow: some View {
+        Button {
+            sharingSheetMode = .editing
+            showingSharingSheet = true
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "slider.horizontal.3")
+                    .foregroundColor(.accentColor)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Public sharing").foregroundColor(.primary)
+                    Text(sharingSummaryText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.secondary.opacity(0.4))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Public sharing, \(sharingSummaryText)")
+        .accessibilityHint("Double-tap to choose what's shared")
+    }
+
+    private var sharingSummaryText: String {
+        guard let car = liveCar else { return "" }
+        var on: [String] = []
+        if car.publicSharing.photos { on.append("photos") }
+        if car.publicSharing.specs { on.append("specs") }
+        if car.publicSharing.mileage { on.append("mileage") }
+        if car.publicSharing.notes { on.append("notes") }
+        if car.publicSharing.serviceHistory { on.append("service history") }
+        if car.publicSharing.mods { on.append("mods") }
+        if car.publicSharing.engineSound { on.append("engine sound") }
+        if car.showValuePublicly { on.append("value") }
+        guard !on.isEmpty else { return "Nothing extra shared" }
+        return "Sharing: " + on.joined(separator: ", ")
+    }
+
+    private func applyVisibility(_ isPublic: Bool, sharing: PublicSharingSettings? = nil, showValuePublicly: Bool? = nil) {
         guard let car = liveCar, car.isPublic != isPublic else { return }
         let username = authService.currentUser?.username ?? ""
         let avatarURL = authService.currentUser?.avatarURL
-        carStore.setVisibility(isPublic, for: car, ownerUsername: username, ownerAvatarURL: avatarURL)
+        carStore.setVisibility(isPublic, for: car, ownerUsername: username, ownerAvatarURL: avatarURL, sharing: sharing, showValuePublicly: showValuePublicly)
         AnalyticsService.carVisibilityChanged(isPublic: isPublic)
         if isPublic { offerPushPrePrompt() }
     }
@@ -795,6 +889,13 @@ struct CarDetailView: View {
     }
 
     // MARK: - Vehicle Details (public — includes trim/body/drive/engine)
+
+    /// Hides the whole section rather than show an empty "Vehicle Details"
+    /// header when the owner has switched off both specs and mileage.
+    private var hasPublicVehicleDetailsData: Bool {
+        !color.isEmpty || !mileage.isEmpty || !trim.isEmpty || !bodyStyle.isEmpty ||
+            !driveType.isEmpty || !engine.isEmpty || !fuelType.isEmpty || !transmission.isEmpty
+    }
 
     private var publicVehicleDetailsSection: some View {
         Section(header: Text("Vehicle Details")) {

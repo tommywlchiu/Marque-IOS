@@ -153,6 +153,20 @@ await check("owner writes a non-string valueRange", false, () => setDoc(doc(as("
 await check("VALUE owner clears a server-set valueRange", false, () => updateDoc(doc(as("owner1"), "publicCars/car1"), { valueRange: deleteField() }));
 await check("owner writes photoURLs + engineSoundURL", true, () => setDoc(doc(as("owner1"), "publicCars/car1"), { photoURLs: [carURL("owner1", "car1"), carURL("owner1", "car1", "C3D4.jpg")], engineSoundURL: carURL("owner1", "car1", "sound.m4a"), photoStorageURL: carURL("owner1", "car1") }, { merge: true }));
 await check("owner writes photoURLs as a string", false, () => setDoc(doc(as("owner1"), "publicCars/car1"), { photoURLs: "https://a" }, { merge: true }));
+
+// ---- publicCars: per-car sharing-settings toggles blank/remove fields ----
+// Mirrors what CarStore.updatePublicSharing's re-sync writes when the owner
+// turns a sharing group off: PublicCar(from:) emits "" / [] for those fields
+// (mileage/notes/serviceHistory/mods), and nil (deleted, not just omitted)
+// for the optional photoStorageURL/engineSoundURL. All of this must remain
+// ALLOWED for the owner -- an allowlisted field blanked by its own owner is
+// not the same as a stranger or a forged field.
+await check("owner blanks mileage/notes/serviceHistory/mods (sharing toggle off)", true, () =>
+  setDoc(doc(as("owner1"), "publicCars/car1"), { mileage: "", notes: "", serviceHistory: [], mods: [] }, { merge: true }));
+await check("owner deletes engineSoundURL + photoStorageURL (sharing toggle off)", true, () =>
+  updateDoc(doc(as("owner1"), "publicCars/car1"), { engineSoundURL: deleteField(), photoStorageURL: deleteField() }));
+await check("owner re-adds photoStorageURL after deleting it (sharing toggle back on)", true, () =>
+  setDoc(doc(as("owner1"), "publicCars/car1"), { photoStorageURL: carURL("owner1", "car1") }, { merge: true }));
 const claim = (uid) => ({ uid, createdAt: serverTimestamp() });
 const publishBatch = (db, uid, carId, data) => { const b = writeBatch(db); b.set(doc(db, `publicCarOwners/${carId}`), claim(uid)); b.set(doc(db, `publicCars/${carId}`), data, { merge: true }); return b.commit(); };
 await check("owner creates a full public car (claim + doc batch)", true, () => publishBatch(as("owner1"), "owner1", "car4", pubCar("owner1", { photoURLs: [carURL("owner1", "car4")], engineSoundURL: carURL("owner1", "car4", "sound.m4a") })));

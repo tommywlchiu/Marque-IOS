@@ -35,6 +35,13 @@ struct Car: Identifiable, Codable, Equatable {
     var notes: String
     var isPublic: Bool
 
+    // Per-car Explore sharing toggles (photos/specs/mileage/notes/
+    // serviceHistory/mods/engineSound). Estimated value stays on
+    // `showValuePublicly` below, not here. `PublicCar(from:)` is the only
+    // place that must honor this — see its doc comment and CarStore's
+    // "Public copy" section.
+    var publicSharing: PublicSharingSettings
+
     // Estimated market value (USD). Private: only `CarValueRange.publicLabel`
     // of it ever reaches publicCars, and only when `showValuePublicly` is on.
     var estimatedValue: Double?
@@ -89,6 +96,7 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate: Date? = nil,
         notes: String = "",
         isPublic: Bool = false,
+        publicSharing: PublicSharingSettings = .privacyFirst,
         estimatedValue: Double? = nil,
         valueSource: CarValueSource? = nil,
         valueUpdatedAt: Date? = nil,
@@ -124,6 +132,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.registrationExpiryDate = registrationExpiryDate
         self.notes = notes
         self.isPublic = isPublic
+        self.publicSharing = publicSharing
         self.estimatedValue = estimatedValue
         self.valueSource = valueSource
         self.valueUpdatedAt = valueUpdatedAt
@@ -149,6 +158,7 @@ struct Car: Identifiable, Codable, Equatable {
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
         case notes, isPublic
+        case publicSharing
         case estimatedValue, valueSource, valueUpdatedAt, showValuePublicly
         case engineSoundFileName, engineSoundURL, engineSoundDuration
         case maintenanceRecords, serviceReminders
@@ -189,6 +199,16 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
         notes = try c.decode(String.self, forKey: .notes)
         isPublic = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
+        // Missing key (every car saved before this feature existed): an
+        // already-public car keeps sharing everything it always has (no
+        // visible change in Explore) until the owner reviews; an already-
+        // private car gets the new privacy-first defaults the first time
+        // it's made public, since it never had a reviewed public footprint.
+        if let decoded = try? c.decodeIfPresent(PublicSharingSettings.self, forKey: .publicSharing) {
+            publicSharing = decoded
+        } else {
+            publicSharing = isPublic ? .legacyAllOn : .privacyFirst
+        }
         // All optional/defaulted: every car saved before these fields existed
         // has none of them. `try?` on the enum so an unknown future source
         // string degrades to nil instead of failing the whole car's decode.
@@ -231,6 +251,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encodeIfPresent(registrationExpiryDate, forKey: .registrationExpiryDate)
         try c.encode(notes, forKey: .notes)
         try c.encode(isPublic, forKey: .isPublic)
+        try c.encode(publicSharing, forKey: .publicSharing)
         try c.encodeIfPresent(estimatedValue, forKey: .estimatedValue)
         try c.encodeIfPresent(valueSource, forKey: .valueSource)
         try c.encodeIfPresent(valueUpdatedAt, forKey: .valueUpdatedAt)
