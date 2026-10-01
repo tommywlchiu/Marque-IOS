@@ -238,6 +238,8 @@ function resolveProStatus(
     case NotificationTypeV2.SUBSCRIBED:
     case NotificationTypeV2.DID_RENEW:
     case NotificationTypeV2.OFFER_REDEEMED:
+    // Apple reversed a refund: the user has paid again, so restore access.
+    case NotificationTypeV2.REFUND_REVERSED:
       return true;
 
     case NotificationTypeV2.DID_CHANGE_RENEWAL_STATUS:
@@ -251,6 +253,9 @@ function resolveProStatus(
     case NotificationTypeV2.EXPIRED:
     case NotificationTypeV2.REVOKE:
     case NotificationTypeV2.REFUND:
+    // The billing grace period ended unpaid. Without this, a user kept Pro
+    // through Apple's up-to-60-day billing retry until the final EXPIRED.
+    case NotificationTypeV2.GRACE_PERIOD_EXPIRED:
       return false;
 
     default:
