@@ -120,6 +120,8 @@
 		FE50B300000000000000001F /* PopularModelsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D200000000000000001F /* PopularModelsRow.swift */; };
 		FE50B3000000000000000020 /* ExploreFiltersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D2000000000000000020 /* ExploreFiltersSheet.swift */; };
 		FE50B1000000000000000010 /* CarModsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000010 /* CarModsSection.swift */; };
+		FE50F2000000000000000001 /* CarShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50F1000000000000000001 /* CarShareCard.swift */; };
+		FE50F2000000000000000002 /* ShareCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50F1000000000000000002 /* ShareCardSheet.swift */; };
 		FE50B1000000000000000011 /* EditModSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000011 /* EditModSheet.swift */; };
 		FE50E2000000000000000001 /* ExpenseReportPeriod.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000001 /* ExpenseReportPeriod.swift */; };
 		FE50E2000000000000000002 /* ExpenseReportCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000002 /* ExpenseReportCSV.swift */; };
@@ -220,6 +222,8 @@
 		FE50C1000000000000000003 /* EngineSoundPlayback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundPlayback.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000004 /* CarCommentsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarCommentsViews.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000005 /* CarDetailSocial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarDetailSocial.swift; sourceTree = "<group>"; };
+		FE50F1000000000000000001 /* CarShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarShareCard.swift; sourceTree = "<group>"; };
+		FE50F1000000000000000002 /* ShareCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardSheet.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000006 /* FollowPushRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowPushRouter.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000007 /* EngineSoundRecorderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundRecorderSheet.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000008 /* EngineSoundOwnerSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundOwnerSection.swift; sourceTree = "<group>"; };
@@ -499,6 +503,8 @@
 				FE50C1000000000000000004 /* CarCommentsViews.swift */,
 				FE50C1000000000000000005 /* CarDetailSocial.swift */,
 				FE50C1000000000000000006 /* FollowPushRouter.swift */,
+				FE50F1000000000000000001 /* CarShareCard.swift */,
+				FE50F1000000000000000002 /* ShareCardSheet.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -645,6 +651,8 @@
 				FE50B3000000000000000020 /* ExploreFiltersSheet.swift in Sources */,
 				FE50B1000000000000000010 /* CarModsSection.swift in Sources */,
 				FE50B1000000000000000011 /* EditModSheet.swift in Sources */,
+				FE50F2000000000000000001 /* CarShareCard.swift in Sources */,
+				FE50F2000000000000000002 /* ShareCardSheet.swift in Sources */,
 				FE50E2000000000000000001 /* ExpenseReportPeriod.swift in Sources */,
 				FE50E2000000000000000002 /* ExpenseReportCSV.swift in Sources */,
 				FE50E2000000000000000003 /* ExpenseReportPDF.swift in Sources */,

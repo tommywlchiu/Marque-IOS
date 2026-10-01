@@ -47,6 +47,7 @@ struct CarDetailView: View {
     @State private var commentProfileTarget: UserRef?
     /// Opens the comments sheet once on appear (a comment push/notification).
     @State private var openCommentsOnAppear: Bool
+    @State private var showingShareCard = false
 
     init(car: Car, openComments: Bool = false) {
         self._ownCar = State(initialValue: car)
@@ -139,6 +140,29 @@ struct CarDetailView: View {
             carName: displayName,
             focusComposer: focusComposer
         )
+    }
+
+    // MARK: - Share card
+
+    /// The FR-06.3 public projection `ShareCardSheet`/`CarShareCard` are built
+    /// from — structurally the same privacy boundary as everything else that
+    /// reaches Explore. For the owner's own public car, prefers the live
+    /// `publicCars` copy (real server valueRange/likeCount) over a freshly
+    /// built one; for a private own car there's no published doc yet, so
+    /// `PublicCar(from:)` is built directly (its valueRange is nil, which is
+    /// correct — nothing has been computed server-side for it).
+    private var shareCardProjection: PublicCar? {
+        if let car = liveCar {
+            if let pc = ownPublicCar { return pc }
+            guard let uid = authService.currentUser?.id else { return nil }
+            return PublicCar(
+                from: car,
+                ownerUID: uid,
+                ownerUsername: authService.currentUser?.username ?? "",
+                ownerAvatarURL: authService.currentUser?.avatarURL
+            )
+        }
+        return livePublicCar ?? publicCar
     }
 
     private func offerPushPrePrompt() {
@@ -244,6 +268,23 @@ struct CarDetailView: View {
                     }
                     .accessibilityLabel("More")
                 }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingShareCard = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .accessibilityLabel("Share car")
+            }
+        }
+        .sheet(isPresented: $showingShareCard) {
+            if let projection = shareCardProjection {
+                ShareCardSheet(
+                    car: projection,
+                    localCoverPhotoFileName: isOwnCar ? liveCar?.primaryPhotoFileName : nil,
+                    isOwnCar: isOwnCar
+                )
             }
         }
         .sheet(isPresented: $showingEditDetails) {
