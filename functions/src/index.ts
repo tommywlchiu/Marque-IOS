@@ -350,7 +350,13 @@ export const getAppAccountToken = onCall(async (request: CallableRequest) => {
 //   https://us-central1-marque-173c3.cloudfunctions.net/appStoreNotifications
 // ---------------------------------------------------------------------------
 
+// invoker "public" is required, not optional: Apple's servers call this URL
+// with no Google credentials. Without an explicit setting the deployed Cloud
+// Run service ended up private and answered every notification with 403
+// before this code ran (found 2026-09-30). Authenticity is enforced below by
+// SignedDataVerifier, not by IAM.
 export const appStoreNotifications = functions.https.onRequest(
+  { invoker: "public" },
   async (req, res) => {
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
