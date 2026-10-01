@@ -1305,6 +1305,31 @@ private struct LocalProfile: Codable {
     }
 }
 
+extension AuthService {
+    private static let deviceOnlyExportDateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = .current
+        return df
+    }()
+
+    /// FR-15.7 / FR-09.4 — the driver-license fields kept in UserDefaults only
+    /// (`marque_profile_{uid}`, `LocalProfile`), never sent to Firestore or any
+    /// Cloud Function. `exportAccountData` has no way to see these, so
+    /// `AccountExportService` reads them straight off disk via this accessor
+    /// and merges them into the export's `deviceOnly` section locally.
+    static func deviceOnlyExportFields(uid: String) -> [String: Any] {
+        let profile = LocalProfile.load(uid: uid)
+        return [
+            "driverLicenseNumber": profile.driverLicenseNumber,
+            "driverLicenseState": profile.driverLicenseState,
+            "driverLicenseExpiryDate": profile.driverLicenseExpiryDate
+                .map { deviceOnlyExportDateFormatter.string(from: $0) } ?? "",
+        ]
+    }
+}
+
 enum ProfileSetupError: LocalizedError {
     case usernameTaken
     case invalidUsername

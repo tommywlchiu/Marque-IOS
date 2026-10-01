@@ -57,6 +57,7 @@ struct SettingsView: View {
             accountSection
             subscriptionSection
             preferencesSection
+            dataSection
             supportSection
             legalSection
             dangerSection
@@ -167,6 +168,20 @@ struct SettingsView: View {
         Section(header: Text("Preferences")) {
             NavigationLink(destination: NotificationsSettingsView()) {
                 Label("Notification Settings", systemImage: "bell.badge")
+            }
+        }
+    }
+
+    // FR-15: free service & expense export (PDF/CSV), plus a marked spot for
+    // the GDPR account-data (JSON) export row a backend agent is building in
+    // parallel (AccountExportService) — not wired here.
+    private var dataSection: some View {
+        Section(header: Text("Data")) {
+            NavigationLink(destination: DataExportView()) {
+                Label("Export Service & Expenses", systemImage: "square.and.arrow.up")
+            }
+            NavigationLink(destination: AccountDataExportView()) {
+                Label("Download My Account Data", systemImage: "arrow.down.doc")
             }
         }
     }

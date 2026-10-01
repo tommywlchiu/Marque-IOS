@@ -9,7 +9,7 @@ import { defineSecret } from "firebase-functions/params";
 // are undefined in the Functions runtime under the emulator (Timestamp crashed
 // onPublicCarCreated; FieldValue crashed onCarLikeWritten/onCarCommentWritten),
 // while the modular exports are always present. Never use the namespace forms.
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, GeoPoint, DocumentReference } from "firebase-admin/firestore";
 import { containsBlockedTerm } from "./commentFilter";
 import { publicValueLabel, snapshotOf, valuationStillApplies, CarSnapshot } from "./valueRange";
 import {
@@ -2658,6 +2658,291 @@ export const askMarque = onCall(
       });
       throw new HttpsError("internal", "Marque couldn't answer right now. Try again.");
     }
+  }
+);
+
+// ============================================================================
+// exportAccountData — FR-15.7 / GDPR Art. 20 data-portability export
+// ============================================================================
+//
+// Distinct from the FR-15.1-15.6 export (a client-side PDF/CSV service-history
+// report, no Cloud Function involved): this is "give me everything you have
+// on me," machine-readable JSON, including paths firestore.rules deny the
+// client outright (usage/, appAccountTokens/, familyGrants/, publicCarOwners/,
+// reports/, pushThrottle/). The Admin SDK is used throughout so rules never
+// gate what is gathered — this function IS the authorization boundary, scoped
+// entirely to request.auth.uid.
+//
+// No requireVerifiedEmail() gate, unlike askMarque/the parsers/
+// suggestServiceReminders: those guard paid Anthropic calls an unverified
+// mailbox could abuse for free; this never reaches Anthropic and costs only
+// Firestore/Storage reads of the caller's own data, so there is no
+// third-party spend to protect. App Check is still enforced (bot/abuse
+// protection on the read volume a full export can generate), and the daily
+// cap below is the primary throttle on this endpoint.
+const EXPORT_DAILY_CAP = 5;
+
+// Callable responses cap out around 10 MB; stay comfortably under that so a
+// large-but-real account gets a clear failed-precondition instead of a
+// transport-level failure that looks like a bug.
+const EXPORT_MAX_BYTES = 9 * 1024 * 1024;
+
+// usage/exports_{serverDate} — the date key comes from the SERVER clock only,
+// never the client (see assertPlausibleClientDate's header comment on why a
+// client-suppliable key isn't a cap). There is no client input to this
+// function at all, so there is nothing to validate here.
+//
+// Deliberately NOT refunded on a thrown error. The scan/suggest/valuation
+// reservations refund because a throw there means the paid Anthropic call
+// never happened; here a throw (e.g. the size guard below) still means the
+// Admin SDK did the full read fan-out the cap exists to bound, so the slot is
+// fairly spent either way. Keeping this asymmetric with the AI wrappers is
+// intentional simplicity, not an oversight.
+async function reserveExportSlot(uid: string, date: string): Promise<number> {
+  const ref = db.collection("users").doc(uid).collection("usage").doc(`exports_${date}`);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = (snap.exists ? (snap.data()?.count as number | undefined) : 0) ?? 0;
+    if (current >= EXPORT_DAILY_CAP) {
+      throw new HttpsError(
+        "resource-exhausted",
+        `You've reached today's limit of ${EXPORT_DAILY_CAP} data exports. Try again tomorrow.`
+      );
+    }
+    tx.set(ref, {
+      count: current + 1,
+      lastUsedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    return current + 1;
+  });
+}
+
+function serverUTCDateString(now: Date = new Date()): string {
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+type JSONValue = null | boolean | number | string | JSONValue[] | { [key: string]: JSONValue };
+
+// Converts a raw Firestore field value into plain JSON: Timestamp -> ISO-8601
+// string, GeoPoint -> {lat,lng}, DocumentReference -> its path string,
+// Buffer/Uint8Array -> base64. Anything already a JSON primitive/array/object
+// passes through recursively; anything else (shouldn't occur in practice)
+// falls back to String(v) rather than silently dropping a field GDPR
+// requires exporting.
+function serializeFirestoreValue(v: unknown): JSONValue {
+  if (v === null || v === undefined) return null;
+  if (v instanceof Timestamp) return v.toDate().toISOString();
+  if (v instanceof GeoPoint) return { lat: v.latitude, lng: v.longitude };
+  if (v instanceof DocumentReference) return v.path;
+  if (Buffer.isBuffer(v)) return v.toString("base64");
+  if (v instanceof Uint8Array) return Buffer.from(v).toString("base64");
+  if (Array.isArray(v)) return v.map(serializeFirestoreValue);
+  if (typeof v === "object") {
+    const out: { [key: string]: JSONValue } = {};
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      out[k] = serializeFirestoreValue(val);
+    }
+    return out;
+  }
+  if (typeof v === "number" || typeof v === "string" || typeof v === "boolean") return v;
+  return String(v);
+}
+
+function dumpDocSnap(snap: FirebaseFirestore.DocumentSnapshot): Record<string, JSONValue> {
+  return {
+    id: snap.id,
+    path: snap.ref.path,
+    data: serializeFirestoreValue(snap.data() ?? {}),
+  };
+}
+
+function dumpQuerySnap(snap: FirebaseFirestore.QuerySnapshot): JSONValue[] {
+  return snap.docs.map(dumpDocSnap);
+}
+
+// Safety net against runaway recursion; real nesting under users/{uid} never
+// exceeds 2 (e.g. conversations/{id}/messages/{id}).
+const EXPORT_MAX_RECURSION_DEPTH = 6;
+
+// Dumps one already-fetched document plus every subcollection beneath it,
+// recursively, discovered via listCollections() so a future subcollection is
+// picked up automatically without a code change here. Takes the snapshot the
+// parent query already returned (no second read per doc), and fans out
+// siblings in parallel: a heavy account (hundreds of Assistant messages)
+// would otherwise make thousands of sequential RPCs and risk the timeout.
+async function dumpDocumentRecursive(
+  snap: FirebaseFirestore.DocumentSnapshot,
+  depth: number
+): Promise<Record<string, JSONValue>> {
+  const out = dumpDocSnap(snap);
+  if (depth < EXPORT_MAX_RECURSION_DEPTH) {
+    for (const col of await snap.ref.listCollections()) {
+      out[col.id] = await dumpCollection(col, depth + 1);
+    }
+  }
+  return out;
+}
+
+async function dumpCollection(
+  col: FirebaseFirestore.CollectionReference,
+  depth: number
+): Promise<JSONValue[]> {
+  const colSnap = await col.get();
+  return Promise.all(colSnap.docs.map((doc) => dumpDocumentRecursive(doc, depth)));
+}
+
+// The users/{uid} doc plus every subcollection under it (recursively).
+async function dumpUserGraph(
+  uid: string
+): Promise<{ profile: JSONValue; collections: Record<string, JSONValue[]> }> {
+  const userRef = db.collection("users").doc(uid);
+  const [snap, subcollections] = await Promise.all([userRef.get(), userRef.listCollections()]);
+  const profile: JSONValue = snap.exists ? dumpDocSnap(snap) : null;
+  const dumped = await Promise.all(subcollections.map((col) => dumpCollection(col, 1)));
+  const collections: Record<string, JSONValue[]> = {};
+  subcollections.forEach((col, i) => { collections[col.id] = dumped[i]; });
+  return { profile, collections };
+}
+
+interface ExportStorageFile {
+  name: string;
+  size: number;
+  contentType: string;
+  updated: string;
+}
+
+// Metadata only — never file bytes. The export would otherwise balloon to
+// however many MB of photos/sound the account has, blowing past the callable
+// response cap for no benefit (the app's own photo/sound viewers, or the
+// FR-15 service report, already show the actual content).
+async function listStorageFiles(uid: string): Promise<ExportStorageFile[]> {
+  const [files] = await admin.storage().bucket().getFiles({ prefix: `users/${uid}/` });
+  return files.map((f) => ({
+    name: f.name,
+    size: Number(f.metadata.size ?? 0),
+    contentType: f.metadata.contentType ?? "",
+    updated: f.metadata.updated ?? "",
+  }));
+}
+
+// Explicitly allowlisted rather than spreading admin.auth().getUser()'s
+// UserRecord: that record can carry passwordHash/passwordSalt for
+// email/password accounts, which must never leave the server, even in the
+// user's own export.
+async function buildAuthExport(uid: string): Promise<JSONValue> {
+  let record;
+  try {
+    record = await admin.auth().getUser(uid);
+  } catch (err) {
+    functions.logger.error("exportAccountData: auth lookup failed", { uid });
+    throw new HttpsError("internal", "Couldn't load your account record. Try again.");
+  }
+  return {
+    email: record.email ?? null,
+    emailVerified: record.emailVerified,
+    providers: record.providerData.map((p) => p.providerId),
+    createdAt: record.metadata.creationTime ?? null,
+    lastSignInAt: record.metadata.lastSignInTime ?? null,
+  };
+}
+
+export const exportAccountData = onCall(
+  { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: "512MiB" },
+  async (request: CallableRequest): Promise<JSONValue> => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    const uid = request.auth.uid;
+    const serverDate = serverUTCDateString();
+    await reserveExportSlot(uid, serverDate);
+
+    const startedAt = Date.now();
+
+    const [
+      { profile, collections },
+      publicCarsSnap,
+      claimsSnap,
+      likesSnap,
+      commentsSnap,
+      reportsSnap,
+      tokensSnap,
+      grantsSnap,
+      throttleActorSnap,
+      storageFiles,
+      authInfo,
+    ] = await Promise.all([
+      dumpUserGraph(uid),
+      db.collection("publicCars").where("ownerUID", "==", uid).get(),
+      db.collection("publicCarOwners").where("uid", "==", uid).get(),
+      db.collectionGroup("likes").where("uid", "==", uid).get(),
+      db.collectionGroup("comments").where("authorUID", "==", uid).get(),
+      db.collection("reports").where("reporterUID", "==", uid).get(),
+      db.collection("appAccountTokens").where("uid", "==", uid).get(),
+      db.collection("familyGrants").where("uid", "==", uid).get(),
+      // Actor side only: ownerUID == uid docs record OTHER users' comment
+      // activity on this user's cars -- excluded like their likes/comments.
+      db.collection("pushThrottle").where("actorUID", "==", uid).get(),
+      listStorageFiles(uid),
+      buildAuthExport(uid),
+    ]);
+
+    // The username reservation is looked up from the profile's own `username`
+    // field — one doc, the caller's own reservation — never a scan of
+    // usernames/.
+    let usernameDoc: JSONValue | null = null;
+    const profileData = (profile as Record<string, JSONValue> | null)?.data as
+      | Record<string, JSONValue>
+      | undefined;
+    const usernameValue = profileData?.username;
+    if (typeof usernameValue === "string" && usernameValue.trim().length > 0) {
+      const usernameSnap = await db
+        .collection("usernames")
+        .doc(usernameValue.trim().toLowerCase())
+        .get();
+      if (usernameSnap.exists) usernameDoc = dumpDocSnap(usernameSnap);
+    }
+
+    const output: Record<string, JSONValue> = {
+      exportVersion: 1,
+      generatedAt: new Date().toISOString(),
+      uid,
+      auth: authInfo,
+      profile,
+      collections,
+      publicCars: dumpQuerySnap(publicCarsSnap),
+      publicCarOwnerClaims: dumpQuerySnap(claimsSnap),
+      likes: dumpQuerySnap(likesSnap),
+      comments: dumpQuerySnap(commentsSnap),
+      reports: dumpQuerySnap(reportsSnap),
+      username: usernameDoc,
+      appAccountTokens: dumpQuerySnap(tokensSnap),
+      familyGrants: dumpQuerySnap(grantsSnap),
+      pushThrottle: dumpQuerySnap(throttleActorSnap),
+      storageFiles: storageFiles.map((f) => ({ ...f })),
+      notes: [
+        "collections.<name> is every subcollection currently under your profile document (cars, conversations, notifications, following, followers, blocked, usage, devices, settings, ...), discovered automatically.",
+        "likes/comments are your own likes and comments left on OTHER users' cars. Likes/comments other people left on YOUR cars are excluded -- that is their data, not yours; your publicCars entries already carry the aggregate likeCount/commentCount.",
+        "reports is limited to reports you filed. Reports filed against you by other users are excluded, to protect reporter safety and because Article 20 covers data you provided, not data a third party provided about you.",
+        "storageFiles lists file metadata only (name, size, contentType, updated) -- not file bytes.",
+        "Your driver's license fields never leave your device and are not in this export -- the app merges them in locally under a top-level 'deviceOnly' key before writing the file you see.",
+      ],
+    };
+
+    const bytes = Buffer.byteLength(JSON.stringify(output), "utf8");
+    if (bytes > EXPORT_MAX_BYTES) {
+      functions.logger.error("exportAccountData: output too large", { uid, bytes });
+      throw new HttpsError(
+        "failed-precondition",
+        "Your account data is too large to export in one request. Contact support for an assisted export."
+      );
+    }
+
+    functions.logger.info("exportAccountData", { uid, bytes, latency_ms: Date.now() - startedAt });
+
+    return output;
   }
 );
 

@@ -22,6 +22,7 @@
 		65B797A53B1D4533B9DFCDDE /* AuthTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */; };
 		1B445AF9F26D417AAE319543 /* GarageEntranceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9412D7442710420CB0A6B6F6 /* GarageEntranceView.swift */; };
 		9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */; };
+		DDEA61B1FDB94D958EBFE896 /* AccountExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B35D4AABF04F78AC0B2395 /* AccountExportService.swift */; };
 		A10001 /* Marque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* Marque.swift */; };
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
 		A10003 /* CarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* CarStore.swift */; };
@@ -120,6 +121,11 @@
 		FE50B3000000000000000020 /* ExploreFiltersSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50D2000000000000000020 /* ExploreFiltersSheet.swift */; };
 		FE50B1000000000000000010 /* CarModsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000010 /* CarModsSection.swift */; };
 		FE50B1000000000000000011 /* EditModSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000011 /* EditModSheet.swift */; };
+		FE50E2000000000000000001 /* ExpenseReportPeriod.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000001 /* ExpenseReportPeriod.swift */; };
+		FE50E2000000000000000002 /* ExpenseReportCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000002 /* ExpenseReportCSV.swift */; };
+		FE50E2000000000000000003 /* ExpenseReportPDF.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000003 /* ExpenseReportPDF.swift */; };
+		FE50E2000000000000000004 /* DataExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000004 /* DataExportView.swift */; };
+		FE50E2000000000000000005 /* AccountDataExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000005 /* AccountDataExportView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -138,6 +144,7 @@
 		24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthTheme.swift; sourceTree = "<group>"; };
 		9412D7442710420CB0A6B6F6 /* GarageEntranceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GarageEntranceView.swift; sourceTree = "<group>"; };
 		8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceStore.swift; sourceTree = "<group>"; };
+		63B35D4AABF04F78AC0B2395 /* AccountExportService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AccountExportService.swift; sourceTree = "<group>"; };
 		A20001 /* Marque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Marque.swift; sourceTree = "<group>"; };
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
 		A20003 /* CarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarStore.swift; sourceTree = "<group>"; };
@@ -228,6 +235,11 @@
 		FE50D2000000000000000020 /* ExploreFiltersSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreFiltersSheet.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000010 /* CarModsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarModsSection.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000011 /* EditModSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditModSheet.swift; sourceTree = "<group>"; };
+		FE50E1000000000000000001 /* ExpenseReportPeriod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExpenseReportPeriod.swift; path = Export/ExpenseReportPeriod.swift; sourceTree = "<group>"; };
+		FE50E1000000000000000002 /* ExpenseReportCSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExpenseReportCSV.swift; path = Export/ExpenseReportCSV.swift; sourceTree = "<group>"; };
+		FE50E1000000000000000003 /* ExpenseReportPDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExpenseReportPDF.swift; path = Export/ExpenseReportPDF.swift; sourceTree = "<group>"; };
+		FE50E1000000000000000004 /* DataExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportView.swift; sourceTree = "<group>"; };
+		FE50E1000000000000000005 /* AccountDataExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDataExportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -351,6 +363,7 @@
 				A20033 /* ServiceReminderEngine.swift */,
 				20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */,
 				8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */,
+				63B35D4AABF04F78AC0B2395 /* AccountExportService.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -440,6 +453,8 @@
 				A20031 /* ProUpgradeView.swift */,
 				A20065 /* DeleteAccountView.swift */,
 				A20067 /* ChangePasswordView.swift */,
+				FE50E1000000000000000004 /* DataExportView.swift */,
+				FE50E1000000000000000005 /* AccountDataExportView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -467,6 +482,9 @@
 			isa = PBXGroup;
 			children = (
 				A20036 /* ExpenseChartsView.swift */,
+				FE50E1000000000000000001 /* ExpenseReportPeriod.swift */,
+				FE50E1000000000000000002 /* ExpenseReportCSV.swift */,
+				FE50E1000000000000000003 /* ExpenseReportPDF.swift */,
 			);
 			path = Expenses;
 			sourceTree = "<group>";
@@ -627,6 +645,11 @@
 				FE50B3000000000000000020 /* ExploreFiltersSheet.swift in Sources */,
 				FE50B1000000000000000010 /* CarModsSection.swift in Sources */,
 				FE50B1000000000000000011 /* EditModSheet.swift in Sources */,
+				FE50E2000000000000000001 /* ExpenseReportPeriod.swift in Sources */,
+				FE50E2000000000000000002 /* ExpenseReportCSV.swift in Sources */,
+				FE50E2000000000000000003 /* ExpenseReportPDF.swift in Sources */,
+				FE50E2000000000000000004 /* DataExportView.swift in Sources */,
+				FE50E2000000000000000005 /* AccountDataExportView.swift in Sources */,
 				A10001 /* Marque.swift in Sources */,
 				A10066 /* AppDelegate.swift in Sources */,
 				A10002 /* Car.swift in Sources */,
@@ -701,6 +724,7 @@
 				F497CF0F300B0735001892AE /* Conversation.swift in Sources */,
 				A3102D2E8EEAF6E1F29BF87E /* CrashReportingService.swift in Sources */,
 				9EB13AE6904D8A46EF90FF98 /* ScanAllowanceStore.swift in Sources */,
+				DDEA61B1FDB94D958EBFE896 /* AccountExportService.swift in Sources */,
 				E64384DAD01BCC101BC4750B /* ScanAllowanceViews.swift in Sources */,
 				762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */,
 				65B797A53B1D4533B9DFCDDE /* AuthTheme.swift in Sources */,
