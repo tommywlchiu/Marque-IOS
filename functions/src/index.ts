@@ -381,9 +381,9 @@ export const appStoreNotifications = functions.https.onRequest(
         const decodedNotification = await v.verifyAndDecodeNotification(
           signedPayload
         );
-        // Not every notification carries a transaction. TEST (the "Send Test
-        // Notification" button in App Store Connect — the standard way to
-        // validate this URL), RENEWAL_EXTENSION and other summary-shaped
+        // Not every notification carries a transaction. TEST (sent via the App
+        // Store Server API's "Request a Test Notification" endpoint; App Store
+        // Connect's notification-URL screen has no such button), RENEWAL_EXTENSION and other summary-shaped
         // payloads have no signedTransactionInfo at all. Reading it
         // unconditionally threw, and the throw landed in the catch below, so a
         // perfectly healthy endpoint logged every test notification as a
