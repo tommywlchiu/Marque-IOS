@@ -32,9 +32,12 @@ const BUNDLE_ID = "com.tommychiu.marque";
 // The app's numeric App Store Connect identifier. Required by
 // SignedDataVerifier for Environment.PRODUCTION only — the constructor throws
 // synchronously ("appAppleId is required when the environment is Production")
-// if it's omitted there. Confirmed directly from App Store Connect; do not
-// alter.
-const APP_STORE_APP_ID = 6763424467;
+// if it's omitted there. Must match App Store Connect > App Information >
+// Apple ID (confirmed by the owner 2026-09-30). The previous value,
+// 6763424467, was wrong despite a comment claiming it was confirmed;
+// production (non-sandbox) verification would have rejected every live
+// purchase. TestFlight/sandbox never checks it, so tests can't catch this.
+const APP_STORE_APP_ID = 6812103249;
 
 // The auto-renewable subscription products that grant Pro. Must stay in sync
 // with SubscriptionStore.monthlyID / .annualID on the client. Only used by
