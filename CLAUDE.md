@@ -168,6 +168,11 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — `storageObjectPrefix()` matched only the portless host. 203 emulator tests passed, and after the deploy every production publish carrying an avatar or photo URL was denied.
 - **Detect** — Read one real `publicCars` doc (Firebase MCP `firestore_get_document`) and check its URL fields against each `matches(` pattern in `firestore.rules`.
 
+### A webhook that third parties call must declare `invoker: "public"`
+- **Rule** — Any `onRequest` function called by an outside service (Apple's App Store Server Notifications today) must pass `{ invoker: "public" }` explicitly, and after deploying it, `curl -X GET <url>` must return the function's own response (405 for `appStoreNotifications`), not Cloud Run's 403 HTML page. Callables are a different case: the Firebase SDK sends credentials, and they were public all along.
+- **Why** — `appStoreNotifications` was a private Cloud Run service, so every Apple notification (renewals, cancellations, refunds) got a 403 before the code ran. The logs show this since at least 2026-09-29. The in-app `syncEntitlement` path kept purchases working, which hid it.
+- **Detect** — `curl -s -o /dev/null -w "%{http_code}" -X GET https://us-central1-marque-173c3.cloudfunctions.net/appStoreNotifications` must print 405; the function logs showing "The request was not authenticated… allow unauthenticated invocations" means it's private.
+
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.
 - **Why** — Both this file and both agent definitions asserted a `#if canImport(FirebaseCore)` mock-branch pattern for ~4 months after it was removed. Agents were being briefed with a false architecture.
