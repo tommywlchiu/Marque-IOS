@@ -48,8 +48,6 @@ struct MaintenanceLogSection: View {
 /// kind of request twice in a row still presents.
 struct MaintenanceAddRequest: Identifiable {
     let id = UUID()
-    /// Open the receipt scanner immediately (the Garage "Scan" action).
-    var startWithReceiptScan = false
 }
 
 /// The add/edit maintenance sheets, the record-limit alert, and the writes
@@ -72,8 +70,8 @@ struct MaintenanceLogFlow: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: $addRequest) { request in
-                AddMaintenanceView(startWithReceiptScan: request.startWithReceiptScan) { record, image in
+            .sheet(item: $addRequest) { _ in
+                AddMaintenanceView { record, image in
                     logNewRecord(record, receiptImage: image)
                 }
             }

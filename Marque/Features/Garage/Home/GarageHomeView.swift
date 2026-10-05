@@ -1,14 +1,17 @@
 import SwiftUI
-import PhotosUI
 
 /// The Garage tab root: one car at a time, Tesla-app style. Always dark —
 /// applied locally with `.environment(\.colorScheme, .dark)` on this subtree,
 /// never `.preferredColorScheme` (which would flip the whole window).
 ///
-/// Layout, top to bottom: car name + switcher chevron with chat / settings
+/// Layout, top to bottom: car name + switcher chevron with chat / share
 /// icons, a two-line status block, the hero car (pinned behind the list as it
-/// scrolls, fading to a ghost), four icon-only quick actions, the "attention"
-/// card, the plain list of focused screens, and a model wordmark footer.
+/// scrolls, fading to a ghost), the "attention" card, the plain list of
+/// focused screens, and a model wordmark footer. No standalone quick-action
+/// row — every action it would have duplicated (log service, scan a
+/// receipt, add a photo) already has exactly one home elsewhere (Service
+/// History, the Photos tab), so this screen stays a status display, Tesla's
+/// widget style, rather than a second place to trigger them.
 struct GarageHomeView: View {
     @EnvironmentObject private var carStore: CarStore
     @EnvironmentObject private var authService: AuthService
@@ -29,12 +32,6 @@ struct GarageHomeView: View {
     @State private var showingShareCard = false
     @State private var showingEditCar = false
     @State private var editDraft: Car?
-    @State private var showingPhotoPicker = false
-    @State private var pickedPhotos: [PhotosPickerItem] = []
-
-    @State private var addRequest: MaintenanceAddRequest?
-    @State private var editingRecord: MaintenanceRecord?
-    @State private var logConfirmation: LogConfirmation?
 
     /// Hero height; the hero is pinned at its resting position as the list scrolls.
     private let heroHeight: CGFloat = 260
@@ -79,19 +76,6 @@ struct GarageHomeView: View {
             showingEditCar: $showingEditCar,
             editDraft: $editDraft
         ))
-        .modifier(MaintenanceLogFlow(
-            carID: selectedCar?.id ?? UUID(),
-            addRequest: $addRequest,
-            editingRecord: $editingRecord,
-            logConfirmation: $logConfirmation
-        ))
-        .photosPicker(isPresented: $showingPhotoPicker, selection: $pickedPhotos, maxSelectionCount: 10, matching: .images)
-        .onChange(of: pickedPhotos) { _, items in
-            guard !items.isEmpty, let car = selectedCar else { return }
-            pickedPhotos = []
-            Task { await addPhotos(items, to: car.id) }
-        }
-        .onChange(of: selectedCar?.id) { _, _ in logConfirmation = nil }
         .onAppear(perform: tryDeepLinkNavigation)
         .onChange(of: appDelegate.pendingCarID) { _, _ in tryDeepLinkNavigation() }
         .onChange(of: carStore.cars) { _, _ in tryDeepLinkNavigation() }
@@ -134,10 +118,6 @@ struct GarageHomeView: View {
                     .padding(.top, 8)
                     .zIndex(-1)
 
-                quickActions(for: car)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-
                 attentionCard(for: car)
 
                 GarageMileageCheckIn(car: car)
@@ -155,7 +135,6 @@ struct GarageHomeView: View {
         }
         .scrollIndicators(.hidden)
         .overlay(alignment: .top) { statusBarFade }
-        .modifier(LogConfirmationOverlay(carID: car.id, confirmation: $logConfirmation))
     }
 
     /// Keeps rows that scroll up from colliding with the status bar text.
@@ -200,7 +179,10 @@ struct GarageHomeView: View {
 
             Spacer(minLength: 8)
 
-            headerIcons
+            HStack(spacing: 0) {
+                headerIcons
+                headerIcon("square.and.arrow.up", label: "Share car") { showingShareCard = true }
+            }
         }
         .padding(.leading, 24)
         .padding(.trailing, 12)
@@ -213,8 +195,9 @@ struct GarageHomeView: View {
         }
     }
 
-    /// Settings lives on the Wallet tab; the Garage header only has the
-    /// Assistant, scoped to the car on screen.
+    /// Settings lives on the Wallet tab; shared with the (car-less) empty
+    /// Garage state, so this is only the Assistant. `header(for:)` adds
+    /// Share alongside it when there's an actual car.
     @ViewBuilder
     private var headerIcons: some View {
         if featureFlagsStore.assistantEnabled {
@@ -261,25 +244,6 @@ struct GarageHomeView: View {
             }
         }
         .accessibilityElement(children: .combine)
-    }
-
-    // MARK: Quick actions
-
-    private func quickActions(for car: Car) -> some View {
-        HStack(spacing: 0) {
-            GarageQuickAction(systemImage: "wrench.and.screwdriver", accessibilityLabel: "Log service") {
-                addRequest = MaintenanceAddRequest()
-            }
-            GarageQuickAction(systemImage: "doc.text.viewfinder", accessibilityLabel: "Scan a receipt") {
-                addRequest = MaintenanceAddRequest(startWithReceiptScan: true)
-            }
-            GarageQuickAction(systemImage: "camera", accessibilityLabel: "Add photo") {
-                showingPhotoPicker = true
-            }
-            GarageQuickAction(systemImage: "square.and.arrow.up", accessibilityLabel: "Share car") {
-                showingShareCard = true
-            }
-        }
     }
 
     // MARK: Attention card
@@ -479,39 +443,6 @@ struct GarageHomeView: View {
         }
     }
 
-    // MARK: - Add photo
-
-    /// Same write path as EditCarDetailView's save: write each image under a
-    /// fresh filename via `ImageManager`, append it to the car (keeping
-    /// `photoStorageURLs` parallel, empty until uploaded), save, then hand the
-    /// new files to `CarStore.uploadPhotos`.
-    private func addPhotos(_ items: [PhotosPickerItem], to carID: UUID) async {
-        var images: [UIImage] = []
-        for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
-                images.append(image)
-            }
-        }
-        guard !images.isEmpty else { return }
-        // Downscale + JPEG encode + file write, off the main thread.
-        let newPhotos: [(fileName: String, image: UIImage)] = await Task.detached(priority: .userInitiated) {
-            images.map { image in
-                let name = ImageManager.generateFileName()
-                ImageManager.saveImage(image, fileName: name)
-                return (fileName: name, image: image)
-            }
-        }.value
-
-        guard var updated = carStore.cars.first(where: { $0.id == carID }) else { return }
-        let existingURLs = updated.photoStorageURLs.prefix(updated.photoFileNames.count)
-        updated.photoStorageURLs = Array(existingURLs)
-            + Array(repeating: "", count: updated.photoFileNames.count - existingURLs.count)
-            + Array(repeating: "", count: newPhotos.count)
-        updated.photoFileNames += newPhotos.map(\.fileName)
-        carStore.updateCar(updated)
-        carStore.uploadPhotos(newPhotos, removingFileNames: [], for: updated)
-        for _ in newPhotos { AnalyticsService.carPhotoAdded() }
-    }
 }
 
 // MARK: - Pinned hero

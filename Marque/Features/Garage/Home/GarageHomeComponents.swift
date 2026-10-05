@@ -2,26 +2,6 @@ import SwiftUI
 
 /// Icon-only quick action (no label, no circle). The tap target is at least
 /// 44x44pt; the VoiceOver label carries the meaning the glyph alone can't.
-struct GarageQuickAction: View {
-    let systemImage: String
-    let accessibilityLabel: String
-    let action: () -> Void
-
-    @ScaledMetric(relativeTo: .title2) private var glyphSize: CGFloat = 24
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: glyphSize, weight: .regular))
-                .foregroundColor(GarageTheme.icon)
-                .frame(maxWidth: .infinity, minHeight: 56)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(GaragePressStyle())
-        .accessibilityLabel(accessibilityLabel)
-    }
-}
-
 /// Large Tesla-style row: icon, big label, grey live subtitle, chevron.
 /// Separated from its neighbours by generous spacing, not divider lines.
 struct GarageListRow: View {

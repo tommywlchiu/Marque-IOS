@@ -26,11 +26,6 @@ struct AddMaintenanceView: View {
     private let onSaveEdit: ((MaintenanceRecord, UIImage?, _ removeReceipt: Bool) -> Void)?
     private let onSkip: (() -> Void)?
     private let onDelete: (() -> Void)?
-    /// Add mode only: open the receipt scanner as soon as the form appears
-    /// (the Garage "Scan" quick action), instead of waiting for a tap on
-    /// "Scan Receipt". Cancelling the scanner leaves the normal form.
-    private let startWithReceiptScan: Bool
-    @State private var didAutoStartScan = false
 
     @State private var serviceType = ""
     @State private var customServiceType = ""
@@ -88,7 +83,6 @@ struct AddMaintenanceView: View {
     /// Add mode.
     init(
         prefill: Prefill? = nil,
-        startWithReceiptScan: Bool = false,
         onSkip: (() -> Void)? = nil,
         onSave: @escaping (MaintenanceRecord, UIImage?) -> Void
     ) {
@@ -97,7 +91,6 @@ struct AddMaintenanceView: View {
         self.onSaveEdit = nil
         self.onSkip = onSkip
         self.onDelete = nil
-        self.startWithReceiptScan = startWithReceiptScan
 
         if let prefill {
             let isPreset = MaintenanceRecord.serviceTypes.contains(prefill.serviceType)
@@ -119,7 +112,6 @@ struct AddMaintenanceView: View {
         self.onSaveEdit = onSave
         self.onSkip = nil
         self.onDelete = onDelete
-        self.startWithReceiptScan = false
 
         let isPreset = MaintenanceRecord.serviceTypes.contains(record.serviceType)
         _serviceType = State(initialValue: isPreset ? record.serviceType : "Other")
@@ -248,14 +240,6 @@ struct AddMaintenanceView: View {
                 }
             } message: {
                 Text("This will permanently delete this service record. This cannot be undone.")
-            }
-            .task {
-                // Once per presentation. The short wait lets the sheet finish
-                // presenting; a fullScreenCover requested mid-presentation is dropped.
-                guard startWithReceiptScan, !didAutoStartScan else { return }
-                didAutoStartScan = true
-                try? await Task.sleep(for: .milliseconds(450))
-                startReceiptScan()
             }
             .onChange(of: selectedLibraryItem) { _, newItem in
                 guard let newItem else { return }
