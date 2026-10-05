@@ -133,15 +133,6 @@ struct PublicCar: Identifiable, Codable {
         return URL(string: str)
     }
 
-    var specRows: [(label: String, value: String)] {
-        [
-            ("Make", make), ("Model", model), ("Year", year), ("Trim", trim),
-            ("Color", color), ("Body Style", bodyStyle), ("Drive Type", driveType),
-            ("Engine", engine), ("Fuel Type", fuelType), ("Transmission", transmission),
-            ("Mileage", mileage),
-        ].filter { !$0.value.isEmpty }
-    }
-
     private enum CodingKeys: String, CodingKey {
         case carId, ownerUID, ownerUsername, ownerAvatarURL
         case make, model, year, color, mileage, trim, bodyStyle, driveType, engine

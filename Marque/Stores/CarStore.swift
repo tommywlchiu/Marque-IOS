@@ -391,14 +391,6 @@ class CarStore: ObservableObject {
 
     static let maxMaintenanceRecords = 500
 
-    func addMaintenanceRecord(_ record: MaintenanceRecord, to car: Car) {
-        // Hard cap to prevent unbounded growth past Firestore's 1MB doc limit.
-        guard car.maintenanceRecords.count < Self.maxMaintenanceRecords else { return }
-        var updated = car
-        updated.maintenanceRecords.append(record)
-        updateCar(updated)
-    }
-
     func deleteMaintenanceRecord(_ record: MaintenanceRecord, from car: Car) {
         var updated = car
         updated.maintenanceRecords.removeAll { $0.id == record.id }

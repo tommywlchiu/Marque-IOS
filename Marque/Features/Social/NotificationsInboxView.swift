@@ -4,6 +4,8 @@ struct NotificationsInboxView: View {
     @EnvironmentObject var notificationStore: NotificationStore
     @EnvironmentObject var carStore: CarStore
     @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var appDelegate: AppDelegate
+    @Environment(\.dismiss) private var dismiss
 
     /// Actor profile opened from a row's avatar (the row itself opens the car).
     @State private var actorProfile: UserRef?
@@ -71,32 +73,46 @@ struct NotificationsInboxView: View {
         return carStore.cars.first(where: { $0.id.uuidString == id })
     }
 
+    /// A like/comment on the user's own car opens that car in the Garage
+    /// (comments on its Public Sharing screen), the same route as tapping the
+    /// push itself — `MainTabView` switches to the Garage on `pendingCarID`.
+    private func openInGarage(_ car: Car, for note: AppNotification) {
+        notificationStore.markRead(note)
+        appDelegate.pendingPush = AppDelegate.PushRoute(
+            kind: note.type == .comment ? .comment : .like,
+            actorUID: note.actorUID,
+            carId: car.id.uuidString,
+            commentId: nil
+        )
+        appDelegate.pendingCarID = car.id
+        // Closes the inbox (popped from Explore, or the follow-push sheet) so
+        // returning to that tab later shows its root rather than the inbox.
+        dismiss()
+    }
+
     @ViewBuilder
-    private func destination(for note: AppNotification) -> some View {
+    private func rowLink(for note: AppNotification) -> some View {
+        let label = NotificationRow(notification: note) {
+            notificationStore.markRead(note)
+            actorProfile = actorRef(for: note)
+        }
         if let car = car(for: note) {
-            CarDetailView(car: car, openComments: note.type == .comment)
+            Button { openInGarage(car, for: note) } label: { label }
+                .buttonStyle(.plain)
         } else {
-            PublicProfileView(
-                ownerUID: note.actorUID,
-                ownerUsername: note.actorUsername
-            )
+            NavigationLink {
+                PublicProfileView(ownerUID: note.actorUID, ownerUsername: note.actorUsername)
+                // Marking read here is cleaner than a simultaneous gesture on the
+                // NavigationLink — a competing TapGesture on the link suppresses the
+                // link's own push recogniser, causing the avatar (and row body) to
+                // appear unresponsive to navigation.
+                .onAppear { notificationStore.markRead(note) }
+            } label: { label }
         }
     }
 
     private func row(for note: AppNotification) -> some View {
-        NavigationLink {
-            destination(for: note)
-            // Marking read here is cleaner than a simultaneous gesture on the
-            // NavigationLink — a competing TapGesture on the link suppresses the
-            // link's own push recogniser, causing the avatar (and row body) to
-            // appear unresponsive to navigation.
-            .onAppear { notificationStore.markRead(note) }
-        } label: {
-            NotificationRow(notification: note) {
-                notificationStore.markRead(note)
-                actorProfile = actorRef(for: note)
-            }
-        }
+        rowLink(for: note)
         .contextMenu {
             Button { actorProfile = actorRef(for: note) } label: {
                 Label("View @\(note.actorUsername)", systemImage: "person.crop.circle")

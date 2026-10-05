@@ -122,3 +122,79 @@ struct GaragePressStyle: ButtonStyle {
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
+
+// MARK: - Mileage check-in
+
+/// "Current mileage?" — shown when the car has an open mileage-triggered
+/// reminder and its mileage hasn't been updated in 30 days (or ever). Those
+/// reminders can never fire a local notification on their own, so this is
+/// the periodic nudge that keeps them accurate. Dismissal lasts until the
+/// screen is rebuilt, as it did on the old car page.
+struct GarageMileageCheckIn: View {
+    let car: Car
+
+    @EnvironmentObject private var carStore: CarStore
+    @State private var dismissedCarID: UUID?
+    @State private var text = ""
+
+    private var shouldShow: Bool {
+        guard dismissedCarID != car.id, car.hasOpenMileageReminders else { return false }
+        guard let updatedAt = car.mileageUpdatedAt else { return true }
+        return Date().timeIntervalSince(updatedAt) > 30 * 24 * 60 * 60
+    }
+
+    private var enteredValue: Int? { Int(text.replacingOccurrences(of: ",", with: "")) }
+
+    var body: some View {
+        if shouldShow {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Current mileage?")
+                        .font(.headline)
+                        .foregroundColor(GarageTheme.primaryText)
+                    Spacer()
+                    Button {
+                        withAnimation { dismissedCarID = car.id }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(GarageTheme.secondaryText)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(GaragePressStyle())
+                    .accessibilityLabel("Dismiss")
+                }
+                Text("Keeps your mileage-based reminders on time.")
+                    .font(.subheadline)
+                    .foregroundColor(GarageTheme.secondaryText)
+                HStack(spacing: 10) {
+                    TextField("Mileage", text: $text)
+                        .keyboardType(.numberPad)
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 44)
+                        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(0.08)))
+                        .foregroundColor(GarageTheme.primaryText)
+                    Button {
+                        guard let value = enteredValue else { return }
+                        carStore.updateMileage(value, for: car)
+                        text = ""
+                        withAnimation { dismissedCarID = car.id }
+                    } label: {
+                        Text("Update")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(GarageTheme.background)
+                            .padding(.horizontal, 18)
+                            .frame(minHeight: 44)
+                            .background(Capsule().fill(Color.white.opacity(enteredValue == nil ? 0.4 : 1)))
+                    }
+                    .buttonStyle(GaragePressStyle())
+                    .disabled(enteredValue == nil)
+                }
+            }
+            .padding(.leading, 16)
+            .padding(.trailing, 4)
+            .padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(GarageTheme.card))
+        }
+    }
+}

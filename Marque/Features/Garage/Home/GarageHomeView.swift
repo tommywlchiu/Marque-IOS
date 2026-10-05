@@ -16,6 +16,7 @@ struct GarageHomeView: View {
     @EnvironmentObject private var subscriptionStore: SubscriptionStore
     @EnvironmentObject private var featureFlagsStore: FeatureFlagsStore
     @EnvironmentObject private var appDelegate: AppDelegate
+    @Environment(\.selectMainTab) private var selectMainTab
 
     @AppStorage("garage.selectedCarID") private var selectedCarIDString = ""
 
@@ -113,7 +114,9 @@ struct GarageHomeView: View {
             appDelegate.pendingPush = nil
         }
         selectedCarIDString = carID.uuidString
-        path = openComments ? [.carPage(carID, openComments: true)] : []
+        // The owner's likes and comments live on the car's Public Sharing screen.
+        let isPublic = carStore.cars.first(where: { $0.id == carID })?.isPublic ?? false
+        path = openComments && isPublic ? [.carComments(carID)] : []
         appDelegate.pendingCarID = nil
     }
 
@@ -136,6 +139,10 @@ struct GarageHomeView: View {
                     .padding(.top, 12)
 
                 attentionCard(for: car)
+
+                GarageMileageCheckIn(car: car)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
 
                 rows(for: car)
                     .padding(.top, 16)
@@ -206,12 +213,12 @@ struct GarageHomeView: View {
         }
     }
 
+    /// Settings lives on the Wallet tab; the Garage header only has the
+    /// Assistant, scoped to the car on screen.
+    @ViewBuilder
     private var headerIcons: some View {
-        HStack(spacing: 0) {
-            if featureFlagsStore.assistantEnabled {
-                headerIcon("text.bubble", label: "Ask Marque") { showingChat = true }
-            }
-            headerIcon("line.3.horizontal", label: "Settings") { path.append(.settings) }
+        if featureFlagsStore.assistantEnabled {
+            headerIcon("text.bubble", label: "Ask Marque about this car") { showingChat = true }
         }
     }
 
@@ -289,7 +296,7 @@ struct GarageHomeView: View {
                             .frame(height: 1)
                             .padding(.leading, 64)
                     }
-                    Button { path.append(route(for: item.target, carID: car.id)) } label: {
+                    Button { open(item.target, carID: car.id) } label: {
                         GarageAttentionRow(item: item)
                     }
                     .buttonStyle(GaragePressStyle())
@@ -301,11 +308,11 @@ struct GarageHomeView: View {
         }
     }
 
-    private func route(for target: GarageSummary.AttentionTarget, carID: UUID) -> GarageRoute {
+    private func open(_ target: GarageSummary.AttentionTarget, carID: UUID) {
         switch target {
-        case .documents: return .documents(carID)
-        case .reminders: return .reminders(carID)
-        case .publicSharing: return .publicSharing(carID)
+        case .documents: selectMainTab(.wallet)  // documents are edited in Wallet
+        case .reminders: path.append(.reminders(carID))
+        case .publicSharing: path.append(.publicSharing(carID))
         }
     }
 
@@ -318,9 +325,6 @@ struct GarageHomeView: View {
             row(.reminders(car.id), "bell", "Reminders",
                 GarageSummary.remindersSubtitle(car),
                 dot: GarageSummary.remindersNeedAttention(car))
-            row(.documents(car.id), "doc.text", "Documents",
-                GarageSummary.documentsSubtitle(car),
-                dot: car.hasExpiryWarning)
             row(.mods(car.id), "slider.horizontal.3", "Mods",
                 GarageSummary.modsSubtitle(car))
             row(.expenses(car.id), "creditcard", "Expenses",
@@ -465,18 +469,13 @@ struct GarageHomeView: View {
         switch route {
         case .serviceHistory(let id): GarageServiceHistoryScreen(carID: id)
         case .reminders(let id): ServiceRemindersView(carID: id)
-        case .documents(let id): GarageDocumentsScreen(carID: id)
         case .mods(let id): GarageModsScreen(carID: id)
         case .expenses(let id): GarageExpensesScreen(carID: id)
         case .value(let id): GarageValueScreen(carID: id)
         case .engineSound(let id): GarageEngineSoundScreen(carID: id)
         case .publicSharing(let id): GaragePublicSharingScreen(carID: id)
         case .details(let id): GarageDetailsScreen(carID: id)
-        case .settings: SettingsView()
-        case .carPage(let id, let openComments):
-            if let car = carStore.cars.first(where: { $0.id == id }) {
-                CarDetailView(car: car, openComments: openComments)
-            }
+        case .carComments(let id): GaragePublicSharingScreen(carID: id, openCommentsOnAppear: true)
         }
     }
 
@@ -570,7 +569,7 @@ private struct GarageHomePresenters: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $showingChat) {
-                MarqueChatView()
+                MarqueChatView(scopedCarId: car?.id.uuidString)
                     .presentationDetents([.large])
             }
             .sheet(isPresented: $showingAddCar) {

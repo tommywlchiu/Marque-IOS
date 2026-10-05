@@ -18,14 +18,6 @@ struct AIServiceSuggestion: Identifiable, Sendable {
 
     enum Priority: String, Sendable {
         case high, medium, low
-
-        var sortOrder: Int {
-            switch self {
-            case .high: return 0
-            case .medium: return 1
-            case .low: return 2
-            }
-        }
     }
 
     // Standard init — AI-sourced suggestions get a fresh UUID.

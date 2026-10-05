@@ -9,7 +9,6 @@ struct SettingsView: View {
     @State private var showingSignOutAlert = false
     @State private var showingDeleteAccountSheet = false
     @State private var showingChangePassword = false
-    @State private var showingEditProfile = false
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
@@ -73,9 +72,6 @@ struct SettingsView: View {
         .sheet(isPresented: $showingChangePassword) {
             ChangePasswordView()
         }
-        .sheet(isPresented: $showingEditProfile) {
-            EditProfileView()
-        }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Sign Out", role: .destructive) { authService.signOut() }
             Button("Cancel", role: .cancel) { }
@@ -94,33 +90,13 @@ struct SettingsView: View {
 
     // MARK: - Sections
 
+    /// Profile editing lives at the top of Wallet; Settings only keeps
+    /// what Wallet doesn't (the password, for email accounts).
+    @ViewBuilder
     private var accountSection: some View {
-        Section(header: Text("Account")) {
-            HStack(spacing: 12) {
-                UserAvatar(user: user, size: 48)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(user.displayName).font(.headline)
-                    Text("@\(user.username)").font(.caption).foregroundColor(.secondary)
-                }
-            }
-            .padding(.vertical, 4)
-
-            // EditProfileView wraps itself in its own NavigationStack (it's
-            // built for sheet presentation — see its Cancel -> dismiss()
-            // toolbar button, and WalletView's own sheet(isPresented:) use
-            // of it). Pushing it here via NavigationLink instead nested a
-            // second NavigationStack inside this screen's already-active
-            // one, which glitched on the first push before "settling" —
-            // sheet presentation avoids the nested-stack conflict entirely.
-            Button {
-                showingEditProfile = true
-            } label: {
-                Label("Edit Profile", systemImage: "person.crop.circle")
-                    .foregroundColor(.primary)
-            }
-
-            // Password-based accounts only — Apple/Google sign-in has no Marque password to change.
-            if authService.signInProvider == "password" {
+        // Password-based accounts only — Apple/Google sign-in has no Marque password to change.
+        if authService.signInProvider == "password" {
+            Section(header: Text("Account")) {
                 Button {
                     showingChangePassword = true
                 } label: {

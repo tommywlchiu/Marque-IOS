@@ -822,13 +822,6 @@ class AuthService: NSObject, ObservableObject {
         Task { await performSignOut() }
     }
 
-    /// The same, for callers that need to wait until the user is signed out.
-    func signOutAndWait() async {
-        guard !isSigningOut else { return }
-        isSigningOut = true
-        await performSignOut()
-    }
-
     private func performSignOut() async {
         defer { isSigningOut = false }
         if let willSignOut { await willSignOut() }

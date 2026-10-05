@@ -1,252 +1,109 @@
 import SwiftUI
 
-/// Unified detail view that handles both the user's own car (full edit / delete /
-/// expense / reminder / maintenance controls) and another user's public car
-/// (owner row + report button, hides private fields).
+/// Another user's public car (or your own, as Explore shows it): owner row,
+/// likes/comments, the shared specs, mods and service history. Never the
+/// private fields — it only ever holds a `PublicCar`. The owner manages their
+/// own car in the Garage tab.
 struct CarDetailView: View {
-    @EnvironmentObject var carStore: CarStore
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var exploreStore: ExploreStore
     @EnvironmentObject var blockStore: BlockStore
     @EnvironmentObject var commentStore: CommentStore
-    @Environment(\.dismiss) var dismiss
 
-    // Exactly one of these is non-nil. Own car is @State so mutations sync to UI.
-    @State private var ownCar: Car?
-    private let publicCar: PublicCar?
+    private let publicCar: PublicCar
 
-    @State private var showingEditDetails = false
-    @State private var showingDeleteConfirmation = false
-    @State private var maintenanceAddRequest: MaintenanceAddRequest?
     @State private var reportTarget: CarReportTarget?
     @State private var showingOwnerProfile = false
     @State private var galleryStartIndex: Int?
-    @State private var editingMaintenanceRecord: MaintenanceRecord?
 
-    // Post-log confirmation banner (MaintenanceLogFlow / LogConfirmationOverlay)
-    // and the "current mileage?" check-in card (see `dismissedMileageCheckIn`).
-    @State private var logConfirmation: LogConfirmation?
-    @State private var dismissedMileageCheckIn = false
-    @State private var mileageCheckInText = ""
-
-    // Focused-sheet add/edit flows — one per section. Consolidated with the
-    // above state to make it obvious that every "add/edit" surface here is a
-    // sheet, not a full-form drop-in or a navigation push.
-    @State private var showingEditRegistration = false
-    @State private var showingEditVehicleDetails = false
-    @State private var showingEditInsurance = false
-    @State private var showingAddReminder = false
-
-    // Social: comments sheet, push pre-prompt, going-private confirmation.
+    // Social: comments sheet, push pre-prompt.
     @State private var commentsRequest: CommentsSheetRequest?
     @State private var showingPushPrePrompt = false
-    @State private var showingMakePrivateConfirmation = false
-    @State private var showingSharingSheet = false
-    @State private var sharingSheetMode: PublicSharingSheetMode = .goingPublic
     @State private var commentActionError: String?
     @State private var blockTarget: UserRef?
     @State private var commentProfileTarget: UserRef?
-    /// Opens the comments sheet once on appear (a comment push/notification).
-    @State private var openCommentsOnAppear: Bool
     @State private var showingShareCard = false
 
-    init(car: Car, openComments: Bool = false) {
-        self._ownCar = State(initialValue: car)
-        self.publicCar = nil
-        self._openCommentsOnAppear = State(initialValue: openComments)
-    }
-
     init(publicCar: PublicCar) {
-        self._ownCar = State(initialValue: nil)
         self.publicCar = publicCar
-        self._openCommentsOnAppear = State(initialValue: false)
     }
-
-    // MARK: - Mode helpers
-
-    private var isOwnCar: Bool { ownCar != nil }
-
-    /// The live `Car` for own-car mode — pulled from `carStore` so external updates
-    /// (Firestore listener, photo upload) flow into the UI.
-    private var liveCar: Car? {
-        guard let car = ownCar else { return nil }
-        return carStore.cars.first(where: { $0.id == car.id }) ?? car
-    }
-
-    // MARK: - Common accessors
-
-    private var displayName: String {
-        liveCar?.displayName ?? publicCar?.displayName ?? ""
-    }
-    private var make: String { liveCar?.make ?? publicCar?.make ?? "" }
-    private var model: String { liveCar?.model ?? publicCar?.model ?? "" }
-    private var year: String { liveCar?.year ?? publicCar?.year ?? "" }
-    private var color: String { liveCar?.color ?? publicCar?.color ?? "" }
-    private var mileage: String { liveCar?.mileage ?? publicCar?.mileage ?? "" }
-    private var trim: String { liveCar?.trim ?? publicCar?.trim ?? "" }
-    private var bodyStyle: String { liveCar?.bodyStyle ?? publicCar?.bodyStyle ?? "" }
-    private var driveType: String { liveCar?.driveType ?? publicCar?.driveType ?? "" }
-    private var engine: String { liveCar?.engine ?? publicCar?.engine ?? "" }
-    private var fuelType: String { liveCar?.fuelType ?? publicCar?.fuelType ?? "" }
-    private var transmission: String { liveCar?.transmission ?? publicCar?.transmission ?? "" }
-    private var notes: String { liveCar?.notes ?? publicCar?.notes ?? "" }
-
-    // MARK: - Social accessors
 
     /// The latest copy of the public car (Explore's live feed or Top Cars),
     /// so like/comment counts update while the page is open.
-    private var livePublicCar: PublicCar? {
-        guard let pc = publicCar else { return nil }
-        return exploreStore.cars.first(where: { $0.carId == pc.carId }) ?? pc
+    private var livePublicCar: PublicCar {
+        exploreStore.cars.first(where: { $0.carId == publicCar.carId })
+            ?? exploreStore.topCarsAllTime.first(where: { $0.carId == publicCar.carId })
+            ?? publicCar
     }
 
-    /// The owner's own car as it appears publicly, if Explore has it loaded.
-    private var ownPublicCar: PublicCar? {
-        guard let car = liveCar else { return nil }
-        return OwnCarPublicProjection.publishedCopy(of: car, in: exploreStore)
-    }
-
-    /// publicCars doc id whose comments this page shows; nil for a private own car.
-    private var commentsCarId: String? {
-        if let pc = publicCar { return pc.carId }
-        guard let car = liveCar, car.isPublic else { return nil }
-        return car.id.uuidString
-    }
-
-    private var commentsOwnerUID: String {
-        publicCar?.ownerUID ?? authService.currentUser?.id ?? ""
-    }
-
-    private var serverCommentCount: Int {
-        (livePublicCar ?? ownPublicCar)?.commentCount ?? 0
-    }
+    private var isOwnCar: Bool { publicCar.ownerUID == authService.currentUser?.id }
 
     /// Loaded, block-filtered count when the whole thread is loaded; the
     /// server count otherwise.
     private var displayedCommentCount: Int {
-        guard let id = commentsCarId, commentStore.carId == id, !commentStore.isLoading else {
-            return serverCommentCount
-        }
+        let serverCount = livePublicCar.commentCount
+        guard commentStore.carId == publicCar.carId, !commentStore.isLoading else { return serverCount }
         let visible = commentStore.visibleComments(hiding: blockStore.blockedUIDs).count
-        return commentStore.comments.count >= CommentStore.pageLimit ? max(serverCommentCount, visible) : visible
+        return commentStore.comments.count >= CommentStore.pageLimit ? max(serverCount, visible) : visible
     }
 
     private func openComments(focusComposer: Bool) {
-        guard let id = commentsCarId else { return }
         commentsRequest = CommentsSheetRequest(
-            carId: id,
-            carOwnerUID: commentsOwnerUID,
-            carName: displayName,
+            carId: publicCar.carId,
+            carOwnerUID: publicCar.ownerUID,
+            carName: publicCar.displayName,
             focusComposer: focusComposer
         )
-    }
-
-    // MARK: - Share card
-
-    /// The FR-06.3 public projection `ShareCardSheet`/`CarShareCard` are built
-    /// from (see `OwnCarPublicProjection.shareCard` for the own-car rules).
-    private var shareCardProjection: PublicCar? {
-        if let car = liveCar {
-            return OwnCarPublicProjection.shareCard(for: car, exploreStore: exploreStore, authService: authService)
-        }
-        return livePublicCar ?? publicCar
-    }
-
-    private func offerPushPrePrompt() {
-        PushPrePrompt.offer { showingPushPrePrompt = true }
     }
 
     // MARK: - Body
 
     var body: some View {
+        let pc = livePublicCar
         List {
-            photoHeaderSection
+            photoHeaderSection(for: pc)
+            ownerRowSection(for: pc)
+            PublicCarHighlightsSection(
+                car: pc,
+                commentCount: displayedCommentCount,
+                onLiked: { PushPrePrompt.offer { showingPushPrePrompt = true } },
+                onOpenComments: { openComments(focusComposer: false) }
+            )
 
-            if let pc = livePublicCar {
-                ownerRowSection(for: pc)
-                PublicCarHighlightsSection(
-                    car: pc,
-                    commentCount: displayedCommentCount,
-                    onLiked: offerPushPrePrompt,
-                    onOpenComments: { openComments(focusComposer: false) }
-                )
+            BasicInfoSection(make: pc.make, model: pc.model, year: pc.year)
+            if !VehicleSpecs(publicCar: pc).isEmpty {
+                VehicleDetailsSection(specs: VehicleSpecs(publicCar: pc))
             }
-
-            if let car = liveCar, car.hasExpiryWarning {
-                expiryAlertBanner(for: car)
+            if !pc.mods.isEmpty {
+                PublicCarModsSection(mods: pc.mods)
             }
-
-            mileageCheckInSection
-
-            if liveCar != nil {
-                visibilitySection
-            }
-
-            BasicInfoSection(make: make, model: model, year: year)
-
-            if let car = liveCar {
-                RegistrationSection(car: car) { showingEditRegistration = true }
-                VehicleDetailsSection(specs: VehicleSpecs(car: car)) { showingEditVehicleDetails = true }
-                InsuranceSection(car: car) { showingEditInsurance = true }
-                CarModsSection(car: car)
-                CarValueSection(car: car)
-                EngineSoundOwnerSection(car: car)
-            } else {
-                if let pc = publicCar, !VehicleSpecs(publicCar: pc).isEmpty {
-                    VehicleDetailsSection(specs: VehicleSpecs(publicCar: pc))
-                }
-                if let pc = publicCar, !pc.mods.isEmpty {
-                    PublicCarModsSection(mods: pc.mods)
-                }
-            }
-
-            if !notes.isEmpty {
+            if !pc.notes.isEmpty {
                 Section(header: Text("Notes")) {
-                    Text(notes).font(.body)
+                    Text(pc.notes).font(.body)
                 }
             }
-
-            if let car = liveCar, car.totalExpenses > 0 {
-                ExpenseSummarySection(car: car)
-            }
-
-            if let car = liveCar {
-                remindersSection
-                MaintenanceLogSection(
-                    car: car,
-                    onAdd: { maintenanceAddRequest = MaintenanceAddRequest() },
-                    onEdit: { editingMaintenanceRecord = $0 }
-                )
-            } else if let pc = publicCar, !pc.serviceHistory.isEmpty {
+            if !pc.serviceHistory.isEmpty {
                 publicServiceHistorySection(for: pc)
             }
 
-            if let id = commentsCarId {
-                CarCommentsSection(
-                    carId: id,
-                    carOwnerUID: commentsOwnerUID,
-                    serverCount: serverCommentCount,
-                    onOpenComments: { openComments(focusComposer: $0) },
-                    callbacks: CommentCallbacks(
-                        onReport: { reportTarget = .comment($0, carId: id) },
-                        onBlock: { blockTarget = $0 },
-                        onOpenProfile: { commentProfileTarget = $0 },
-                        onDeleteError: { commentActionError = $0 }
-                    )
+            CarCommentsSection(
+                carId: pc.carId,
+                carOwnerUID: pc.ownerUID,
+                serverCount: pc.commentCount,
+                onOpenComments: { openComments(focusComposer: $0) },
+                callbacks: CommentCallbacks(
+                    onReport: { reportTarget = .comment($0, carId: pc.carId) },
+                    onBlock: { blockTarget = $0 },
+                    onOpenProfile: { commentProfileTarget = $0 },
+                    onDeleteError: { commentActionError = $0 }
                 )
-            }
-
-            if isOwnCar {
-                deleteSection
-            }
+            )
         }
         .navigationTitle("Car Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                if isOwnCar {
-                    Button("Edit") { showingEditDetails = true }
-                } else if let pc = livePublicCar {
+                if !isOwnCar {
                     Menu {
                         Button(role: .destructive) { reportTarget = .car(pc) } label: {
                             Label("Report Car", systemImage: "flag")
@@ -272,119 +129,50 @@ struct CarDetailView: View {
             }
         }
         .sheet(isPresented: $showingShareCard) {
-            if let projection = shareCardProjection {
-                ShareCardSheet(
-                    car: projection,
-                    localCoverPhotoFileName: isOwnCar ? liveCar?.primaryPhotoFileName : nil,
-                    isOwnCar: isOwnCar
-                )
-            }
+            ShareCardSheet(car: pc, localCoverPhotoFileName: nil, isOwnCar: isOwnCar)
         }
-        .sheet(isPresented: $showingEditDetails) {
-            if let car = ownCar {
-                EditCarDetailView(car: ownCarBinding(initial: car), onSave: { updatedCar in
-                    ownCar = updatedCar
-                    carStore.updateCar(updatedCar)
-                })
-            }
-        }
-        .modifier(PublicSharingSheetPresenter(
-            car: liveCar,
-            mode: sharingSheetMode,
-            isPresented: $showingSharingSheet,
-            onMadePublic: offerPushPrePrompt
-        ))
-        .modifier(MaintenanceLogFlow(
-            carID: ownCar?.id ?? UUID(),
-            addRequest: $maintenanceAddRequest,
-            editingRecord: $editingMaintenanceRecord,
-            logConfirmation: $logConfirmation
-        ))
-        .modifier(FocusedEditPresenters(
-            liveCar: liveCar,
-            showingEditRegistration: $showingEditRegistration,
-            showingEditVehicleDetails: $showingEditVehicleDetails,
-            showingEditInsurance: $showingEditInsurance,
-            showingAddReminder: $showingAddReminder,
-            onSave: { updated in
-                ownCar = updated
-                carStore.updateCar(updated)
-            }
-        ))
         .sheet(isPresented: $showingOwnerProfile) {
-            if let pc = publicCar {
-                NavigationStack {
-                    PublicProfileView(ownerUID: pc.ownerUID, ownerUsername: pc.ownerUsername)
-                        .environmentObject(exploreStore)
-                        .environmentObject(blockStore)
-                }
+            NavigationStack {
+                PublicProfileView(ownerUID: pc.ownerUID, ownerUsername: pc.ownerUsername)
+                    .environmentObject(exploreStore)
+                    .environmentObject(blockStore)
             }
         }
         .modifier(CarSocialPresenters(
             commentsRequest: $commentsRequest,
             reportTarget: $reportTarget,
             showingPushPrePrompt: $showingPushPrePrompt,
-            showingMakePrivateConfirmation: $showingMakePrivateConfirmation,
+            showingMakePrivateConfirmation: .constant(false),
             commentActionError: $commentActionError,
             blockTarget: $blockTarget,
             profileTarget: $commentProfileTarget,
-            onConfirmMakePrivate: { applyVisibility(false) }
+            onConfirmMakePrivate: {}
         ))
-        .modifier(CommentsListenerLifecycle(carId: commentsCarId))
-        .onAppear {
-            guard openCommentsOnAppear else { return }
-            openCommentsOnAppear = false
-            openComments(focusComposer: false)
-        }
+        .modifier(CommentsListenerLifecycle(carId: publicCar.carId))
         .fullScreenCover(item: Binding(
             get: { galleryStartIndex.map(GalleryStart.init) },
             set: { galleryStartIndex = $0?.index }
         )) { start in
-            galleryViewer(startIndex: start.index)
-        }
-        .alert("Delete Car", isPresented: $showingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                if let car = liveCar {
-                    carStore.deleteCar(car)
-                }
-                dismiss()
-            }
-        } message: {
-            Text("Are you sure you want to delete \(displayName)? This action cannot be undone.")
-        }
-        .overlay(alignment: .bottomTrailing) {
-            // Hidden while the log confirmation shows: they share the bottom edge,
-            // and the button was taking taps meant for the banner's Undo.
-            if let car = liveCar, logConfirmation == nil {
-                AskMarqueButton(scopedCarId: car.id.uuidString)
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 16)
+            if !pc.galleryURLs.isEmpty {
+                PhotoGalleryView(
+                    photoFileNames: [],
+                    photoStorageURLs: pc.galleryURLs.map(\.absoluteString),
+                    initialIndex: start.index
+                )
             }
         }
-        .modifier(LogConfirmationOverlay(carID: ownCar?.id ?? UUID(), confirmation: $logConfirmation))
     }
 
-    // EditCarDetailView wants a Binding<Car>; thread it through @State ownCar.
-    private func ownCarBinding(initial: Car) -> Binding<Car> {
-        Binding(
-            get: { ownCar ?? initial },
-            set: { ownCar = $0 }
-        )
-    }
+    // MARK: - Photo header
 
-    // MARK: - Photo header (shared, edge-to-edge in the list)
-
-    private var photoHeaderSection: some View {
+    private func photoHeaderSection(for pc: PublicCar) -> some View {
         Section {
             VStack(spacing: 12) {
-                photoHeaderContent
-                Text(displayName)
+                PublicCarPhotoHeader(car: pc) { galleryStartIndex = $0 }
+                Text(pc.displayName)
                     .font(.title2).fontWeight(.bold)
                     .multilineTextAlignment(.center)
-                // Public page only (FR ask): the owner already sees their mod
-                // count in the Mods section header just below.
-                if let pc = publicCar, pc.isModified {
+                if pc.isModified {
                     ModifiedPill()
                 }
             }
@@ -394,98 +182,7 @@ struct CarDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private var photoHeaderContent: some View {
-        if let car = liveCar, let fileName = car.primaryPhotoFileName {
-            ZStack(alignment: .bottomTrailing) {
-                CarPhotoImage(fileName: fileName, storageURL: car.primaryPhotoStorageURL)
-                    .frame(maxWidth: .infinity).frame(height: 200)
-                    .offset(y: car.photoOffsetY)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .contentShape(RoundedRectangle(cornerRadius: 12))
-                    .onTapGesture { galleryStartIndex = 0 }
-
-                if car.hasMultiplePhotos {
-                    photoCountBadge(count: car.photoFileNames.count)
-                }
-            }
-
-            if car.hasMultiplePhotos {
-                photoThumbnailStrip(for: car)
-            }
-        } else if let pc = livePublicCar {
-            PublicCarPhotoHeader(car: pc) { galleryStartIndex = $0 }
-        } else {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.accentColor.opacity(0.08))
-                    .frame(height: 120)
-                VStack(spacing: 8) {
-                    Image(systemName: "car.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.accentColor.opacity(0.4))
-                    if isOwnCar {
-                        Text("Tap Edit to add a photo")
-                            .font(.caption).foregroundColor(.secondary)
-                    }
-                }
-            }
-        }
-    }
-
-    private func photoCountBadge(count: Int) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: "photo.stack").font(.caption2)
-            Text("\(count)").font(.caption).fontWeight(.semibold)
-        }
-        .foregroundColor(.white)
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(Color.black.opacity(0.55))
-        .clipShape(Capsule())
-        .padding(10)
-    }
-
-    private func photoThumbnailStrip(for car: Car) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(Array(car.photoFileNames.enumerated()), id: \.offset) { index, fileName in
-                    Button {
-                        galleryStartIndex = index
-                    } label: {
-                        CarPhotoImage(fileName: fileName, storageURL: car.storageURL(at: index))
-                            .frame(width: 56, height: 56)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 2).padding(.top, 4)
-        }
-    }
-
-    @ViewBuilder
-    private func galleryViewer(startIndex: Int) -> some View {
-        if let car = liveCar {
-            PhotoGalleryView(
-                photoFileNames: car.photoFileNames,
-                photoStorageURLs: car.photoStorageURLs,
-                initialIndex: startIndex,
-                onSetCover: { index in
-                    // Re-read the car at tap time; the gallery may have been open a while.
-                    guard let current = liveCar, index < current.photoFileNames.count else { return }
-                    carStore.setCoverPhoto(fileName: current.photoFileNames[index], for: current)
-                }
-            )
-        } else if let pc = livePublicCar, !pc.galleryURLs.isEmpty {
-            PhotoGalleryView(
-                photoFileNames: [],
-                photoStorageURLs: pc.galleryURLs.map(\.absoluteString),
-                initialIndex: startIndex
-            )
-        }
-    }
-
-    // MARK: - Owner row (public only)
+    // MARK: - Owner row
 
     private func ownerRowSection(for pc: PublicCar) -> some View {
         Section {
@@ -498,143 +195,6 @@ struct CarDetailView: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption).foregroundColor(.secondary.opacity(0.5))
-                }
-            }
-        }
-    }
-
-    // MARK: - Expiry banner (own only)
-
-    private func expiryAlertBanner(for car: Car) -> some View {
-        Section {
-            VStack(alignment: .leading, spacing: 6) {
-                if car.isRegistrationExpired {
-                    ExpiryBannerItem(icon: "exclamationmark.triangle.fill", text: "Registration has expired", color: .red)
-                } else if car.isRegistrationExpiringSoon {
-                    ExpiryBannerItem(icon: "clock.badge.exclamationmark", text: "Registration expiring soon", color: .orange)
-                }
-                if car.isInsuranceExpired {
-                    ExpiryBannerItem(icon: "exclamationmark.triangle.fill", text: "Insurance has expired", color: .red)
-                } else if car.isInsuranceExpiringSoon {
-                    ExpiryBannerItem(icon: "clock.badge.exclamationmark", text: "Insurance expiring soon", color: .orange)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
-    // MARK: - Mileage check-in (own only)
-
-    // Shown when the car has an open mileage-triggered reminder and its
-    // mileage hasn't been touched (or was touched over 30 days ago) — those
-    // reminders can never fire a local notification on their own, so this is
-    // the periodic nudge that keeps them accurate.
-    private var shouldShowMileageCheckIn: Bool {
-        guard !dismissedMileageCheckIn, let car = liveCar, car.hasOpenMileageReminders else { return false }
-        guard let updatedAt = car.mileageUpdatedAt else { return true }
-        return Date().timeIntervalSince(updatedAt) > 30 * 24 * 60 * 60
-    }
-
-    @ViewBuilder
-    private var mileageCheckInSection: some View {
-        if shouldShowMileageCheckIn, let car = liveCar {
-            Section {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("Current mileage?")
-                            .font(.subheadline).fontWeight(.semibold)
-                        Spacer()
-                        Button {
-                            withAnimation { dismissedMileageCheckIn = true }
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary.opacity(0.5))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Dismiss")
-                    }
-
-                    HStack(spacing: 10) {
-                        TextField("Mileage", text: $mileageCheckInText)
-                            .keyboardType(.numberPad)
-                            .textFieldStyle(.roundedBorder)
-
-                        Button("Update") {
-                            let digitsOnly = mileageCheckInText.replacingOccurrences(of: ",", with: "")
-                            guard let value = Int(digitsOnly) else { return }
-                            carStore.updateMileage(value, for: car)
-                            mileageCheckInText = ""
-                            withAnimation { dismissedMileageCheckIn = true }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(Int(mileageCheckInText.replacingOccurrences(of: ",", with: "")) == nil)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-        }
-    }
-
-    // MARK: - Visibility toggle (own only)
-
-    @ViewBuilder
-    private var visibilitySection: some View {
-        if let car = liveCar {
-            CarVisibilitySection(
-                car: car,
-                onRequestPublic: {
-                    sharingSheetMode = .goingPublic
-                    showingSharingSheet = true
-                },
-                onRequestPrivate: { showingMakePrivateConfirmation = true },
-                onEditSharing: {
-                    sharingSheetMode = .editing
-                    showingSharingSheet = true
-                }
-            ) {
-                OwnCarEngagementRow(
-                    publicCar: ownPublicCar,
-                    commentCount: displayedCommentCount,
-                    onOpenComments: { openComments(focusComposer: false) }
-                )
-            }
-        }
-    }
-
-    private func applyVisibility(_ isPublic: Bool) {
-        guard let car = liveCar else { return }
-        if CarVisibilityActions.apply(isPublic, to: car, carStore: carStore, authService: authService) {
-            offerPushPrePrompt()
-        }
-    }
-
-    // MARK: - Reminders (own only)
-
-    private var remindersSection: some View {
-        Section(header: AddSectionHeader(title: "Service Reminders") { showingAddReminder = true }) {
-            if let car = liveCar {
-                let upcoming = car.serviceReminders.filter { !$0.isCompleted }
-                let currentMileage = ServiceReminderEngine.mileage(from: car.mileage)
-                let overdueCount = upcoming.filter { $0.status(currentMileage: currentMileage) == .overdue }.count
-
-                if upcoming.isEmpty && car.serviceReminders.isEmpty {
-                    EmptySectionRow(title: "Add Reminder", systemImage: "wrench.and.screwdriver") {
-                        showingAddReminder = true
-                    }
-                } else {
-                    NavigationLink(destination: ServiceRemindersView(carID: car.id)) {
-                        HStack {
-                            Image(systemName: overdueCount > 0 ? "exclamationmark.circle.fill" : "wrench.and.screwdriver")
-                                .foregroundColor(overdueCount > 0 ? .red : .accentColor)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(upcoming.isEmpty ? "\(car.serviceReminders.count) Completed" : "\(upcoming.count) Upcoming")
-                                    .font(.subheadline)
-                                if overdueCount > 0 {
-                                    Text("\(overdueCount) overdue").font(.caption).foregroundColor(.red)
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -655,22 +215,6 @@ struct CarDetailView: View {
                         .font(.subheadline).fontWeight(.medium)
                     Text(record.date, style: .date)
                         .font(.caption).foregroundColor(.secondary)
-                }
-            }
-        }
-    }
-
-    // MARK: - Delete Car (own only)
-
-    private var deleteSection: some View {
-        Section {
-            Button(role: .destructive) {
-                showingDeleteConfirmation = true
-            } label: {
-                HStack {
-                    Spacer()
-                    Label("Delete Car", systemImage: "trash")
-                    Spacer()
                 }
             }
         }
@@ -758,56 +302,6 @@ struct LogConfirmationBanner: View {
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
-    }
-}
-
-struct ExpiryBannerItem: View {
-    let icon: String
-    let text: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon).foregroundColor(color).font(.subheadline)
-            Text(text).font(.subheadline).fontWeight(.medium).foregroundColor(color)
-        }
-    }
-}
-
-struct ExpiryRow: View {
-    let label: String
-    let date: Date
-    let isExpired: Bool
-    let isExpiringSoon: Bool
-
-    private var statusColor: Color {
-        if isExpired { return .red }
-        if isExpiringSoon { return .orange }
-        return .primary
-    }
-
-    private var daysText: String {
-        let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
-        if days < 0 { return "Expired" }
-        if days == 0 { return "Expires today" }
-        if days == 1 { return "Expires tomorrow" }
-        return "Expires in \(days) days"
-    }
-
-    var body: some View {
-        HStack {
-            Text(label).foregroundColor(.secondary)
-            Spacer()
-            // Copies the date as displayed, not the "Expires in N days" caption.
-            CopyableValue(label: label, copyText: date.formatted(date: .long, time: .omitted)) {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(date, style: .date).foregroundColor(statusColor)
-                    if isExpired || isExpiringSoon {
-                        Text(daysText).font(.caption).fontWeight(.medium).foregroundColor(statusColor)
-                    }
-                }
-            }
-        }
     }
 }
 

@@ -121,7 +121,6 @@ class SubscriptionStore: ObservableObject {
     // MARK: - Purchase
 
     func clearError() { purchaseError = nil }
-    func clearRestoreError() { restoreError = nil }
 
     func purchase(_ product: Product) async {
         purchaseError = nil

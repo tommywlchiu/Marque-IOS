@@ -285,19 +285,6 @@ struct Car: Identifiable, Codable, Equatable {
         photoStorageURLs.prefix(photoFileNames.count).filter { !$0.isEmpty }
     }
 
-    /// The rounded range of the OWNER'S value. NOT what Explore shows any more:
-    /// the public range comes only from an AI valuation, set server-side (owner
-    /// decision). Use `CarStore.publicValueRangePreview(for:)` for that.
-    @available(*, deprecated, message: "Public range is server-derived from the AI valuation; use CarStore.publicValueRangePreview(for:)")
-    var publicValueRange: String? {
-        guard showValuePublicly, let estimatedValue else { return nil }
-        return CarValueRange.publicLabel(for: estimatedValue)
-    }
-
-    var hasMultiplePhotos: Bool {
-        photoFileNames.count > 1
-    }
-
     /// A car with at least one mod counts as "Modified" — drives the Explore
     /// filter (PublicCar.isModified mirrors this).
     var isModified: Bool {
@@ -307,14 +294,6 @@ struct Car: Identifiable, Codable, Equatable {
     var displayName: String {
         let parts = [year, make, model].filter { !$0.isEmpty }
         return parts.isEmpty ? "Unknown Car" : parts.joined(separator: " ")
-    }
-
-    var hasDetailedInfo: Bool {
-        !licensePlate.isEmpty || !vinNumber.isEmpty || !color.isEmpty ||
-        !mileage.isEmpty || !trim.isEmpty || !bodyStyle.isEmpty ||
-        !driveType.isEmpty || !engine.isEmpty || !fuelType.isEmpty ||
-        !transmission.isEmpty || !insuranceProvider.isEmpty ||
-        !insurancePolicyNumber.isEmpty || !notes.isEmpty
     }
 
     var sortedMaintenanceRecords: [MaintenanceRecord] {
@@ -351,11 +330,6 @@ struct Car: Identifiable, Codable, Equatable {
     var isRegistrationExpired: Bool {
         guard let date = registrationExpiryDate else { return false }
         return date < Date()
-    }
-
-    var hasExpiryWarning: Bool {
-        isInsuranceExpiringSoon || isInsuranceExpired ||
-        isRegistrationExpiringSoon || isRegistrationExpired
     }
 
     var totalExpenses: Double {

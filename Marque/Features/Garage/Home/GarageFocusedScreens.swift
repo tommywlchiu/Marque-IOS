@@ -4,16 +4,14 @@ import SwiftUI
 enum GarageRoute: Hashable {
     case serviceHistory(UUID)
     case reminders(UUID)
-    case documents(UUID)
     case mods(UUID)
     case expenses(UUID)
     case value(UUID)
     case engineSound(UUID)
     case publicSharing(UUID)
     case details(UUID)
-    case settings
-    /// The full car page — only for a comment push, so the comments open.
-    case carPage(UUID, openComments: Bool)
+    /// Public Sharing with the comments sheet open (a comment notification).
+    case carComments(UUID)
 }
 
 /// Shell for a focused screen about one car: resolves the live car from
@@ -79,33 +77,6 @@ struct GarageServiceHistoryScreen: View {
             logConfirmation: $logConfirmation
         ))
         .modifier(LogConfirmationOverlay(carID: carID, confirmation: $logConfirmation))
-    }
-}
-
-// MARK: - Documents
-
-struct GarageDocumentsScreen: View {
-    let carID: UUID
-
-    @EnvironmentObject private var carStore: CarStore
-    @State private var showingEditRegistration = false
-    @State private var showingEditInsurance = false
-
-    var body: some View {
-        GarageCarScreen(carID: carID, title: "Documents") { car in
-            List {
-                RegistrationSection(car: car) { showingEditRegistration = true }
-                InsuranceSection(car: car) { showingEditInsurance = true }
-            }
-            .modifier(FocusedEditPresenters(
-                liveCar: car,
-                showingEditRegistration: $showingEditRegistration,
-                showingEditVehicleDetails: .constant(false),
-                showingEditInsurance: $showingEditInsurance,
-                showingAddReminder: .constant(false),
-                onSave: { carStore.updateCar($0) }
-            ))
-        }
     }
 }
 
@@ -192,6 +163,7 @@ struct GarageExpensesScreen: View {
 
 struct GaragePublicSharingScreen: View {
     let carID: UUID
+    var openCommentsOnAppear = false
 
     @EnvironmentObject private var carStore: CarStore
     @EnvironmentObject private var authService: AuthService
@@ -207,6 +179,7 @@ struct GaragePublicSharingScreen: View {
     @State private var commentActionError: String?
     @State private var blockTarget: UserRef?
     @State private var profileTarget: UserRef?
+    @State private var didOpenComments = false
 
     private var liveCar: Car? { carStore.cars.first(where: { $0.id == carID }) }
 
@@ -234,6 +207,11 @@ struct GaragePublicSharingScreen: View {
                 }
             }
             .modifier(CommentsListenerLifecycle(carId: car.isPublic ? car.id.uuidString : nil))
+            .onAppear {
+                guard openCommentsOnAppear, !didOpenComments, car.isPublic else { return }
+                didOpenComments = true
+                openComments(for: car)
+            }
         }
         .modifier(PublicSharingSheetPresenter(
             car: liveCar,
@@ -300,14 +278,9 @@ struct GarageDetailsScreen: View {
                 }
                 .garageRowBackground()
             }
-            .modifier(FocusedEditPresenters(
-                liveCar: car,
-                showingEditRegistration: .constant(false),
-                showingEditVehicleDetails: $showingEditVehicleDetails,
-                showingEditInsurance: .constant(false),
-                showingAddReminder: .constant(false),
-                onSave: { carStore.updateCar($0) }
-            ))
+            .sheet(isPresented: $showingEditVehicleDetails) {
+                EditVehicleDetailsSheet(car: car) { carStore.updateCar($0) }
+            }
             .alert("Delete Car", isPresented: $showingDeleteConfirmation) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) {

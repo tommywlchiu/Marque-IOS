@@ -68,13 +68,6 @@ enum CommentFilter {
     /// Convenience inverse of `containsBlockedTerm`.
     static func isAllowed(_ text: String) -> Bool { !containsBlockedTerm(text) }
 
-    /// splitTokens plus the joined single-letter runs appended (mirrors
-    /// normalizeForFilter).
-    static func normalize(_ text: String) -> [String] {
-        let tokens = splitTokens(text)
-        return tokens + joinedRuns(tokens)
-    }
-
     /// Mirrors splitTokens(): lowercase, NFKD, drop combining marks and format
     /// characters (zero-width, bidi controls, BOM), fold homoglyphs, leetspeak
     /// on runs that touch a letter (a run with "!" needs letters on both

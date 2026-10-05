@@ -309,37 +309,28 @@ private struct ProfileResolvingView: View {
 
 // MARK: - Main Tab View
 
+/// The main tabs. Exposed so a screen can jump to another tab through
+/// `\.selectMainTab` (the Garage's document alerts open Wallet).
+enum MainTab: Hashable { case garage, explore, photos, wallet }
+
+private struct SelectMainTabKey: EnvironmentKey {
+    static let defaultValue: (MainTab) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var selectMainTab: (MainTab) -> Void {
+        get { self[SelectMainTabKey.self] }
+        set { self[SelectMainTabKey.self] = newValue }
+    }
+}
+
 private struct MainTabView: View {
     @EnvironmentObject var carStore: CarStore
-    @EnvironmentObject var subscriptionStore: SubscriptionStore
     @EnvironmentObject var appDelegate: AppDelegate
     @EnvironmentObject var authService: AuthService
 
-    @State private var selectedTab: Tab = .garage
-    @State private var showingAddCar = false
+    @State private var selectedTab: MainTab = .garage
     @State private var showingPaywall = false
-
-    private enum Tab: Hashable { case garage, explore, add, photos, wallet }
-
-    private var atCarLimit: Bool {
-        carStore.cars.count >= CarStore.freeCarLimit && !subscriptionStore.isPro
-    }
-
-    // Intercept selection of the center "+" tab — trigger the add-car flow
-    // instead of switching tabs.
-    private var tabBinding: Binding<Tab> {
-        Binding(
-            get: { selectedTab },
-            set: { newValue in
-                if newValue == .add {
-                    if atCarLimit { showingPaywall = true }
-                    else { showingAddCar = true }
-                } else {
-                    selectedTab = newValue
-                }
-            }
-        )
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -348,30 +339,24 @@ private struct MainTabView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
-            TabView(selection: tabBinding) {
+            TabView(selection: $selectedTab) {
                 GarageHomeView()
                     .tabItem { Label("Garage", systemImage: "car.fill") }
-                    .tag(Tab.garage)
+                    .tag(MainTab.garage)
 
                 ExploreView()
                     .tabItem { Label("Explore", systemImage: "globe") }
-                    .tag(Tab.explore)
-
-                // Placeholder content — this tab is never actually selected.
-                // The selection binding intercepts taps and opens AddCarView.
-                Color.clear
-                    .tabItem { Image(systemName: "plus.circle.fill") }
-                    .tag(Tab.add)
+                    .tag(MainTab.explore)
 
                 PhotosTabView()
                     .modifier(FollowPushRouter())
                     .tabItem { Label("Photos", systemImage: "photo.on.rectangle") }
-                    .tag(Tab.photos)
+                    .tag(MainTab.photos)
 
                 WalletView()
                     .modifier(FollowPushRouter())
                     .tabItem { Label("Wallet", systemImage: "wallet.pass") }
-                    .tag(Tab.wallet)
+                    .tag(MainTab.wallet)
             }
             .onAppear {
                 // No permission prompt here: FR-04.1 / FR-13.6 require it to be
@@ -400,9 +385,7 @@ private struct MainTabView: View {
         .onChange(of: appDelegate.pendingCarID) { _, carID in
             if carID != nil { selectedTab = .garage }
         }
-        .sheet(isPresented: $showingAddCar) {
-            AddCarView()
-        }
+        .environment(\.selectMainTab) { selectedTab = $0 }
         .sheet(isPresented: $showingPaywall) {
             ProUpgradeView(trigger: .carLimit)
         }

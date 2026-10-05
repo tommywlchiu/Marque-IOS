@@ -39,7 +39,7 @@ Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
                               → AddCarView (onboarding mode, if needsFirstCarStep — FR-13's add-first-car step)
                               → MainTabView
 ```
-`MainTabView` has **5 tabs**: Garage, Explore, an Add "+" tab (intercepted, opens `AddCarView`), Photos, Wallet. **Garage** (`Features/Garage/Home/`) is Tesla-style and always dark (local `.environment(\.colorScheme, .dark)`, never `.preferredColorScheme`); Settings is its header menu icon. **Notifications** is a toolbar bell on Explore. **Profile** lives at the top of **Wallet**. Shared screens pushed in the Garage get charcoal styling only via `.garageScreenChrome()` / `.garageRowBackground()`. See CLAUDE.md > Navigation for the full map.
+`MainTabView` has **4 tabs**: Garage, Explore, Photos, Wallet. **Garage** (`Features/Garage/Home/`) is Tesla-style and always dark (local `.environment(\.colorScheme, .dark)`, never `.preferredColorScheme`); Add a Car is in its switcher. **Notifications** is a toolbar bell on Explore. **Profile** and the **Settings** gear live at the top of **Wallet**, which is also the only editor for documents. `CarDetailView` is public-only. One entry point per feature — don't add duplicates. Shared screens pushed in the Garage get charcoal styling only via `.garageScreenChrome()` / `.garageRowBackground()`. See CLAUDE.md > Navigation for the full map.
 
 ### Stores you consume (via `@EnvironmentObject`)
 

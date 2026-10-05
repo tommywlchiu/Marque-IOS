@@ -276,25 +276,6 @@ enum GarageSummary {
         return car.serviceReminders.contains { !$0.isCompleted && $0.status(currentMileage: mileage, today: today) == .overdue }
     }
 
-    static func documentsSubtitle(_ car: Car) -> String {
-        func status(_ label: String, hasData: Bool, date: Date?, expired: Bool, soon: Bool) -> String {
-            guard hasData else { return "No \(label.lowercased())" }
-            if expired { return "\(label) expired" }
-            if soon { return "\(label) expiring" }
-            return date == nil ? "\(label) on file" : "\(label) valid"
-        }
-        // Same test as the Wallet's registration card: a VIN alone isn't a registration.
-        let hasRegistration = !car.licensePlate.isEmpty || car.registrationExpiryDate != nil
-        let hasInsurance = !car.insuranceProvider.isEmpty || !car.insurancePolicyNumber.isEmpty || car.insuranceExpiryDate != nil
-        guard hasRegistration || hasInsurance else { return "Add registration & insurance" }
-        return [
-            status("Registration", hasData: hasRegistration, date: car.registrationExpiryDate,
-                   expired: car.isRegistrationExpired, soon: car.isRegistrationExpiringSoon),
-            status("Insurance", hasData: hasInsurance, date: car.insuranceExpiryDate,
-                   expired: car.isInsuranceExpired, soon: car.isInsuranceExpiringSoon),
-        ].joined(separator: " · ")
-    }
-
     static func modsSubtitle(_ car: Car) -> String {
         car.mods.isEmpty ? "Add your first mod" : "\(car.mods.count) mod\(car.mods.count == 1 ? "" : "s")"
     }
