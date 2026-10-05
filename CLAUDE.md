@@ -158,11 +158,6 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — A local scheme with an absolute `.storekit` path passed `xcodebuild -list`, but crashed the user's Xcode on every open (five crash reports in three minutes) with `dvt_stringByMakingAbsolutePathWithBasePath:` asserting inside `IDESchemeOptionReference.resolvedReference`. It was invisible while their already-running Xcode session hadn't rescanned, and fatal on the restart.
 - **Detect** — `ls -t ~/Library/Logs/DiagnosticReports | grep '^Xcode'`; an `.ips` whose crashed thread has `IDESchemeOptionReference` is this. Removing the scheme file from `<project>.xcodeproj/xcuserdata/*/xcschemes/` restores the project. Note a user scheme also hides the auto-generated default `Marque` scheme from `xcodebuild -list`, breaking the build command above.
 
-### Rules tests must use values copied from production, not hand-typed ones
-- **Rule** — Any rule that pattern-matches a URL or ID needs at least one test whose value is copied verbatim from a real production document. The iOS SDK's Storage `downloadURL()` includes `:443` (`https://firebasestorage.googleapis.com:443/...`); an emulator URL (`127.0.0.1:9199`) or a hand-typed one does not.
-- **Why** — `storageObjectPrefix()` matched only the portless host. 203 emulator tests passed, and after the deploy every production publish carrying an avatar or photo URL was denied.
-- **Detect** — Read one real `publicCars` doc (Firebase MCP `firestore_get_document`) and check its URL fields against each `matches(` pattern in `firestore.rules`.
-
 ### A webhook that third parties call must declare `invoker: "public"`
 - **Rule** — Any `onRequest` function called by an outside service (Apple's App Store Server Notifications today) must pass `{ invoker: "public" }` explicitly, and after deploying it, `curl -X GET <url>` must return the function's own response (405 for `appStoreNotifications`), not Cloud Run's 403 HTML page. Callables are a different case: the Firebase SDK sends credentials, and they were public all along.
 - **Why** — `appStoreNotifications` was a private Cloud Run service, so every Apple notification (renewals, cancellations, refunds) got a 403 before the code ran. The logs show this since at least 2026-09-29. The in-app `syncEntitlement` path kept purchases working, which hid it.
@@ -172,6 +167,11 @@ Learned the hard way. Each one cost real debugging time.
 - **Rule** — Any new `CarBodyProfile` (a hand-tuned "known model" entry in `GarageCarModel.swift`, not the generic `forBodyStyle` shapes) must be rendered and visually checked before it ships — not just checked for a plausible-looking 2D path. `SCNShape`'s tessellator can produce a completely empty mesh for a geometrically valid, non-self-intersecting `CGPath` that `CoreGraphics` fills without complaint; it isn't a gradual chamfer-too-large degradation, it's a sharp cliff (one parameter value renders fine, a change of 0.005 renders nothing, no error, no log).
 - **Why** — `teslaModel3()`'s first-draft `noseHeight = 0.52` rendered a fully invisible lower body (only the glass/wheels/trim showed) in every lighting and chamfer configuration tried, including `chamferRadius = 0`. Bisection against the sedan default isolated it to `noseHeight` alone, with the failure threshold between 0.525 (broken) and 0.53 (fine). Shipped at 0.58 for margin. `CarModelRenderer.image(for:)` now also falls back to `forBodyStyle` if a known-model render comes back empty, so this failure mode can no longer ship a blank hero even if a future profile hits the same cliff.
 - **Detect** — Render the new profile (a `swiftc`-compiled macOS harness reusing the same `CarBodyProfile`/`ProceduralCarModel` code is fast to iterate with) and look at the actual pixels, not just the 2D path. If the body is missing, bisect each field against a known-good baseline one at a time.
+
+### `.onChange` never fires for a value already correct when the view mounts
+- **Rule** — A one-shot setup action driven by `.onChange(of: someStore.property)` must also run once directly (in `.task`/`.onAppear`, using the property's current value) at the same call site. `onChange` only fires on an actual transition; if a `@Published` property is already in its final state by the time the observer attaches — e.g. `CarStore.cars` populated synchronously from its local persistence cache before the Firestore listener's first snapshot changes nothing — the "change" never happens and the handler never runs, silently, with no error.
+- **Why** — `WidgetSnapshotService.sync` was wired only to `.onChange(of: carStore.cars)` in `Marque.swift`. On a device that already had the right cars cached locally, the shared App Group snapshot the widget reads was never written — confirmed by a temporary file-based log showing zero invocations across 30+ seconds, while a direct call from `.task` wrote the file in milliseconds. `MainTabView`'s own `.onChange(of: carStore.cars)` (driving `NotificationManager.scheduleAll`) already carries this exact fix as a paired `.onAppear` call — the same bug, caught once, already had the workaround sitting a few hundred lines away.
+- **Detect** — `grep -n "onChange(of:" Marque/Marque.swift` — for each one, check whether the same side effect also runs once from `.task`/`.onAppear` with the property's current value, not only from the change handler.
 
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.
@@ -278,6 +278,20 @@ An earlier `#if canImport(FirebaseCore)` conditional-compilation pattern with `#
 - **`ImageManager`** — local `Documents/CarPhotos/` file management (add, load, delete).
 - **`AnalyticsService`** — FR-11 PostHog wrapper. A struct of static functions (the `NotificationManager` pattern): no `ObservableObject`, no environment injection, no observable state. One typed method per FR-11.4 event; the generic `capture` is private. Configured once in `Marque_PrototypeApp.init()`, with `identify`/`reset` driven off the auth-state change. Autocapture, session replay, surveys, screen views, lifecycle events, and swizzling are all explicitly disabled — several default to *true*, and screen-view capture in particular would stamp `Car.displayName` onto every event. See Key Conventions.
 - **`CrashReportingService`** — FR-11.8 Firebase Crashlytics wrapper, same static-struct pattern. Deliberately separate from `AnalyticsService`: PostHog is explicitly not the crash reporter. `identify`/`reset` are driven off the same auth-state change as `AnalyticsService`, tying crash reports to the reporting uid. No configure step needed — linking the SPM product plus the existing unguarded `FirebaseApp.configure()` is sufficient; collection is on by default.
+- **`WidgetSnapshotService`** — keeps the Home Screen widget's shared snapshot in sync with `CarStore.cars`. See **Home Screen Widget** below; same `.onChange` + `.task`/`.onAppear` pairing `NotificationManager` already needs (see the pitfall on `.onChange` never firing for an already-correct value).
+
+## Home Screen Widget
+
+A second target, **`MarqueWidgetExtension`** (`MarqueWidget/`), embedded in the app — WidgetKit, `AppIntentConfiguration`, `.systemSmall`/`.systemMedium`, Tesla-widget styled (dark card, name, one status line, mileage, the car's hero image bleeding off the trailing edge). The widget process is separate from the app and never touches Firestore, CarStore, or Firebase directly — its entire input is two files shared via an **App Group** (`group.com.tommychiu.marque`, entitled on both targets):
+
+- `widget_cars.json` (`WidgetSharedData.swift` — `WidgetCarSnapshot`, `WidgetSharedStore` — multi-target-membershipped into both targets, the shared surface between them, not duplicated) — one entry per car: id, display name, mileage text, the same status line `GarageSummary.statusLine` shows on the Garage home, and a hero-image filename.
+- `WidgetHeroImages/<carID>.png` — copies of whichever hero `GarageHeroView` would already show (the Vision cut-out or the SceneKit body-style model), written by `WidgetSnapshotService`, never re-rendered by the widget itself.
+
+`WidgetSnapshotService.sync(cars:)` (app target only) writes both: cached hero images copy in immediately; an uncached car's hero is rendered in the background through the exact same `CarCutoutRenderer`/`CarModelRenderer` calls `GarageHeroView` uses (no second rendering pipeline), then `sync` re-runs once it lands. Called from `Marque.swift` on `.onChange(of: carStore.cars)` **and** once from `.task` with the current value (the pitfall above), and with `cars: []` on sign-out so a signed-out device's widget doesn't keep showing the previous account's cars. `GarageTheme.swift` is the other multi-target-membershipped file, so the widget's palette can never drift from the Garage's.
+
+Tapping a widget opens `marque://car/<uuid>` (`CFBundleURLTypes` in `Marque/Info.plist`), caught by `.onOpenURL` in `Marque.swift`, which sets `AppDelegate.pendingCarID` — the same path a like/comment push already uses, so `GarageHomeView.tryDeepLinkNavigation()` needs no widget-specific code.
+
+**Adding a target by hand-editing `project.pbxproj`** (no Xcode GUI in this environment) is the single riskiest kind of edit in this repo — more so than the hand-written-scheme pitfall, since a target touches ~15 interdependent sections (`PBXNativeTarget`, two `XCBuildConfiguration`s, an `XCConfigurationList`, `PBXSourcesBuildPhase`/`PBXFrameworksBuildPhase`/`PBXResourcesBuildPhase`, a `PBXContainerItemProxy` + `PBXTargetDependency` for the app→extension dependency, a `PBXCopyFilesBuildPhase` embed phase with `dstSubfolderSpec = 13`, `PBXGroup`/`PBXFileReference` entries, and the project's own `targets`/`TargetAttributes`). Never do this directly against the live project: build the whole diff as a parameterized script (`--root <path>`), run it against a scratch `cp -R` copy first, verify with `plutil -lint`, `xcodebuild -list`, a Simulator build, **and** a `generic/platform=iOS` build with `-allowProvisioningUpdates` (the real test — it either validates or rejects a new bundle ID and App Group entitlement against the live Apple Developer account; `codesign -d --entitlements :- <product>` confirms the entitlement actually landed, not just that the local `.entitlements` file says so), and only then run the identical script against the real project.
 
 ## Cloud Functions
 
@@ -349,13 +363,16 @@ Marque/
                      BlockStore, NotificationStore, SubscriptionStore,
                      ImageManager, NotificationManager, VINDecodeService, ServiceReminderEngine,
                      AIServiceSuggestionService, DocumentScanService, AnalyticsService,
-                     CrashReportingService, ScanAllowanceStore
+                     CrashReportingService, ScanAllowanceStore, WidgetSnapshotService
                      (note: FeatureFlagsStore.swift sits at the Marque/ root,
-                      not in Stores/, alongside AppDelegate.swift)
+                      not in Stores/, alongside AppDelegate.swift and WidgetSharedData.swift)
   Components/      — MarqueComponents.swift, CarPhotoImage.swift, ScanAllowanceViews.swift
   Views/           — Legacy flat views (CarDetailView, AddCarView, EditCarDetailView,
                      AddMaintenanceView). Migration target: Features/.
   Features/        — Assistant, Auth, Expenses, Explore, Garage (Home/ = Tesla-style tab), Onboarding, Photos, Profile, Settings, Social, Wallet
+MarqueWidget/      — The Home Screen widget extension target — see Architecture > Home Screen Widget.
+                     Shares WidgetSharedData.swift and GarageTheme.swift with the app target
+                     (multi-target membership, not duplicated).
 .claude/agents/    — frontend.md, backend.md, qa.md (team definitions)
 functions/         — TypeScript Cloud Functions (askMarque, appStoreNotifications, onAuthUserDeleted, ...)
 firestore.rules    — Firestore security rules

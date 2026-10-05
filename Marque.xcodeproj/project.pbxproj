@@ -145,7 +145,41 @@
 		6A4E0B00000000000000000C /* ExpenseSummarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000C /* ExpenseSummarySection.swift */; };
 		6A4E0B00000000000000000D /* CarVisibilitySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000D /* CarVisibilitySection.swift */; };
 		6A4E0B00000000000000000E /* OwnCarPublicProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000E /* OwnCarPublicProjection.swift */; };
+		9D0001000000000000000001 /* MarqueWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000001 /* MarqueWidgetBundle.swift */; };
+		9D0001000000000000000002 /* MarqueGarageWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000002 /* MarqueGarageWidget.swift */; };
+		9D0001000000000000000003 /* SelectCarIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000003 /* SelectCarIntent.swift */; };
+		9D0001000000000000000004 /* GarageWidgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000004 /* GarageWidgetProvider.swift */; };
+		9D0001000000000000000005 /* GarageWidgetEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000005 /* GarageWidgetEntryView.swift */; };
+		9D0001000000000000000006 /* WidgetSharedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000006 /* WidgetSharedData.swift */; };
+		9D0001000000000000000007 /* GarageTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000002 /* GarageTheme.swift */; };
+		9D0001000000000000000008 /* WidgetSharedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000006 /* WidgetSharedData.swift */; };
+		9D0001000000000000000009 /* WidgetSnapshotService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000009 /* WidgetSnapshotService.swift */; };
+		9D000100000000000000000A /* MarqueWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9D000200000000000000000A /* MarqueWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9D0008000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A90001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D0004000000000000000001;
+			remoteInfo = MarqueWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9D000A000000000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				9D000100000000000000000A /* MarqueWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		600BB66AA00BB37F3FA29F33 /* CarValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarValue.swift; sourceTree = "<group>"; };
@@ -278,6 +312,16 @@
 		6A4E0F00000000000000000C /* ExpenseSummarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummarySection.swift; sourceTree = "<group>"; };
 		6A4E0F00000000000000000D /* CarVisibilitySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarVisibilitySection.swift; sourceTree = "<group>"; };
 		6A4E0F00000000000000000E /* OwnCarPublicProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnCarPublicProjection.swift; sourceTree = "<group>"; };
+		9D0002000000000000000001 /* MarqueWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueWidgetBundle.swift; sourceTree = "<group>"; };
+		9D0002000000000000000002 /* MarqueGarageWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueGarageWidget.swift; sourceTree = "<group>"; };
+		9D0002000000000000000003 /* SelectCarIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectCarIntent.swift; sourceTree = "<group>"; };
+		9D0002000000000000000004 /* GarageWidgetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageWidgetProvider.swift; sourceTree = "<group>"; };
+		9D0002000000000000000005 /* GarageWidgetEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageWidgetEntryView.swift; sourceTree = "<group>"; };
+		9D0002000000000000000006 /* WidgetSharedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSharedData.swift; sourceTree = "<group>"; };
+		9D0002000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9D0002000000000000000008 /* MarqueWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MarqueWidget.entitlements; sourceTree = "<group>"; };
+		9D0002000000000000000009 /* WidgetSnapshotService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotService.swift; sourceTree = "<group>"; };
+		9D000200000000000000000A /* MarqueWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MarqueWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -300,6 +344,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9D0007000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -310,6 +361,7 @@
 				A50002 /* Marque */,
 				F497CF16301D5D1B001892AE /* Frameworks */,
 				A50005 /* Products */,
+				9D0003000000000000000001 /* MarqueWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -319,6 +371,7 @@
 				F421FDE72FA465A7000DBF3C /* Info.plist */,
 				F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */,
 				A20001 /* Marque.swift */,
+				9D0002000000000000000006 /* WidgetSharedData.swift */,
 				A20066 /* AppDelegate.swift */,
 				A50003 /* Models */,
 				A50006 /* Stores */,
@@ -372,6 +425,7 @@
 			isa = PBXGroup;
 			children = (
 				A30001 /* Marque.app */,
+				9D000200000000000000000A /* MarqueWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -401,6 +455,7 @@
 				20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */,
 				8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */,
 				63B35D4AABF04F78AC0B2395 /* AccountExportService.swift */,
+				9D0002000000000000000009 /* WidgetSnapshotService.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -599,6 +654,20 @@
 			path = Sections;
 			sourceTree = "<group>";
 		};
+		9D0003000000000000000001 /* MarqueWidget */ = {
+			isa = PBXGroup;
+			children = (
+				9D0002000000000000000001 /* MarqueWidgetBundle.swift */,
+				9D0002000000000000000002 /* MarqueGarageWidget.swift */,
+				9D0002000000000000000003 /* SelectCarIntent.swift */,
+				9D0002000000000000000004 /* GarageWidgetProvider.swift */,
+				9D0002000000000000000005 /* GarageWidgetEntryView.swift */,
+				9D0002000000000000000007 /* Info.plist */,
+				9D0002000000000000000008 /* MarqueWidget.entitlements */,
+			);
+			path = MarqueWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -610,10 +679,12 @@
 				A40001 /* Frameworks */,
 				A70002 /* Resources */,
 				4D6E1D89B9CCDAFA5DDCDA13 /* Upload Crashlytics Symbols */,
+				9D000A000000000000000001 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				9D0009000000000000000001 /* PBXTargetDependency */,
 			);
 			name = Marque;
 			packageProductDependencies = (
@@ -634,6 +705,23 @@
 			productReference = A30001 /* Marque.app */;
 			productType = "com.apple.product-type.application";
 		};
+		9D0004000000000000000001 /* MarqueWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9D0005000000000000000001 /* Build configuration list for PBXNativeTarget "MarqueWidgetExtension" */;
+			buildPhases = (
+				9D0007000000000000000001 /* Sources */,
+				9D0007000000000000000002 /* Frameworks */,
+				9D0007000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MarqueWidgetExtension;
+			productName = MarqueWidgetExtension;
+			productReference = 9D000200000000000000000A /* MarqueWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -645,6 +733,9 @@
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					A60001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					9D0004000000000000000001 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -668,6 +759,7 @@
 			projectRoot = "";
 			targets = (
 				A60001 /* Marque */,
+				9D0004000000000000000001 /* MarqueWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -680,6 +772,13 @@
 				A10008 /* Assets.xcassets in Resources */,
 				A10044 /* GoogleService-Info.plist in Resources */,
 				F5B1000100000000B1000001 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9D0007000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -714,6 +813,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D0001000000000000000008 /* WidgetSharedData.swift in Sources */,
+				9D0001000000000000000009 /* WidgetSnapshotService.swift in Sources */,
 				FE50B1000000000000000001 /* LikeButton.swift in Sources */,
 				FE50B1000000000000000002 /* PushPermissionPrePrompt.swift in Sources */,
 				FE50B1000000000000000003 /* EngineSoundPlayback.swift in Sources */,
@@ -840,7 +941,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9D0007000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9D0001000000000000000001 /* MarqueWidgetBundle.swift in Sources */,
+				9D0001000000000000000002 /* MarqueGarageWidget.swift in Sources */,
+				9D0001000000000000000003 /* SelectCarIntent.swift in Sources */,
+				9D0001000000000000000004 /* GarageWidgetProvider.swift in Sources */,
+				9D0001000000000000000005 /* GarageWidgetEntryView.swift in Sources */,
+				9D0001000000000000000006 /* WidgetSharedData.swift in Sources */,
+				9D0001000000000000000007 /* GarageTheme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9D0009000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D0004000000000000000001 /* MarqueWidgetExtension */;
+			targetProxy = 9D0008000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		B10001 /* Debug */ = {
@@ -1024,6 +1147,64 @@
 			};
 			name = Release;
 		};
+		9D0006000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "MarqueWidget/MarqueWidget.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 7DZTSZ3299;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MarqueWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Marque;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommychiu.marque.MarqueWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9D0006000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "MarqueWidget/MarqueWidget.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = 7DZTSZ3299;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MarqueWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Marque;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommychiu.marque.MarqueWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1041,6 +1222,15 @@
 			buildConfigurations = (
 				B20001 /* Debug */,
 				B20002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9D0005000000000000000001 /* Build configuration list for PBXNativeTarget "MarqueWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9D0006000000000000000001 /* Debug */,
+				9D0006000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -94,6 +94,14 @@ struct Marque_PrototypeApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .onOpenURL { url in
+                    // The widget's deep link: marque://car/<uuid>. Reuses the
+                    // same pendingCarID path a like/comment push already uses —
+                    // GarageHomeView.tryDeepLinkNavigation() picks it up.
+                    guard url.scheme == "marque", url.host == "car",
+                          let id = UUID(uuidString: url.lastPathComponent) else { return }
+                    appDelegate.pendingCarID = id
+                }
                 .task {
                     // FR-11.4 launch events. `.task` on the root view fires once
                     // per process, after the first render is scheduled, which is
@@ -107,6 +115,12 @@ struct Marque_PrototypeApp: App {
                     // AuthService.signOut() calls Auth.signOut(). The
                     // authState observer below runs too late for that.
                     authService.willSignOut = { [pushStore] in await pushStore.prepareForSignOut() }
+                    // CarStore's local persistence cache can already have the
+                    // right value by the time this view mounts, so onChange
+                    // below (which only fires on an actual change) may never
+                    // fire this session — same reason MainTabView's own
+                    // onChange(of: carStore.cars) is paired with an onAppear.
+                    WidgetSnapshotService.sync(cars: carStore.cars)
                 }
                 .environmentObject(carStore)
                 .environmentObject(authService)
@@ -157,7 +171,13 @@ struct Marque_PrototypeApp: App {
                         // on this device isn't merged into the previous identity.
                         AnalyticsService.reset()
                         CrashReportingService.reset()
+                        // A signed-out device's widget must not keep showing the
+                        // previous account's cars.
+                        WidgetSnapshotService.sync(cars: [])
                     }
+                }
+                .onChange(of: carStore.cars) { _, cars in
+                    WidgetSnapshotService.sync(cars: cars)
                 }
                 .onChange(of: subscriptionStore.isPro) { oldValue, newValue in
                     guard oldValue != newValue else { return }

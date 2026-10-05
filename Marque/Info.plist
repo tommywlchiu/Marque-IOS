@@ -26,6 +26,14 @@
 				<string>com.googleusercontent.apps.415884250922-9sdb41ipkhnh8e8tlbe4pkikd1fjri68</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>marque</string>
+			</array>
+		</dict>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
