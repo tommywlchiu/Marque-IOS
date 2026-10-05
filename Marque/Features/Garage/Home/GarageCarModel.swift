@@ -1,0 +1,426 @@
+import SceneKit
+import UIKit
+
+// The Garage hero's stand-in for a car with no usable photo: a stylized
+// "clay model" of its body style, built in code (no external assets), painted
+// in the car's color and rendered on-device once per style/color.
+
+/// Side-profile dimensions (meters) for one body style. The car runs along +x
+/// from the nose at x = 0; y is up; the shapes are extruded across z.
+struct CarBodyProfile {
+    var length: CGFloat = 4.8, width: CGFloat = 1.84
+    var clearance: CGFloat = 0.17, wheelRadius: CGFloat = 0.36
+    var frontAxle: CGFloat = 0.98, rearAxle: CGFloat = 3.78
+    var noseHeight: CGFloat = 0.64, belt: CGFloat = 0.96, cowlX: CGFloat = 1.72
+    var roofFrontX: CGFloat = 2.32, roofRearX: CGFloat = 3.28, roofHeight: CGFloat = 1.43
+    var rearGlassBaseX: CGFloat = 3.98, deckHeight: CGFloat = 1.0, tailHeight: CGFloat = 0.98
+    var hasRoof = true
+    var hasBed = false
+
+    static func forBodyStyle(_ style: String) -> CarBodyProfile {
+        var p = CarBodyProfile()
+        switch style.lowercased() {
+        case "coupe":
+            p.length = 4.6; p.rearAxle = 3.62; p.noseHeight = 0.58; p.belt = 0.92
+            p.roofFrontX = 2.25; p.roofRearX = 2.95; p.roofHeight = 1.32
+            p.rearGlassBaseX = 3.95; p.deckHeight = 0.96; p.tailHeight = 0.95
+        case "convertible":
+            p.length = 4.6; p.rearAxle = 3.62; p.noseHeight = 0.58; p.belt = 0.92
+            p.roofFrontX = 2.05; p.roofRearX = 2.1; p.roofHeight = 1.18
+            p.rearGlassBaseX = 2.18; p.deckHeight = 0.96; p.tailHeight = 0.95; p.hasRoof = false
+        case "hatchback":
+            p.length = 4.25; p.frontAxle = 0.9; p.rearAxle = 3.5; p.cowlX = 1.55
+            p.roofFrontX = 2.1; p.roofRearX = 3.75; p.roofHeight = 1.46
+            p.rearGlassBaseX = 4.17; p.deckHeight = 1.0; p.tailHeight = 1.0
+        case "wagon":
+            p.roofRearX = 4.42; p.rearGlassBaseX = 4.74; p.deckHeight = 1.0; p.tailHeight = 1.0
+        case "suv", "crossover":
+            p.length = 4.75; p.width = 1.92; p.clearance = 0.25; p.wheelRadius = 0.42
+            p.frontAxle = 0.98; p.rearAxle = 3.82; p.noseHeight = 0.86; p.belt = 1.14
+            p.cowlX = 1.6; p.roofFrontX = 2.12; p.roofRearX = 4.3; p.roofHeight = 1.74
+            p.rearGlassBaseX = 4.66; p.deckHeight = 1.15; p.tailHeight = 1.14
+        case "pickup":
+            p.length = 5.6; p.width = 1.98; p.clearance = 0.28; p.wheelRadius = 0.44
+            p.frontAxle = 1.02; p.rearAxle = 4.55; p.noseHeight = 0.98; p.belt = 1.18
+            p.cowlX = 1.7; p.roofFrontX = 2.2; p.roofRearX = 3.25; p.roofHeight = 1.88
+            p.rearGlassBaseX = 3.32; p.deckHeight = 1.18; p.tailHeight = 1.18; p.hasBed = true
+        case "van", "minivan":
+            p.length = 5.05; p.width = 1.96; p.clearance = 0.2; p.wheelRadius = 0.38
+            p.frontAxle = 0.95; p.rearAxle = 4.0; p.noseHeight = 0.78; p.belt = 1.08
+            p.cowlX = 1.2; p.roofFrontX = 1.85; p.roofRearX = 4.72; p.roofHeight = 1.8
+            p.rearGlassBaseX = 4.98; p.deckHeight = 1.1; p.tailHeight = 1.1
+        default: break  // sedan
+        }
+        return p
+    }
+
+    // Lower body: nose, hood, beltline, deck, tail, and a bottom with two wheel arches.
+    var lowerBodyPath: CGPath {
+        let path = CGMutablePath()
+        let L = length, c = clearance, deckY = max(belt, deckHeight - 0.02)
+        path.move(to: CGPoint(x: 0.14, y: c + 0.07))
+        path.addQuadCurve(to: CGPoint(x: 0.0, y: noseHeight - 0.14), control: CGPoint(x: -0.01, y: c + 0.1))
+        path.addQuadCurve(to: CGPoint(x: 0.32, y: noseHeight + 0.05), control: CGPoint(x: 0.02, y: noseHeight + 0.04))
+        path.addQuadCurve(to: CGPoint(x: cowlX, y: belt), control: CGPoint(x: cowlX - 0.45, y: belt - 0.01))
+        path.addLine(to: CGPoint(x: rearGlassBaseX, y: deckY))
+        if rearGlassBaseX < L - 0.3 {
+            path.addQuadCurve(to: CGPoint(x: L - 0.12, y: deckHeight), control: CGPoint(x: (rearGlassBaseX + L) / 2, y: deckHeight + 0.03))
+            path.addQuadCurve(to: CGPoint(x: L, y: tailHeight - 0.22), control: CGPoint(x: L, y: deckHeight))
+        } else {
+            path.addQuadCurve(to: CGPoint(x: L, y: tailHeight - 0.22), control: CGPoint(x: L + 0.01, y: deckY))
+        }
+        path.addQuadCurve(to: CGPoint(x: L - 0.1, y: c + 0.07), control: CGPoint(x: L + 0.02, y: c + 0.09))
+        for axle in [rearAxle, frontAxle] {
+            let r = wheelRadius + 0.07, cy = wheelRadius
+            let dx = sqrt(max(0, r * r - (cy - c) * (cy - c)))
+            path.addLine(to: CGPoint(x: axle + dx, y: c))
+            let a0 = atan2(c - cy, dx)
+            let steps = 28
+            for i in 1..<steps {
+                let a = a0 + (.pi - 2 * a0) * CGFloat(i) / CGFloat(steps)
+                path.addLine(to: CGPoint(x: axle + r * cos(a), y: cy + r * sin(a)))
+            }
+            path.addLine(to: CGPoint(x: axle - dx, y: c))
+        }
+        path.closeSubpath()
+        return path
+    }
+
+    // Glass: windshield, side windows and rear window as one shape above the beltline.
+    var greenhousePath: CGPath {
+        let path = CGMutablePath()
+        let baseY = max(belt, deckHeight - 0.02) - 0.02
+        path.move(to: CGPoint(x: cowlX, y: belt - 0.02))
+        path.addQuadCurve(to: CGPoint(x: roofFrontX, y: roofHeight), control: CGPoint(x: roofFrontX - 0.16, y: roofHeight))
+        path.addQuadCurve(to: CGPoint(x: roofRearX, y: roofHeight), control: CGPoint(x: (roofFrontX + roofRearX) / 2, y: roofHeight + 0.03))
+        path.addQuadCurve(to: CGPoint(x: rearGlassBaseX, y: baseY), control: CGPoint(x: min(roofRearX + 0.3, rearGlassBaseX), y: roofHeight))
+        path.closeSubpath()
+        return path
+    }
+
+    // Painted roof panel: a thin band along the top of the greenhouse.
+    var roofPath: CGPath {
+        let path = CGMutablePath()
+        let n = 24
+        let x0 = roofFrontX - 0.14, x1 = min(roofRearX + 0.18, rearGlassBaseX - 0.05)
+        var top: [CGPoint] = []
+        for i in 0...n {
+            let t = CGFloat(i) / CGFloat(n)
+            let edge = min(t, 1 - t)
+            let drop = edge < 0.12 ? (0.12 - edge) * 0.8 : 0
+            top.append(CGPoint(x: x0 + (x1 - x0) * t, y: roofHeight + 0.02 + 0.03 * sin(t * .pi) - drop))
+        }
+        path.move(to: top[0])
+        top.dropFirst().forEach { path.addLine(to: $0) }
+        top.reversed().forEach { path.addLine(to: CGPoint(x: $0.x, y: $0.y - 0.05)) }
+        path.closeSubpath()
+        return path
+    }
+}
+
+enum ProceduralCarModel {
+    private static func vec(_ x: CGFloat, _ y: CGFloat, _ z: CGFloat) -> SCNVector3 {
+        SCNVector3(Float(x), Float(y), Float(z))
+    }
+
+    fileprivate static func node(for p: CarBodyProfile, paint color: UIColor) -> SCNNode {
+        let car = SCNNode()
+        let paint = paintMaterial(color)
+        add(shape(p.lowerBodyPath, depth: p.width, chamfer: 0.07), paint, to: car)
+        add(shape(p.greenhousePath, depth: p.width * 0.84, chamfer: 0.08),
+            material(UIColor(white: 0.03, alpha: 1), metalness: 0.3, roughness: 0.06), to: car)
+        if p.hasRoof {
+            add(shape(p.roofPath, depth: p.width * 0.84 + 0.02, chamfer: 0.025), paint, to: car)
+        }
+        let trim = material(UIColor(white: 0.05, alpha: 1), metalness: 0.1, roughness: 0.55)
+        if p.hasBed {
+            // open cargo bed: a dark recess just below the bed rails
+            let bedLength = p.length - p.rearGlassBaseX - 0.22
+            let bed = SCNNode(geometry: SCNBox(width: bedLength, height: 0.04, length: p.width - 0.22, chamferRadius: 0.02))
+            bed.geometry?.materials = [trim]
+            bed.position = vec(p.rearGlassBaseX + 0.1 + bedLength / 2, p.deckHeight + 0.005, 0)
+            car.addChildNode(bed)
+        }
+        // rocker trim between the arches
+        let rocker = SCNNode(geometry: SCNBox(width: p.rearAxle - p.frontAxle - 2 * (p.wheelRadius + 0.1), height: 0.09, length: p.width + 0.01, chamferRadius: 0.03))
+        rocker.geometry?.materials = [trim]
+        rocker.position = vec((p.frontAxle + p.rearAxle) / 2, p.clearance + 0.05, 0)
+        car.addChildNode(rocker)
+        // grille / lower intake
+        let grille = SCNNode(geometry: SCNBox(width: 0.06, height: 0.15, length: p.width * 0.55, chamferRadius: 0.04))
+        grille.geometry?.materials = [trim]
+        grille.position = vec(0.02, p.clearance + 0.19, 0)
+        car.addChildNode(grille)
+        for side in [CGFloat(1), -1] {
+            let head = SCNNode(geometry: SCNBox(width: 0.16, height: 0.06, length: 0.44, chamferRadius: 0.03))
+            let hm = material(.white, metalness: 0, roughness: 0.2); hm.emission.contents = UIColor(white: 0.95, alpha: 1)
+            head.geometry?.materials = [hm]
+            head.position = vec(0.12, p.noseHeight - 0.05, side * (p.width / 2 - 0.3))
+            head.eulerAngles.z = 0.3
+            car.addChildNode(head)
+            let tail = SCNNode(geometry: SCNBox(width: 0.06, height: 0.07, length: 0.5, chamferRadius: 0.02))
+            let tm = material(UIColor(red: 0.5, green: 0, blue: 0, alpha: 1), metalness: 0, roughness: 0.2)
+            tm.emission.contents = UIColor(red: 0.75, green: 0.03, blue: 0.03, alpha: 1)
+            tail.geometry?.materials = [tm]
+            tail.position = vec(p.length - 0.02, p.tailHeight - 0.13, side * (p.width / 2 - 0.3))
+            car.addChildNode(tail)
+            for axle in [p.frontAxle, p.rearAxle] {
+                car.addChildNode(wheel(radius: p.wheelRadius, at: vec(axle, p.wheelRadius, side * (p.width / 2 - 0.13)), outward: side))
+            }
+        }
+        return car
+    }
+
+    private static func wheel(radius: CGFloat, at position: SCNVector3, outward: CGFloat) -> SCNNode {
+        let wheel = SCNNode(); wheel.position = position
+        let tire = SCNNode(geometry: SCNCylinder(radius: radius, height: 0.24))
+        tire.geometry?.materials = [material(UIColor(white: 0.04, alpha: 1), metalness: 0, roughness: 0.9)]
+        tire.eulerAngles.x = .pi / 2
+        wheel.addChildNode(tire)
+        let rimR = radius * 0.66
+        let face = SCNNode(geometry: SCNCylinder(radius: rimR, height: 0.02))
+        face.geometry?.materials = [material(UIColor(white: 0.12, alpha: 1), metalness: 0.6, roughness: 0.4)]
+        face.eulerAngles.x = .pi / 2
+        face.position = vec(0, 0, outward * 0.115)
+        wheel.addChildNode(face)
+        let silver = material(UIColor(white: 0.78, alpha: 1), metalness: 1, roughness: 0.22)
+        for i in 0..<5 {
+            let spoke = SCNNode(geometry: SCNBox(width: 0.055, height: rimR * 2 * 0.96, length: 0.03, chamferRadius: 0.012))
+            spoke.geometry?.materials = [silver]
+            spoke.position = vec(0, 0, outward * 0.128)
+            spoke.eulerAngles.z = Float(i) * .pi / 5
+            wheel.addChildNode(spoke)
+        }
+        let lip = SCNNode(geometry: SCNTube(innerRadius: rimR - 0.025, outerRadius: rimR, height: 0.03))
+        lip.geometry?.materials = [silver]
+        lip.eulerAngles.x = .pi / 2
+        lip.position = vec(0, 0, outward * 0.128)
+        wheel.addChildNode(lip)
+        let hub = SCNNode(geometry: SCNCylinder(radius: 0.045, height: 0.04))
+        hub.geometry?.materials = [silver]
+        hub.eulerAngles.x = .pi / 2
+        hub.position = vec(0, 0, outward * 0.135)
+        wheel.addChildNode(hub)
+        return wheel
+    }
+
+    private static func add(_ geometry: SCNGeometry, _ m: SCNMaterial, to parent: SCNNode) {
+        geometry.materials = [m]
+        parent.addChildNode(SCNNode(geometry: geometry))
+    }
+
+    private static func shape(_ path: CGPath, depth: CGFloat, chamfer: CGFloat) -> SCNShape {
+        let b = UIBezierPath(cgPath: path)
+        b.flatness = 0.005
+        let s = SCNShape(path: b, extrusionDepth: depth)
+        s.chamferRadius = chamfer
+        s.chamferMode = .both
+        let profile = UIBezierPath()
+        profile.move(to: CGPoint(x: 0, y: 1))
+        profile.addCurve(to: CGPoint(x: 1, y: 0), controlPoint1: CGPoint(x: 0.55, y: 1), controlPoint2: CGPoint(x: 1, y: 0.55))
+        s.chamferProfile = profile
+        return s
+    }
+
+    private static func paintMaterial(_ color: UIColor) -> SCNMaterial {
+        let m = material(color, metalness: 0.35, roughness: 0.22)
+        m.clearCoat.contents = 1.0
+        m.clearCoatRoughness.contents = 0.04
+        return m
+    }
+
+    private static func material(_ color: UIColor, metalness: CGFloat, roughness: CGFloat) -> SCNMaterial {
+        let m = SCNMaterial()
+        m.lightingModel = .physicallyBased
+        m.diffuse.contents = color
+        m.metalness.contents = metalness
+        m.roughness.contents = roughness
+        return m
+    }
+}
+
+// MARK: - Paint
+
+/// Maps the free-text `Car.color` ("Silver", "Dark Blue", "Pearl White") to a
+/// paint. Unknown or empty colors get a neutral silver.
+enum CarPaint {
+    private static let table: [(keywords: [String], color: UIColor)] = [
+        (["black", "onyx", "obsidian", "ebony"], UIColor(white: 0.06, alpha: 1)),
+        (["white", "pearl", "ivory", "alpine", "chalk"], UIColor(white: 0.93, alpha: 1)),
+        (["charcoal", "gunmetal", "graphite"], UIColor(white: 0.22, alpha: 1)),
+        (["gray", "grey", "slate"], UIColor(white: 0.42, alpha: 1)),
+        (["silver", "platinum", "titanium", "aluminum"], UIColor(white: 0.62, alpha: 1)),
+        (["burgundy", "maroon", "wine"], UIColor(red: 0.36, green: 0.04, blue: 0.08, alpha: 1)),
+        (["red", "crimson", "ruby", "scarlet"], UIColor(red: 0.62, green: 0.05, blue: 0.07, alpha: 1)),
+        (["orange"], UIColor(red: 0.85, green: 0.33, blue: 0.05, alpha: 1)),
+        (["yellow"], UIColor(red: 0.92, green: 0.75, blue: 0.08, alpha: 1)),
+        (["gold", "champagne"], UIColor(red: 0.72, green: 0.6, blue: 0.38, alpha: 1)),
+        (["bronze", "copper"], UIColor(red: 0.5, green: 0.3, blue: 0.16, alpha: 1)),
+        (["brown", "mocha", "espresso"], UIColor(red: 0.3, green: 0.18, blue: 0.1, alpha: 1)),
+        (["beige", "tan", "sand", "khaki"], UIColor(red: 0.72, green: 0.65, blue: 0.52, alpha: 1)),
+        (["navy", "midnight"], UIColor(red: 0.06, green: 0.1, blue: 0.26, alpha: 1)),
+        (["teal", "turquoise", "cyan", "aqua"], UIColor(red: 0.05, green: 0.45, blue: 0.5, alpha: 1)),
+        (["blue", "sapphire", "cobalt"], UIColor(red: 0.1, green: 0.26, blue: 0.62, alpha: 1)),
+        (["green", "emerald", "olive", "forest", "sage"], UIColor(red: 0.12, green: 0.33, blue: 0.18, alpha: 1)),
+        (["purple", "violet", "plum"], UIColor(red: 0.3, green: 0.12, blue: 0.42, alpha: 1)),
+        (["pink", "rose"], UIColor(red: 0.85, green: 0.45, blue: 0.55, alpha: 1)),
+    ]
+    static let fallback = UIColor(white: 0.62, alpha: 1)
+
+    static func color(for name: String) -> UIColor {
+        let lowered = name.lowercased()
+        var color = table.first(where: { $0.keywords.contains(where: lowered.contains) })?.color ?? fallback
+        if lowered.contains("dark") { color = color.adjusted(by: 0.55) }
+        if lowered.contains("light") { color = color.adjusted(by: 1.35) }
+        return color
+    }
+}
+
+private extension UIColor {
+    func adjusted(by factor: CGFloat) -> UIColor {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+        return UIColor(red: min(r * factor, 1), green: min(g * factor, 1), blue: min(b * factor, 1), alpha: a)
+    }
+
+    var cacheKey: String {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+        return String(format: "%02x%02x%02x", Int(r * 255), Int(g * 255), Int(b * 255))
+    }
+}
+
+// MARK: - Renderer
+
+/// Renders a body style in a paint color to a transparent, tightly cropped
+/// image at a 3/4 front angle. Cached on disk (Caches/GarageHeroModels) keyed
+/// by style + color + `version`, so each combination renders once per device.
+enum CarModelRenderer {
+    /// Bump when the model or lighting changes, to retire old cached renders.
+    private static let version = 2
+    /// Rendered image size, in pixels (the renderer is given a pixel size and
+    /// the result is re-wrapped at scale 1 — see the image-size pitfall).
+    private static let renderSize = CGSize(width: 2400, height: 1200)
+
+    private static var cacheDirectory: URL {
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        let dir = caches.appendingPathComponent("GarageHeroModels", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    static func normalizedStyle(_ bodyStyle: String) -> String {
+        let style = bodyStyle.lowercased()
+        let known = ["sedan", "coupe", "convertible", "hatchback", "wagon", "suv", "crossover", "pickup", "van", "minivan"]
+        return known.contains(style) ? style : "sedan"
+    }
+
+    private static func cacheURL(style: String, paint: UIColor) -> URL {
+        cacheDirectory.appendingPathComponent("\(style)-\(paint.cacheKey)-v\(version).png")
+    }
+
+    /// Synchronous disk probe, for painting a cached render on the first frame.
+    static func cachedImage(for car: Car) -> UIImage? {
+        let url = cacheURL(style: normalizedStyle(car.bodyStyle), paint: CarPaint.color(for: car.color))
+        return UIImage(contentsOfFile: url.path)
+    }
+
+    static func image(for car: Car) async -> UIImage? {
+        let style = normalizedStyle(car.bodyStyle)
+        let paint = CarPaint.color(for: car.color)
+        let url = cacheURL(style: style, paint: paint)
+        if let cached = UIImage(contentsOfFile: url.path) { return cached }
+        return await Task.detached(priority: .userInitiated) { () -> UIImage? in
+            guard let image = render(style: style, paint: paint) else { return nil }
+            if let data = image.pngData() { try? data.write(to: url, options: .atomic) }
+            return image
+        }.value
+    }
+
+    private static func render(style: String, paint: UIColor) -> UIImage? {
+        let profile = CarBodyProfile.forBodyStyle(style)
+        let scene = SCNScene()
+        scene.background.contents = UIColor.clear
+        scene.lightingEnvironment.contents = studioEnvironment()
+        scene.lightingEnvironment.intensity = 2.2
+
+        let car = ProceduralCarModel.node(for: profile, paint: paint)
+        car.position = SCNVector3(-Float(profile.length) / 2, 0, 0)
+        let turntable = SCNNode()
+        turntable.addChildNode(car)
+        turntable.eulerAngles.y = 0.6
+        scene.rootNode.addChildNode(turntable)
+
+        let key = SCNNode()
+        key.light = SCNLight()
+        key.light?.type = .directional
+        key.light?.intensity = 1600
+        key.eulerAngles = SCNVector3(-1.0, 0.5, 0)
+        scene.rootNode.addChildNode(key)
+        let fill = SCNNode()
+        fill.light = SCNLight()
+        fill.light?.type = .ambient
+        fill.light?.intensity = 200
+        scene.rootNode.addChildNode(fill)
+
+        let camera = SCNNode()
+        camera.camera = SCNCamera()
+        camera.camera?.fieldOfView = 17
+        camera.camera?.wantsHDR = true
+        camera.position = SCNVector3(0, 1.7, 14)
+        camera.look(at: SCNVector3(0, 0.7, 0))
+        scene.rootNode.addChildNode(camera)
+
+        guard let device = MTLCreateSystemDefaultDevice() else { return nil }
+        let renderer = SCNRenderer(device: device, options: nil)
+        renderer.scene = scene
+        renderer.pointOfView = camera
+        let snapshot = renderer.snapshot(atTime: 0, with: renderSize, antialiasingMode: .multisampling4X)
+        guard let cgImage = snapshot.cgImage, let cropped = cropToOpaque(cgImage) else { return nil }
+        return UIImage(cgImage: cropped, scale: 1, orientation: .up)
+    }
+
+    /// A dark studio with an overhead softbox and a few vertical strips, so the
+    /// clear coat picks up highlights.
+    private static func studioEnvironment() -> UIImage {
+        let size = CGSize(width: 1024, height: 512)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            let cg = ctx.cgContext
+            let colors = [UIColor(white: 0.08, alpha: 1).cgColor, UIColor(white: 0.55, alpha: 1).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) {
+                cg.drawLinearGradient(gradient, start: CGPoint(x: 0, y: size.height), end: .zero, options: [])
+            }
+            UIColor.white.setFill()
+            cg.fill(CGRect(x: 0, y: size.height * 0.06, width: size.width, height: size.height * 0.1))
+            UIColor(white: 0.8, alpha: 1).setFill()
+            for x in [0.12, 0.42, 0.62, 0.9] {
+                cg.fill(CGRect(x: size.width * x, y: size.height * 0.24, width: size.width * 0.05, height: size.height * 0.26))
+            }
+        }
+    }
+
+    /// Trims the transparent margin so the car fills the image.
+    private static func cropToOpaque(_ image: CGImage) -> CGImage? {
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        guard let ctx = CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8,
+                                  bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return image }
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var minX = width, minY = height, maxX = -1, maxY = -1
+        for y in 0..<height {
+            for x in 0..<width where pixels[(y * width + x) * 4 + 3] > 8 {
+                minX = min(minX, x); maxX = max(maxX, x)
+                minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        guard maxX >= minX, maxY >= minY else { return nil }
+        let pad = 8
+        let rect = CGRect(x: max(minX - pad, 0), y: max(minY - pad, 0),
+                          width: min(maxX + pad, width - 1) - max(minX - pad, 0) + 1,
+                          height: min(maxY + pad, height - 1) - max(minY - pad, 0) + 1)
+        return image.cropping(to: rect)
+    }
+}
