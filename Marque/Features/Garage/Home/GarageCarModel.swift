@@ -2,8 +2,10 @@ import SceneKit
 import UIKit
 
 // The Garage hero's stand-in for a car with no usable photo: a stylized
-// "clay model" of its body style, built in code (no external assets), painted
-// in the car's color and rendered on-device once per style/color.
+// "clay model" built in code (no external assets), painted in the car's
+// color and rendered on-device once per model/color. A short list of
+// recognizable makes/models (e.g. Tesla Model 3) get a hand-tuned shape;
+// everything else falls back to its generic body-style shape.
 
 /// Side-profile dimensions (meters) for one body style. The car runs along +x
 /// from the nose at x = 0; y is up; the shapes are extruded across z.
@@ -16,6 +18,56 @@ struct CarBodyProfile {
     var rearGlassBaseX: CGFloat = 3.98, deckHeight: CGFloat = 1.0, tailHeight: CGFloat = 0.98
     var hasRoof = true
     var hasBed = false
+    /// False for a grille-less front fascia (most EVs).
+    var hasGrille = true
+
+    /// The profile for a car: a hand-tuned shape for a short list of
+    /// recognizable makes/models when there's a match, else the generic
+    /// body-style shape. `modelKey(make:model:bodyStyle:)` is the matching
+    /// identity — keep the two in sync.
+    static func forCar(make: String, model: String, bodyStyle: String) -> CarBodyProfile {
+        knownModels[normalizedKey(make: make, model: model)]?() ?? forBodyStyle(bodyStyle)
+    }
+
+    /// Cache/identity key for a car's rendered model: the known model's id
+    /// when recognized (so e.g. a Tesla Model 3 gets its own render, distinct
+    /// from a generic sedan), else the normalized body style.
+    static func modelKey(make: String, model: String, bodyStyle: String) -> String {
+        let key = normalizedKey(make: make, model: model)
+        return knownModels[key] != nil ? key : CarModelRenderer.normalizedStyle(bodyStyle)
+    }
+
+    /// Lowercased, alphanumerics-only, so "Tesla"/"Model 3" matches
+    /// "tesla"/"model3" regardless of spacing or punctuation.
+    private static func normalizedKey(make: String, model: String) -> String {
+        (make + " " + model).lowercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    private static let knownModels: [String: () -> CarBodyProfile] = [
+        normalizedKey(make: "Tesla", model: "Model 3"): teslaModel3,
+    ]
+
+    /// Low, smooth EV fastback: closed nose (no grille), a glass roof panel
+    /// (no painted roof band — `hasRoof = false` already renders the
+    /// greenhouse's dark glass material all the way across the top, which is
+    /// exactly what a glass-roof car looks like from the side).
+    private static func teslaModel3() -> CarBodyProfile {
+        var p = CarBodyProfile()
+        p.length = 4.69; p.width = 1.85
+        p.clearance = 0.14; p.wheelRadius = 0.345
+        p.frontAxle = 0.88; p.rearAxle = 3.72
+        // 0.58, not lower: SceneKit's shape tessellator renders a fully
+        // empty (zero-geometry) body below ~0.53 here — a sharp cliff, not a
+        // gradual degradation — verified by bisection in a standalone
+        // harness. 0.58 clears it with margin and still reads as a
+        // noticeably lower, sleeker nose than the sedan default (0.64).
+        p.noseHeight = 0.58; p.belt = 0.9; p.cowlX = 1.55
+        p.roofFrontX = 2.05; p.roofRearX = 3.55; p.roofHeight = 1.3
+        p.rearGlassBaseX = 3.82; p.deckHeight = 0.92; p.tailHeight = 0.9
+        p.hasRoof = false
+        p.hasGrille = false
+        return p
+    }
 
     static func forBodyStyle(_ style: String) -> CarBodyProfile {
         var p = CarBodyProfile()
@@ -146,11 +198,12 @@ enum ProceduralCarModel {
         rocker.geometry?.materials = [trim]
         rocker.position = vec((p.frontAxle + p.rearAxle) / 2, p.clearance + 0.05, 0)
         car.addChildNode(rocker)
-        // grille / lower intake
-        let grille = SCNNode(geometry: SCNBox(width: 0.06, height: 0.15, length: p.width * 0.55, chamferRadius: 0.04))
-        grille.geometry?.materials = [trim]
-        grille.position = vec(0.02, p.clearance + 0.19, 0)
-        car.addChildNode(grille)
+        if p.hasGrille {
+            let grille = SCNNode(geometry: SCNBox(width: 0.06, height: 0.15, length: p.width * 0.55, chamferRadius: 0.04))
+            grille.geometry?.materials = [trim]
+            grille.position = vec(0.02, p.clearance + 0.19, 0)
+            car.addChildNode(grille)
+        }
         for side in [CGFloat(1), -1] {
             let head = SCNNode(geometry: SCNBox(width: 0.16, height: 0.06, length: 0.44, chamferRadius: 0.03))
             let hm = material(.white, metalness: 0, roughness: 0.2); hm.emission.contents = UIColor(white: 0.95, alpha: 1)
@@ -297,7 +350,7 @@ private extension UIColor {
 /// by style + color + `version`, so each combination renders once per device.
 enum CarModelRenderer {
     /// Bump when the model or lighting changes, to retire old cached renders.
-    private static let version = 2
+    private static let version = 3
     /// Rendered image size, in pixels (the renderer is given a pixel size and
     /// the result is re-wrapped at scale 1 — see the image-size pitfall).
     private static let renderSize = CGSize(width: 2400, height: 1200)
@@ -321,24 +374,34 @@ enum CarModelRenderer {
 
     /// Synchronous disk probe, for painting a cached render on the first frame.
     static func cachedImage(for car: Car) -> UIImage? {
-        let url = cacheURL(style: normalizedStyle(car.bodyStyle), paint: CarPaint.color(for: car.color))
+        let key = CarBodyProfile.modelKey(make: car.make, model: car.model, bodyStyle: car.bodyStyle)
+        let url = cacheURL(style: key, paint: CarPaint.color(for: car.color))
         return UIImage(contentsOfFile: url.path)
     }
 
     static func image(for car: Car) async -> UIImage? {
-        let style = normalizedStyle(car.bodyStyle)
+        let key = CarBodyProfile.modelKey(make: car.make, model: car.model, bodyStyle: car.bodyStyle)
+        let profile = CarBodyProfile.forCar(make: car.make, model: car.model, bodyStyle: car.bodyStyle)
         let paint = CarPaint.color(for: car.color)
-        let url = cacheURL(style: style, paint: paint)
+        let url = cacheURL(style: key, paint: paint)
         if let cached = UIImage(contentsOfFile: url.path) { return cached }
         return await Task.detached(priority: .userInitiated) { () -> UIImage? in
-            guard let image = render(style: style, paint: paint) else { return nil }
+            // A hand-tuned profile's numbers can, in principle, hit a
+            // SceneKit shape-tessellation edge case that renders nothing at
+            // all (verified once, for too-tight a nose curve — see the
+            // comment on `teslaModel3`). Never ship that as a blank hero:
+            // fall back to the plain body-style shape, which is always
+            // within known-safe bounds, and cache the fallback under the
+            // same key so a transient failure doesn't retry every load.
+            let image = render(profile: profile, paint: paint)
+                ?? render(profile: CarBodyProfile.forBodyStyle(car.bodyStyle), paint: paint)
+            guard let image else { return nil }
             if let data = image.pngData() { try? data.write(to: url, options: .atomic) }
             return image
         }.value
     }
 
-    private static func render(style: String, paint: UIColor) -> UIImage? {
-        let profile = CarBodyProfile.forBodyStyle(style)
+    private static func render(profile: CarBodyProfile, paint: UIColor) -> UIImage? {
         let scene = SCNScene()
         scene.background.contents = UIColor.clear
         scene.lightingEnvironment.contents = studioEnvironment()

@@ -91,11 +91,6 @@ Learned the hard way. Each one cost real debugging time.
 - **Why** — The message-deletion pager re-queried the same 500 docs forever if the batch commit kept failing, hanging `deleteAccount()`.
 - **Detect** — Grep for `try?` inside `while` bodies in `Stores/**`.
 
-### `npm audit fix` does nothing for transitive dependencies
-- **Rule** — For CVEs inside the `firebase-admin` / `firebase-functions` trees, add an `overrides` entry in `functions/package.json`. Don't rely on `npm audit fix`; it only bumps direct dependencies.
-- **Why** — `npm audit fix` cleared 1 of 12 CVEs. Overrides on `uuid` and `qs` cleared the remaining 11 to zero.
-- **Detect** — `cd functions && npm audit` after any dependency change.
-
 ### Xcode fails a build on the literal text `error:` in a Run Script phase, independent of its exit code
 - **Rule** — Xcode scans a Run Script build phase's raw stdout/stderr for a line starting with `error:` and fails the whole build/archive on sight of it, even if the phase's own process exits `0`. Making a flaky script "non-fatal" needs two things, not one: zero the exit code (`cmd || true`) *and* keep the underlying tool's own `error:`-prefixed output from ever reaching the log — redirect it to a file and emit your own `note:`/`warning:`-prefixed line instead. Fixing only the exit code still fails the build; Xcode's own log even says so ("emitted errors but did not return a nonzero exit code to indicate failure") while still marking it failed.
 - **Why** — The Crashlytics symbol-upload script hits an open, unresolved `firebase-ios-sdk` bug on every Release archive (`Could not get GOOGLE_APP_ID...`, archive-only, `GoogleService-Info.plist` correctly bundled). The first fix (`cmd || echo "warning: ..."`) still failed the archive, because the underlying tool's own `error:` line printed before the `||` fallback ran.
@@ -172,6 +167,11 @@ Learned the hard way. Each one cost real debugging time.
 - **Rule** — Any `onRequest` function called by an outside service (Apple's App Store Server Notifications today) must pass `{ invoker: "public" }` explicitly, and after deploying it, `curl -X GET <url>` must return the function's own response (405 for `appStoreNotifications`), not Cloud Run's 403 HTML page. Callables are a different case: the Firebase SDK sends credentials, and they were public all along.
 - **Why** — `appStoreNotifications` was a private Cloud Run service, so every Apple notification (renewals, cancellations, refunds) got a 403 before the code ran. The logs show this since at least 2026-09-29. The in-app `syncEntitlement` path kept purchases working, which hid it.
 - **Detect** — `curl -s -o /dev/null -w "%{http_code}" -X GET https://us-central1-marque-173c3.cloudfunctions.net/appStoreNotifications` must print 405; the function logs showing "The request was not authenticated… allow unauthenticated invocations" means it's private.
+
+### `SCNShape` can silently render zero geometry — verify every hand-tuned profile
+- **Rule** — Any new `CarBodyProfile` (a hand-tuned "known model" entry in `GarageCarModel.swift`, not the generic `forBodyStyle` shapes) must be rendered and visually checked before it ships — not just checked for a plausible-looking 2D path. `SCNShape`'s tessellator can produce a completely empty mesh for a geometrically valid, non-self-intersecting `CGPath` that `CoreGraphics` fills without complaint; it isn't a gradual chamfer-too-large degradation, it's a sharp cliff (one parameter value renders fine, a change of 0.005 renders nothing, no error, no log).
+- **Why** — `teslaModel3()`'s first-draft `noseHeight = 0.52` rendered a fully invisible lower body (only the glass/wheels/trim showed) in every lighting and chamfer configuration tried, including `chamferRadius = 0`. Bisection against the sedan default isolated it to `noseHeight` alone, with the failure threshold between 0.525 (broken) and 0.53 (fine). Shipped at 0.58 for margin. `CarModelRenderer.image(for:)` now also falls back to `forBodyStyle` if a known-model render comes back empty, so this failure mode can no longer ship a blank hero even if a future profile hits the same cliff.
+- **Detect** — Render the new profile (a `swiftc`-compiled macOS harness reusing the same `CarBodyProfile`/`ProceduralCarModel` code is fast to iterate with) and look at the actual pixels, not just the 2D path. If the body is missing, bisect each field against a known-good baseline one at a time.
 
 ### Documentation drifts silently and agents act on it
 - **Rule** — When you change an architectural pattern, update `CLAUDE.md` **and** every `.claude/agents/*.md` that repeats the claim, in the same change.

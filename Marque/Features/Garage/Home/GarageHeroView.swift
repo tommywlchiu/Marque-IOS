@@ -207,7 +207,7 @@ struct GarageHeroView: View {
 
     /// Changes whenever what the hero should show changes.
     private var key: String {
-        [car.primaryPhotoFileName ?? "-", car.bodyStyle, car.color].joined(separator: "|")
+        [car.primaryPhotoFileName ?? "-", car.make, car.model, car.bodyStyle, car.color].joined(separator: "|")
     }
 
     var body: some View {
