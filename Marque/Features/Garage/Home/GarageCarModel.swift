@@ -20,6 +20,8 @@ struct CarBodyProfile {
     var hasBed = false
     /// False for a grille-less front fascia (most EVs).
     var hasGrille = true
+    /// True for a full-width LED light bar instead of two boxed taillights.
+    var hasTailLightBar = false
 
     /// The profile for a car: a hand-tuned shape for a short list of
     /// recognizable makes/models when there's a match, else the generic
@@ -50,22 +52,38 @@ struct CarBodyProfile {
     /// Low, smooth EV fastback: closed nose (no grille), a glass roof panel
     /// (no painted roof band — `hasRoof = false` already renders the
     /// greenhouse's dark glass material all the way across the top, which is
-    /// exactly what a glass-roof car looks like from the side).
+    /// exactly what a glass-roof car looks like from the side), and a
+    /// full-width light bar instead of boxed taillights.
+    ///
+    /// Dimensions below marked "spec" are the real 2019 Model 3's own
+    /// figures (length/width/height/wheelbase/ground clearance/front+rear
+    /// overhang — Tesla's published numbers, cross-checked against
+    /// carexpert.com.au / evspecifications.com / carsguide.com.au, all
+    /// agreeing). This is still a stylized 2D-profile extrusion, not the
+    /// manufacturer's surface data, so it reads as a Model 3, not a replica —
+    /// the only way to get the literal car is an on-device 3D scan of it
+    /// (Object Capture), which this isn't. Everything marked "styling" is
+    /// this renderer's own judgment, not a sourced figure.
     private static func teslaModel3() -> CarBodyProfile {
         var p = CarBodyProfile()
-        p.length = 4.69; p.width = 1.85
-        p.clearance = 0.14; p.wheelRadius = 0.345
-        p.frontAxle = 0.88; p.rearAxle = 3.72
+        p.length = 4.694; p.width = 1.849                 // spec
+        p.clearance = 0.138                                // spec (ground clearance)
+        p.wheelRadius = 0.33                               // styling (~18" wheel + tire)
+        p.frontAxle = 0.868                                // spec (front overhang)
+        p.rearAxle = p.length - 0.977                      // spec (rear overhang)
         // 0.58, not lower: SceneKit's shape tessellator renders a fully
         // empty (zero-geometry) body below ~0.53 here — a sharp cliff, not a
         // gradual degradation — verified by bisection in a standalone
         // harness. 0.58 clears it with margin and still reads as a
         // noticeably lower, sleeker nose than the sedan default (0.64).
-        p.noseHeight = 0.58; p.belt = 0.9; p.cowlX = 1.55
-        p.roofFrontX = 2.05; p.roofRearX = 3.55; p.roofHeight = 1.3
-        p.rearGlassBaseX = 3.82; p.deckHeight = 0.92; p.tailHeight = 0.9
+        p.noseHeight = 0.58                                // styling, clamped by the cliff above
+        p.belt = 0.93; p.cowlX = 1.55                      // styling
+        p.roofFrontX = 2.05; p.roofRearX = 3.55            // styling
+        p.roofHeight = 1.40                                // spec-anchored: total height 1.443
+        p.rearGlassBaseX = 3.82; p.deckHeight = 0.92; p.tailHeight = 0.9  // styling
         p.hasRoof = false
         p.hasGrille = false
+        p.hasTailLightBar = true
         return p
     }
 
@@ -204,6 +222,14 @@ enum ProceduralCarModel {
             grille.position = vec(0.02, p.clearance + 0.19, 0)
             car.addChildNode(grille)
         }
+        let tailMaterial = material(UIColor(red: 0.5, green: 0, blue: 0, alpha: 1), metalness: 0, roughness: 0.2)
+        tailMaterial.emission.contents = UIColor(red: 0.75, green: 0.03, blue: 0.03, alpha: 1)
+        if p.hasTailLightBar {
+            let bar = SCNNode(geometry: SCNBox(width: 0.05, height: 0.045, length: p.width - 0.14, chamferRadius: 0.018))
+            bar.geometry?.materials = [tailMaterial]
+            bar.position = vec(p.length - 0.015, p.tailHeight - 0.13, 0)
+            car.addChildNode(bar)
+        }
         for side in [CGFloat(1), -1] {
             let head = SCNNode(geometry: SCNBox(width: 0.16, height: 0.06, length: 0.44, chamferRadius: 0.03))
             let hm = material(.white, metalness: 0, roughness: 0.2); hm.emission.contents = UIColor(white: 0.95, alpha: 1)
@@ -211,12 +237,12 @@ enum ProceduralCarModel {
             head.position = vec(0.12, p.noseHeight - 0.05, side * (p.width / 2 - 0.3))
             head.eulerAngles.z = 0.3
             car.addChildNode(head)
-            let tail = SCNNode(geometry: SCNBox(width: 0.06, height: 0.07, length: 0.5, chamferRadius: 0.02))
-            let tm = material(UIColor(red: 0.5, green: 0, blue: 0, alpha: 1), metalness: 0, roughness: 0.2)
-            tm.emission.contents = UIColor(red: 0.75, green: 0.03, blue: 0.03, alpha: 1)
-            tail.geometry?.materials = [tm]
-            tail.position = vec(p.length - 0.02, p.tailHeight - 0.13, side * (p.width / 2 - 0.3))
-            car.addChildNode(tail)
+            if !p.hasTailLightBar {
+                let tail = SCNNode(geometry: SCNBox(width: 0.06, height: 0.07, length: 0.5, chamferRadius: 0.02))
+                tail.geometry?.materials = [tailMaterial]
+                tail.position = vec(p.length - 0.02, p.tailHeight - 0.13, side * (p.width / 2 - 0.3))
+                car.addChildNode(tail)
+            }
             for axle in [p.frontAxle, p.rearAxle] {
                 car.addChildNode(wheel(radius: p.wheelRadius, at: vec(axle, p.wheelRadius, side * (p.width / 2 - 0.13)), outward: side))
             }
@@ -350,7 +376,7 @@ private extension UIColor {
 /// by style + color + `version`, so each combination renders once per device.
 enum CarModelRenderer {
     /// Bump when the model or lighting changes, to retire old cached renders.
-    private static let version = 3
+    private static let version = 4
     /// Rendered image size, in pixels (the renderer is given a pixel size and
     /// the result is re-wrapped at scale 1 — see the image-size pitfall).
     private static let renderSize = CGSize(width: 2400, height: 1200)
