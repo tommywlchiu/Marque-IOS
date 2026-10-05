@@ -1,0 +1,278 @@
+import SwiftUI
+
+// MARK: - Expiry status
+//
+// Shared "N days left / expired / no date" classification for wallet document
+// badges, mirroring the 30-day threshold Car.isInsuranceExpiringSoon etc.
+// already use. Driver-license expiry lives on AppUser, which has no
+// equivalent computed property, so this is a small local pure helper rather
+// than a Models/ change.
+enum DocumentExpiryStatus {
+    case none
+    case valid(Date)
+    case expiringSoon(Date, daysLeft: Int)
+    case expired(Date)
+
+    init(_ date: Date?) {
+        guard let date else {
+            self = .none
+            return
+        }
+        let start = Calendar.current.startOfDay(for: Date())
+        let end = Calendar.current.startOfDay(for: date)
+        let days = Calendar.current.dateComponents([.day], from: start, to: end).day ?? 0
+        if days < 0 {
+            self = .expired(date)
+        } else if days <= 30 {
+            self = .expiringSoon(date, daysLeft: days)
+        } else {
+            self = .valid(date)
+        }
+    }
+}
+
+/// FR-12.5: every state pairs an icon with text, never color alone.
+struct ExpiryBadge: View {
+    let status: DocumentExpiryStatus
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(text)
+        }
+        .font(.caption2.weight(.semibold))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(background, in: Capsule())
+        .foregroundStyle(foreground)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var icon: String {
+        switch status {
+        case .none: return "minus.circle.fill"
+        case .valid: return "checkmark.circle.fill"
+        case .expiringSoon: return "exclamationmark.circle.fill"
+        case .expired: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var text: String {
+        switch status {
+        case .none: return "No expiry set"
+        case .valid(let date): return date.formatted(date: .abbreviated, time: .omitted)
+        case .expiringSoon(_, let days): return days == 0 ? "Expires today" : "Expires in \(days)d"
+        case .expired: return "Expired"
+        }
+    }
+
+    private var background: Color {
+        switch status {
+        case .none, .valid: return Color.white.opacity(0.2)
+        case .expiringSoon: return Color.yellow.opacity(0.95)
+        case .expired: return Color.red.opacity(0.95)
+        }
+    }
+
+    private var foreground: Color {
+        switch status {
+        case .none, .valid: return .white
+        case .expiringSoon: return .black
+        case .expired: return .white
+        }
+    }
+}
+
+// MARK: - Masking
+
+/// Masks all but the last `keepLast` characters, matching the masked-by-
+/// default pattern EditProfileView's driver-license field already uses.
+func maskedTail(_ value: String, revealed: Bool, keepLast: Int = 4) -> String {
+    guard !value.isEmpty else { return "—" }
+    guard !revealed else { return value }
+    guard value.count > keepLast else { return String(repeating: "•", count: max(value.count, 4)) }
+    return String(repeating: "•", count: value.count - keepLast) + value.suffix(keepLast)
+}
+
+private struct RevealButton: View {
+    @Binding var revealed: Bool
+
+    var body: some View {
+        Button {
+            revealed.toggle()
+        } label: {
+            Image(systemName: revealed ? "eye.slash.fill" : "eye.fill")
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(revealed ? "Hide number" : "Show number")
+    }
+}
+
+// MARK: - Card shell
+
+/// Apple-Wallet-style rounded card: gradient fill, icon + chevron header row,
+/// caption title, then the type's own content. `onTap` opens the existing
+/// editor for that document (never a second editor built here).
+private struct WalletCardShell<Content: View>: View {
+    let gradient: [Color]
+    let icon: String
+    let title: String
+    let onTap: () -> Void
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Image(systemName: icon)
+                        .font(.title2)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .opacity(0.7)
+                }
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
+                    .opacity(0.85)
+                content
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(.white)
+            .background(
+                LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Driver's License
+
+struct DriverLicenseCard: View {
+    let user: AppUser
+    let onTap: () -> Void
+
+    @State private var revealed = false
+
+    private var status: DocumentExpiryStatus { DocumentExpiryStatus(user.driverLicenseExpiryDate) }
+
+    var body: some View {
+        WalletCardShell(gradient: [.indigo, .blue], icon: "person.text.rectangle.fill", title: "Driver's License", onTap: onTap) {
+            HStack {
+                Text(maskedTail(user.driverLicenseNumber, revealed: revealed))
+                    .font(.system(.title3, design: .monospaced).weight(.semibold))
+                    .lineLimit(1)
+                Spacer()
+                RevealButton(revealed: $revealed)
+            }
+            HStack {
+                if !user.driverLicenseState.isEmpty {
+                    Text(user.driverLicenseState)
+                        .font(.footnote.weight(.medium))
+                        .opacity(0.9)
+                }
+                Spacer()
+                ExpiryBadge(status: status)
+            }
+        }
+        .accessibilityLabel("Driver's license, edit")
+    }
+}
+
+// MARK: - Insurance
+
+struct InsuranceCard: View {
+    let car: Car
+    let onTap: () -> Void
+
+    @State private var revealed = false
+
+    private var status: DocumentExpiryStatus { DocumentExpiryStatus(car.insuranceExpiryDate) }
+
+    var body: some View {
+        WalletCardShell(gradient: [.teal, .green], icon: "shield.fill", title: "Insurance", onTap: onTap) {
+            HStack {
+                Text(maskedTail(car.insurancePolicyNumber, revealed: revealed))
+                    .font(.system(.title3, design: .monospaced).weight(.semibold))
+                    .lineLimit(1)
+                Spacer()
+                RevealButton(revealed: $revealed)
+            }
+            HStack {
+                if !car.insuranceProvider.isEmpty {
+                    Text(car.insuranceProvider)
+                        .font(.footnote.weight(.medium))
+                        .opacity(0.9)
+                        .lineLimit(1)
+                }
+                Spacer()
+                ExpiryBadge(status: status)
+            }
+        }
+        .accessibilityLabel("\(car.displayName) insurance, edit")
+    }
+}
+
+// MARK: - Registration
+
+struct RegistrationCard: View {
+    let car: Car
+    let onTap: () -> Void
+
+    private var status: DocumentExpiryStatus { DocumentExpiryStatus(car.registrationExpiryDate) }
+
+    var body: some View {
+        WalletCardShell(gradient: [.orange, .red], icon: "doc.text.fill", title: "Registration", onTap: onTap) {
+            Text(car.licensePlate.isEmpty ? "No plate on file" : car.licensePlate)
+                .font(.system(.title3, design: .monospaced).weight(.semibold))
+                .lineLimit(1)
+            HStack {
+                Spacer()
+                ExpiryBadge(status: status)
+            }
+        }
+        .accessibilityLabel("\(car.displayName) registration, edit")
+    }
+}
+
+// MARK: - Add-document prompt
+
+/// Dashed "Add X" card for a document type the user hasn't filled in yet —
+/// matches the dashed "Add a Car" affordance already used on Garage.
+struct AddDocumentCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(Color.accentColor.opacity(0.12)).frame(width: 44, height: 44)
+                    Image(systemName: icon).foregroundStyle(Color.accentColor)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "plus.circle.fill").foregroundStyle(Color.accentColor)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.accentColor.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens the editor to add this document")
+    }
+}

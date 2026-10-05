@@ -5,7 +5,7 @@ import SwiftUI
 /// username, otherwise the Notifications inbox. Attach to the root of each
 /// tab; only the tab on screen acts, and it clears `pendingPush`.
 ///
-/// Like and comment pushes are routed by `CarListView` through
+/// Like and comment pushes are routed by `GarageHomeView` through
 /// `pendingCarID` (the recipient's own car), not here.
 struct FollowPushRouter: ViewModifier {
     @EnvironmentObject private var appDelegate: AppDelegate

@@ -51,6 +51,7 @@ struct ServiceRemindersView: View {
         }
         .navigationTitle("Service Reminders")
         .navigationBarTitleDisplayMode(.inline)
+        .garageScreenChrome()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAddReminder = true } label: {
@@ -147,6 +148,7 @@ struct ServiceRemindersView: View {
                                 onEdit: { reminderToEdit = reminder }
                             )
                             .transition(.opacity.combined(with: .scale(scale: 0.94)))
+                            .garageRowBackground()
                         }
                         .onDelete(perform: deleteUpcoming)
                     }
@@ -169,6 +171,7 @@ struct ServiceRemindersView: View {
                             // one count and then displaying another.
                             Label("Suggested reminders available", systemImage: "sparkles")
                         }
+                        .garageRowBackground()
                     }
                 }
 
@@ -183,6 +186,7 @@ struct ServiceRemindersView: View {
                                 onRestore: { restore(reminder) }
                             )
                             .opacity(0.7)
+                            .garageRowBackground()
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {
                                     restore(reminder)
@@ -247,30 +251,8 @@ struct ServiceRemindersView: View {
         carStore.updateCar(car)
     }
 
-    // Sort: overdue first, then by soonest trigger (whichever is set).
-    //
-    // The previous version keyed purely on `daysUntilDue() ?? <bucket
-    // fallback>`, so a mileage-only reminder (no dueDate, so daysUntilDue()
-    // is always nil) got the same fallback constant as every other
-    // mileage-only reminder in its bucket — they clumped together in
-    // whatever order the array happened to be in, and in .dueSoon/.upcoming
-    // that fallback (999) always sorted them after every date-based reminder
-    // regardless of how close their mileage actually was. Normalizing both
-    // triggers onto one "soonness" scale (100 miles ~= 1 day — a rough but
-    // reasonable stand-in, not meant to be physically exact) and using
-    // whichever trigger is set — or the sooner of the two, mirroring
-    // ServiceReminder.status()'s own whichever-comes-first semantics — means
-    // mileage-only reminders sort by their actual urgency instead.
     private func sortKey(_ r: ServiceReminder, currentMileage: Int) -> Double {
-        let dayValue = r.daysUntilDue().map(Double.init)
-        let mileValue = r.milesUntilDue(currentMileage: currentMileage).map { Double($0) / 100.0 }
-        let soonest = [dayValue, mileValue].compactMap { $0 }.min() ?? .greatestFiniteMagnitude
-
-        switch r.status(currentMileage: currentMileage) {
-        case .overdue:  return -1_000_000 + soonest
-        case .dueSoon:  return soonest
-        case .upcoming: return 1_000 + soonest
-        }
+        ReminderUrgency.sortKey(r, currentMileage: currentMileage)
     }
 }
 
@@ -360,30 +342,7 @@ private struct ReminderRow: View {
     }
 
     private var detailText: String {
-        // Completed reminders show when they were done, not a due/overdue
-        // countdown against a target that no longer applies. completedDate
-        // is nil for reminders completed before that field existed.
-        if reminder.isCompleted {
-            guard let completedDate = reminder.completedDate else { return "Done" }
-            return "Done \(completedDate.formatted(date: .abbreviated, time: .omitted))"
-        }
-
-        var parts: [String] = []
-
-        if let days = reminder.daysUntilDue() {
-            if days < 0 { parts.append("\(-days) days overdue") }
-            else if days == 0 { parts.append("Due today") }
-            else { parts.append("Due in \(days) days") }
-        }
-
-        if let miles = reminder.milesUntilDue(currentMileage: currentMileage) {
-            if miles < 0 { parts.append("\(-miles) mi past due") }
-            else { parts.append("\(miles) mi to go") }
-        }
-
-        // Join with "or" (not "•") when both triggers are set — matches the
-        // whichever-first semantics of ServiceReminder.status().
-        return parts.joined(separator: " or ")
+        ReminderUrgency.detailText(reminder, currentMileage: currentMileage)
     }
 }
 

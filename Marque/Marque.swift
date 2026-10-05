@@ -319,7 +319,7 @@ private struct MainTabView: View {
     @State private var showingAddCar = false
     @State private var showingPaywall = false
 
-    private enum Tab: Hashable { case garage, add, explore }
+    private enum Tab: Hashable { case garage, explore, add, photos, wallet }
 
     private var atCarLimit: Bool {
         carStore.cars.count >= CarStore.freeCarLimit && !subscriptionStore.isPro
@@ -349,9 +349,13 @@ private struct MainTabView: View {
             }
 
             TabView(selection: tabBinding) {
-                CarListView()
+                GarageHomeView()
                     .tabItem { Label("Garage", systemImage: "car.fill") }
                     .tag(Tab.garage)
+
+                ExploreView()
+                    .tabItem { Label("Explore", systemImage: "globe") }
+                    .tag(Tab.explore)
 
                 // Placeholder content — this tab is never actually selected.
                 // The selection binding intercepts taps and opens AddCarView.
@@ -359,9 +363,15 @@ private struct MainTabView: View {
                     .tabItem { Image(systemName: "plus.circle.fill") }
                     .tag(Tab.add)
 
-                ExploreView()
-                    .tabItem { Label("Explore", systemImage: "globe") }
-                    .tag(Tab.explore)
+                PhotosTabView()
+                    .modifier(FollowPushRouter())
+                    .tabItem { Label("Photos", systemImage: "photo.on.rectangle") }
+                    .tag(Tab.photos)
+
+                WalletView()
+                    .modifier(FollowPushRouter())
+                    .tabItem { Label("Wallet", systemImage: "wallet.pass") }
+                    .tag(Tab.wallet)
             }
             .onAppear {
                 // No permission prompt here: FR-04.1 / FR-13.6 require it to be

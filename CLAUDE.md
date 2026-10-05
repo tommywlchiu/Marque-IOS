@@ -223,7 +223,12 @@ Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
 
 `AddCarView` (onboarding mode) is FR-13's add-first-car step, gated by `AuthService.needsFirstCarStep`. It's session-local, not persisted: `completeProfileSetup()` sets it true, and either adding a car or tapping "Skip" (both routed through `completeFirstCarStep(addedCar:)`) sets it false and advances to `MainTabView`. An existing user never sees this step and no migration flag was needed: their `hasCompletedProfileSetup` is either already true locally, or — on a fresh install / new device, where the UserDefaults copy is gone — restored from Firestore by `AuthService.resolveProfileFromFirestore` before `RootView` routes (a non-empty `users/{uid}.username` means setup was completed; only `completeProfileSetup` and `changeUsername` write it, and the server can create a `users/{uid}` doc holding just `isPro`, so the doc merely *existing* is **not** the signal). While that lookup runs, `isResolvingProfile` holds `RootView` on `ProfileResolvingView`, with an 8 s backstop so it can never pin the user.
 
-`MainTabView` currently has 3 tabs (Garage, an Add "+" tab, Explore). None of Notifications, Profile, or Settings are tab items — each is reached differently: **Settings** is a toolbar gear icon on Garage; **Notifications** is a toolbar bell icon on Explore; **Profile** isn't a toolbar item anywhere — it's the inline header on Garage (Edit Profile button, follower/following stat chips). The PRD's 5-tab layout (Garage / Explore / Notifications / Profile / Settings) is the eventual target; the current arrangement is a deliberate interim state.
+`MainTabView` has 5 tabs: **Garage · Explore · + · Photos · Wallet**. The "+" tab is never selected — its binding intercepts the tap and opens `AddCarView` (or the paywall at `CarStore.freeCarLimit`).
+- **Garage** (`Features/Garage/Home/GarageHomeView`) — Tesla-app style, one car at a time, **always dark** via a local `.environment(\.colorScheme, .dark)` (never `.preferredColorScheme`, which flips the whole window). Name + chevron opens `GarageCarSwitcherSheet`; the selection persists in `@AppStorage("garage.selectedCarID")`. Hero = on-device Vision cut-out of the cover photo (`CarCutoutRenderer`, cached in Caches/GarageHeroCutouts), falling back to the faded full photo, then a silhouette. Quick actions (log service, scan receipt, add photo, share card), an attention card, and rows that push focused screens (`GarageRoute`, `GarageFocusedScreens.swift`). Shared screens pushed here (e.g. `ServiceRemindersView`) take the charcoal styling only through `.garageScreenChrome()` / `.garageRowBackground()`, keyed on the `isGarageChrome` environment value — no-ops elsewhere. Settings is the header's menu icon; the Assistant is the header's chat icon (flag-gated). Like/comment push deep links (`AppDelegate.pendingCarID`) select the car here; a comment push opens `CarDetailView` with comments.
+- **Explore** — public feed; Notifications is its toolbar bell.
+- **Photos** (`Features/Photos/PhotosTabView`) — every car's photos grouped by car; add, set cover, reorder, delete.
+- **Wallet** (`Features/Wallet/WalletView`) — the profile header (Edit Profile, follower/following chips) plus document cards: driver license and each car's insurance and registration.
+`CarDetailView` remains the full car page for public cars (Explore) and comment deep links; its owner sections were extracted to `Features/Garage/Home/Sections/` and are shared with the focused screens. `FollowPushRouter` must be attached to each tab root (it acts only on the tab on screen).
 
 ## Stores
 
@@ -348,9 +353,9 @@ Marque/
                      (note: FeatureFlagsStore.swift sits at the Marque/ root,
                       not in Stores/, alongside AppDelegate.swift)
   Components/      — MarqueComponents.swift, CarPhotoImage.swift, ScanAllowanceViews.swift
-  Views/           — Legacy flat views (CarListView, CarDetailView, AddCarView, EditCarDetailView,
+  Views/           — Legacy flat views (CarDetailView, AddCarView, EditCarDetailView,
                      AddMaintenanceView, ExpenseSummaryView). Migration target: Features/.
-  Features/        — Assistant, Auth, Expenses, Explore, Garage, Onboarding, Profile, Settings, Social
+  Features/        — Assistant, Auth, Expenses, Explore, Garage (Home/ = Tesla-style tab), Onboarding, Photos, Profile, Settings, Social, Wallet
 .claude/agents/    — frontend.md, backend.md, qa.md (team definitions)
 functions/         — TypeScript Cloud Functions (askMarque, appStoreNotifications, onAuthUserDeleted, ...)
 firestore.rules    — Firestore security rules

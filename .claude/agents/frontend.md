@@ -39,7 +39,7 @@ Onboarding (once) → LoginView → VerifyEmailView (if email unverified)
                               → AddCarView (onboarding mode, if needsFirstCarStep — FR-13's add-first-car step)
                               → MainTabView
 ```
-`MainTabView` has **3 tabs**: Garage, an Add "+" tab, Explore. None of Notifications, Profile, or Settings are tab items: **Settings** is a toolbar gear icon on Garage; **Notifications** is a toolbar bell icon on **Explore**, not Garage; **Profile** isn't a toolbar item at all — it's the inline header on Garage. The PRD's 5-tab layout is the eventual target; the current arrangement is a deliberate interim state — don't "fix" it without an explicit task.
+`MainTabView` has **5 tabs**: Garage, Explore, an Add "+" tab (intercepted, opens `AddCarView`), Photos, Wallet. **Garage** (`Features/Garage/Home/`) is Tesla-style and always dark (local `.environment(\.colorScheme, .dark)`, never `.preferredColorScheme`); Settings is its header menu icon. **Notifications** is a toolbar bell on Explore. **Profile** lives at the top of **Wallet**. Shared screens pushed in the Garage get charcoal styling only via `.garageScreenChrome()` / `.garageRowBackground()`. See CLAUDE.md > Navigation for the full map.
 
 ### Stores you consume (via `@EnvironmentObject`)
 

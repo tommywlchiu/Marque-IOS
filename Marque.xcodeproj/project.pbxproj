@@ -27,7 +27,6 @@
 		A10002 /* Car.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Car.swift */; };
 		A10003 /* CarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* CarStore.swift */; };
 		A10004 /* AddCarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* AddCarView.swift */; };
-		A10005 /* CarListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20005 /* CarListView.swift */; };
 		A10006 /* CarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20006 /* CarDetailView.swift */; };
 		A10007 /* EditCarDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20007 /* EditCarDetailView.swift */; };
 		A10008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20008 /* Assets.xcassets */; };
@@ -123,6 +122,9 @@
 		FE50F2000000000000000001 /* CarShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50F1000000000000000001 /* CarShareCard.swift */; };
 		FE50F2000000000000000002 /* ShareCardSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50F1000000000000000002 /* ShareCardSheet.swift */; };
 		FE50F2000000000000000003 /* PublicSharingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50F1000000000000000003 /* PublicSharingSheet.swift */; };
+		FE60A2000000000000000001 /* WalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60A1000000000000000001 /* WalletView.swift */; };
+		FE60A2000000000000000002 /* WalletDocumentCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60A1000000000000000002 /* WalletDocumentCards.swift */; };
+		FE60B2000000000000000001 /* PhotosTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60B1000000000000000001 /* PhotosTabView.swift */; };
 		FE50B1000000000000000011 /* EditModSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50C1000000000000000011 /* EditModSheet.swift */; };
 		FE50E2000000000000000001 /* ExpenseReportPeriod.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000001 /* ExpenseReportPeriod.swift */; };
 		FE50E2000000000000000002 /* ExpenseReportCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000002 /* ExpenseReportCSV.swift */; };
@@ -130,6 +132,20 @@
 		FE50E2000000000000000004 /* DataExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000004 /* DataExportView.swift */; };
 		FE50E2000000000000000005 /* AccountDataExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50E1000000000000000005 /* AccountDataExportView.swift */; };
 		7EA680C2C5354143A6723C58 /* PublicSharingSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FA7577767C45F799AA60C1 /* PublicSharingSettings.swift */; };
+		6A4E0B000000000000000001 /* GarageHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000001 /* GarageHomeView.swift */; };
+		6A4E0B000000000000000002 /* GarageTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000002 /* GarageTheme.swift */; };
+		6A4E0B000000000000000003 /* GarageCarSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000003 /* GarageCarSummary.swift */; };
+		6A4E0B000000000000000004 /* GarageHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000004 /* GarageHeroView.swift */; };
+		6A4E0B000000000000000005 /* GarageCarSwitcherSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */; };
+		6A4E0B000000000000000006 /* GarageHomeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000006 /* GarageHomeComponents.swift */; };
+		6A4E0B000000000000000007 /* GarageFocusedScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000007 /* GarageFocusedScreens.swift */; };
+		6A4E0B000000000000000008 /* CarSectionHeaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000008 /* CarSectionHeaders.swift */; };
+		6A4E0B000000000000000009 /* CarDocumentsSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000009 /* CarDocumentsSections.swift */; };
+		6A4E0B00000000000000000A /* VehicleDetailsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000A /* VehicleDetailsSection.swift */; };
+		6A4E0B00000000000000000B /* MaintenanceLogSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000B /* MaintenanceLogSection.swift */; };
+		6A4E0B00000000000000000C /* ExpenseSummarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000C /* ExpenseSummarySection.swift */; };
+		6A4E0B00000000000000000D /* CarVisibilitySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000D /* CarVisibilitySection.swift */; };
+		6A4E0B00000000000000000E /* OwnCarPublicProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F00000000000000000E /* OwnCarPublicProjection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -154,7 +170,6 @@
 		A20002 /* Car.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Car.swift; sourceTree = "<group>"; };
 		A20003 /* CarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarStore.swift; sourceTree = "<group>"; };
 		A20004 /* AddCarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCarView.swift; sourceTree = "<group>"; };
-		A20005 /* CarListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarListView.swift; sourceTree = "<group>"; };
 		A20006 /* CarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarDetailView.swift; sourceTree = "<group>"; };
 		A20007 /* EditCarDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCarDetailView.swift; sourceTree = "<group>"; };
 		A20008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -228,6 +243,9 @@
 		FE50F1000000000000000001 /* CarShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarShareCard.swift; sourceTree = "<group>"; };
 		FE50F1000000000000000002 /* ShareCardSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardSheet.swift; sourceTree = "<group>"; };
 		FE50F1000000000000000003 /* PublicSharingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicSharingSheet.swift; sourceTree = "<group>"; };
+		FE60A1000000000000000001 /* WalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletView.swift; sourceTree = "<group>"; };
+		FE60A1000000000000000002 /* WalletDocumentCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletDocumentCards.swift; sourceTree = "<group>"; };
+		FE60B1000000000000000001 /* PhotosTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosTabView.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000006 /* FollowPushRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowPushRouter.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000007 /* EngineSoundRecorderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundRecorderSheet.swift; sourceTree = "<group>"; };
 		FE50C1000000000000000008 /* EngineSoundOwnerSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineSoundOwnerSection.swift; sourceTree = "<group>"; };
@@ -248,6 +266,20 @@
 		FE50E1000000000000000003 /* ExpenseReportPDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExpenseReportPDF.swift; path = Export/ExpenseReportPDF.swift; sourceTree = "<group>"; };
 		FE50E1000000000000000004 /* DataExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportView.swift; sourceTree = "<group>"; };
 		FE50E1000000000000000005 /* AccountDataExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDataExportView.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000001 /* GarageHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageHomeView.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000002 /* GarageTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageTheme.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000003 /* GarageCarSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarSummary.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000004 /* GarageHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageHeroView.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarSwitcherSheet.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000006 /* GarageHomeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageHomeComponents.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000007 /* GarageFocusedScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageFocusedScreens.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000008 /* CarSectionHeaders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarSectionHeaders.swift; sourceTree = "<group>"; };
+		6A4E0F000000000000000009 /* CarDocumentsSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarDocumentsSections.swift; sourceTree = "<group>"; };
+		6A4E0F00000000000000000A /* VehicleDetailsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleDetailsSection.swift; sourceTree = "<group>"; };
+		6A4E0F00000000000000000B /* MaintenanceLogSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaintenanceLogSection.swift; sourceTree = "<group>"; };
+		6A4E0F00000000000000000C /* ExpenseSummarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpenseSummarySection.swift; sourceTree = "<group>"; };
+		6A4E0F00000000000000000D /* CarVisibilitySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarVisibilitySection.swift; sourceTree = "<group>"; };
+		6A4E0F00000000000000000E /* OwnCarPublicProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnCarPublicProjection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -332,7 +364,6 @@
 			children = (
 				A20004 /* AddCarView.swift */,
 				A20011 /* AddMaintenanceView.swift */,
-				A20005 /* CarListView.swift */,
 				A20006 /* CarDetailView.swift */,
 				A20007 /* EditCarDetailView.swift */,
 				A20013 /* ExpenseSummaryView.swift */,
@@ -400,6 +431,8 @@
 				A50014 /* Garage */,
 				A50015 /* Expenses */,
 				A50016 /* Social */,
+				FE60A3000000000000000001 /* Wallet */,
+				FE60B3000000000000000001 /* Photos */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -483,6 +516,7 @@
 				A20034 /* ServiceRemindersView.swift */,
 				A20035 /* AddReminderView.swift */,
 				A20037 /* PhotoGalleryView.swift */,
+				6A4E0A000000000000000001 /* Home */,
 			);
 			path = Garage;
 			sourceTree = "<group>";
@@ -515,11 +549,57 @@
 			path = Social;
 			sourceTree = "<group>";
 		};
+		FE60A3000000000000000001 /* Wallet */ = {
+			isa = PBXGroup;
+			children = (
+				FE60A1000000000000000001 /* WalletView.swift */,
+				FE60A1000000000000000002 /* WalletDocumentCards.swift */,
+			);
+			path = Wallet;
+			sourceTree = "<group>";
+		};
+		FE60B3000000000000000001 /* Photos */ = {
+			isa = PBXGroup;
+			children = (
+				FE60B1000000000000000001 /* PhotosTabView.swift */,
+			);
+			path = Photos;
+			sourceTree = "<group>";
+		};
 		F497CF16301D5D1B001892AE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6A4E0A000000000000000001 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				6A4E0A000000000000000002 /* Sections */,
+				6A4E0F000000000000000001 /* GarageHomeView.swift */,
+				6A4E0F000000000000000002 /* GarageTheme.swift */,
+				6A4E0F000000000000000003 /* GarageCarSummary.swift */,
+				6A4E0F000000000000000004 /* GarageHeroView.swift */,
+				6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */,
+				6A4E0F000000000000000006 /* GarageHomeComponents.swift */,
+				6A4E0F000000000000000007 /* GarageFocusedScreens.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		6A4E0A000000000000000002 /* Sections */ = {
+			isa = PBXGroup;
+			children = (
+				6A4E0F000000000000000008 /* CarSectionHeaders.swift */,
+				6A4E0F000000000000000009 /* CarDocumentsSections.swift */,
+				6A4E0F00000000000000000A /* VehicleDetailsSection.swift */,
+				6A4E0F00000000000000000B /* MaintenanceLogSection.swift */,
+				6A4E0F00000000000000000C /* ExpenseSummarySection.swift */,
+				6A4E0F00000000000000000D /* CarVisibilitySection.swift */,
+				6A4E0F00000000000000000E /* OwnCarPublicProjection.swift */,
+			);
+			path = Sections;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -656,10 +736,27 @@
 				FE50B300000000000000001F /* PopularModelsRow.swift in Sources */,
 				FE50B3000000000000000020 /* ExploreFiltersSheet.swift in Sources */,
 				FE50B1000000000000000010 /* CarModsSection.swift in Sources */,
+				6A4E0B000000000000000001 /* GarageHomeView.swift in Sources */,
+				6A4E0B000000000000000002 /* GarageTheme.swift in Sources */,
+				6A4E0B000000000000000003 /* GarageCarSummary.swift in Sources */,
+				6A4E0B000000000000000004 /* GarageHeroView.swift in Sources */,
+				6A4E0B000000000000000005 /* GarageCarSwitcherSheet.swift in Sources */,
+				6A4E0B000000000000000006 /* GarageHomeComponents.swift in Sources */,
+				6A4E0B000000000000000007 /* GarageFocusedScreens.swift in Sources */,
+				6A4E0B000000000000000008 /* CarSectionHeaders.swift in Sources */,
+				6A4E0B000000000000000009 /* CarDocumentsSections.swift in Sources */,
+				6A4E0B00000000000000000A /* VehicleDetailsSection.swift in Sources */,
+				6A4E0B00000000000000000B /* MaintenanceLogSection.swift in Sources */,
+				6A4E0B00000000000000000C /* ExpenseSummarySection.swift in Sources */,
+				6A4E0B00000000000000000D /* CarVisibilitySection.swift in Sources */,
+				6A4E0B00000000000000000E /* OwnCarPublicProjection.swift in Sources */,
 				FE50B1000000000000000011 /* EditModSheet.swift in Sources */,
 				FE50F2000000000000000001 /* CarShareCard.swift in Sources */,
 				FE50F2000000000000000002 /* ShareCardSheet.swift in Sources */,
 				FE50F2000000000000000003 /* PublicSharingSheet.swift in Sources */,
+				FE60A2000000000000000001 /* WalletView.swift in Sources */,
+				FE60A2000000000000000002 /* WalletDocumentCards.swift in Sources */,
+				FE60B2000000000000000001 /* PhotosTabView.swift in Sources */,
 				FE50E2000000000000000001 /* ExpenseReportPeriod.swift in Sources */,
 				FE50E2000000000000000002 /* ExpenseReportCSV.swift in Sources */,
 				FE50E2000000000000000003 /* ExpenseReportPDF.swift in Sources */,
@@ -696,7 +793,6 @@
 				A10062 /* ReportView.swift in Sources */,
 				A10003 /* CarStore.swift in Sources */,
 				A10004 /* AddCarView.swift in Sources */,
-				A10005 /* CarListView.swift in Sources */,
 				A10006 /* CarDetailView.swift in Sources */,
 				A10007 /* EditCarDetailView.swift in Sources */,
 				A10009 /* MaintenanceRecord.swift in Sources */,

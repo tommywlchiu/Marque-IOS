@@ -107,7 +107,7 @@ struct SettingsView: View {
 
             // EditProfileView wraps itself in its own NavigationStack (it's
             // built for sheet presentation — see its Cancel -> dismiss()
-            // toolbar button, and CarListView's own sheet(isPresented:) use
+            // toolbar button, and WalletView's own sheet(isPresented:) use
             // of it). Pushing it here via NavigationLink instead nested a
             // second NavigationStack inside this screen's already-active
             // one, which glitched on the first push before "settling" —

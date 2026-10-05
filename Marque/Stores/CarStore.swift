@@ -19,7 +19,7 @@ class CarStore: ObservableObject {
     // over the free car limit (Pro and active Family Sharing are
     // unlimited — see firestore.rules `users/{uid}/cars/{carId}` create).
     // This is the server's word, independent of and a backstop to the
-    // existing client-side gate (CarListView.atCarLimit / MainTabView's
+    // existing client-side gate (the Garage switcher's atCarLimit / MainTabView's
     // copy): the client check can drift from what usage/limits.carCount
     // actually says (multi-device races, an offline-queued create that
     // wasn't counted yet), and the rule is what actually decides. The
