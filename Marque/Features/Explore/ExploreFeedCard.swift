@@ -8,6 +8,8 @@ import SwiftUI
 /// "open the car page" without extra plumbing.
 struct ExploreFeedCard: View {
     let car: PublicCar
+    /// Shows the PRO badge by the owner's name (`ExploreStore.isPro`).
+    var ownerIsPro = false
     /// Opens the owner's `PublicProfileView`.
     var onOwnerTap: () -> Void
     /// Called after a successful like (not unlike) so the host can offer the
@@ -36,6 +38,7 @@ struct ExploreFeedCard: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.primary)
                     .lineLimit(1)
+                if ownerIsPro { ProBadge() }
                 Spacer(minLength: 0)
             }
         }

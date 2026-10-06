@@ -143,6 +143,16 @@ struct ProUpgradeView: View {
 
     // MARK: - Sections
 
+    private var heroTitle: String {
+        trigger == .carLimit ? "Room for Every Car" : "More from Marque Assistant"
+    }
+
+    private var heroSubtitle: String {
+        trigger == .carLimit
+            ? "The free plan holds \(CarStore.freeCarLimit) cars. Pro adds as many as you own, plus 50x the Assistant messages and a Pro badge on your profile."
+            : "50x the daily messages, plus unlimited cars and a Pro badge on your profile."
+    }
+
     private var heroSection: some View {
         VStack(spacing: 14) {
             ZStack {
@@ -157,11 +167,13 @@ struct ProUpgradeView: View {
             // FR-08's positioning: Pro anchors on metered AI usage (the
             // Assistant), because that's the only feature with real recurring
             // marginal cost. Leads with that rather than the generic
-            // "unlock everything" framing FR-08.7 was written to retire.
+            // "unlock everything" framing FR-08.7 was written to retire —
+            // except when the user hit the car limit (owner decision,
+            // 2026-10-06): there the headline answers what they just tried.
             VStack(spacing: 6) {
-                Text("More from Marque Assistant")
+                Text(heroTitle)
                     .font(.title2).fontWeight(.bold)
-                Text("50x the daily messages, plus unlimited cars and a Pro badge on your profile.")
+                Text(heroSubtitle)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -284,7 +296,7 @@ struct ProUpgradeView: View {
                 ("bubble.left.and.bubble.right.fill", "Marque Assistant", "500 messages a day, up from 10 free"),
                 ("doc.text.viewfinder",               "Document Scans",   "\(ScanAllowanceStore.proDailyCap) scans a day, up from \(ScanAllowanceStore.freeDailyCap) free"),
                 ("infinity",                          "Unlimited Cars",   "Free plan is limited to \(CarStore.freeCarLimit) vehicles"),
-                ("checkmark.seal.fill",               "Pro Badge",        "Shown next to your name in Garage and Settings"),
+                ("checkmark.seal.fill",               "Pro Badge",        "Shown next to your name in Garage, Settings and Explore"),
             ]
 
             ForEach(features, id: \.title) { feat in

@@ -65,6 +65,13 @@ class ExploreStore: ObservableObject {
     /// Cleared by the next successful snapshot or refresh.
     @Published private(set) var feedLoadFailed = false
 
+    /// Owners whose server-side plan is Pro (`users/{uid}.isPro`, written
+    /// only by the entitlement functions) — the one source that holds for
+    /// someone else's account. A Family Sharing member is Pro on their own
+    /// device but not here, by the same rule that keeps their AI caps free.
+    @Published private(set) var proOwnerUIDs: Set<String> = []
+    private var checkedOwnerUIDs: Set<String> = []
+
     private var listener: ListenerRegistration?
     private let db = Firestore.firestore()
     private var profileCache: [String: PublicUserProfile] = [:]
@@ -90,6 +97,7 @@ class ExploreStore: ObservableObject {
                 self.isLoading = false
                 self.feedLoadFailed = false
                 self.cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
+                self.loadProStatus(for: self.cars.map(\.ownerUID))
             }
     }
 
@@ -107,6 +115,7 @@ class ExploreStore: ObservableObject {
             .getDocuments(source: .server)
         else { return }
         cars = snapshot.documents.compactMap { try? $0.data(as: PublicCar.self) }
+        loadProStatus(for: cars.map(\.ownerUID))
         if feedLoadFailed { retryFeed() }
     }
 
@@ -124,6 +133,8 @@ class ExploreStore: ObservableObject {
         feedLoadFailed = false
         cars = []
         profileCache = [:]
+        proOwnerUIDs = []
+        checkedOwnerUIDs = []
         topCarsThisWeek = []
         topCarsAllTime = []
         topCarsFailedPeriods = []
@@ -164,6 +175,34 @@ class ExploreStore: ObservableObject {
         switch period {
         case .thisWeek: topCarsThisWeek = cars
         case .allTime: topCarsAllTime = cars
+        }
+        loadProStatus(for: cars.map(\.ownerUID))
+    }
+
+    // MARK: - Pro badges
+
+    func isPro(_ uid: String) -> Bool { proOwnerUIDs.contains(uid) }
+
+    /// Looks up the plan of owners not checked yet this session, 30 per
+    /// query (Firestore's `in` limit). A failed chunk is retried next call.
+    func loadProStatus(for uids: [String]) {
+        let unchecked = Array(Set(uids).subtracting(checkedOwnerUIDs))
+        guard !unchecked.isEmpty else { return }
+        checkedOwnerUIDs.formUnion(unchecked)
+        Task {
+            for start in stride(from: 0, to: unchecked.count, by: 30) {
+                let chunk = Array(unchecked[start..<min(start + 30, unchecked.count)])
+                guard let snapshot = try? await db.collection("users")
+                    .whereField(FieldPath.documentID(), in: chunk)
+                    .getDocuments()
+                else {
+                    checkedOwnerUIDs.subtract(chunk)
+                    continue
+                }
+                for doc in snapshot.documents where doc.data()["isPro"] as? Bool == true {
+                    proOwnerUIDs.insert(doc.documentID)
+                }
+            }
         }
     }
 

@@ -167,7 +167,7 @@ struct ExploreView: View {
                                 NavigationLink(destination: CarDetailView(publicCar: heroCar)
                                     .environmentObject(exploreStore)
                                     .environmentObject(blockStore)) {
-                                    CarOfTheWeekHero(car: heroCar)
+                                    CarOfTheWeekHero(car: heroCar, ownerIsPro: exploreStore.isPro(heroCar.ownerUID))
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.horizontal, 16)
@@ -396,7 +396,7 @@ struct ExploreView: View {
                         NavigationLink(destination: CarDetailView(publicCar: car)
                             .environmentObject(exploreStore)
                             .environmentObject(blockStore)) {
-                            ExploreFeedCard(car: car, onOwnerTap: {
+                            ExploreFeedCard(car: car, ownerIsPro: exploreStore.isPro(car.ownerUID), onOwnerTap: {
                                 profileTarget = ProfileTarget(uid: car.ownerUID, username: car.ownerUsername)
                             }, onLiked: offerPushPrePrompt)
                         }

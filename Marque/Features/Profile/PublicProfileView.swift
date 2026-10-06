@@ -45,6 +45,7 @@ struct PublicProfileView: View {
         .navigationTitle("@\(ownerUsername)")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            exploreStore.loadProStatus(for: [ownerUID])
             profile = await exploreStore.fetchUserProfile(uid: ownerUID)
             let edges = await exploreStore.fetchFollowUIDs(uid: ownerUID)
             followerUIDs = edges.followers
@@ -120,8 +121,11 @@ struct PublicProfileView: View {
                     .clipShape(Circle())
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(profile?.displayName ?? ownerUsername)
-                        .font(.headline)
+                    HStack(spacing: 6) {
+                        Text(profile?.displayName ?? ownerUsername)
+                            .font(.headline)
+                        if exploreStore.isPro(ownerUID) { ProBadge() }
+                    }
                     Text("@\(ownerUsername)")
                         .font(.subheadline).foregroundColor(.secondary)
                 }

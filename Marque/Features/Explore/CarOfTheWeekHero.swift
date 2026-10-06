@@ -8,6 +8,8 @@ import SwiftUI
 /// `TopCarsSection`'s `TopCarCard` use).
 struct CarOfTheWeekHero: View {
     let car: PublicCar
+    /// Shows the PRO badge by the owner's name (`ExploreStore.isPro`).
+    var ownerIsPro = false
 
     @EnvironmentObject private var likeStore: LikeStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -78,6 +80,7 @@ struct CarOfTheWeekHero: View {
             HStack(spacing: 6) {
                 Text("@\(car.ownerUsername)")
                     .font(.subheadline.weight(.semibold))
+                if ownerIsPro { ProBadge() }
                 Text("\u{00B7}")
                 Text(likesText)
                     .font(.subheadline)
