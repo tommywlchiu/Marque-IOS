@@ -211,7 +211,7 @@ enum ExpenseReportPDF {
         if !car.trim.isEmpty { identityParts.append("Trim: \(car.trim)") }
         if !car.vinNumber.isEmpty { identityParts.append("VIN: \(car.vinNumber)") }
         if !car.licensePlate.isEmpty { identityParts.append("Plate: \(car.licensePlate)") }
-        if !car.mileage.isEmpty { identityParts.append("Mileage: \(car.mileage) mi") }
+        if let mileage = car.mileageText { identityParts.append("Mileage: \(mileage)") }
         if !identityParts.isEmpty {
             line(identityParts.joined(separator: "   ·   "), font: identityFont, color: .darkGray, spacingAfter: 12, cursor: cursor)
         } else {

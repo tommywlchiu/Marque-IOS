@@ -303,6 +303,13 @@ struct Car: Identifiable, Codable, Equatable {
     // Tolerant parse of `mileage` (see NumberParsing in ServiceReminderEngine.swift).
     var mileageValue: Int? { NumberParsing.mileage(from: mileage) }
 
+    /// Formatted "28,450 mi", or nil if unset. `mileage` is free text (the
+    /// field's own placeholder suggests including "mi"), so appending " mi"
+    /// to it directly double-units a value a user already typed with the
+    /// unit — always go through this (or `mileageValue`) instead of reading
+    /// `mileage` raw wherever a unit-suffixed display string is needed.
+    var mileageText: String? { mileageValue.map { "\($0.formatted()) mi" } }
+
     // Drives NotificationManager's mileage check-in alert (FR-14-adjacent):
     // a mileage-only reminder can never fire a date-based local notification,
     // so instead we periodically nudge the user to update their mileage.

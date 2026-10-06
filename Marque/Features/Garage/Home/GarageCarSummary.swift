@@ -103,7 +103,7 @@ enum GarageSummary {
     }
 
     static func mileageText(_ car: Car) -> String? {
-        car.mileageValue.map { "\($0.formatted()) mi" }
+        car.mileageText
     }
 
     // MARK: Status line

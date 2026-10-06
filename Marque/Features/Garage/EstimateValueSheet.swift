@@ -45,7 +45,7 @@ struct EstimateValueSheet: View {
                     .listRowBackground(Color.clear)
                 } footer: {
                     if let car {
-                        Text("Based on \(car.displayName)\(car.mileage.isEmpty ? "" : ", \(car.mileage) mi") and the condition you pick.")
+                        Text("Based on \(car.displayName)\(car.mileageText.map { ", \($0)" } ?? "") and the condition you pick.")
                     }
                 }
 

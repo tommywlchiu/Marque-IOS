@@ -158,7 +158,7 @@ struct PublicSharingSheet: View {
     }
 
     private var mileageSubtitle: String {
-        car.mileage.isEmpty ? "Nothing to share yet" : "\(car.mileage) mi"
+        car.mileageText ?? "Nothing to share yet"
     }
 
     private var notesSubtitle: String {
