@@ -17,7 +17,7 @@ for key in only or list(manifest):  # in the order given, so the caller can prio
     if len(done) == 36 * len(palette):
         print("SKIP (already rendered)", key, flush=True); continue
     raw = os.path.join(outdir, "_png", key)
-    args = ["blender", "-b", "-P", os.path.join(here, "render_car.py"), "--", f"in={glb}", f"out={raw}",
+    args = ["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--", f"in={glb}", f"out={raw}",
             f"paintmat={car['paintmat']}", "engine=BLENDER_EEVEE", "samples=48", "res=1200x675",
             f"colors={colors}", "frames=36"] + (["flip=1"] if car.get("flip") else []) \
            + ([f"styles={car['styles']}"] if car.get("styles") else []) \
@@ -26,5 +26,10 @@ for key in only or list(manifest):  # in the order given, so the caller can prio
            + ([f"roll={car['roll']}"] if car.get("roll") else []) \
            + ([f"keep={car['keep']}"] if car.get("keep") else [])
     print("RENDER", key, flush=True)
-    subprocess.run(args, check=True, stdout=subprocess.DEVNULL)
-    print("DONE", key, flush=True)
+    result = subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    # Blender can exit 0 after its script fails; count the frames instead.
+    made = len(glob.glob(os.path.join(raw, "*", "*.png")))
+    if result.returncode != 0 or made != 36 * len(palette):
+        print("FAILED", key, f"{made} frames", result.stderr.strip().splitlines()[-1:] , flush=True)
+    else:
+        print("DONE", key, flush=True)

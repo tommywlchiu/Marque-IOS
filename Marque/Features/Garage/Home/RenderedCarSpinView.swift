@@ -9,10 +9,16 @@ import UIKit
 struct RenderedCarSpinView: UIViewRepresentable {
     let still: UIImage
     let frames: [UIImage]?
+    /// Where the plates sit in each frame, if the car has them.
+    var plates: CarRenderLibrary.PlateTrack? = nil
+    /// The owner's plate; blank draws a plain plate (which still covers the
+    /// placeholder text some models ship with). Private: the Garage only.
+    var plateText: String = ""
 
     func makeUIView(context: Context) -> StageView {
         let view = StageView()
-        view.show(still)
+        view.plateText = plateText
+        view.show(still, plates: plates?.frames.first)
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
@@ -22,11 +28,16 @@ struct RenderedCarSpinView: UIViewRepresentable {
 
     func updateUIView(_ view: StageView, context: Context) {
         let coordinator = context.coordinator
+        view.plateText = plateText
+        let platesChanged = coordinator.plates != plates
+        coordinator.plates = plates
         if let frames, coordinator.frames.count != frames.count {
             coordinator.frames = frames
             coordinator.show(coordinator.index)
         } else if coordinator.frames.isEmpty {
-            view.show(still)
+            view.show(still, plates: plates?.frames.first)
+        } else if platesChanged {
+            coordinator.show(coordinator.index)
         }
     }
 
@@ -59,6 +70,11 @@ struct RenderedCarSpinView: UIViewRepresentable {
         private let reflectionView = UIImageView()
         private let reflectionFade = CAGradientLayer()
         private let shadow = CAGradientLayer()
+        private var plateLayers: [String: CALayer] = [:]
+        private var placements: [String: CarRenderLibrary.PlateTrack.Placement] = [:]
+        var plateText = "" {
+            didSet { if plateText != oldValue { plateLayers.values.forEach { $0.removeFromSuperlayer() }; plateLayers = [:]; setNeedsLayout() } }
+        }
         private var floorLines: [ObjectIdentifier: FloorLine] = [:]
         private var floorLine = FloorLine()
 
@@ -83,7 +99,8 @@ struct RenderedCarSpinView: UIViewRepresentable {
 
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-        func show(_ image: UIImage) {
+        func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil) {
+            placements = plates ?? [:]
             carView.image = image
             reflectionView.image = image
             let id = ObjectIdentifier(image)
@@ -172,7 +189,63 @@ struct RenderedCarSpinView: UIViewRepresentable {
             let midY = a + b * car.midX
             shadow.frame = CGRect(x: car.minX + car.width * 0.06, y: midY - car.height * 0.07,
                                   width: car.width * 0.88, height: car.height * 0.14)
+            layoutPlates(in: car)
             CATransaction.commit()
+        }
+
+        /// Each visible plate: the plate artwork mapped onto its quad in this
+        /// frame with a perspective transform, dimmed as it turns away.
+        private func layoutPlates(in car: CGRect) {
+            for (side, layer) in plateLayers where placements[side] == nil { layer.isHidden = true }
+            for (side, placement) in placements where placement.quad.count == 4 {
+                let quad = placement.quad.map { CGPoint(x: car.minX + $0[0] * car.width, y: car.minY + $0[1] * car.height) }
+                let width = hypot(quad[1].x - quad[0].x, quad[1].y - quad[0].y)
+                let height = hypot(quad[3].x - quad[0].x, quad[3].y - quad[0].y)
+                guard width > 2, height > 1 else { plateLayers[side]?.isHidden = true; continue }
+                let layer = plateLayers[side] ?? makePlateLayer(side: side, aspect: width / height)
+                layer.isHidden = false
+                layer.transform = CATransform3DIdentity
+                layer.bounds = CGRect(origin: .zero, size: Self.plateArtSize)
+                layer.position = .zero
+                layer.transform = Self.transform(from: Self.plateArtSize, to: quad)
+                layer.sublayers?.first?.opacity = Float(0.08 + (1 - placement.facing) * 0.45)
+            }
+        }
+
+        private static let plateArtSize = CGSize(width: 300, height: 150)
+
+        private func makePlateLayer(side: String, aspect: CGFloat) -> CALayer {
+            let layer = CALayer()
+            layer.anchorPoint = .zero
+            layer.allowsEdgeAntialiasing = true
+            layer.contents = LicensePlateArt.image(text: plateText, aspect: aspect).cgImage
+            layer.contentsGravity = .resize
+            let shade = CALayer()
+            shade.backgroundColor = UIColor.black.cgColor
+            shade.frame = CGRect(origin: .zero, size: Self.plateArtSize)
+            layer.addSublayer(shade)
+            self.layer.insertSublayer(layer, above: carView.layer)
+            plateLayers[side] = layer
+            return layer
+        }
+
+        /// The projective transform taking a size×size rect (origin at the
+        /// layer's anchor) onto `quad` — top-left, top-right, bottom-right,
+        /// bottom-left (Heckbert's square-to-quad mapping, scaled to `size`).
+        static func transform(from size: CGSize, to quad: [CGPoint]) -> CATransform3D {
+            let (p0, p1, p2, p3) = (quad[0], quad[1], quad[2], quad[3])
+            let dx1 = p1.x - p2.x, dx2 = p3.x - p2.x, dx3 = p0.x - p1.x + p2.x - p3.x
+            let dy1 = p1.y - p2.y, dy2 = p3.y - p2.y, dy3 = p0.y - p1.y + p2.y - p3.y
+            let den = dx1 * dy2 - dx2 * dy1
+            let g = den == 0 ? 0 : (dx3 * dy2 - dx2 * dy3) / den
+            let h = den == 0 ? 0 : (dx1 * dy3 - dx3 * dy1) / den
+            let a = p1.x - p0.x + g * p1.x, b = p3.x - p0.x + h * p3.x
+            let d = p1.y - p0.y + g * p1.y, e = p3.y - p0.y + h * p3.y
+            var t = CATransform3DIdentity
+            t.m11 = a / size.width; t.m12 = d / size.width; t.m14 = g / size.width
+            t.m21 = b / size.height; t.m22 = e / size.height; t.m24 = h / size.height
+            t.m41 = p0.x; t.m42 = p0.y; t.m44 = 1
+            return t
         }
     }
 
@@ -183,10 +256,12 @@ struct RenderedCarSpinView: UIViewRepresentable {
         var index = 0
         private var dragStartIndex = 0
 
+        var plates: CarRenderLibrary.PlateTrack?
+
         func show(_ i: Int) {
             guard !frames.isEmpty else { return }
             index = ((i % frames.count) + frames.count) % frames.count
-            stage?.show(frames[index])
+            stage?.show(frames[index], plates: plates.flatMap { index < $0.frames.count ? $0.frames[index] : nil })
         }
 
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
@@ -208,6 +283,40 @@ struct RenderedCarSpinView: UIViewRepresentable {
             default:
                 break
             }
+        }
+    }
+}
+
+/// A plain US-style plate: white, a thin navy border and the owner's
+/// characters in navy, drawn at the plate's own aspect (some models' plate
+/// recesses are European-width).
+enum LicensePlateArt {
+    static func image(text: String, aspect: CGFloat) -> UIImage {
+        let height: CGFloat = 150
+        let size = CGSize(width: max(height * min(max(aspect, 1.6), 5), 1), height: height)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            UIColor(white: 0.93, alpha: 1).setFill()
+            UIBezierPath(roundedRect: rect, cornerRadius: 12).fill()
+            let navy = UIColor(red: 0.08, green: 0.16, blue: 0.42, alpha: 1)
+            navy.setStroke()
+            let border = UIBezierPath(roundedRect: rect.insetBy(dx: 6, dy: 6), cornerRadius: 9)
+            border.lineWidth = 5
+            border.stroke()
+            let characters = text.uppercased().trimmingCharacters(in: .whitespaces)
+            guard !characters.isEmpty else { return }
+            var fontSize: CGFloat = 92
+            var attributes: [NSAttributedString.Key: Any] = [:]
+            var textSize = CGSize.zero
+            repeat {
+                attributes = [.font: UIFont.systemFont(ofSize: fontSize, weight: .heavy), .foregroundColor: navy]
+                textSize = (characters as NSString).size(withAttributes: attributes)
+                fontSize -= 4
+            } while textSize.width > size.width * 0.86 && fontSize > 20
+            (characters as NSString).draw(at: CGPoint(x: (size.width - textSize.width) / 2, y: (size.height - textSize.height) / 2),
+                                          withAttributes: attributes)
         }
     }
 }

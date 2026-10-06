@@ -41,6 +41,7 @@ enum CarRenderLibrary {
         /// Normalized body styles it stands in for (`CarModelRenderer.normalizedStyle`).
         let styles: [String]
         let credit: Credit
+        let plates: Bool?
     }
 
     struct Entry: Codable, Identifiable {
@@ -49,7 +50,23 @@ enum CarRenderLibrary {
         let models: [String]
         let years: [Int]
         let credit: Credit
+        /// Whether `<key>/plates.json` exists (optional: older catalogs).
+        let plates: Bool?
         var id: String { key }
+    }
+
+    /// Where the license plates land in each turntable frame, as fractions
+    /// of the frame (scripts/car-render/plates.py → publish.py).
+    struct PlateTrack: Codable, Equatable {
+        struct Plate: Codable, Equatable { let aspect: Double }
+        struct Placement: Codable, Equatable {
+            /// Top-left, top-right, bottom-right, bottom-left.
+            let quad: [[Double]]
+            /// How squarely the plate faces the camera, 0...1.
+            let facing: Double
+        }
+        let plates: [String: Plate]
+        let frames: [[String: Placement]]
     }
 
     struct Credit: Codable, Identifiable {
@@ -67,6 +84,7 @@ enum CarRenderLibrary {
         let carKey: String
         let colorKey: String
         let frameCount: Int
+        var hasPlates = false
 
         fileprivate func remoteURL(_ frame: Int) -> URL {
             CarRenderLibrary.baseURL.appendingPathComponent("\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp")
@@ -148,10 +166,12 @@ enum CarRenderLibrary {
             .compactMap { entry in score(entry).map { (entry, $0) } }
             .max { $0.1 < $1.1 }?.0
         let style = CarModelRenderer.normalizedStyle(car.bodyStyle)
-        guard let key = entry?.key ?? catalog.generics?.first(where: { $0.styles.contains(style) })?.key else { return nil }
+        let generic = entry == nil ? catalog.generics?.first(where: { $0.styles.contains(style) }) : nil
+        guard let key = entry?.key ?? generic?.key else { return nil }
         let color = CarPaint.paletteKey(for: car.color)
         guard catalog.colors.contains(color) else { return nil }
-        return Match(carKey: key, colorKey: color, frameCount: catalog.frames)
+        return Match(carKey: key, colorKey: color, frameCount: catalog.frames,
+                     hasPlates: (entry?.plates ?? generic?.plates) == true)
     }
 
     // MARK: - Frames
@@ -170,6 +190,21 @@ enum CarRenderLibrary {
         try? FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: local, options: .atomic)
         return image
+    }
+
+    /// The car's plate positions, if it has them (disk-cached like frames).
+    static func plates(of match: Match) async -> PlateTrack? {
+        guard match.hasPlates else { return nil }
+        let local = cacheDirectory.appendingPathComponent("\(match.carKey)/plates.json")
+        if let data = try? Data(contentsOf: local), let track = try? JSONDecoder().decode(PlateTrack.self, from: data) {
+            return track
+        }
+        guard let (data, response) = try? await URLSession.shared.data(from: baseURL.appendingPathComponent("\(match.carKey)/plates.json")),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let track = try? JSONDecoder().decode(PlateTrack.self, from: data) else { return nil }
+        try? FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? data.write(to: local, options: .atomic)
+        return track
     }
 
     /// All frames in order, fetched in parallel; nil if any is missing, so a

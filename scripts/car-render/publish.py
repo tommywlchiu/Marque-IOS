@@ -7,7 +7,7 @@ For each manifest car rendered under <render-dir>/_png/<car>/<color>/<NN>.png:
   * writes public/carRenders/v1/<car>/<color>/<NN>.webp (alpha WebP).
 Then writes public/carRenders/v1/catalog.json, which the app reads to match a
 car (make/model/year; else the generic for its body style — manifest entries
-with `styles` instead of `covers`) and to show credits. Credits (author, license, link) are
+with `bodyStyles` instead of `covers`) and to show credits. Credits (author, license, link) are
 read from Sketchfab's public API, not typed by hand.
 """
 import glob, json, os, sys, urllib.request
@@ -28,12 +28,7 @@ def credit(uid):
             "authorURL": m["user"]["profileUrl"], "license": lic.get("label", ""),
             "licenseURL": lic.get("url", ""), "url": m["viewerUrl"]}
 
-cars, generics = [], []
-for key, car in manifest.items():
-    pngs = sorted(glob.glob(os.path.join(src, key, "*", "*.png")))
-    if len(pngs) != FRAMES * len(palette):
-        print(f"SKIP {key}: {len(pngs)} frames, expected {FRAMES * len(palette)}")
-        continue
+def publish_frames(key, pngs):
     box = None
     for p in pngs:
         b = Image.open(p).getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox()
@@ -45,13 +40,44 @@ for key, car in manifest.items():
         out = os.path.join(dst, key, color, name.replace(".png", ".webp"))
         os.makedirs(os.path.dirname(out), exist_ok=True)
         Image.open(p).crop(box).save(out, "WEBP", quality=82, method=4)
-    if "styles" in car:  # an unbadged stand-in for every car of these body styles
-        generics.append({"key": key, "styles": car["styles"], "credit": credit(car["sketchfab"])})
+    # Plate positions (plates.py), as fractions of the cropped frame, so the
+    # app can draw the owner's plate on whatever size it shows the frame at.
+    has_plates = False
+    plate_src = os.path.join(sys.argv[1], "_plates", f"{key}.json")
+    if os.path.exists(plate_src):
+        meta = json.load(open(plate_src))
+        bw, bh = box[2] - box[0], box[3] - box[1]
+        frames = [{side: {"quad": [[round((x - box[0]) / bw, 4), round((y - box[1]) / bh, 4)] for x, y in p["quad"]],
+                          "facing": p["facing"]} for side, p in f.items()} for f in meta["frames"]]
+        sizes = {side: {"aspect": round(v["w"] / v["h"], 3)} for side, v in meta["plates"].items()}
+        json.dump({"plates": sizes, "frames": frames}, open(os.path.join(dst, key, "plates.json"), "w"))
+        has_plates = True
+    return has_plates
+
+# --catalog-only: rewrite catalog.json from what's already published (no
+# frame conversion) — for a manifest change that touches no pixels.
+catalog_only = "--catalog-only" in sys.argv
+cars, generics = [], []
+for key, car in manifest.items():
+    if catalog_only:
+        if len(glob.glob(os.path.join(dst, key, "*", "*.webp"))) != FRAMES * len(palette):
+            continue
+        has_plates = os.path.exists(os.path.join(dst, key, "plates.json"))
+    else:
+        has_plates = None
+    pngs = [] if catalog_only else sorted(glob.glob(os.path.join(src, key, "*", "*.png")))
+    if not catalog_only and len(pngs) != FRAMES * len(palette):
+        print(f"SKIP {key}: {len(pngs)} frames, expected {FRAMES * len(palette)}")
+        continue
+    if not catalog_only:
+        has_plates = publish_frames(key, pngs)
+    if "bodyStyles" in car:  # an unbadged stand-in for every car of these body styles
+        generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]), "plates": has_plates})
     else:
         c = car["covers"]
         cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
-                     "years": c["years"], "credit": credit(car["sketchfab"])})
-    print(f"PUBLISHED {key} crop={box}")
+                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates})
+    print(f"PUBLISHED {key}")
 
 json.dump({"version": 1, "frames": FRAMES, "colors": palette, "cars": cars, "generics": generics},
           open(os.path.join(dst, "catalog.json"), "w"), indent=2)

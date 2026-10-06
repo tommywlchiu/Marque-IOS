@@ -210,6 +210,8 @@ struct GarageHeroView: View {
     @State private var loaded: (key: String, image: GarageHeroImage)?
     /// The turntable frames for a `.rendered` hero, keyed like `loaded`.
     @State private var renderFrames: (key: String, frames: [UIImage])?
+    /// Where the license plates sit in each of those frames, keyed the same.
+    @State private var renderPlates: (key: String, track: CarRenderLibrary.PlateTrack)?
 
     /// Changes whenever what the hero should show changes.
     private var key: String {
@@ -265,6 +267,15 @@ struct GarageHeroView: View {
         if let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()),
            let still = CarRenderLibrary.cachedStill(for: match) {
             loaded = (key, .rendered(still, match))
+            // The disk catalog is last launch's. Re-check against this
+            // launch's: it can match the car differently (a new model in
+            // place of its generic) or add plate positions.
+            if let fresh = CarRenderLibrary.match(car, in: await CarRenderLibrary.catalog()), fresh != match,
+               let freshStill = await CarRenderLibrary.frame(0, of: fresh), !Task.isCancelled {
+                loaded = (key, .rendered(freshStill, fresh))
+                await loadFrames(fresh, key: key)
+                return
+            }
             await loadFrames(match, key: key)
             return
         }
@@ -285,6 +296,9 @@ struct GarageHeroView: View {
     }
 
     private func loadFrames(_ match: CarRenderLibrary.Match, key: String) async {
+        if renderPlates?.key != key, let track = await CarRenderLibrary.plates(of: match), !Task.isCancelled {
+            renderPlates = (key, track)
+        }
         guard renderFrames?.key != key else { return }
         if let frames = await CarRenderLibrary.allFrames(of: match), !Task.isCancelled {
             renderFrames = (key, frames)
@@ -298,7 +312,9 @@ struct GarageHeroView: View {
         VStack(spacing: 0) {
             RenderedCarSpinView(
                 still: still,
-                frames: renderFrames?.key == key ? renderFrames?.frames : nil
+                frames: renderFrames?.key == key ? renderFrames?.frames : nil,
+                plates: renderPlates?.key == key ? renderPlates?.track : nil,
+                plateText: car.licensePlate
             )
             // A new car/color must get a fresh view: the coordinator holds the
             // previous car's frames, and SwiftUI would otherwise reuse it.

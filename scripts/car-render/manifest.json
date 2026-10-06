@@ -28,7 +28,9 @@
     "title": "Tesla 2018 Model 3",
     "license": "CC BY 4.0",
     "paintmat": "primary",
-    "flip": false
+    "flip": false,
+    "plate_rear_z": 0.72,
+    "plate_rear_w": 0.5
   },
   "bmw-m4-f82": {
     "covers": {
@@ -43,7 +45,8 @@
     "title": "BMW M4 f82",
     "license": "CC BY 4.0",
     "paintmat": "ARm4_main",
-    "flip": true
+    "flip": true,
+    "plate_rear_z": 0.64
   },
   "toyota-rav4-5g": {
     "covers": {
@@ -90,7 +93,8 @@
     },
     "sketchfab": "014ebfab735341248431da3d6447bbb5",
     "paintmat": "Magnetic_Metallic",
-    "flip": true
+    "flip": true,
+    "plate_rear_z": 0.58
   },
   "ford-f150-lightning": {
     "covers": {
@@ -125,7 +129,9 @@
     },
     "sketchfab": "91c6673859444597bf006a0ef8570005",
     "paintmat": "paintBlue",
-    "flip": true
+    "flip": true,
+    "platemat": "none",
+    "plate_rear_z": 0.75
   },
   "honda-crv-5g": {
     "covers": {
@@ -142,7 +148,8 @@
     },
     "sketchfab": "cf55df17d2154cbbb157c2e1b062ac23",
     "paintmat": "body_color2",
-    "flip": true
+    "flip": true,
+    "plate_rear_w": 0.52
   },
   "ram-1500-5g": {
     "covers": {
@@ -216,7 +223,8 @@
     },
     "sketchfab": "8bb91f037ec64151ba72279c50ce5c20",
     "paintmat": "Mat_rancher..012",
-    "flip": false
+    "flip": false,
+    "plate_rear_z": 0.65
   },
   "honda-civic-11g": {
     "covers": {
@@ -256,7 +264,8 @@
     },
     "sketchfab": "7674a3bd168a451daf73fc0a33d39589",
     "paintmat": "varnish",
-    "flip": true
+    "flip": true,
+    "plate_rear_w": 0.52
   },
   "ford-explorer-6g": {
     "covers": {
@@ -461,7 +470,9 @@
     "sketchfab": "574deec95f094e9192b0023d3d4ad607",
     "paintmat": "Material_2125670220",
     "flip": false,
-    "styles": "glass:glass;Material_134|black|black_0|black222:trim;Carpaint_Simple_Onyx2:gloss;Carpaint_Simple_Onyx3|Material_2125670235|steel|steel3434|Iron_Clean_Distorted:satin;Material_34|Red_Light1:redlight;glass_light1141:lamp"
+    "styles": "glass:glass;Material_134|black|black_0|black222:trim;Carpaint_Simple_Onyx2:gloss;Carpaint_Simple_Onyx3|Material_2125670235|steel|steel3434|Iron_Clean_Distorted:satin;Material_34|Red_Light1:redlight;glass_light1141:lamp",
+    "plate_rear_z": 0.99,
+    "plate_rear_w": 0.52
   },
   "nissan-rogue-3g": {
     "covers": {
@@ -520,7 +531,9 @@
     "paintmat": "main_paint.001",
     "flip": true,
     "hide": "invisible_dark",
-    "roll": -90
+    "roll": -90,
+    "plate_rear_z": 1.32,
+    "plate_rear_w": 0.52
   },
   "honda-civic-10g": {
     "covers": {
@@ -550,7 +563,8 @@
     },
     "sketchfab": "2ad964f59a774e199d9caf143f21e614",
     "paintmat": "Meshpart2Mtl.002",
-    "flip": true
+    "flip": true,
+    "plate_rear_z": 0.6
   },
   "chevrolet-silverado-ev": {
     "covers": {
@@ -566,65 +580,65 @@
     "flip": true
   },
   "generic-sedan": {
-    "styles": [
-      "sedan"
-    ],
     "sketchfab": "7fd6e15785fa4aa9bfd6e31eb7c97ba6",
     "paintmat": "Kiri10_bodymat",
-    "flip": true
+    "flip": true,
+    "bodyStyles": [
+      "sedan"
+    ]
   },
   "generic-coupe": {
-    "styles": [
-      "coupe",
-      "convertible"
-    ],
     "sketchfab": "20f9af9b8a404d5cb022ac6fe87f21f5",
     "paintmat": "Body_0",
     "flip": true,
-    "keep": "Coupe Body"
+    "keep": "Coupe Body",
+    "bodyStyles": [
+      "coupe",
+      "convertible"
+    ]
   },
   "generic-hatchback": {
-    "styles": [
-      "hatchback"
-    ],
     "sketchfab": "2866efdfa943484391ef8313768e074d",
     "paintmat": "Urban10_bodymat",
-    "flip": true
+    "flip": true,
+    "bodyStyles": [
+      "hatchback"
+    ]
   },
   "generic-wagon": {
-    "styles": [
-      "wagon"
-    ],
     "sketchfab": "cfaabdec76a74b68a48ba5657b6d9aee",
     "paintmat": "grey_car_paint",
-    "flip": false
+    "flip": false,
+    "bodyStyles": [
+      "wagon"
+    ]
   },
   "generic-suv": {
-    "styles": [
-      "suv",
-      "crossover"
-    ],
     "sketchfab": "5db696c6ed5d4bdc87905c1040fa072a",
     "paintmat": "body",
-    "flip": true
+    "flip": true,
+    "bodyStyles": [
+      "suv",
+      "crossover"
+    ]
   },
   "generic-pickup": {
-    "styles": [
-      "pickup"
-    ],
     "sketchfab": "2a3afc6780614a819fb575fee959b3ab",
     "paintmat": "Body_4",
     "flip": false,
-    "keep": "Pickup Body"
+    "keep": "Pickup Body",
+    "bodyStyles": [
+      "pickup"
+    ]
   },
   "generic-van": {
-    "styles": [
-      "van",
-      "minivan"
-    ],
     "sketchfab": "20f9af9b8a404d5cb022ac6fe87f21f5",
     "paintmat": "Body_2",
     "flip": false,
-    "keep": "minivan body"
+    "keep": "minivan body",
+    "bodyStyles": [
+      "van",
+      "minivan"
+    ]
   }
 }

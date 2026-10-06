@@ -169,6 +169,48 @@ if opt.get("matid") == "1":
         nt.links.new(em.outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
         print("MATID", name, ",".join(f"{c:.3f}" for c in rgb))
 
+# mask=glass: a window mask for the app's tint add-on — the glass flat white,
+# everything else a holdout (transparent, but still hiding what's behind
+# it). Glass is `tintmat=a|b`, else the materials `styles` makes glass, else
+# found by name (not headlight/taillight lenses).
+if opt.get("mask") == "glass":
+    import re
+    if opt.get("tintmat"):
+        glass = set(opt["tintmat"].split("|"))
+    else:
+        lens = re.compile(r"light|lamp|head|tail|brake|signal|led|mirror|interior|trim|feux|phare|lampu|clignot|vermelho|laranja|kuning|red|orange|amber", re.I)
+        def transparent(m):
+            bsdf = next((n for n in (m.node_tree.nodes if m.node_tree else []) if n.type == "BSDF_PRINCIPLED"), None)
+            return bsdf is not None and (bsdf.inputs["Alpha"].default_value < 0.95 or bsdf.inputs["Transmission Weight"].default_value > 0.3)
+        glass = {n for e in filter(None, opt.get("styles", "").split(";")) if e.endswith(":glass") for n in e.rsplit(":", 1)[0].split("|")}
+        glass |= {m.name for m in bpy.data.materials if not lens.search(m.name)
+                  and (re.search(r"glass|window|windshield|vidro|vitre|steklo|kaca|backlight", m.name, re.I) or transparent(m))}
+    # Lamp lenses are often glass too; they sit low on the body, windows
+    # above the beltline. Glass faces below it get a holdout of their own.
+    low = bpy.data.materials.new("MaskHoldoutLow"); low.use_nodes = True
+    nt = low.node_tree; nt.nodes.clear()
+    nt.links.new(nt.nodes.new("ShaderNodeHoldout").outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+    blo, bhi = bbox(meshes); belt = blo.z + float(opt.get("belt", 0.5)) * (bhi.z - blo.z)
+    for o in meshes:
+        if not any(s.material and s.material.name in glass for s in o.material_slots): continue
+        o.data.materials.append(low); low_index = len(o.material_slots) - 1; mw = o.matrix_world
+        for p in o.data.polygons:
+            mat = o.material_slots[p.material_index].material
+            if mat and mat.name in glass and (mw @ p.center).z < belt:
+                p.material_index = low_index
+    for o in meshes:
+        for slot in o.material_slots:
+            m = slot.material
+            if not m or m is low: continue
+            m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
+            if m.name in glass:
+                sh = nt.nodes.new("ShaderNodeEmission"); sh.inputs["Color"].default_value = (1, 1, 1, 1)
+            else:
+                sh = nt.nodes.new("ShaderNodeHoldout")
+            nt.links.new(sh.outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+            m.surface_render_method = "DITHERED"
+    print("GLASS", sorted(glass))
+
 scene = bpy.context.scene
 # World: Blender's bundled studio HDRI for reflections, kept out of the shot.
 world = bpy.data.worlds.new("Studio"); scene.world = world
@@ -249,16 +291,126 @@ scene.render.resolution_x, scene.render.resolution_y = w, h
 scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - Punchy"
 # EEVEE has less bounce light than Cycles; lift it so white paint isn't gray.
 if engine != "CYCLES": scene.view_settings.exposure = float(opt.get("exposure", 0.45))
-if opt.get("matid") == "1": scene.view_settings.view_transform = "Standard"; scene.view_settings.look = "None"; scene.view_settings.exposure = 0
+if opt.get("matid") == "1" or "mask" in opt: scene.view_settings.view_transform = "Standard"; scene.view_settings.look = "None"; scene.view_settings.exposure = 0
 scene.render.image_settings.file_format = "PNG"
 scene.render.image_settings.color_mode = "RGBA"
 
 def set_paint(rgb):
     for b in paint_bsdfs: b.inputs["Base Color"].default_value = (*rgb, 1)
 
+# plates=1 frames=N: no rendering — writes <out> (JSON): where the license
+# plates land in each turntable frame, so the app can draw the owner's own
+# plate there. A plate is the model's own plate geometry when it has a plate
+# material (`platemat=a|b`, else found by name), split into front and rear;
+# without one, a standard US plate (12x6 in) placed where a ray at plate
+# height (`plate_rear_z`/`plate_front_z`, meters from the ground) hits the
+# tail (and the nose only when `plate_front_z` is given). Same scene, camera
+# and turntable as the renders, so it lines up frame for frame.
+def write_plates():
+    import json, re
+    from bpy_extras.object_utils import world_to_camera_view
+    turn.rotation_euler.z = 0
+    bpy.context.view_layer.update()
+    deps = bpy.context.evaluated_depsgraph_get()
+    car_objs = set(meshes)
+    lo, hi = bbox(meshes)
+    up = Vector((0, 0, 1))
+    pattern = re.compile(r"plate|licen|nomer|regist", re.I)
+    wanted = set(opt["platemat"].split("|")) if opt.get("platemat") else None
+
+    def is_plate(m):
+        return m and (m.name in wanted if wanted is not None else bool(pattern.search(m.name)))
+
+    def rect(center, normal, w, h):
+        r = up.cross(normal).normalized()  # the viewer's right, looking at the plate
+        u = normal.cross(r).normalized()
+        return [center - r * w / 2 + u * h / 2, center + r * w / 2 + u * h / 2,
+                center + r * w / 2 - u * h / 2, center - r * w / 2 - u * h / 2], normal
+
+    plates = {}
+    # The model's own plates. Front is -X, rear +X (frame 0's yaw shows the
+    # front three-quarter, after `flip`).
+    faces = {"front": [], "rear": []}
+    for o in meshes:
+        mw = o.matrix_world; nm = mw.to_3x3()
+        for p in o.data.polygons:
+            if p.material_index < len(o.material_slots) and is_plate(o.material_slots[p.material_index].material):
+                c = mw @ p.center
+                verts = [mw @ o.data.vertices[i].co for i in p.vertices]
+                faces["rear" if c.x > 0 else "front"].append((c, (nm @ p.normal).normalized(), p.area, verts))
+    for side, fs in faces.items():
+        if not fs: continue
+        side_sign = 1 if side == "rear" else -1
+        # Outward normal: the average of the faces pointing out of this end.
+        outward = [n * a for _, n, a, _ in fs if n.x * side_sign > 0.3]
+        normal = (sum(outward, Vector()) if outward else Vector((side_sign, 0, 0))).normalized()
+        vs = [v for *_, verts in fs for v in verts]
+        ys = [v.y for v in vs]; zs = [v.z for v in vs]
+        w = max(max(ys) - min(ys), 0.2); h = max(max(zs) - min(zs), 0.08)
+        center = Vector(((max(v.x for v in vs) if side == "rear" else min(v.x for v in vs)),
+                         (max(ys) + min(ys)) / 2, (max(zs) + min(zs)) / 2))
+        plates[side] = rect(center + normal * 0.004, normal, w, h) + ("model",)
+    # Fallback: a standard US plate where a ray at plate height hits the body.
+    for side, key, default in (("rear", "plate_rear_z", 0.75), ("front", "plate_front_z", None)):
+        if side in plates or (key not in opt and default is None): continue
+        z = float(opt.get(key, default)); s = 1 if side == "rear" else -1
+        origin = Vector((s * (abs(hi.x if s > 0 else lo.x) + 2), 0, z))
+        hit, loc, nrm, _, obj, _ = bpy.context.scene.ray_cast(deps, origin, Vector((-s, 0, 0)))
+        if hit and obj in car_objs:
+            normal = Vector((nrm.x, 0, nrm.z)).normalized() if abs(nrm.x) > 0.3 else Vector((s, 0, 0))
+            w = float(opt.get(f"plate_{side}_w", 0.305))
+            plates[side] = rect(loc + normal * 0.004, normal, w, w / 2 if w <= 0.33 else 0.115) + ("ray",)
+
+    def visible(point, cam_pos):
+        # First thing a ray from the camera hits, skipping the softboxes
+        # (camera-invisible, but still geometry).
+        d = point - cam_pos; dist = d.length; d.normalize(); start = cam_pos.copy()
+        for _ in range(6):
+            hit, loc, _, _, obj, _ = bpy.context.scene.ray_cast(deps, start, d)
+            if not hit: return True
+            if obj in car_objs: return (loc - cam_pos).length > dist - 0.05
+            start = loc + d * 0.01
+        return True
+
+    frames = int(opt.get("frames", 36))
+    res = (scene.render.resolution_x, scene.render.resolution_y)
+    out_frames = []
+    for f in range(frames):
+        turn.rotation_euler.z = yaw + 2 * math.pi * f / frames
+        bpy.context.view_layer.update()
+        deps = bpy.context.evaluated_depsgraph_get()
+        m = turn.matrix_world; m3 = m.to_3x3()
+        cam_pos = cam.matrix_world.translation
+        entry = {}
+        for side, (corners, normal, source) in plates.items():
+            world = [m @ c for c in corners]
+            center = sum(world, Vector()) / 4
+            facing = (m3 @ normal).normalized().dot((cam_pos - center).normalized())
+            if facing < 0.12 or not visible(center, cam_pos): continue
+            quad = []
+            for p in world:
+                v = world_to_camera_view(scene, cam, p)
+                quad.append([round(v.x * res[0], 1), round((1 - v.y) * res[1], 1)])
+            entry[side] = {"quad": quad, "facing": round(facing, 3)}
+        out_frames.append(entry)
+    sizes = {s: {"w": round((c[1] - c[0]).length, 3), "h": round((c[0] - c[3]).length, 3), "source": src}
+             for s, (c, _, src) in plates.items()}
+    result = {"res": list(res), "plates": sizes, "frames": out_frames}
+    if opt.get("zgrid") == "1":
+        # Straight-behind view (yaw -90): where each height lands on screen,
+        # for choosing plate_rear_z by eye against a render at the same yaw.
+        turn.rotation_euler.z = math.radians(-90); bpy.context.view_layer.update()
+        m = turn.matrix_world
+        result["zgrid"] = {f"{z / 100:.2f}": round((1 - world_to_camera_view(scene, cam, m @ Vector((hi.x, 0, z / 100))).y) * res[1], 1)
+                           for z in range(20, 141, 10)}
+    json.dump(result, open(out, "w"))
+    print("PLATES", sizes)
+
 # colors=key:r,g,b;key:r,g,b (linear RGB)  frames=N  -> out is a directory: <out>/<key>/<frame:02d>.png
 import time
-if "colors" in opt:
+if opt.get("plates") == "1":
+    write_plates()
+elif "colors" in opt:
     colors = [(k, tuple(float(c) for c in v.split(","))) for k, v in (e.split(":") for e in opt["colors"].split(";"))]
     frames = int(opt.get("frames", 36))
     for key, rgb in colors:
