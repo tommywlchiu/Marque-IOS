@@ -10,8 +10,8 @@ manifest = json.load(open(os.path.join(here, "manifest.json")))
 palette = {k: v for k, v in json.load(open(os.path.join(here, "palette.json"))).items() if not k.startswith("_")}
 lin = lambda c: c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 colors = ";".join(f"{k}:{','.join(f'{lin(c):.4f}' for c in rgb)}" for k, rgb in palette.items())
-for key, car in manifest.items():
-    if only and key not in only: continue
+for key in only or list(manifest):  # in the order given, so the caller can prioritize
+    car = manifest[key]
     glb = os.path.join(glbdir, f"{key}.glb")
     done = glob.glob(os.path.join(outdir, "_png", key, "*", "*.png"))
     if len(done) == 36 * len(palette):
@@ -23,7 +23,8 @@ for key, car in manifest.items():
            + ([f"styles={car['styles']}"] if car.get("styles") else []) \
            + (["invert=1"] if car.get("invert") else []) \
            + ([f"hide={car['hide']}"] if car.get("hide") else []) \
-           + ([f"roll={car['roll']}"] if car.get("roll") else [])
+           + ([f"roll={car['roll']}"] if car.get("roll") else []) \
+           + ([f"keep={car['keep']}"] if car.get("keep") else [])
     print("RENDER", key, flush=True)
     subprocess.run(args, check=True, stdout=subprocess.DEVNULL)
     print("DONE", key, flush=True)

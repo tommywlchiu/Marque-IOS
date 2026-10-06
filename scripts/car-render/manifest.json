@@ -564,5 +564,67 @@
     "sketchfab": "73a1f1a86dc54b97b1f658daf070460c",
     "paintmat": "M_Body_paint.002",
     "flip": true
+  },
+  "generic-sedan": {
+    "styles": [
+      "sedan"
+    ],
+    "sketchfab": "7fd6e15785fa4aa9bfd6e31eb7c97ba6",
+    "paintmat": "Kiri10_bodymat",
+    "flip": true
+  },
+  "generic-coupe": {
+    "styles": [
+      "coupe",
+      "convertible"
+    ],
+    "sketchfab": "20f9af9b8a404d5cb022ac6fe87f21f5",
+    "paintmat": "Body_0",
+    "flip": true,
+    "keep": "Coupe Body"
+  },
+  "generic-hatchback": {
+    "styles": [
+      "hatchback"
+    ],
+    "sketchfab": "2866efdfa943484391ef8313768e074d",
+    "paintmat": "Urban10_bodymat",
+    "flip": true
+  },
+  "generic-wagon": {
+    "styles": [
+      "wagon"
+    ],
+    "sketchfab": "cfaabdec76a74b68a48ba5657b6d9aee",
+    "paintmat": "grey_car_paint",
+    "flip": false
+  },
+  "generic-suv": {
+    "styles": [
+      "suv",
+      "crossover"
+    ],
+    "sketchfab": "5db696c6ed5d4bdc87905c1040fa072a",
+    "paintmat": "body",
+    "flip": true
+  },
+  "generic-pickup": {
+    "styles": [
+      "pickup"
+    ],
+    "sketchfab": "2a3afc6780614a819fb575fee959b3ab",
+    "paintmat": "Body_4",
+    "flip": false,
+    "keep": "Pickup Body"
+  },
+  "generic-van": {
+    "styles": [
+      "van",
+      "minivan"
+    ],
+    "sketchfab": "20f9af9b8a404d5cb022ac6fe87f21f5",
+    "paintmat": "Body_2",
+    "flip": false,
+    "keep": "minivan body"
   }
 }

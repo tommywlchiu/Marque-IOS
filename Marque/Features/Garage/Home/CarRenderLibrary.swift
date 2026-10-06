@@ -5,7 +5,9 @@ import UIKit
 /// 12 palette colors × 36 turntable angles — and served as static WebP files
 /// from Firebase Hosting. `catalog.json` (fetched, cached on disk) says which
 /// make/model/years exist, so cars can be added without an app update. A car
-/// with no catalog entry keeps the code-built `CarModelRenderer` model.
+/// with no entry of its own gets the catalog's generic, unbadged render of its
+/// body style; only with no catalog at all (first launch offline) does it fall
+/// back to the code-built `CarModelRenderer` model.
 enum CarRenderLibrary {
     static let baseURL: URL = {
         #if DEBUG
@@ -22,6 +24,23 @@ enum CarRenderLibrary {
         let frames: Int
         let colors: [String]
         let cars: [Entry]
+        /// Unbadged stand-ins, one per body style. Optional so a catalog
+        /// written before they existed still decodes.
+        let generics: [Generic]?
+
+        /// Every model credited, once each (one pack can supply several
+        /// generics) — for Settings › Acknowledgements.
+        var credits: [Credit] {
+            var seen = Set<String>()
+            return (cars.map(\.credit) + (generics ?? []).map(\.credit)).filter { seen.insert($0.url).inserted }
+        }
+    }
+
+    struct Generic: Codable {
+        let key: String
+        /// Normalized body styles it stands in for (`CarModelRenderer.normalizedStyle`).
+        let styles: [String]
+        let credit: Credit
     }
 
     struct Entry: Codable, Identifiable {
@@ -33,13 +52,14 @@ enum CarRenderLibrary {
         var id: String { key }
     }
 
-    struct Credit: Codable {
+    struct Credit: Codable, Identifiable {
         let title: String
         let author: String
         let authorURL: String
         let license: String
         let licenseURL: String
         let url: String
+        var id: String { url }
     }
 
     /// One car's renders in one color: the frame URLs and local cache paths.
@@ -109,7 +129,7 @@ enum CarRenderLibrary {
     /// Range"), and a year inside its range when the year is known. The most
     /// specific name wins — an exact match, else the longest prefix — so a
     /// "Silverado EV" gets the EV, not the gas Silverado whose name it starts
-    /// with.
+    /// with. No entry of its own → the generic render of its body style.
     static func match(_ car: Car, in catalog: Catalog?) -> Match? {
         guard let catalog else { return nil }
         let make = normalized(car.make)
@@ -127,10 +147,11 @@ enum CarRenderLibrary {
         let entry = catalog.cars
             .compactMap { entry in score(entry).map { (entry, $0) } }
             .max { $0.1 < $1.1 }?.0
-        guard let entry else { return nil }
+        let style = CarModelRenderer.normalizedStyle(car.bodyStyle)
+        guard let key = entry?.key ?? catalog.generics?.first(where: { $0.styles.contains(style) })?.key else { return nil }
         let color = CarPaint.paletteKey(for: car.color)
         guard catalog.colors.contains(color) else { return nil }
-        return Match(carKey: entry.key, colorKey: color, frameCount: catalog.frames)
+        return Match(carKey: key, colorKey: color, frameCount: catalog.frames)
     }
 
     // MARK: - Frames

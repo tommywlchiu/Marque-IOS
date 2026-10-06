@@ -5,7 +5,7 @@ import SwiftUI
 /// license and the source — read from the same `catalog.json` that decides
 /// which cars have renders, so a car can never ship without its credit.
 struct AcknowledgementsView: View {
-    @State private var entries: [CarRenderLibrary.Entry] = CarRenderLibrary.cachedCatalog()?.cars ?? []
+    @State private var credits: [CarRenderLibrary.Credit] = CarRenderLibrary.cachedCatalog()?.credits ?? []
 
     var body: some View {
         List {
@@ -15,22 +15,22 @@ struct AcknowledgementsView: View {
                     .foregroundStyle(.secondary)
             }
             Section(header: Text("3D Car Models")) {
-                if entries.isEmpty {
+                if credits.isEmpty {
                     Text("Loading…").foregroundStyle(.secondary)
                 }
-                ForEach(entries) { entry in
+                ForEach(credits) { credit in
                     VStack(alignment: .leading, spacing: 4) {
-                        if let url = URL(string: entry.credit.url) {
-                            Link(entry.credit.title, destination: url)
+                        if let url = URL(string: credit.url) {
+                            Link(credit.title, destination: url)
                                 .font(.subheadline.weight(.semibold))
                         }
-                        Text("by \(entry.credit.author)")
+                        Text("by \(credit.author)")
                             .font(.footnote)
-                        if let license = URL(string: entry.credit.licenseURL) {
-                            Link(entry.credit.license, destination: license)
+                        if let license = URL(string: credit.licenseURL) {
+                            Link(credit.license, destination: license)
                                 .font(.caption)
                         } else {
-                            Text(entry.credit.license).font(.caption)
+                            Text(credit.license).font(.caption)
                         }
                     }
                     .padding(.vertical, 2)
@@ -40,7 +40,7 @@ struct AcknowledgementsView: View {
         .navigationTitle("Acknowledgements")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            if let catalog = await CarRenderLibrary.catalog() { entries = catalog.cars }
+            if let catalog = await CarRenderLibrary.catalog() { credits = catalog.credits }
         }
     }
 }

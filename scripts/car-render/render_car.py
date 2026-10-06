@@ -20,6 +20,22 @@ for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
     names = {s.material.name for s in o.material_slots if s.material}
     if hidden and names and names <= hidden:
         bpy.data.objects.remove(o, do_unlink=True)
+# keep=<node>: a multi-car pack — keep only the car under this node (its
+# wheels are separate objects, so keep every mesh whose center falls inside
+# the car's footprint), and turn it square to the axes (the pack lays its
+# cars out in a circle at arbitrary angles).
+keep_rot = None
+if "keep" in opt:
+    from mathutils import Vector as V
+    node = bpy.data.objects[opt["keep"]]
+    body = [c for c in node.children_recursive if c.type == "MESH"] + ([node] if node.type == "MESH" else [])
+    pts = [m.matrix_world @ V(c) for m in body for c in m.bound_box]
+    lo = V([min(p[i] for p in pts) - 0.3 for i in range(3)]); hi = V([max(p[i] for p in pts) + 0.3 for i in range(3)])
+    for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
+        c = sum((o.matrix_world @ V(b) for b in o.bound_box), V()) / 8
+        if not all(lo[i] <= c[i] <= hi[i] for i in range(3)):
+            bpy.data.objects.remove(o, do_unlink=True)
+    keep_rot = node.matrix_world.to_quaternion()
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
 
 # Bounding box in world space
@@ -38,6 +54,9 @@ for o in bpy.context.scene.objects:
         o.parent = root
 bpy.context.view_layer.update()
 from mathutils import Matrix
+if keep_rot is not None:  # into the kept car's own frame; the checks below square up the rest
+    root.matrix_world = keep_rot.inverted().to_matrix().to_4x4() @ root.matrix_world
+    bpy.context.view_layer.update()
 def rot(axis):
     root.matrix_world = Matrix.Rotation(math.radians(90), 4, axis) @ root.matrix_world
     bpy.context.view_layer.update()

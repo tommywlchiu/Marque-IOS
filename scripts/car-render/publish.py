@@ -6,7 +6,8 @@ For each manifest car rendered under <render-dir>/_png/<car>/<color>/<NN>.png:
     opaque pixels across all of them), so the car never jumps while spinning;
   * writes public/carRenders/v1/<car>/<color>/<NN>.webp (alpha WebP).
 Then writes public/carRenders/v1/catalog.json, which the app reads to match a
-car (make/model/year) and to show credits. Credits (author, license, link) are
+car (make/model/year; else the generic for its body style — manifest entries
+with `styles` instead of `covers`) and to show credits. Credits (author, license, link) are
 read from Sketchfab's public API, not typed by hand.
 """
 import glob, json, os, sys, urllib.request
@@ -27,7 +28,7 @@ def credit(uid):
             "authorURL": m["user"]["profileUrl"], "license": lic.get("label", ""),
             "licenseURL": lic.get("url", ""), "url": m["viewerUrl"]}
 
-cars = []
+cars, generics = [], []
 for key, car in manifest.items():
     pngs = sorted(glob.glob(os.path.join(src, key, "*", "*.png")))
     if len(pngs) != FRAMES * len(palette):
@@ -44,11 +45,14 @@ for key, car in manifest.items():
         out = os.path.join(dst, key, color, name.replace(".png", ".webp"))
         os.makedirs(os.path.dirname(out), exist_ok=True)
         Image.open(p).crop(box).save(out, "WEBP", quality=82, method=4)
-    c = car["covers"]
-    cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
-                 "years": c["years"], "credit": credit(car["sketchfab"])})
+    if "styles" in car:  # an unbadged stand-in for every car of these body styles
+        generics.append({"key": key, "styles": car["styles"], "credit": credit(car["sketchfab"])})
+    else:
+        c = car["covers"]
+        cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
+                     "years": c["years"], "credit": credit(car["sketchfab"])})
     print(f"PUBLISHED {key} crop={box}")
 
-json.dump({"version": 1, "frames": FRAMES, "colors": palette, "cars": cars},
+json.dump({"version": 1, "frames": FRAMES, "colors": palette, "cars": cars, "generics": generics},
           open(os.path.join(dst, "catalog.json"), "w"), indent=2)
-print("catalog:", len(cars), "cars")
+print("catalog:", len(cars), "cars,", len(generics), "generics")

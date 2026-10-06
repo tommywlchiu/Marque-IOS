@@ -184,5 +184,21 @@
     "paintmat": "EXT_carpaint",
     "flip": true,
     "rejected": "three free 10th-gen models tried: 54c22744 single material; aad70ad7 one side doors+windows are one material; 1ee08b36 (this uid) side windows render frosted/noisy whatever the glass is styled as"
+  },
+  "generic-sedan": {
+    "paintmat": "Kiri10_bodymat",
+    "flip": false
+  },
+  "generic-hatchback": {
+    "paintmat": "Urban10_bodymat",
+    "flip": false
+  },
+  "generic-suv": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "generic-pickup": {
+    "paintmat": "CARPAINT_BODY_Mat",
+    "flip": false
   }
 }

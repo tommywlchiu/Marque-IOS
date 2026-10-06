@@ -440,5 +440,35 @@
       2024,
       2026
     ]
+  },
+  "generic-sedan": {
+    "uid": "7fd6e15785fa4aa9bfd6e31eb7c97ba6",
+    "generic": "sedan"
+  },
+  "generic-coupe": {
+    "uid": "20f9af9b8a404d5cb022ac6fe87f21f5",
+    "generic": "coupe",
+    "keep": "Coupe Body"
+  },
+  "generic-hatchback": {
+    "uid": "2866efdfa943484391ef8313768e074d",
+    "generic": "hatchback"
+  },
+  "generic-wagon": {
+    "uid": "cfaabdec76a74b68a48ba5657b6d9aee",
+    "generic": "wagon"
+  },
+  "generic-suv": {
+    "uid": "5db696c6ed5d4bdc87905c1040fa072a",
+    "generic": "suv"
+  },
+  "generic-pickup": {
+    "uid": "2a3afc6780614a819fb575fee959b3ab",
+    "generic": "pickup"
+  },
+  "generic-van": {
+    "uid": "20f9af9b8a404d5cb022ac6fe87f21f5",
+    "generic": "van",
+    "keep": "minivan body"
   }
 }
