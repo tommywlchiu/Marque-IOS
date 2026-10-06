@@ -13,6 +13,13 @@ FLIP = opt.get("flip") == "1"
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src)
+# hide=mat|mat: delete objects made only of these materials (a baked shadow
+# plane, say) before orienting — they'd skew the bounding box.
+hidden = set(opt.get("hide", "").split("|")) - {""}
+for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
+    names = {s.material.name for s in o.material_slots if s.material}
+    if hidden and names and names <= hidden:
+        bpy.data.objects.remove(o, do_unlink=True)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
 
 # Bounding box in world space
@@ -56,6 +63,9 @@ gz = glass_z()
 if (gz is not None and gz < (lo.z + hi.z) / 2) != (opt.get("invert") == "1"):
     lo, hi = rot("X"); lo, hi = rot("X")
     print("FLIPPED_UPRIGHT")
+# roll=<deg>: manual turn about the length axis, for a model the size check
+# above leaves on its side (something on it is taller than the car is wide).
+if "roll" in opt: root.matrix_world = Matrix.Rotation(math.radians(float(opt["roll"])), 4, "X") @ root.matrix_world
 if FLIP: root.matrix_world = Matrix.Rotation(math.pi, 4, "Z") @ root.matrix_world
 bpy.context.view_layer.update()
 lo, hi = bbox(meshes)

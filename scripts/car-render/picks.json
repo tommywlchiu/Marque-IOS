@@ -378,5 +378,67 @@
       "F-150",
       "F150"
     ]
+  },
+  "honda-civic-10g": {
+    "uid": "ff844e296f214e709c0d0691d031c68b",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2016,
+      2021
+    ]
+  },
+  "honda-accord-10g": {
+    "uid": "1ee08b36dc3c438584034c6799f6e3a7",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2018,
+      2022
+    ]
+  },
+  "toyota-corolla-11g": {
+    "uid": "36f95efb0585464cae43a25a3b3392e8",
+    "make": "Toyota",
+    "model": "Corolla",
+    "years": [
+      2014,
+      2019
+    ]
+  },
+  "toyota-rav4-4g": {
+    "uid": "c60b2bf47c4341c59462449e069257a2",
+    "make": "Toyota",
+    "model": "RAV4",
+    "years": [
+      2016,
+      2018
+    ],
+    "aliases": [
+      "RAV4",
+      "RAV-4"
+    ]
+  },
+  "chevrolet-silverado-2g": {
+    "uid": "2ad964f59a774e199d9caf143f21e614",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2007,
+      2013
+    ],
+    "aliases": [
+      "Silverado",
+      "Silverado 1500"
+    ]
+  },
+  "chevrolet-silverado-ev": {
+    "uid": "73a1f1a86dc54b97b1f658daf070460c",
+    "make": "Chevrolet",
+    "model": "Silverado EV",
+    "years": [
+      2024,
+      2026
+    ]
   }
 }

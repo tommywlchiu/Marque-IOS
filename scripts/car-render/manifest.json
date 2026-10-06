@@ -489,5 +489,80 @@
     "sketchfab": "1cac877105eb4188ba92e8e4991a8213",
     "paintmat": "vehicle_generic_smallspecmap_PRIMARY|vehicle_generic_smallspecmap_PRIMARY.001",
     "flip": false
+  },
+  "toyota-rav4-4g": {
+    "covers": {
+      "make": "Toyota",
+      "model": "RAV4",
+      "years": [
+        2016,
+        2018
+      ],
+      "aliases": [
+        "RAV4",
+        "RAV-4"
+      ]
+    },
+    "sketchfab": "c60b2bf47c4341c59462449e069257a2",
+    "paintmat": "Material_5",
+    "flip": true
+  },
+  "toyota-corolla-11g": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "years": [
+        2014,
+        2019
+      ]
+    },
+    "sketchfab": "36f95efb0585464cae43a25a3b3392e8",
+    "paintmat": "main_paint.001",
+    "flip": true,
+    "hide": "invisible_dark",
+    "roll": -90
+  },
+  "honda-civic-10g": {
+    "covers": {
+      "make": "Honda",
+      "model": "Civic",
+      "years": [
+        2016,
+        2021
+      ]
+    },
+    "sketchfab": "ff844e296f214e709c0d0691d031c68b",
+    "paintmat": "main_material",
+    "flip": false
+  },
+  "chevrolet-silverado-2g": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Silverado",
+      "years": [
+        2007,
+        2013
+      ],
+      "aliases": [
+        "Silverado",
+        "Silverado 1500"
+      ]
+    },
+    "sketchfab": "2ad964f59a774e199d9caf143f21e614",
+    "paintmat": "Meshpart2Mtl.002",
+    "flip": true
+  },
+  "chevrolet-silverado-ev": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Silverado EV",
+      "years": [
+        2024,
+        2026
+      ]
+    },
+    "sketchfab": "73a1f1a86dc54b97b1f658daf070460c",
+    "paintmat": "M_Body_paint.002",
+    "flip": true
   }
 }

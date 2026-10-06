@@ -106,21 +106,27 @@ enum CarRenderLibrary {
 
     /// The catalog entry for this car: same make, a model that equals one of
     /// the entry's names (or starts with it as a separate word — "Model 3 Long
-    /// Range"), and a year inside its range when the year is known.
+    /// Range"), and a year inside its range when the year is known. The most
+    /// specific name wins — an exact match, else the longest prefix — so a
+    /// "Silverado EV" gets the EV, not the gas Silverado whose name it starts
+    /// with.
     static func match(_ car: Car, in catalog: Catalog?) -> Match? {
         guard let catalog else { return nil }
         let make = normalized(car.make)
+        let model = normalized(car.model)
         let modelWords = car.model.lowercased()
         let year = Int(car.year.trimmingCharacters(in: .whitespaces))
-        let entry = catalog.cars.first { entry in
-            guard normalized(entry.make) == make else { return false }
-            let modelOK = entry.models.contains { name in
-                normalized(car.model) == normalized(name) || modelWords.hasPrefix(name.lowercased() + " ")
-            }
-            guard modelOK else { return false }
-            guard let year, entry.years.count == 2 else { return true }
-            return (entry.years[0]...entry.years[1]).contains(year)
+        func score(_ entry: Entry) -> Int? {
+            guard normalized(entry.make) == make else { return nil }
+            if let year, entry.years.count == 2, !(entry.years[0]...entry.years[1]).contains(year) { return nil }
+            return entry.models.compactMap { name -> Int? in
+                if model == normalized(name) { return Int.max }
+                return modelWords.hasPrefix(name.lowercased() + " ") ? name.count : nil
+            }.max()
         }
+        let entry = catalog.cars
+            .compactMap { entry in score(entry).map { (entry, $0) } }
+            .max { $0.1 < $1.1 }?.0
         guard let entry else { return nil }
         let color = CarPaint.paletteKey(for: car.color)
         guard catalog.colors.contains(color) else { return nil }

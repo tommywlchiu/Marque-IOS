@@ -157,5 +157,32 @@
     "paintmat": "",
     "flip": false,
     "rejected": "every free 2021+ model is the same Lariat shell with the windows inside the body-paint material (renders painted windows); the \"2021 Raptor\" alternative is a modified 2017-20 Raptor"
+  },
+  "honda-civic-10g": {
+    "paintmat": "main_material",
+    "flip": false
+  },
+  "toyota-corolla-11g": {
+    "paintmat": "main_paint.001",
+    "flip": true,
+    "hide": "invisible_dark",
+    "roll": -90
+  },
+  "toyota-rav4-4g": {
+    "paintmat": "Material_5",
+    "flip": true
+  },
+  "chevrolet-silverado-2g": {
+    "paintmat": "Meshpart2Mtl.002",
+    "flip": true
+  },
+  "chevrolet-silverado-ev": {
+    "paintmat": "M_Body_paint.002",
+    "flip": true
+  },
+  "honda-accord-10g": {
+    "paintmat": "EXT_carpaint",
+    "flip": true,
+    "rejected": "three free 10th-gen models tried: 54c22744 single material; aad70ad7 one side doors+windows are one material; 1ee08b36 (this uid) side windows render frosted/noisy whatever the glass is styled as"
   }
 }
