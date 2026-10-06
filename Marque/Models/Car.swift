@@ -32,6 +32,10 @@ struct Car: Identifiable, Codable, Equatable {
     var insurancePolicyNumber: String
     var insuranceExpiryDate: Date?
     var registrationExpiryDate: Date?
+    // Warranty, like specs, has no expiry tracking (owner decision) — just
+    // who covers it and what kind. Private only; never reaches PublicCar.
+    var warrantyProvider: String
+    var warrantyType: String
     var notes: String
     var isPublic: Bool
 
@@ -94,6 +98,8 @@ struct Car: Identifiable, Codable, Equatable {
         insurancePolicyNumber: String = "",
         insuranceExpiryDate: Date? = nil,
         registrationExpiryDate: Date? = nil,
+        warrantyProvider: String = "",
+        warrantyType: String = "",
         notes: String = "",
         isPublic: Bool = false,
         publicSharing: PublicSharingSettings = .privacyFirst,
@@ -130,6 +136,8 @@ struct Car: Identifiable, Codable, Equatable {
         self.insurancePolicyNumber = insurancePolicyNumber
         self.insuranceExpiryDate = insuranceExpiryDate
         self.registrationExpiryDate = registrationExpiryDate
+        self.warrantyProvider = warrantyProvider
+        self.warrantyType = warrantyType
         self.notes = notes
         self.isPublic = isPublic
         self.publicSharing = publicSharing
@@ -157,6 +165,7 @@ struct Car: Identifiable, Codable, Equatable {
         case fuelType, transmission
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
+        case warrantyProvider, warrantyType
         case notes, isPublic
         case publicSharing
         case estimatedValue, valueSource, valueUpdatedAt, showValuePublicly
@@ -197,6 +206,8 @@ struct Car: Identifiable, Codable, Equatable {
         insurancePolicyNumber = try c.decode(String.self, forKey: .insurancePolicyNumber)
         insuranceExpiryDate = try c.decodeIfPresent(Date.self, forKey: .insuranceExpiryDate)
         registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
+        warrantyProvider = try c.decodeIfPresent(String.self, forKey: .warrantyProvider) ?? ""
+        warrantyType = try c.decodeIfPresent(String.self, forKey: .warrantyType) ?? ""
         notes = try c.decode(String.self, forKey: .notes)
         isPublic = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
         // Missing key (every car saved before this feature existed): an
@@ -249,6 +260,8 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(insurancePolicyNumber, forKey: .insurancePolicyNumber)
         try c.encodeIfPresent(insuranceExpiryDate, forKey: .insuranceExpiryDate)
         try c.encodeIfPresent(registrationExpiryDate, forKey: .registrationExpiryDate)
+        try c.encode(warrantyProvider, forKey: .warrantyProvider)
+        try c.encode(warrantyType, forKey: .warrantyType)
         try c.encode(notes, forKey: .notes)
         try c.encode(isPublic, forKey: .isPublic)
         try c.encode(publicSharing, forKey: .publicSharing)

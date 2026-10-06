@@ -93,6 +93,7 @@
 		F497CF1530197BDF001892AE /* FeatureFlagsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */; };
 		F497CF18301D5D1B001892AE /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = F497CF17301D5D1B001892AE /* FirebaseRemoteConfig */; };
 		F497CF1F3022A2DB001892AE /* EditInsuranceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */; };
+		9D000B00000000000000EW01 /* EditWarrantySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D000F00000000000000EW01 /* EditWarrantySheet.swift */; };
 		F497CF203022A2DB001892AE /* EditRegistrationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */; };
 		F497CF223022AC1B001892AE /* EditVehicleDetailsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF213022AC1B001892AE /* EditVehicleDetailsSheet.swift */; };
 		F497CF2430244586001892AE /* AIServiceSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F497CF2330244586001892AE /* AIServiceSuggestion.swift */; };
@@ -262,6 +263,7 @@
 		F497CF12300B075C001892AE /* MarqueChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MarqueChatView.swift; path = Assistant/MarqueChatView.swift; sourceTree = "<group>"; };
 		F497CF1430197BDF001892AE /* FeatureFlagsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsStore.swift; sourceTree = "<group>"; };
 		F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditInsuranceSheet.swift; sourceTree = "<group>"; };
+		9D000F00000000000000EW01 /* EditWarrantySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditWarrantySheet.swift; sourceTree = "<group>"; };
 		F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRegistrationSheet.swift; sourceTree = "<group>"; };
 		F497CF213022AC1B001892AE /* EditVehicleDetailsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditVehicleDetailsSheet.swift; sourceTree = "<group>"; };
 		F497CF2330244586001892AE /* AIServiceSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServiceSuggestion.swift; sourceTree = "<group>"; };
@@ -558,6 +560,7 @@
 			children = (
 				F497CF213022AC1B001892AE /* EditVehicleDetailsSheet.swift */,
 				F497CF1D3022A2DB001892AE /* EditInsuranceSheet.swift */,
+				9D000F00000000000000EW01 /* EditWarrantySheet.swift */,
 				F497CF1E3022A2DB001892AE /* EditRegistrationSheet.swift */,
 				FE50C1000000000000000007 /* EngineSoundRecorderSheet.swift */,
 				FE50C1000000000000000008 /* EngineSoundOwnerSection.swift */,
@@ -869,6 +872,7 @@
 				A10058 /* ExploreStore.swift in Sources */,
 				A10059 /* FollowStore.swift in Sources */,
 				F497CF1F3022A2DB001892AE /* EditInsuranceSheet.swift in Sources */,
+				9D000B00000000000000EW01 /* EditWarrantySheet.swift in Sources */,
 				F497CF203022A2DB001892AE /* EditRegistrationSheet.swift in Sources */,
 				A10060 /* SubscriptionStore.swift in Sources */,
 				A10065 /* DeleteAccountView.swift in Sources */,

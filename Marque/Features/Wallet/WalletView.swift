@@ -2,9 +2,11 @@ import SwiftUI
 
 /// Wallet tab: profile (moved from the old Garage list's header)
 /// plus every document the user stores in Marque — driver's license, and each
-/// car's insurance and registration — presented Apple-Wallet-style. Editing
-/// always routes to the existing screens (EditProfileView, EditInsuranceSheet,
-/// EditRegistrationSheet); this file never duplicates that logic.
+/// car's specs, insurance, registration and warranty — presented
+/// Apple-Wallet-style. Editing always routes to the existing screens
+/// (EditProfileView, EditVehicleDetailsSheet, EditInsuranceSheet,
+/// EditRegistrationSheet, EditWarrantySheet); this file never duplicates
+/// that logic.
 struct WalletView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var carStore: CarStore
@@ -14,8 +16,10 @@ struct WalletView: View {
     @State private var showingEditProfile = false
     @State private var showingFollowers = false
     @State private var showingFollowing = false
+    @State private var editingSpecsCar: Car?
     @State private var editingInsuranceCar: Car?
     @State private var editingRegistrationCar: Car?
+    @State private var editingWarrantyCar: Car?
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
@@ -51,11 +55,17 @@ struct WalletView: View {
             .sheet(isPresented: $showingFollowing) {
                 FollowListView(mode: .following, uids: followStore.followingUIDs, currentUserUID: user.id)
             }
+            .sheet(item: $editingSpecsCar) { car in
+                EditVehicleDetailsSheet(car: car) { carStore.updateCar($0) }
+            }
             .sheet(item: $editingInsuranceCar) { car in
                 EditInsuranceSheet(car: car) { carStore.updateCar($0) }
             }
             .sheet(item: $editingRegistrationCar) { car in
                 EditRegistrationSheet(car: car) { carStore.updateCar($0) }
+            }
+            .sheet(item: $editingWarrantyCar) { car in
+                EditWarrantySheet(car: car) { carStore.updateCar($0) }
             }
         }
     }
@@ -188,6 +198,19 @@ struct WalletView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(.secondary)
 
+            if car.trim.isEmpty && car.bodyStyle.isEmpty && car.driveType.isEmpty
+                && car.engine.isEmpty && car.fuelType.isEmpty && car.transmission.isEmpty && car.color.isEmpty {
+                AddDocumentCard(
+                    title: "Add Specs",
+                    subtitle: "Track \(car.displayName)'s trim, engine and more",
+                    icon: "list.bullet.rectangle.fill"
+                ) {
+                    editingSpecsCar = car
+                }
+            } else {
+                SpecsCard(car: car) { editingSpecsCar = car }
+            }
+
             if car.insuranceProvider.isEmpty && car.insurancePolicyNumber.isEmpty && car.insuranceExpiryDate == nil {
                 AddDocumentCard(
                     title: "Add Insurance",
@@ -210,6 +233,18 @@ struct WalletView: View {
                 }
             } else {
                 RegistrationCard(car: car) { editingRegistrationCar = car }
+            }
+
+            if car.warrantyProvider.isEmpty && car.warrantyType.isEmpty {
+                AddDocumentCard(
+                    title: "Add Warranty",
+                    subtitle: "Track \(car.displayName)'s coverage",
+                    icon: "checkmark.seal.fill"
+                ) {
+                    editingWarrantyCar = car
+                }
+            } else {
+                WarrantyCard(car: car) { editingWarrantyCar = car }
             }
         }
     }

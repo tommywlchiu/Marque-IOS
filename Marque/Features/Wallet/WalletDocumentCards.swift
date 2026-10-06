@@ -241,6 +241,63 @@ struct RegistrationCard: View {
     }
 }
 
+// MARK: - Specs
+
+/// Read-only summary of the car's own vehicle-detail fields — editing routes
+/// to the existing EditVehicleDetailsSheet (Garage's Details screen), never
+/// a second specs editor. No expiry badge: specs don't expire.
+struct SpecsCard: View {
+    let car: Car
+    let onTap: () -> Void
+
+    private var identityLine: String {
+        [car.trim, car.bodyStyle, car.driveType].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private var powertrainLine: String {
+        [car.engine, car.transmission, car.fuelType, car.color].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    var body: some View {
+        WalletCardShell(gradient: [.gray, Color(white: 0.2)], icon: "list.bullet.rectangle.fill", title: "Specs", onTap: onTap) {
+            if !identityLine.isEmpty {
+                Text(identityLine)
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .lineLimit(1)
+            }
+            if !powertrainLine.isEmpty {
+                Text(powertrainLine)
+                    .font(.footnote.weight(.medium))
+                    .opacity(0.9)
+                    .lineLimit(2)
+            }
+        }
+        .accessibilityLabel("\(car.displayName) specs, edit")
+    }
+}
+
+// MARK: - Warranty
+
+struct WarrantyCard: View {
+    let car: Car
+    let onTap: () -> Void
+
+    var body: some View {
+        WalletCardShell(gradient: [.purple, .indigo], icon: "checkmark.seal.fill", title: "Warranty", onTap: onTap) {
+            Text(car.warrantyType.isEmpty ? "Type not set" : car.warrantyType)
+                .font(.system(.title3, design: .rounded).weight(.semibold))
+                .lineLimit(1)
+            if !car.warrantyProvider.isEmpty {
+                Text(car.warrantyProvider)
+                    .font(.footnote.weight(.medium))
+                    .opacity(0.9)
+                    .lineLimit(1)
+            }
+        }
+        .accessibilityLabel("\(car.displayName) warranty, edit")
+    }
+}
+
 // MARK: - Add-document prompt
 
 /// Dashed "Add X" card for a document type the user hasn't filled in yet —

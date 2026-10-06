@@ -96,4 +96,13 @@ struct CarData {
         "Wawanesa",
         "Other"
     ]
+
+    static let warrantyTypes = [
+        "Factory",
+        "Powertrain",
+        "Bumper-to-Bumper",
+        "Certified Pre-Owned (CPO)",
+        "Extended / Third-Party",
+        "Other"
+    ]
 }
