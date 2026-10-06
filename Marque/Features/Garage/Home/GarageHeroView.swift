@@ -212,6 +212,8 @@ struct GarageHeroView: View {
     @State private var renderFrames: (key: String, frames: [UIImage])?
     /// Where the license plates sit in each of those frames, keyed the same.
     @State private var renderPlates: (key: String, track: CarRenderLibrary.PlateTrack)?
+    /// Window masks for the tint add-on, keyed the same.
+    @State private var renderTintMasks: (key: String, masks: [UIImage])?
 
     /// Changes whenever what the hero should show changes.
     private var key: String {
@@ -299,6 +301,9 @@ struct GarageHeroView: View {
         if renderPlates?.key != key, let track = await CarRenderLibrary.plates(of: match), !Task.isCancelled {
             renderPlates = (key, track)
         }
+        if renderTintMasks?.key != key, let masks = await CarRenderLibrary.tintMasks(of: match), !Task.isCancelled {
+            renderTintMasks = (key, masks)
+        }
         guard renderFrames?.key != key else { return }
         if let frames = await CarRenderLibrary.allFrames(of: match), !Task.isCancelled {
             renderFrames = (key, frames)
@@ -314,7 +319,9 @@ struct GarageHeroView: View {
                 still: still,
                 frames: renderFrames?.key == key ? renderFrames?.frames : nil,
                 plates: renderPlates?.key == key ? renderPlates?.track : nil,
-                plateText: car.licensePlate
+                plateText: car.licensePlate,
+                tintMasks: renderTintMasks?.key == key ? renderTintMasks?.masks : nil,
+                tint: car.customization.tint
             )
             // A new car/color must get a fresh view: the coordinator holds the
             // previous car's frames, and SwiftUI would otherwise reuse it.

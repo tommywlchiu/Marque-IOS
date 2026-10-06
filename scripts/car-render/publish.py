@@ -52,31 +52,45 @@ def publish_frames(key, pngs):
         sizes = {side: {"aspect": round(v["w"] / v["h"], 3)} for side, v in meta["plates"].items()}
         json.dump({"plates": sizes, "frames": frames}, open(os.path.join(dst, key, "plates.json"), "w"))
         has_plates = True
+    # Window masks (tints.py), cropped the same way: the app darkens through
+    # them for the tint add-on. Lossless — a soft edge would halo.
+    tint_src = sorted(glob.glob(os.path.join(sys.argv[1], "_tint", key, "tint", "*.png")))
+    if len(tint_src) == FRAMES:
+        for p in tint_src:
+            out = os.path.join(dst, key, "tint", os.path.basename(p).replace(".png", ".webp"))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            Image.open(p).crop(box).save(out, "WEBP", lossless=True, method=4)
     return has_plates
 
 # --catalog-only: rewrite catalog.json from what's already published (no
 # frame conversion) — for a manifest change that touches no pixels.
 catalog_only = "--catalog-only" in sys.argv
+# Optional car keys after the render dir: publish just those; every other
+# car keeps its published files and stays in the catalog.
+only = [a for a in sys.argv[2:] if not a.startswith("--")]
 cars, generics = [], []
 for key, car in manifest.items():
-    if catalog_only:
+    if catalog_only or (only and key not in only):
         if len(glob.glob(os.path.join(dst, key, "*", "*.webp"))) != FRAMES * len(palette):
             continue
         has_plates = os.path.exists(os.path.join(dst, key, "plates.json"))
     else:
         has_plates = None
-    pngs = [] if catalog_only else sorted(glob.glob(os.path.join(src, key, "*", "*.png")))
-    if not catalog_only and len(pngs) != FRAMES * len(palette):
+    convert = not catalog_only and (not only or key in only)
+    pngs = sorted(glob.glob(os.path.join(src, key, "*", "*.png"))) if convert else []
+    if convert and len(pngs) != FRAMES * len(palette):
         print(f"SKIP {key}: {len(pngs)} frames, expected {FRAMES * len(palette)}")
         continue
-    if not catalog_only:
+    if convert:
         has_plates = publish_frames(key, pngs)
+    has_tint = len(glob.glob(os.path.join(dst, key, "tint", "*.webp"))) == FRAMES
     if "bodyStyles" in car:  # an unbadged stand-in for every car of these body styles
-        generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]), "plates": has_plates})
+        generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]),
+                         "plates": has_plates, "tint": has_tint})
     else:
         c = car["covers"]
         cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
-                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates})
+                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint})
     print(f"PUBLISHED {key}")
 
 json.dump({"version": 1, "frames": FRAMES, "colors": palette, "cars": cars, "generics": generics},

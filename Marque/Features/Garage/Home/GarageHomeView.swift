@@ -298,6 +298,8 @@ struct GarageHomeView: View {
             row(.publicSharing(car.id), car.isPublic ? "globe" : "lock", "Public Sharing",
                 GarageSummary.sharingSubtitle(car),
                 dot: CarSharingSummary.needsReview(car))
+            row(.customize(car.id), "paintbrush", "Customize",
+                car.customization.tint == .none ? "Window tint & plate" : "\(car.customization.tint.title) tint")
             row(.details(car.id), "info.circle", "Details",
                 GarageSummary.detailsSubtitle(car))
         }
@@ -436,6 +438,7 @@ struct GarageHomeView: View {
         case .engineSound(let id): GarageEngineSoundScreen(carID: id)
         case .publicSharing(let id): GaragePublicSharingScreen(carID: id)
         case .details(let id): GarageDetailsScreen(carID: id)
+        case .customize(let id): GarageCustomizeScreen(carID: id)
         case .carComments(let id): GaragePublicSharingScreen(carID: id, openCommentsOnAppear: true)
         }
     }

@@ -59,7 +59,8 @@
     },
     "sketchfab": "de74fe4e98004c92b1103947597d1b53",
     "paintmat": "Silver_Sky_Metallic",
-    "flip": true
+    "flip": true,
+    "tintmat": "Color_M09"
   },
   "chevrolet-silverado-4g": {
     "covers": {
@@ -112,7 +113,8 @@
     },
     "sketchfab": "6c495ecc36bd49e198b16d1dee25f90b",
     "paintmat": "M_2023_Ford_F150_Lightning_Platinum_Iced_Blue_Silver",
-    "flip": true
+    "flip": true,
+    "tintmat": "M_2023_Ford_F150_Lightning_Platinum_Windows"
   },
   "honda-crv-6g": {
     "covers": {
@@ -131,7 +133,8 @@
     "paintmat": "paintBlue",
     "flip": true,
     "platemat": "none",
-    "plate_rear_z": 0.75
+    "plate_rear_z": 0.75,
+    "tintmat": "winshield"
   },
   "honda-crv-5g": {
     "covers": {
@@ -197,7 +200,8 @@
     },
     "sketchfab": "236a5a6e2fa6420fbdf641f4800cd544",
     "paintmat": "Paint_Color",
-    "flip": true
+    "flip": true,
+    "tintmat": "Index_0_2"
   },
   "toyota-camry-xv40": {
     "covers": {
@@ -251,7 +255,8 @@
     },
     "sketchfab": "6d7d34ee42734d1ab28a6b1f1c5fc4fc",
     "paintmat": "Paint_Color",
-    "flip": true
+    "flip": true,
+    "tintmat": "Index_0_2"
   },
   "hyundai-tucson-3g": {
     "covers": {
@@ -305,7 +310,8 @@
     },
     "sketchfab": "76e12f46be1743c591ac01544fb97399",
     "paintmat": "Paint_Color",
-    "flip": true
+    "flip": true,
+    "tintmat": "Index_0_2"
   },
   "kia-sportage-5g": {
     "covers": {
@@ -564,7 +570,8 @@
     "sketchfab": "2ad964f59a774e199d9caf143f21e614",
     "paintmat": "Meshpart2Mtl.002",
     "flip": true,
-    "plate_rear_z": 0.6
+    "plate_rear_z": 0.6,
+    "tintmat": "Meshpart6Mtl"
   },
   "chevrolet-silverado-ev": {
     "covers": {

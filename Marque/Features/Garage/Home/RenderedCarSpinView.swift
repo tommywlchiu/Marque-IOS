@@ -14,11 +14,15 @@ struct RenderedCarSpinView: UIViewRepresentable {
     /// The owner's plate; blank draws a plain plate (which still covers the
     /// placeholder text some models ship with). Private: the Garage only.
     var plateText: String = ""
+    /// Window masks, one per frame, for the tint add-on.
+    var tintMasks: [UIImage]? = nil
+    var tint: CarCustomization.Tint = .none
 
     func makeUIView(context: Context) -> StageView {
         let view = StageView()
         view.plateText = plateText
-        view.show(still, plates: plates?.frames.first)
+        view.tintOpacity = tint.opacity
+        view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first)
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
@@ -29,13 +33,15 @@ struct RenderedCarSpinView: UIViewRepresentable {
     func updateUIView(_ view: StageView, context: Context) {
         let coordinator = context.coordinator
         view.plateText = plateText
-        let platesChanged = coordinator.plates != plates
+        view.tintOpacity = tint.opacity
+        let platesChanged = coordinator.plates != plates || coordinator.tintMasks.count != (tintMasks?.count ?? 0)
         coordinator.plates = plates
+        coordinator.tintMasks = tintMasks ?? []
         if let frames, coordinator.frames.count != frames.count {
             coordinator.frames = frames
             coordinator.show(coordinator.index)
         } else if coordinator.frames.isEmpty {
-            view.show(still, plates: plates?.frames.first)
+            view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first)
         } else if platesChanged {
             coordinator.show(coordinator.index)
         }
@@ -71,6 +77,12 @@ struct RenderedCarSpinView: UIViewRepresentable {
         private let reflectionFade = CAGradientLayer()
         private let shadow = CAGradientLayer()
         private var plateLayers: [String: CALayer] = [:]
+        /// Black, shown through the current frame's window mask.
+        private let tintLayer = CALayer()
+        private let tintMask = CALayer()
+        var tintOpacity: Float = 0 {
+            didSet { tintLayer.opacity = tintOpacity }
+        }
         private var placements: [String: CarRenderLibrary.PlateTrack.Placement] = [:]
         var plateText = "" {
             didSet { if plateText != oldValue { plateLayers.values.forEach { $0.removeFromSuperlayer() }; plateLayers = [:]; setNeedsLayout() } }
@@ -95,12 +107,19 @@ struct RenderedCarSpinView: UIViewRepresentable {
             reflectionClip.layer.mask = reflectionFade
             addSubview(reflectionClip)
             addSubview(carView)
+            tintLayer.backgroundColor = UIColor.black.cgColor
+            tintLayer.opacity = 0
+            tintMask.contentsGravity = .resize
+            tintLayer.mask = tintMask
+            layer.addSublayer(tintLayer)
         }
 
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-        func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil) {
+        func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil, tintMask mask: UIImage? = nil) {
             placements = plates ?? [:]
+            tintMask.contents = mask?.cgImage
+            tintLayer.isHidden = mask == nil
             carView.image = image
             reflectionView.image = image
             let id = ObjectIdentifier(image)
@@ -173,6 +192,8 @@ struct RenderedCarSpinView: UIViewRepresentable {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             carView.frame = car
+            tintLayer.frame = car
+            tintMask.frame = CGRect(origin: .zero, size: car.size)
             reflectionClip.frame = clip
             // Each column mirrored about its own point on the contact line
             // (x' = x, y' = 2(a + b·x) − y): a reflection that keeps verticals
@@ -257,11 +278,14 @@ struct RenderedCarSpinView: UIViewRepresentable {
         private var dragStartIndex = 0
 
         var plates: CarRenderLibrary.PlateTrack?
+        var tintMasks: [UIImage] = []
 
         func show(_ i: Int) {
             guard !frames.isEmpty else { return }
             index = ((i % frames.count) + frames.count) % frames.count
-            stage?.show(frames[index], plates: plates.flatMap { index < $0.frames.count ? $0.frames[index] : nil })
+            stage?.show(frames[index],
+                        plates: plates.flatMap { index < $0.frames.count ? $0.frames[index] : nil },
+                        tintMask: index < tintMasks.count ? tintMasks[index] : nil)
         }
 
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {

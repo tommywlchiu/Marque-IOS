@@ -42,6 +42,7 @@ enum CarRenderLibrary {
         let styles: [String]
         let credit: Credit
         let plates: Bool?
+        let tint: Bool?
     }
 
     struct Entry: Codable, Identifiable {
@@ -52,6 +53,8 @@ enum CarRenderLibrary {
         let credit: Credit
         /// Whether `<key>/plates.json` exists (optional: older catalogs).
         let plates: Bool?
+        /// Whether `<key>/tint/NN.webp` window masks exist.
+        let tint: Bool?
         var id: String { key }
     }
 
@@ -85,6 +88,7 @@ enum CarRenderLibrary {
         let colorKey: String
         let frameCount: Int
         var hasPlates = false
+        var hasTint = false
 
         fileprivate func remoteURL(_ frame: Int) -> URL {
             CarRenderLibrary.baseURL.appendingPathComponent("\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp")
@@ -171,7 +175,8 @@ enum CarRenderLibrary {
         let color = CarPaint.paletteKey(for: car.color)
         guard catalog.colors.contains(color) else { return nil }
         return Match(carKey: key, colorKey: color, frameCount: catalog.frames,
-                     hasPlates: (entry?.plates ?? generic?.plates) == true)
+                     hasPlates: (entry?.plates ?? generic?.plates) == true,
+                     hasTint: (entry?.tint ?? generic?.tint) == true)
     }
 
     // MARK: - Frames
@@ -190,6 +195,31 @@ enum CarRenderLibrary {
         try? FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: local, options: .atomic)
         return image
+    }
+
+    /// The car's window masks for the tint add-on, one per frame (white =
+    /// glass), or nil if it has none or any is missing.
+    static func tintMasks(of match: Match) async -> [UIImage]? {
+        guard match.hasTint else { return nil }
+        return await withTaskGroup(of: (Int, UIImage?).self) { group in
+            for i in 0..<match.frameCount {
+                group.addTask {
+                    let path = "\(match.carKey)/tint/\(String(format: "%02d", i)).webp"
+                    let local = cacheDirectory.appendingPathComponent(path)
+                    if let image = UIImage(contentsOfFile: local.path) { return (i, image) }
+                    guard let (data, response) = try? await URLSession.shared.data(from: baseURL.appendingPathComponent(path)),
+                          (response as? HTTPURLResponse)?.statusCode == 200,
+                          let image = UIImage(data: data) else { return (i, nil) }
+                    try? FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try? data.write(to: local, options: .atomic)
+                    return (i, image)
+                }
+            }
+            var masks = [UIImage?](repeating: nil, count: match.frameCount)
+            for await (i, image) in group { masks[i] = image }
+            let loaded = masks.compactMap { $0 }
+            return loaded.count == match.frameCount ? loaded : nil
+        }
     }
 
     /// The car's plate positions, if it has them (disk-cached like frames).

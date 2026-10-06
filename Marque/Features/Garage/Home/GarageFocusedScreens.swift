@@ -10,6 +10,7 @@ enum GarageRoute: Hashable {
     case engineSound(UUID)
     case publicSharing(UUID)
     case details(UUID)
+    case customize(UUID)
     /// Public Sharing with the comments sheet open (a comment notification).
     case carComments(UUID)
 }
@@ -290,6 +291,57 @@ struct GarageDetailsScreen: View {
             } message: {
                 Text("Are you sure you want to delete \(car.displayName)? This action cannot be undone.")
             }
+        }
+    }
+}
+
+// MARK: - Customize
+
+/// How the car's studio render is dressed in the Garage hero: window tint
+/// now; the license plate shown here is edited where it lives (Wallet ›
+/// Registration). Private — none of it reaches Explore.
+struct GarageCustomizeScreen: View {
+    let carID: UUID
+
+    @EnvironmentObject private var carStore: CarStore
+    @Environment(\.selectMainTab) private var selectMainTab
+
+    var body: some View {
+        GarageCarScreen(carID: carID, title: "Customize") { car in
+            List {
+                Section {
+                    GarageHeroView(car: car, height: 220)
+                        .listRowInsets(EdgeInsets())
+                }
+                .garageRowBackground()
+
+                Section(header: Text("Window Tint")) {
+                    Picker("Window Tint", selection: Binding(
+                        get: { car.customization.tint },
+                        set: { tint in
+                            var updated = car
+                            updated.customization.tint = tint
+                            carStore.updateCar(updated)
+                        }
+                    )) {
+                        ForEach(CarCustomization.Tint.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .garageRowBackground()
+
+                Section(header: Text("License Plate"),
+                        footer: Text("Shown on your car in your Garage only — never in Explore.")) {
+                    HStack {
+                        Text(car.licensePlate.isEmpty ? "No plate on file" : car.licensePlate)
+                            .foregroundColor(car.licensePlate.isEmpty ? .secondary : .primary)
+                        Spacer()
+                        Button("Edit in Wallet") { selectMainTab(.wallet) }
+                    }
+                }
+                .garageRowBackground()
+            }
+            .scrollContentBackground(.hidden)
         }
     }
 }

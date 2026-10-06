@@ -190,7 +190,7 @@ if opt.get("mask") == "glass":
     low = bpy.data.materials.new("MaskHoldoutLow"); low.use_nodes = True
     nt = low.node_tree; nt.nodes.clear()
     nt.links.new(nt.nodes.new("ShaderNodeHoldout").outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
-    blo, bhi = bbox(meshes); belt = blo.z + float(opt.get("belt", 0.5)) * (bhi.z - blo.z)
+    blo, bhi = bbox(meshes); belt = blo.z + float(opt.get("belt", 0.6)) * (bhi.z - blo.z)
     for o in meshes:
         if not any(s.material and s.material.name in glass for s in o.material_slots): continue
         o.data.materials.append(low); low_index = len(o.material_slots) - 1; mw = o.matrix_world

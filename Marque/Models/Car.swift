@@ -66,6 +66,9 @@ struct Car: Identifiable, Codable, Equatable {
     var maintenanceRecords: [MaintenanceRecord]
     var serviceReminders: [ServiceReminder]
     var mods: [CarMod]
+    /// How the Garage's studio render is dressed (tint, wheels, stance,
+    /// extras). Private: only the owner's own Garage hero uses it.
+    var customization: CarCustomization
 
     /// The most modifications a car can carry. Enforced client-side by
     /// `CarStore.addMod` (the private `users/{uid}/cars` doc has no deep
@@ -112,7 +115,8 @@ struct Car: Identifiable, Codable, Equatable {
         engineSoundDuration: Double? = nil,
         maintenanceRecords: [MaintenanceRecord] = [],
         serviceReminders: [ServiceReminder] = [],
-        mods: [CarMod] = []
+        mods: [CarMod] = [],
+        customization: CarCustomization = CarCustomization()
     ) {
         self.id = id
         self.make = make
@@ -151,6 +155,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.maintenanceRecords = maintenanceRecords
         self.serviceReminders = serviceReminders
         self.mods = mods
+        self.customization = customization
     }
 
     // Includes a legacy `photoFileName` key so previously-saved single-photo
@@ -172,6 +177,7 @@ struct Car: Identifiable, Codable, Equatable {
         case engineSoundFileName, engineSoundURL, engineSoundDuration
         case maintenanceRecords, serviceReminders
         case mods
+        case customization
     }
 
     init(from decoder: Decoder) throws {
@@ -233,6 +239,7 @@ struct Car: Identifiable, Codable, Equatable {
         maintenanceRecords = try c.decode([MaintenanceRecord].self, forKey: .maintenanceRecords)
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
         mods = try c.decodeIfPresent([CarMod].self, forKey: .mods) ?? []
+        customization = try c.decodeIfPresent(CarCustomization.self, forKey: .customization) ?? CarCustomization()
     }
 
     // Skip writing the legacy key — new data is written under photoFileNames.
@@ -275,6 +282,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(maintenanceRecords, forKey: .maintenanceRecords)
         try c.encode(serviceReminders, forKey: .serviceReminders)
         try c.encode(mods, forKey: .mods)
+        try c.encode(customization, forKey: .customization)
     }
 
     var primaryPhotoFileName: String? {
