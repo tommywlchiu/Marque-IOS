@@ -52,7 +52,8 @@ def glass_z():
                     zs.append((mw @ poly.center).z)
     return sum(zs) / len(zs) if zs else None
 gz = glass_z()
-if gz is not None and gz < (lo.z + hi.z) / 2:
+# invert=1 overrides it for a model whose windows aren't a "glass" material.
+if (gz is not None and gz < (lo.z + hi.z) / 2) != (opt.get("invert") == "1"):
     lo, hi = rot("X"); lo, hi = rot("X")
     print("FLIPPED_UPRIGHT")
 if FLIP: root.matrix_world = Matrix.Rotation(math.pi, 4, "Z") @ root.matrix_world
@@ -125,6 +126,19 @@ for entry in filter(None, opt.get("styles", "").split(";")):
         b.inputs["Metallic"].default_value = metal
         b.inputs["Roughness"].default_value = rough
         if "Coat Weight" in b.inputs: b.inputs["Coat Weight"].default_value = coat
+
+# matid=1: every material a flat, distinct color (printed as MATID lines), to
+# tell which unnamed material is which on a model that needs `styles`.
+if opt.get("matid") == "1":
+    import colorsys
+    used = sorted({s.material.name for o in meshes for s in o.material_slots if s.material})
+    for i, name in enumerate(used):
+        rgb = colorsys.hsv_to_rgb((i * 0.618034) % 1, 0.85, 0.95 if i % 2 else 0.6)
+        m = bpy.data.materials[name]; m.use_nodes = True
+        nt = m.node_tree; nt.nodes.clear()
+        em = nt.nodes.new("ShaderNodeEmission"); em.inputs["Color"].default_value = (*rgb, 1)
+        nt.links.new(em.outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+        print("MATID", name, ",".join(f"{c:.3f}" for c in rgb))
 
 scene = bpy.context.scene
 # World: Blender's bundled studio HDRI for reflections, kept out of the shot.
@@ -206,6 +220,7 @@ scene.render.resolution_x, scene.render.resolution_y = w, h
 scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - Punchy"
 # EEVEE has less bounce light than Cycles; lift it so white paint isn't gray.
 if engine != "CYCLES": scene.view_settings.exposure = float(opt.get("exposure", 0.45))
+if opt.get("matid") == "1": scene.view_settings.view_transform = "Standard"; scene.view_settings.look = "None"; scene.view_settings.exposure = 0
 scene.render.image_settings.file_format = "PNG"
 scene.render.image_settings.color_mode = "RGBA"
 

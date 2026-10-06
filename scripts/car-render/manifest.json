@@ -448,5 +448,46 @@
     "sketchfab": "3d97c4d69dcf4cf8b8c774b724861cc1",
     "paintmat": "paint",
     "flip": false
+  },
+  "hyundai-tucson-4g": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Tucson",
+      "years": [
+        2022,
+        2026
+      ]
+    },
+    "sketchfab": "574deec95f094e9192b0023d3d4ad607",
+    "paintmat": "Material_2125670220",
+    "flip": false,
+    "styles": "glass:glass;Material_134|black|black_0|black222:trim;Carpaint_Simple_Onyx2:gloss;Carpaint_Simple_Onyx3|Material_2125670235|steel|steel3434|Iron_Clean_Distorted:satin;Material_34|Red_Light1:redlight;glass_light1141:lamp"
+  },
+  "nissan-rogue-3g": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Rogue",
+      "years": [
+        2021,
+        2026
+      ]
+    },
+    "sketchfab": "48fa53c7743745949b9cb518b7b67579",
+    "paintmat": "M_2022_Nissan_Rogue_Pearl_White_Tricoat",
+    "flip": true,
+    "styles": "M_2022_Nissan_Rogue_Windows|M_2022_Nissan_Rogue_HeadLightsGlass|M_2022_Nissan_Rogue_BrakeLightsGlass:glass;M_2022_Nissan_Rogue_Black1|M_2022_Nissan_Rogue_BlackTrims1|M_2022_Nissan_Rogue_Grille2|M_2022_Nissan_Rogue_Mirrors|M_2022_Nissan_Rogue_UnderCarrier|M_2022_Nissan_Rogue_Exhausts:trim;M_2022_Nissan_Rogue_WindowsTrims|M_2022_Nissan_Rogue_Grille1:gloss;M_2022_Nissan_Rogue_BlackChrome|M_2022_Nissan_Rogue_ChromeTrims|M_2022_Nissan_Rogue_Badges:chrome;M_2022_Nissan_Rogue_Rims1|M_2022_Nissan_Rogue_Rims2|M_2022_Nissan_Rogue_SilverSkid|M_2022_Nissan_Rogue_Calipers|M_2022_Nissan_Rogue_BrakeRotors|M_2022_Nissan_Rogue_BrakeRotors1:satin;M_2022_Nissan_Rogue_BrakeLightsMain|M_2022_Nissan_Rogue_BrakeLightsBase|M_2022_Nissan_Rogue_Red1|M_2022_Nissan_Rogue_DarkRed|M_2022_Nissan_Rogue_ThirdBrakeLights:redlight;M_2022_Nissan_Rogue_SignalLights|M_2022_Nissan_Rogue_Orange_Catastrophic:amber;M_2022_Nissan_Rogue_HeadLightsBase|M_2022_Nissan_Rogue_DRLs:lamp"
+  },
+  "toyota-camry-xv80": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Camry",
+      "years": [
+        2025,
+        2026
+      ]
+    },
+    "sketchfab": "1cac877105eb4188ba92e8e4991a8213",
+    "paintmat": "vehicle_generic_smallspecmap_PRIMARY|vehicle_generic_smallspecmap_PRIMARY.001",
+    "flip": false
   }
 }

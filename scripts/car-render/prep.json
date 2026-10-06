@@ -36,11 +36,6 @@
     "paintmat": "Paint_Color",
     "flip": true
   },
-  "toyota-camry-xv80": {
-    "paintmat": "BLACK12.001",
-    "flip": false,
-    "rejected": "body material is a mottled scan texture; no clean paint surface"
-  },
   "toyota-camry-xv40": {
     "paintmat": "Material.005",
     "flip": true
@@ -69,9 +64,9 @@
     "flip": true
   },
   "hyundai-tucson-4g": {
-    "paintmat": "Material_134",
+    "paintmat": "Material_2125670220",
     "flip": false,
-    "rejected": "source model is untextured; body split over many unnamed materials"
+    "styles": "glass:glass;Material_134|black|black_0|black222:trim;Carpaint_Simple_Onyx2:gloss;Carpaint_Simple_Onyx3|Material_2125670235|steel|steel3434|Iron_Clean_Distorted:satin;Material_34|Red_Light1:redlight;glass_light1141:lamp"
   },
   "hyundai-tucson-3g": {
     "paintmat": "varnish",
@@ -83,9 +78,9 @@
     "known_issue": "one rear quarter panel stays dark"
   },
   "nissan-rogue-3g": {
-    "paintmat": "M_2022_Nissan_Rogue_Pearl_White_Tricoat|M_2022_Nissan_Rogue_UnderCarrier",
+    "paintmat": "M_2022_Nissan_Rogue_Pearl_White_Tricoat",
     "flip": true,
-    "rejected": "upper body stays white with every material tried"
+    "styles": "M_2022_Nissan_Rogue_Windows|M_2022_Nissan_Rogue_HeadLightsGlass|M_2022_Nissan_Rogue_BrakeLightsGlass:glass;M_2022_Nissan_Rogue_Black1|M_2022_Nissan_Rogue_BlackTrims1|M_2022_Nissan_Rogue_Grille2|M_2022_Nissan_Rogue_Mirrors|M_2022_Nissan_Rogue_UnderCarrier|M_2022_Nissan_Rogue_Exhausts:trim;M_2022_Nissan_Rogue_WindowsTrims|M_2022_Nissan_Rogue_Grille1:gloss;M_2022_Nissan_Rogue_BlackChrome|M_2022_Nissan_Rogue_ChromeTrims|M_2022_Nissan_Rogue_Badges:chrome;M_2022_Nissan_Rogue_Rims1|M_2022_Nissan_Rogue_Rims2|M_2022_Nissan_Rogue_SilverSkid|M_2022_Nissan_Rogue_Calipers|M_2022_Nissan_Rogue_BrakeRotors|M_2022_Nissan_Rogue_BrakeRotors1:satin;M_2022_Nissan_Rogue_BrakeLightsMain|M_2022_Nissan_Rogue_BrakeLightsBase|M_2022_Nissan_Rogue_Red1|M_2022_Nissan_Rogue_DarkRed|M_2022_Nissan_Rogue_ThirdBrakeLights:redlight;M_2022_Nissan_Rogue_SignalLights|M_2022_Nissan_Rogue_Orange_Catastrophic:amber;M_2022_Nissan_Rogue_HeadLightsBase|M_2022_Nissan_Rogue_DRLs:lamp"
   },
   "jeep-grand-cherokee-wk2": {
     "paintmat": "Body",
@@ -153,5 +148,14 @@
   "subaru-crosstrek-1g": {
     "paintmat": "paint",
     "flip": false
+  },
+  "toyota-camry-xv80": {
+    "paintmat": "vehicle_generic_smallspecmap_PRIMARY|vehicle_generic_smallspecmap_PRIMARY.001",
+    "flip": false
+  },
+  "ford-f150-14g": {
+    "paintmat": "",
+    "flip": false,
+    "rejected": "every free 2021+ model is the same Lariat shell with the windows inside the body-paint material (renders painted windows); the \"2021 Raptor\" alternative is a modified 2017-20 Raptor"
   }
 }
