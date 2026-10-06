@@ -19,7 +19,8 @@ for key, car in manifest.items():
     raw = os.path.join(outdir, "_png", key)
     args = ["blender", "-b", "-P", os.path.join(here, "render_car.py"), "--", f"in={glb}", f"out={raw}",
             f"paintmat={car['paintmat']}", "engine=BLENDER_EEVEE", "samples=48", "res=1200x675",
-            f"colors={colors}", "frames=36"] + (["flip=1"] if car.get("flip") else [])
+            f"colors={colors}", "frames=36"] + (["flip=1"] if car.get("flip") else []) \
+           + ([f"styles={car['styles']}"] if car.get("styles") else [])
     print("RENDER", key, flush=True)
     subprocess.run(args, check=True, stdout=subprocess.DEVNULL)
     print("DONE", key, flush=True)

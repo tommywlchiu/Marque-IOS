@@ -158,9 +158,9 @@
       ]
     },
     "sketchfab": "1d0057b4f1c74dbdac2b78e5db7eb6ce",
-    "paintmat": "body",
+    "paintmat": "body|white",
     "flip": true,
-    "known_issue": "roof renders light"
+    "styles": "glass|d_glass|vd_glass:glass;chrome:chrome;silver|silver_d|brakes1:satin;black|black_m|grey|material|material_4:trim;r_glass:redlight;orange|o_glass:amber;interior:interior"
   },
   "gmc-sierra-2022": {
     "covers": {

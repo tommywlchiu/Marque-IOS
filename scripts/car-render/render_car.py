@@ -103,6 +103,29 @@ for m in bpy.data.materials:
 if paint:
     for b in paint_bsdfs: b.inputs["Base Color"].default_value = (*paint, 1)
 
+# styles=mat|mat:preset;... — for untextured models (every material the same
+# flat gray), give named materials a look so glass, trim and lights read right.
+STYLES = {  # base color (linear), metallic, roughness, coat
+    "glass":    ((0.004, 0.005, 0.006), 0.0, 0.03, 1.0),
+    "chrome":   ((0.9, 0.9, 0.9), 1.0, 0.06, 0.0),
+    "satin":    ((0.35, 0.35, 0.36), 1.0, 0.3, 0.0),
+    "trim":     ((0.015, 0.015, 0.015), 0.0, 0.55, 0.0),
+    "gloss":    ((0.01, 0.01, 0.01), 0.0, 0.15, 1.0),
+    "interior": ((0.025, 0.025, 0.025), 0.0, 0.8, 0.0),
+    "redlight": ((0.35, 0.005, 0.005), 0.0, 0.05, 1.0),
+    "amber":    ((0.6, 0.18, 0.01), 0.0, 0.05, 1.0),
+    "lamp":     ((0.7, 0.7, 0.72), 0.3, 0.05, 1.0),
+}
+for entry in filter(None, opt.get("styles", "").split(";")):
+    names, preset = entry.rsplit(":", 1)
+    rgb, metal, rough, coat = STYLES[preset]
+    for n in names.split("|"):
+        b = make_paint(bpy.data.materials[n])
+        b.inputs["Base Color"].default_value = (*rgb, 1)
+        b.inputs["Metallic"].default_value = metal
+        b.inputs["Roughness"].default_value = rough
+        if "Coat Weight" in b.inputs: b.inputs["Coat Weight"].default_value = coat
+
 scene = bpy.context.scene
 # World: Blender's bundled studio HDRI for reflections, kept out of the shot.
 world = bpy.data.worlds.new("Studio"); scene.world = world
@@ -114,23 +137,50 @@ bg = nt.nodes.new("ShaderNodeBackground"); bg.inputs["Strength"].default_value =
 outn = nt.nodes.new("ShaderNodeOutputWorld")
 nt.links.new(env.outputs["Color"], bg.inputs["Color"]); nt.links.new(bg.outputs["Background"], outn.inputs["Surface"])
 
-# Soft key + rim area lights
 def area_light(name, loc, energy, size):
     l = bpy.data.lights.new(name, "AREA"); l.energy = energy; l.size = size
     o = bpy.data.objects.new(name, l); o.location = loc
     scene.collection.objects.link(o)
     d = o.constraints.new("TRACK_TO"); d.target = turn
     return o
-area_light("Key", (4, -6, 6), 700, 6)
-area_light("Rim", (-6, 5, 4), 500, 6)
-area_light("Top", (0, 0, 8), 500, 8)
 
-# Shadow-catcher floor so the car sits on the ground over a transparent background
-# (Cycles only — EEVEE has no shadow catcher and would render the floor
-# opaque; the app draws its own contact shadow under the car anyway.)
+def softbox(name, loc, rot, size, strength):
+    # An emissive panel the camera can't see but the paint reflects, like a
+    # photo studio's softboxes: long clean highlights instead of a blurry HDRI.
+    bpy.ops.mesh.primitive_plane_add(size=1, location=loc, rotation=rot)
+    o = bpy.context.active_object; o.name = name; o.scale = (*size, 1)
+    m = bpy.data.materials.new(name); m.use_nodes = True
+    nt2 = m.node_tree; nt2.nodes.clear()
+    em = nt2.nodes.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = strength
+    o2 = nt2.nodes.new("ShaderNodeOutputMaterial"); nt2.links.new(em.outputs[0], o2.inputs["Surface"])
+    o.data.materials.append(m)
+    o.visible_camera = False; o.visible_shadow = False
+    return o
+
+# Car-photography studio: an overhead softbox (long highlight down the hood
+# and roof), a wide panel above the camera (what the side facing us
+# reflects — without it dark paint goes flat black), and two tall side strips
+# (the vertical streaks that show a body's shape). The world HDRI is turned
+# down so the softboxes, not its blur, make the reflections.
+bg.inputs["Strength"].default_value = float(opt.get("world", 0.5))
+softbox("Overhead", (0, 0, 7), (0, 0, 0), (7, 3.2), 9)
+softbox("Front", (0, -11, 3.6), (math.radians(80), 0, 0), (9, 2.2), 3.5)
+softbox("StripL", (-6, -6, 2.4), (math.radians(90), 0, math.radians(-45)), (1.4, 4.5), 6)
+softbox("StripR", (7, 1.5, 2.4), (math.radians(90), 0, math.radians(95)), (1.4, 4.5), 6)
+# Area lights shape the body but cast no shadows, so a Cycles shadow catcher
+# gets only a soft contact shadow, not a long one that would widen the crop.
+for l in (area_light("Key", (5, -7, 5), 450, 5), area_light("Rim", (-5, 7, 4), 400, 6)):
+    l.data.use_shadow = False
 if engine == "CYCLES":
-    bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0))
     bpy.context.active_object.is_shadow_catcher = True
+else:
+    # EEVEE reflects off-screen objects (the softboxes, which the camera
+    # can't see) only through a light probe; without one the paint reflects
+    # just the dim world. No floor: EEVEE has no shadow catcher, and the
+    # app draws the contact shadow and floor reflection itself.
+    bpy.ops.object.lightprobe_add(type="SPHERE", location=(0, 0, 1.2))
+    bpy.context.active_object.data.influence_distance = 8
 
 cam_data = bpy.data.cameras.new("Cam"); cam_data.lens = 85
 cam = bpy.data.objects.new("Cam", cam_data); scene.collection.objects.link(cam)
@@ -154,6 +204,8 @@ scene.render.film_transparent = True
 w, h = (int(v) for v in opt.get("res", "1600x900").split("x"))
 scene.render.resolution_x, scene.render.resolution_y = w, h
 scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - Punchy"
+# EEVEE has less bounce light than Cycles; lift it so white paint isn't gray.
+if engine != "CYCLES": scene.view_settings.exposure = float(opt.get("exposure", 0.45))
 scene.render.image_settings.file_format = "PNG"
 scene.render.image_settings.color_mode = "RGBA"
 

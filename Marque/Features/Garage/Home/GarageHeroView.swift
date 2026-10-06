@@ -292,34 +292,31 @@ struct GarageHeroView: View {
         }
     }
 
-    /// Studio-render turntable: the still right away, spinnable once every
-    /// frame is in.
+    /// Studio-render turntable on a glossy floor (its reflection and contact
+    /// shadow are drawn by `RenderedCarSpinView`): the still right away,
+    /// spinnable once every frame is in.
     private func stagedRendered(_ still: UIImage) -> some View {
         VStack(spacing: 0) {
             RenderedCarSpinView(
                 still: still,
-                frames: renderFrames?.key == key ? renderFrames?.frames : nil,
-                autoRotates: !reduceMotion
+                frames: renderFrames?.key == key ? renderFrames?.frames : nil
             )
             // A new car/color must get a fresh view: the coordinator holds the
             // previous car's frames, and SwiftUI would otherwise reuse it.
             .id(key)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(alignment: .bottom) { groundShadow.offset(y: -6) }
             .accessibilityHidden(true)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
     }
 
-    /// Live, interactive turntable for the model-fallback case. No device-
-    /// tilt parallax or floor reflection here — the user's own drag is the
-    /// more meaningful motion, and a live-mirrored second SCNView isn't
-    /// worth the extra render cost for a minor flourish the static-image
-    /// case already covers.
+    /// Live, interactive turntable for the model-fallback case (its floor
+    /// reflection is drawn by `SpinnableCarModelView`). No device-tilt parallax
+    /// here — the user's own drag is the more meaningful motion.
     private var stagedSpinnable: some View {
         VStack(spacing: 0) {
-            SpinnableCarModelView(profile: modelProfile, paint: modelPaint, autoRotates: !reduceMotion)
+            SpinnableCarModelView(profile: modelProfile, paint: modelPaint)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(alignment: .bottom) { groundShadow.offset(y: 10) }
                 .accessibilityHidden(true)

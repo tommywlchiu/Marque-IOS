@@ -3,9 +3,8 @@ import SceneKit
 
 /// Live, interactive turntable view of the model-fallback car (the Garage
 /// hero shows this instead of a static baked image when there's no usable
-/// cover photo): drag horizontally to spin it around its vertical axis: it
-/// auto-rotates slowly when idle, pauses on touch, and resumes a couple of
-/// seconds after the user lets go. Reuses the exact same node graph
+/// cover photo): it rests at a three-quarter angle on a glossy floor, and a
+/// horizontal drag spins it around its vertical axis. Reuses the exact same node graph
 /// (`ProceduralCarModel.node(for:paint:)`) and studio lighting
 /// (`CarModelRenderer.studioEnvironment()`) as the static bake, just hosted
 /// in a live `SCNView` instead of rendered once to a PNG. `CarModelRenderer`
@@ -14,12 +13,10 @@ import SceneKit
 struct SpinnableCarModelView: UIViewRepresentable {
     let profile: CarBodyProfile
     let paint: UIColor
-    /// False under Reduce Motion: no unprompted continuous spin, but drag
-    /// still works — that motion is user-initiated, not ambient.
-    var autoRotates: Bool = true
 
-    func makeUIView(context: Context) -> SCNView {
-        let view = SCNView()
+    func makeUIView(context: Context) -> FloorFadeView {
+        let view = FloorFadeView()
+        view.groundRadius = Float(profile.length) / 2
         view.backgroundColor = .clear
         view.antialiasingMode = .multisampling4X
         view.isUserInteractionEnabled = true
@@ -34,6 +31,7 @@ struct SpinnableCarModelView: UIViewRepresentable {
         car.position = SCNVector3(-Float(profile.length) / 2, 0, 0)
         let turntable = SCNNode()
         turntable.addChildNode(car)
+        turntable.addChildNode(Self.reflection(of: car))
         turntable.eulerAngles.y = 0.6
         scene.rootNode.addChildNode(turntable)
 
@@ -66,8 +64,6 @@ struct SpinnableCarModelView: UIViewRepresentable {
         view.pointOfView = camera
 
         context.coordinator.turntable = turntable
-        context.coordinator.autoRotates = autoRotates
-        context.coordinator.startAutoRotate()
 
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         pan.delegate = context.coordinator
@@ -75,10 +71,47 @@ struct SpinnableCarModelView: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: SCNView, context: Context) {}
+    func updateUIView(_ uiView: FloorFadeView, context: Context) {}
 
-    static func dismantleUIView(_ uiView: SCNView, coordinator: Coordinator) {
-        coordinator.invalidate()
+    /// The car mirrored under the floor, darkened rather than made
+    /// translucent (a translucent copy would show its insides). Geometry is
+    /// copied so darkening it can't touch the real car's shared materials.
+    private static func reflection(of car: SCNNode) -> SCNNode {
+        let mirror = car.clone()
+        mirror.enumerateHierarchy { node, _ in
+            guard let geometry = node.geometry?.copy() as? SCNGeometry else { return }
+            geometry.materials = geometry.materials.map { material in
+                let copy = material.copy() as! SCNMaterial
+                copy.multiply.contents = UIColor(white: 0.18, alpha: 1)
+                return copy
+            }
+            node.geometry = geometry
+        }
+        mirror.scale = SCNVector3(1, -1, 1)
+        return mirror
+    }
+
+    /// Fades the view out below the floor, so the mirrored car reads as a
+    /// reflection on a glossy floor that falls away from the car.
+    final class FloorFadeView: SCNView {
+        /// Radius of the car's footprint: the floor point nearest the camera,
+        /// whichever way the car faces, is where the fade starts.
+        var groundRadius: Float = 2.4
+        private let fade = CAGradientLayer()
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            guard bounds.height > 0 else { return }
+            let start = CGFloat(projectPoint(SCNVector3(0, 0, groundRadius)).y)
+            let end = CGFloat(projectPoint(SCNVector3(0, -0.9, groundRadius)).y)
+            // Full strength down to the floor, then the reflection drops to
+            // half and fades out.
+            let black = UIColor.black.cgColor
+            fade.colors = [black, black, UIColor.black.withAlphaComponent(0.5).cgColor, UIColor.clear.cgColor]
+            fade.locations = [0, start, start + 1, end].map { NSNumber(value: Double($0 / bounds.height)) }
+            fade.frame = bounds
+            layer.mask = fade
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -86,21 +119,7 @@ struct SpinnableCarModelView: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         weak var turntable: SCNNode?
-        var autoRotates = true
-        private var resumeWorkItem: DispatchWorkItem?
         private var dragStartY: Float = 0
-
-        func startAutoRotate() {
-            guard autoRotates, let turntable, turntable.action(forKey: "spin") == nil else { return }
-            let spin = SCNAction.repeatForever(.rotateBy(x: 0, y: .pi * 2, z: 0, duration: 16))
-            turntable.runAction(spin, forKey: "spin")
-        }
-
-        func invalidate() {
-            resumeWorkItem?.cancel()
-            turntable?.removeAllActions()
-            turntable = nil
-        }
 
         /// Only a mostly-horizontal drag spins the car; a vertical one is
         /// left to the enclosing ScrollView, so swiping on the hero still
@@ -115,26 +134,15 @@ struct SpinnableCarModelView: UIViewRepresentable {
             guard let turntable else { return }
             switch gesture.state {
             case .began:
-                resumeWorkItem?.cancel()
-                turntable.removeAction(forKey: "spin")
-                dragStartY = turntable.presentation.eulerAngles.y
+                dragStartY = turntable.eulerAngles.y
             case .changed:
                 let translation = gesture.translation(in: gesture.view)
                 let width = max(gesture.view?.bounds.width ?? 1, 1)
                 let delta = Float(translation.x / width) * .pi * 2.4
                 turntable.eulerAngles.y = dragStartY + delta
-            case .ended, .cancelled, .failed:
-                scheduleResume()
             default:
                 break
             }
-        }
-
-        private func scheduleResume() {
-            resumeWorkItem?.cancel()
-            let work = DispatchWorkItem { [weak self] in self?.startAutoRotate() }
-            resumeWorkItem = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: work)
         }
     }
 }
