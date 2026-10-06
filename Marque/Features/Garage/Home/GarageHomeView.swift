@@ -30,7 +30,6 @@ struct GarageHomeView: View {
     @State private var showingAddCar = false
     @State private var showingPaywall = false
     @State private var showingShareCard = false
-    @State private var showingEditCar = false
     @State private var editDraft: Car?
 
     /// Hero height; the hero is pinned at its resting position as the list scrolls.
@@ -73,7 +72,6 @@ struct GarageHomeView: View {
             showingAddCar: $showingAddCar,
             showingPaywall: $showingPaywall,
             showingShareCard: $showingShareCard,
-            showingEditCar: $showingEditCar,
             editDraft: $editDraft
         ))
         .onAppear(perform: tryDeepLinkNavigation)
@@ -358,7 +356,6 @@ struct GarageHomeView: View {
 
             Button {
                 editDraft = car
-                showingEditCar = true
             } label: {
                 Text("Edit Car")
                     .font(.subheadline.weight(.semibold))
@@ -490,7 +487,6 @@ private struct GarageHomePresenters: ViewModifier {
     @Binding var showingAddCar: Bool
     @Binding var showingPaywall: Bool
     @Binding var showingShareCard: Bool
-    @Binding var showingEditCar: Bool
     @Binding var editDraft: Car?
 
     @EnvironmentObject private var carStore: CarStore
@@ -516,13 +512,14 @@ private struct GarageHomePresenters: ViewModifier {
                     ShareCardSheet(car: projection, localCoverPhotoFileName: car.primaryPhotoFileName, isOwnCar: true)
                 }
             }
-            .sheet(isPresented: $showingEditCar, onDismiss: { editDraft = nil }) {
-                if let draft = editDraft {
-                    EditCarDetailView(
-                        car: Binding(get: { editDraft ?? draft }, set: { editDraft = $0 }),
-                        onSave: { carStore.updateCar($0) }
-                    )
-                }
+            // `item:`, not `isPresented:` + a separate draft: with two
+            // states the sheet's content could read the draft before it was
+            // set and present an empty (blank white) sheet.
+            .sheet(item: $editDraft) { draft in
+                EditCarDetailView(
+                    car: Binding(get: { editDraft ?? draft }, set: { editDraft = $0 }),
+                    onSave: { carStore.updateCar($0) }
+                )
             }
     }
 }

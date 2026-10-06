@@ -119,7 +119,12 @@ struct CarBodyProfile {
             p.frontAxle = 0.95; p.rearAxle = 4.0; p.noseHeight = 0.78; p.belt = 1.08
             p.cowlX = 1.2; p.roofFrontX = 1.85; p.roofRearX = 4.72; p.roofHeight = 1.8
             p.rearGlassBaseX = 4.98; p.deckHeight = 1.1; p.tailHeight = 1.1
-        default: break  // sedan
+        default:  // sedan: a three-box shape — flatter, higher hood, upright
+            // cabin with a long roof, and a distinct high trunk deck, so it
+            // doesn't read as a coupe/fastback.
+            p.noseHeight = 0.74; p.belt = 0.98; p.cowlX = 1.62
+            p.roofFrontX = 2.22; p.roofRearX = 3.42; p.roofHeight = 1.44
+            p.rearGlassBaseX = 3.98; p.deckHeight = 1.03; p.tailHeight = 1.01
         }
         return p
     }
@@ -227,11 +232,23 @@ enum CarBodyMesh {
         return t * t * (3 - 2 * t)
     }
 
-    /// 0...1 fraction of full half-width at this point along the body's length.
+    /// 0...1 fraction of full half-width at this point along the body's
+    /// length. Seen from above a car is a rounded rectangle — nearly full
+    /// width right up to the bumpers, with rounded corners — not a pointed
+    /// hull: a long taper left the headlights, taillights and grille (which
+    /// sit near the outer corners) floating in the air past the body.
+    /// The body's half-width at x — trim pieces (lights, bar) are placed
+    /// against this so they sit on the surface instead of floating past it.
+    static func halfWidth(at x: CGFloat, _ p: CarBodyProfile) -> CGFloat {
+        (p.width / 2) * widthFactor(x: x, length: p.length)
+    }
+
     private static func widthFactor(x: CGFloat, length: CGFloat) -> CGFloat {
-        let noseRamp = smoothstep(0, 1.8, x)
-        let tailRamp = smoothstep(0, 1.5, length - x)
-        return max(0.06, min(noseRamp, tailRamp))
+        func corner(_ d: CGFloat, radius: CGFloat, minimum: CGFloat) -> CGFloat {
+            let t = max(0, min(1, d / radius))
+            return minimum + (1 - minimum) * sqrt(1 - (1 - t) * (1 - t))
+        }
+        return min(corner(x, radius: 0.55, minimum: 0.7), corner(length - x, radius: 0.45, minimum: 0.75))
     }
 
     /// How far the cross-section domes downward (in meters) at the full
@@ -240,11 +257,11 @@ enum CarBodyMesh {
         let bulgeY = p.clearance + 0.3
         if y < bulgeY {
             // Lower body (doors/rocker area): modest shoulder taper.
-            return 0.07
+            return 0.05
         } else {
             // Hood/deck/greenhouse-base area: a bit more dome, like a
             // crowned hood or a rounded decklid.
-            return 0.11
+            return 0.07
         }
     }
 
@@ -406,23 +423,27 @@ enum ProceduralCarModel {
         }
         let tailMaterial = material(UIColor(red: 0.5, green: 0, blue: 0, alpha: 1), metalness: 0, roughness: 0.2)
         tailMaterial.emission.contents = UIColor(red: 0.75, green: 0.03, blue: 0.03, alpha: 1)
+        // Lights sit against the body's own width at each end (it narrows
+        // into rounded corners), so they read as part of the surface.
+        let noseHalfWidth = CarBodyMesh.halfWidth(at: 0.05, p)
+        let tailHalfWidth = CarBodyMesh.halfWidth(at: p.length - 0.02, p)
         if p.hasTailLightBar {
-            let bar = SCNNode(geometry: SCNBox(width: 0.05, height: 0.045, length: p.width - 0.14, chamferRadius: 0.018))
+            let bar = SCNNode(geometry: SCNBox(width: 0.05, height: 0.045, length: 2 * tailHalfWidth - 0.1, chamferRadius: 0.018))
             bar.geometry?.materials = [tailMaterial]
-            bar.position = vec(p.length - 0.015, p.tailHeight - 0.13, 0)
+            bar.position = vec(p.length - 0.01, p.tailHeight - 0.13, 0)
             car.addChildNode(bar)
         }
         for side in [CGFloat(1), -1] {
             let head = SCNNode(geometry: SCNBox(width: 0.16, height: 0.06, length: 0.44, chamferRadius: 0.03))
             let hm = material(.white, metalness: 0, roughness: 0.2); hm.emission.contents = UIColor(white: 0.95, alpha: 1)
             head.geometry?.materials = [hm]
-            head.position = vec(0.12, p.noseHeight - 0.05, side * (p.width / 2 - 0.3))
+            head.position = vec(0.1, p.noseHeight - 0.05, side * (noseHalfWidth - 0.24))
             head.eulerAngles.z = 0.3
             car.addChildNode(head)
             if !p.hasTailLightBar {
-                let tail = SCNNode(geometry: SCNBox(width: 0.06, height: 0.07, length: 0.5, chamferRadius: 0.02))
+                let tail = SCNNode(geometry: SCNBox(width: 0.06, height: 0.07, length: 0.42, chamferRadius: 0.02))
                 tail.geometry?.materials = [tailMaterial]
-                tail.position = vec(p.length - 0.02, p.tailHeight - 0.13, side * (p.width / 2 - 0.3))
+                tail.position = vec(p.length - 0.005, p.tailHeight - 0.13, side * (tailHalfWidth - 0.24))
                 car.addChildNode(tail)
             }
             for axle in [p.frontAxle, p.rearAxle] {
@@ -558,7 +579,7 @@ private extension UIColor {
 /// by style + color + `version`, so each combination renders once per device.
 enum CarModelRenderer {
     /// Bump when the model or lighting changes, to retire old cached renders.
-    private static let version = 5
+    private static let version = 6
     /// Rendered image size, in pixels (the renderer is given a pixel size and
     /// the result is re-wrapped at scale 1 — see the image-size pitfall).
     private static let renderSize = CGSize(width: 2400, height: 1200)

@@ -51,7 +51,12 @@ struct SpinnableCarModelView: UIViewRepresentable {
 
         let camera = SCNNode()
         camera.camera = SCNCamera()
-        camera.camera?.fieldOfView = 15
+        // Fit the car's full length across the view's width, so it never
+        // clips when the spin turns it side-on (a pickup is ~1m longer than
+        // a hatchback, so this can't be one fixed angle).
+        camera.camera?.projectionDirection = .horizontal
+        let visibleWidth = Double(profile.length) * 1.18
+        camera.camera?.fieldOfView = 2 * atan(visibleWidth / 2 / 11.3) * 180 / .pi
         camera.camera?.wantsHDR = true
         camera.position = SCNVector3(0, 1.55, 11.3)
         camera.look(at: SCNVector3(0, 0.65, 0))
@@ -65,6 +70,7 @@ struct SpinnableCarModelView: UIViewRepresentable {
         context.coordinator.startAutoRotate()
 
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
+        pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
         return view
     }
@@ -78,7 +84,7 @@ struct SpinnableCarModelView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     @MainActor
-    final class Coordinator: NSObject {
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         weak var turntable: SCNNode?
         var autoRotates = true
         private var resumeWorkItem: DispatchWorkItem?
@@ -94,6 +100,15 @@ struct SpinnableCarModelView: UIViewRepresentable {
             resumeWorkItem?.cancel()
             turntable?.removeAllActions()
             turntable = nil
+        }
+
+        /// Only a mostly-horizontal drag spins the car; a vertical one is
+        /// left to the enclosing ScrollView, so swiping on the hero still
+        /// scrolls the Garage.
+        func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
+            guard let pan = gesture as? UIPanGestureRecognizer else { return true }
+            let v = pan.velocity(in: pan.view)
+            return abs(v.x) > abs(v.y)
         }
 
         @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
