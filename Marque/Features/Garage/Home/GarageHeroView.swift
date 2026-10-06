@@ -230,8 +230,7 @@ struct GarageHeroView: View {
                         // Live and interactive (drag to spin), not the baked
                         // PNG `loaded.image` itself holds — that bake still
                         // exists for cachedImage's first-frame probe and for
-                        // contexts that can't host a live SCNView (the widget,
-                        // the car-switcher thumbnails).
+                        // the widget, which can't host a live SCNView.
                         stagedSpinnable
                     }
                 }

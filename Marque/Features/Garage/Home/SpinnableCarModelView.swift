@@ -9,7 +9,7 @@ import SceneKit
 /// (`CarModelRenderer.studioEnvironment()`) as the static bake, just hosted
 /// in a live `SCNView` instead of rendered once to a PNG. `CarModelRenderer`
 /// itself is untouched and still used where a live `SCNView` can't be hosted
-/// — the Home Screen widget and the car-switcher thumbnails.
+/// — the Home Screen widget.
 struct SpinnableCarModelView: UIViewRepresentable {
     let profile: CarBodyProfile
     let paint: UIColor

@@ -82,6 +82,9 @@ struct GarageCarSwitcherSheet: View {
 private struct CarSwitcherRow: View {
     let car: Car
     let isSelected: Bool
+    /// The studio render (`CarRenderLibrary`, frame 0) for a car without a
+    /// cover photo, when the catalog covers it.
+    @State private var render: UIImage?
 
     private var subtitle: String {
         [GarageSummary.mileageText(car), car.licensePlate.isEmpty ? nil : car.licensePlate]
@@ -113,6 +116,14 @@ private struct CarSwitcherRow: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
+        .task(id: [car.make, car.model, car.year, car.color].joined(separator: "|")) {
+            guard car.primaryPhotoFileName == nil else { return }
+            if let cached = CarRenderLibrary.cachedStill(for: car) {
+                render = cached
+            } else {
+                render = await CarRenderLibrary.still(for: car)
+            }
+        }
     }
 
     @ViewBuilder
@@ -121,6 +132,13 @@ private struct CarSwitcherRow: View {
             CarPhotoImage(fileName: fileName, storageURL: car.primaryPhotoStorageURL)
                 .frame(width: 72, height: 48)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+        } else if let render {
+            Image(uiImage: render)
+                .resizable()
+                .scaledToFit()
+                .padding(4)
+                .frame(width: 72, height: 48)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
         } else {
             Image(systemName: "car.side.fill")
                 .font(.title3)
