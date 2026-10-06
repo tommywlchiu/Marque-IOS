@@ -1,0 +1,452 @@
+{
+  "honda-accord-7g": {
+    "covers": {
+      "make": "Honda",
+      "model": "Accord",
+      "years": [
+        2003,
+        2007
+      ]
+    },
+    "sketchfab": "fb53b8bc2a74417a8a38967930da12d3",
+    "title": "Honda Accord 2007",
+    "author": "cassanelliryan",
+    "license": "CC BY 4.0",
+    "paintmat": "car_paint",
+    "flip": true
+  },
+  "tesla-model3": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Model 3",
+      "years": [
+        2017,
+        2023
+      ]
+    },
+    "sketchfab": "5ef9b845aaf44203b6d04e2c677e444f",
+    "title": "Tesla 2018 Model 3",
+    "license": "CC BY 4.0",
+    "paintmat": "primary",
+    "flip": false
+  },
+  "bmw-m4-f82": {
+    "covers": {
+      "make": "BMW",
+      "model": "M4",
+      "years": [
+        2014,
+        2020
+      ]
+    },
+    "sketchfab": "8e87379f40fd40dcac0a751e22c1a188",
+    "title": "BMW M4 f82",
+    "license": "CC BY 4.0",
+    "paintmat": "ARm4_main",
+    "flip": true
+  },
+  "toyota-rav4-5g": {
+    "covers": {
+      "make": "Toyota",
+      "model": "RAV4",
+      "years": [
+        2019,
+        2025
+      ]
+    },
+    "sketchfab": "de74fe4e98004c92b1103947597d1b53",
+    "paintmat": "Silver_Sky_Metallic",
+    "flip": true
+  },
+  "chevrolet-silverado-4g": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Silverado",
+      "years": [
+        2019,
+        2025
+      ],
+      "aliases": [
+        "Silverado",
+        "Silverado 1500"
+      ]
+    },
+    "sketchfab": "652324cc8a974d3a9869ce2b0f3beaaa",
+    "paintmat": "Carpaint",
+    "flip": true
+  },
+  "ford-f150-13g": {
+    "covers": {
+      "make": "Ford",
+      "model": "F-150",
+      "years": [
+        2015,
+        2020
+      ],
+      "aliases": [
+        "F-150",
+        "F150"
+      ]
+    },
+    "sketchfab": "014ebfab735341248431da3d6447bbb5",
+    "paintmat": "Magnetic_Metallic",
+    "flip": true
+  },
+  "ford-f150-lightning": {
+    "covers": {
+      "make": "Ford",
+      "model": "F-150 Lightning",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": [
+        "F-150 Lightning",
+        "F150 Lightning",
+        "Lightning"
+      ]
+    },
+    "sketchfab": "6c495ecc36bd49e198b16d1dee25f90b",
+    "paintmat": "M_2023_Ford_F150_Lightning_Platinum_Iced_Blue_Silver",
+    "flip": true
+  },
+  "honda-crv-6g": {
+    "covers": {
+      "make": "Honda",
+      "model": "CR-V",
+      "years": [
+        2023,
+        2026
+      ],
+      "aliases": [
+        "CR-V",
+        "CRV"
+      ]
+    },
+    "sketchfab": "91c6673859444597bf006a0ef8570005",
+    "paintmat": "paintBlue",
+    "flip": true
+  },
+  "honda-crv-5g": {
+    "covers": {
+      "make": "Honda",
+      "model": "CR-V",
+      "years": [
+        2017,
+        2022
+      ],
+      "aliases": [
+        "CR-V",
+        "CRV"
+      ]
+    },
+    "sketchfab": "cf55df17d2154cbbb157c2e1b062ac23",
+    "paintmat": "body_color2",
+    "flip": true
+  },
+  "ram-1500-5g": {
+    "covers": {
+      "make": "Ram",
+      "model": "1500",
+      "years": [
+        2019,
+        2025
+      ],
+      "aliases": [
+        "1500",
+        "Ram 1500"
+      ]
+    },
+    "sketchfab": "1d0057b4f1c74dbdac2b78e5db7eb6ce",
+    "paintmat": "body",
+    "flip": true,
+    "known_issue": "roof renders light"
+  },
+  "gmc-sierra-2022": {
+    "covers": {
+      "make": "GMC",
+      "model": "Sierra",
+      "years": [
+        2022,
+        2025
+      ],
+      "aliases": [
+        "Sierra",
+        "Sierra 1500"
+      ]
+    },
+    "sketchfab": "f1c33f582f184e50857be2e832c74c20",
+    "paintmat": "CarPaint",
+    "flip": true
+  },
+  "toyota-camry-xv70": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Camry",
+      "years": [
+        2018,
+        2024
+      ]
+    },
+    "sketchfab": "236a5a6e2fa6420fbdf641f4800cd544",
+    "paintmat": "Paint_Color",
+    "flip": true
+  },
+  "toyota-camry-xv40": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Camry",
+      "years": [
+        2007,
+        2011
+      ]
+    },
+    "sketchfab": "32fbfc7624074f1ca8cdb59f4b3b5ee3",
+    "paintmat": "Material.005",
+    "flip": true
+  },
+  "toyota-tacoma-3g": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Tacoma",
+      "years": [
+        2016,
+        2023
+      ]
+    },
+    "sketchfab": "8bb91f037ec64151ba72279c50ce5c20",
+    "paintmat": "Mat_rancher..012",
+    "flip": false
+  },
+  "honda-civic-11g": {
+    "covers": {
+      "make": "Honda",
+      "model": "Civic",
+      "years": [
+        2022,
+        2026
+      ]
+    },
+    "sketchfab": "35cbd73adbe8411b80bdeeaa4f3cd151",
+    "paintmat": "carpaint",
+    "flip": false,
+    "known_issue": "roof renders light (likely the glass roof material)"
+  },
+  "toyota-corolla-12g": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "years": [
+        2020,
+        2026
+      ]
+    },
+    "sketchfab": "6d7d34ee42734d1ab28a6b1f1c5fc4fc",
+    "paintmat": "Paint_Color",
+    "flip": true
+  },
+  "hyundai-tucson-3g": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Tucson",
+      "years": [
+        2016,
+        2021
+      ]
+    },
+    "sketchfab": "7674a3bd168a451daf73fc0a33d39589",
+    "paintmat": "varnish",
+    "flip": true
+  },
+  "ford-explorer-6g": {
+    "covers": {
+      "make": "Ford",
+      "model": "Explorer",
+      "years": [
+        2020,
+        2026
+      ]
+    },
+    "sketchfab": "ba986f9f9c44426ca7d5e91831b2c98d",
+    "paintmat": "Trim_Bumper|Trim_FrontDoor|Trim_Hood|Trim_RearDoor|Trim_RearFender|Trim_Roof|Trim_Trunk|Base_Hood|Base_FrontDoor|Base_RearDoor|Base_Roof|Base_Bumper|Base_Trunk|Base_Nocolor_RearFender",
+    "flip": true,
+    "known_issue": "one rear quarter panel stays dark"
+  },
+  "jeep-grand-cherokee-wk2": {
+    "covers": {
+      "make": "Jeep",
+      "model": "Grand Cherokee",
+      "years": [
+        2014,
+        2021
+      ]
+    },
+    "sketchfab": "f8024595e11c48119877c9c7cc554abc",
+    "paintmat": "Body",
+    "flip": true
+  },
+  "chevrolet-trax-1g": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Trax",
+      "years": [
+        2017,
+        2022
+      ]
+    },
+    "sketchfab": "76e12f46be1743c591ac01544fb97399",
+    "paintmat": "Paint_Color",
+    "flip": true
+  },
+  "kia-sportage-5g": {
+    "covers": {
+      "make": "Kia",
+      "model": "Sportage",
+      "years": [
+        2023,
+        2026
+      ]
+    },
+    "sketchfab": "98a84407998a4bc6b4dee912b289f15b",
+    "paintmat": "M_2022_Kia_Sportage__WO_Wheels__Wolf_Gray.001",
+    "flip": true
+  },
+  "kia-sportage-4g": {
+    "covers": {
+      "make": "Kia",
+      "model": "Sportage",
+      "years": [
+        2017,
+        2022
+      ]
+    },
+    "sketchfab": "8f794775950041d7a9ae867e40646a33",
+    "paintmat": "Carro_Pintura",
+    "flip": true
+  },
+  "subaru-forester-5g": {
+    "covers": {
+      "make": "Subaru",
+      "model": "Forester",
+      "years": [
+        2019,
+        2024
+      ]
+    },
+    "sketchfab": "611ae23685c14134b5a4f3decde248e9",
+    "paintmat": "M_2020_Subaru_Forester_Brilliant_Bronze_Metallic",
+    "flip": true
+  },
+  "jeep-wrangler-jl": {
+    "covers": {
+      "make": "Jeep",
+      "model": "Wrangler",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "Wrangler",
+        "Wrangler Unlimited"
+      ]
+    },
+    "sketchfab": "49a2914dff81428998a76a3043487404",
+    "paintmat": "Carro_Pintura",
+    "flip": true
+  },
+  "subaru-outback-6g": {
+    "covers": {
+      "make": "Subaru",
+      "model": "Outback",
+      "years": [
+        2020,
+        2025
+      ]
+    },
+    "sketchfab": "a44abee6689e429881209fc6299f505c",
+    "paintmat": "M_2022_Subaru_Outback_Autumn_Green_Metallic",
+    "flip": true
+  },
+  "nissan-sentra-b18": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Sentra",
+      "years": [
+        2020,
+        2026
+      ]
+    },
+    "sketchfab": "74d274c8ad8e49c1b882dca3a199383d",
+    "paintmat": "Paint",
+    "flip": true
+  },
+  "nissan-sentra-b17": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Sentra",
+      "years": [
+        2013,
+        2019
+      ]
+    },
+    "sketchfab": "4e261bd2d93a438ebdabf8cc6b41cf58",
+    "paintmat": "wire_008008136_3",
+    "flip": false
+  },
+  "tesla-model-y": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Model Y",
+      "years": [
+        2020,
+        2024
+      ]
+    },
+    "sketchfab": "59e2ead369984b1a85c800ff6cf6789d",
+    "paintmat": "Carro_Pintura",
+    "flip": true
+  },
+  "bmw-m3-f80": {
+    "covers": {
+      "make": "BMW",
+      "model": "M3",
+      "years": [
+        2014,
+        2018
+      ]
+    },
+    "sketchfab": "3be9ac82a47e4639b7d0698e1697feb9",
+    "paintmat": "body",
+    "flip": true
+  },
+  "chevrolet-equinox-3g-b": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Equinox",
+      "years": [
+        2018,
+        2024
+      ]
+    },
+    "sketchfab": "9065adb2dcd44424b08e59cfba90c62d",
+    "paintmat": "Paint_MAT",
+    "flip": false
+  },
+  "subaru-crosstrek-1g": {
+    "covers": {
+      "make": "Subaru",
+      "model": "Crosstrek",
+      "years": [
+        2013,
+        2017
+      ],
+      "aliases": [
+        "Crosstrek",
+        "XV Crosstrek"
+      ]
+    },
+    "sketchfab": "3d97c4d69dcf4cf8b8c774b724861cc1",
+    "paintmat": "paint",
+    "flip": false
+  }
+}

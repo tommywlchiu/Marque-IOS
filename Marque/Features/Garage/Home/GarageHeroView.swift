@@ -7,13 +7,17 @@ import CoreMotion
 enum GarageHeroImage {
     /// The car lifted out of its cover photo on-device.
     case cutout(UIImage)
-    /// A code-built model of the car's body style in its color — used when
-    /// there's no photo, or the photo isn't a clean, whole shot of a car.
+    /// A studio render of the real make/model in the car's (palette) color
+    /// — `CarRenderLibrary` — when there's no usable photo and the catalog
+    /// covers the car. The image is the resting still; frames load after.
+    case rendered(UIImage, CarRenderLibrary.Match)
+    /// A code-built model of the car's body style in its color — the last
+    /// resort, when there's no usable photo and no studio render.
     case model(UIImage)
 
     var image: UIImage {
         switch self {
-        case .cutout(let image), .model(let image): return image
+        case .cutout(let image), .rendered(let image, _), .model(let image): return image
         }
     }
 }
@@ -204,10 +208,12 @@ struct GarageHeroView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var tilt = HeroMotionTilt()
     @State private var loaded: (key: String, image: GarageHeroImage)?
+    /// The turntable frames for a `.rendered` hero, keyed like `loaded`.
+    @State private var renderFrames: (key: String, frames: [UIImage])?
 
     /// Changes whenever what the hero should show changes.
     private var key: String {
-        [car.primaryPhotoFileName ?? "-", car.make, car.model, car.bodyStyle, car.color].joined(separator: "|")
+        [car.primaryPhotoFileName ?? "-", car.make, car.model, car.year, car.bodyStyle, car.color].joined(separator: "|")
     }
 
     var body: some View {
@@ -218,6 +224,8 @@ struct GarageHeroView: View {
                     switch loaded.image {
                     case .cutout(let image):
                         staged(image)
+                    case .rendered(let still, _):
+                        stagedRendered(still)
                     case .model:
                         // Live and interactive (drag to spin), not the baked
                         // PNG `loaded.image` itself holds — that bake still
@@ -255,6 +263,19 @@ struct GarageHeroView: View {
                 return
             }
         }
+        if let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()),
+           let still = CarRenderLibrary.cachedStill(for: match) {
+            loaded = (key, .rendered(still, match))
+            await loadFrames(match, key: key)
+            return
+        }
+        if let match = CarRenderLibrary.match(car, in: await CarRenderLibrary.catalog()),
+           let still = await CarRenderLibrary.frame(0, of: match) {
+            guard !Task.isCancelled else { return }
+            loaded = (key, .rendered(still, match))
+            await loadFrames(match, key: key)
+            return
+        }
         if let cached = CarModelRenderer.cachedImage(for: car) {
             loaded = (key, .model(cached))
             return
@@ -262,6 +283,33 @@ struct GarageHeroView: View {
         if let model = await CarModelRenderer.image(for: car), !Task.isCancelled {
             loaded = (key, .model(model))
         }
+    }
+
+    private func loadFrames(_ match: CarRenderLibrary.Match, key: String) async {
+        guard renderFrames?.key != key else { return }
+        if let frames = await CarRenderLibrary.allFrames(of: match), !Task.isCancelled {
+            renderFrames = (key, frames)
+        }
+    }
+
+    /// Studio-render turntable: the still right away, spinnable once every
+    /// frame is in.
+    private func stagedRendered(_ still: UIImage) -> some View {
+        VStack(spacing: 0) {
+            RenderedCarSpinView(
+                still: still,
+                frames: renderFrames?.key == key ? renderFrames?.frames : nil,
+                autoRotates: !reduceMotion
+            )
+            // A new car/color must get a fresh view: the coordinator holds the
+            // previous car's frames, and SwiftUI would otherwise reuse it.
+            .id(key)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(alignment: .bottom) { groundShadow.offset(y: -6) }
+            .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
     }
 
     /// Live, interactive turntable for the model-fallback case. No device-

@@ -49,6 +49,7 @@
 		A10027 /* ExploreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20027 /* ExploreView.swift */; };
 		A10028 /* SearchResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20028 /* SearchResultsView.swift */; };
 		A10030 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20030 /* SettingsView.swift */; };
+		9D000B00000000000000AK01 /* AcknowledgementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D000F00000000000000AK01 /* AcknowledgementsView.swift */; };
 		A10031 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20031 /* ProUpgradeView.swift */; };
 		A10032 /* ServiceReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20032 /* ServiceReminder.swift */; };
 		A10033 /* ServiceReminderEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20033 /* ServiceReminderEngine.swift */; };
@@ -137,6 +138,8 @@
 		6A4E0B000000000000000003 /* GarageCarSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000003 /* GarageCarSummary.swift */; };
 		6A4E0B000000000000000004 /* GarageHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000004 /* GarageHeroView.swift */; };
 		9D000B00000000000000SP01 /* SpinnableCarModelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D000F00000000000000SP01 /* SpinnableCarModelView.swift */; };
+		9D000B00000000000000RS01 /* RenderedCarSpinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D000F00000000000000RS01 /* RenderedCarSpinView.swift */; };
+		9D000B00000000000000CR01 /* CarRenderLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D000F00000000000000CR01 /* CarRenderLibrary.swift */; };
 		6A4E0B0000000000000000C1 /* GarageCarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F0000000000000000C1 /* GarageCarModel.swift */; };
 		6A4E0B000000000000000005 /* GarageCarSwitcherSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */; };
 		6A4E0B000000000000000006 /* GarageHomeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000006 /* GarageHomeComponents.swift */; };
@@ -227,6 +230,7 @@
 		A20027 /* ExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreView.swift; sourceTree = "<group>"; };
 		A20028 /* SearchResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchResultsView.swift; sourceTree = "<group>"; };
 		A20030 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9D000F00000000000000AK01 /* AcknowledgementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcknowledgementsView.swift; sourceTree = "<group>"; };
 		A20031 /* ProUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProUpgradeView.swift; sourceTree = "<group>"; };
 		A20032 /* ServiceReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceReminder.swift; sourceTree = "<group>"; };
 		A20033 /* ServiceReminderEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceReminderEngine.swift; sourceTree = "<group>"; };
@@ -306,6 +310,8 @@
 		6A4E0F000000000000000003 /* GarageCarSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarSummary.swift; sourceTree = "<group>"; };
 		6A4E0F000000000000000004 /* GarageHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageHeroView.swift; sourceTree = "<group>"; };
 		9D000F00000000000000SP01 /* SpinnableCarModelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnableCarModelView.swift; sourceTree = "<group>"; };
+		9D000F00000000000000RS01 /* RenderedCarSpinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderedCarSpinView.swift; sourceTree = "<group>"; };
+		9D000F00000000000000CR01 /* CarRenderLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarRenderLibrary.swift; sourceTree = "<group>"; };
 		6A4E0F0000000000000000C1 /* GarageCarModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarModel.swift; sourceTree = "<group>"; };
 		6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarSwitcherSheet.swift; sourceTree = "<group>"; };
 		6A4E0F000000000000000006 /* GarageHomeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageHomeComponents.swift; sourceTree = "<group>"; };
@@ -547,6 +553,7 @@
 			isa = PBXGroup;
 			children = (
 				A20030 /* SettingsView.swift */,
+				9D000F00000000000000AK01 /* AcknowledgementsView.swift */,
 				FE50C100000000000000000C /* PushPreferencesSection.swift */,
 				A20031 /* ProUpgradeView.swift */,
 				A20065 /* DeleteAccountView.swift */,
@@ -639,6 +646,8 @@
 				6A4E0F000000000000000003 /* GarageCarSummary.swift */,
 				6A4E0F000000000000000004 /* GarageHeroView.swift */,
 				9D000F00000000000000SP01 /* SpinnableCarModelView.swift */,
+				9D000F00000000000000RS01 /* RenderedCarSpinView.swift */,
+				9D000F00000000000000CR01 /* CarRenderLibrary.swift */,
 				6A4E0F0000000000000000C1 /* GarageCarModel.swift */,
 				6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */,
 				6A4E0F000000000000000006 /* GarageHomeComponents.swift */,
@@ -845,6 +854,8 @@
 				6A4E0B000000000000000003 /* GarageCarSummary.swift in Sources */,
 				6A4E0B000000000000000004 /* GarageHeroView.swift in Sources */,
 				9D000B00000000000000SP01 /* SpinnableCarModelView.swift in Sources */,
+				9D000B00000000000000RS01 /* RenderedCarSpinView.swift in Sources */,
+				9D000B00000000000000CR01 /* CarRenderLibrary.swift in Sources */,
 				6A4E0B0000000000000000C1 /* GarageCarModel.swift in Sources */,
 				6A4E0B000000000000000005 /* GarageCarSwitcherSheet.swift in Sources */,
 				6A4E0B000000000000000006 /* GarageHomeComponents.swift in Sources */,
@@ -927,6 +938,7 @@
 				A10028 /* SearchResultsView.swift in Sources */,
 				F497CF11300B0749001892AE /* ChatStore.swift in Sources */,
 				A10030 /* SettingsView.swift in Sources */,
+				9D000B00000000000000AK01 /* AcknowledgementsView.swift in Sources */,
 				A10031 /* ProUpgradeView.swift in Sources */,
 				A10032 /* ServiceReminder.swift in Sources */,
 				A10033 /* ServiceReminderEngine.swift in Sources */,

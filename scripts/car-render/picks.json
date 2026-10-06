@@ -1,0 +1,369 @@
+{
+  "_note": "Curated per car after checking each thumbnail is the right make/model/generation. Merged into manifest.json once downloaded (paint material + orientation set per model).",
+  "toyota-rav4-5g": {
+    "uid": "de74fe4e98004c92b1103947597d1b53",
+    "make": "Toyota",
+    "model": "RAV4",
+    "years": [
+      2019,
+      2025
+    ]
+  },
+  "chevrolet-silverado-4g": {
+    "uid": "652324cc8a974d3a9869ce2b0f3beaaa",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "aliases": [
+      "Silverado",
+      "Silverado 1500"
+    ],
+    "years": [
+      2019,
+      2025
+    ]
+  },
+  "ford-f150-13g": {
+    "uid": "014ebfab735341248431da3d6447bbb5",
+    "make": "Ford",
+    "model": "F-150",
+    "aliases": [
+      "F-150",
+      "F150"
+    ],
+    "years": [
+      2015,
+      2020
+    ]
+  },
+  "ford-f150-lightning": {
+    "uid": "6c495ecc36bd49e198b16d1dee25f90b",
+    "make": "Ford",
+    "model": "F-150 Lightning",
+    "aliases": [
+      "F-150 Lightning",
+      "F150 Lightning",
+      "Lightning"
+    ],
+    "years": [
+      2022,
+      2026
+    ]
+  },
+  "honda-crv-6g": {
+    "uid": "91c6673859444597bf006a0ef8570005",
+    "make": "Honda",
+    "model": "CR-V",
+    "aliases": [
+      "CR-V",
+      "CRV"
+    ],
+    "years": [
+      2023,
+      2026
+    ]
+  },
+  "honda-crv-5g": {
+    "uid": "cf55df17d2154cbbb157c2e1b062ac23",
+    "make": "Honda",
+    "model": "CR-V",
+    "aliases": [
+      "CR-V",
+      "CRV"
+    ],
+    "years": [
+      2017,
+      2022
+    ]
+  },
+  "ram-1500-5g": {
+    "uid": "1d0057b4f1c74dbdac2b78e5db7eb6ce",
+    "make": "Ram",
+    "model": "1500",
+    "aliases": [
+      "1500",
+      "Ram 1500"
+    ],
+    "years": [
+      2019,
+      2025
+    ]
+  },
+  "gmc-sierra-2022": {
+    "uid": "f1c33f582f184e50857be2e832c74c20",
+    "make": "GMC",
+    "model": "Sierra",
+    "aliases": [
+      "Sierra",
+      "Sierra 1500"
+    ],
+    "years": [
+      2022,
+      2025
+    ]
+  },
+  "toyota-camry-xv70": {
+    "uid": "236a5a6e2fa6420fbdf641f4800cd544",
+    "make": "Toyota",
+    "model": "Camry",
+    "years": [
+      2018,
+      2024
+    ]
+  },
+  "toyota-camry-xv80": {
+    "uid": "98c70e5aa53446728fea4d8f448bbf33",
+    "make": "Toyota",
+    "model": "Camry",
+    "years": [
+      2025,
+      2026
+    ]
+  },
+  "toyota-camry-xv40": {
+    "uid": "32fbfc7624074f1ca8cdb59f4b3b5ee3",
+    "make": "Toyota",
+    "model": "Camry",
+    "years": [
+      2007,
+      2011
+    ]
+  },
+  "toyota-tacoma-3g": {
+    "uid": "8bb91f037ec64151ba72279c50ce5c20",
+    "make": "Toyota",
+    "model": "Tacoma",
+    "years": [
+      2016,
+      2023
+    ]
+  },
+  "honda-civic-11g": {
+    "uid": "35cbd73adbe8411b80bdeeaa4f3cd151",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2022,
+      2026
+    ]
+  },
+  "chevrolet-equinox-3g": {
+    "uid": "95b533e8d76e448885f60977aaff03f7",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2018,
+      2021
+    ]
+  },
+  "chevrolet-equinox-3g-facelift": {
+    "uid": "a67024110891472e9e6d5fb3ff8bdd1d",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2022,
+      2024
+    ]
+  },
+  "toyota-corolla-12g": {
+    "uid": "6d7d34ee42734d1ab28a6b1f1c5fc4fc",
+    "make": "Toyota",
+    "model": "Corolla",
+    "years": [
+      2020,
+      2026
+    ]
+  },
+  "hyundai-tucson-4g": {
+    "uid": "574deec95f094e9192b0023d3d4ad607",
+    "make": "Hyundai",
+    "model": "Tucson",
+    "years": [
+      2022,
+      2026
+    ]
+  },
+  "hyundai-tucson-3g": {
+    "uid": "7674a3bd168a451daf73fc0a33d39589",
+    "make": "Hyundai",
+    "model": "Tucson",
+    "years": [
+      2016,
+      2021
+    ]
+  },
+  "ford-explorer-6g": {
+    "uid": "ba986f9f9c44426ca7d5e91831b2c98d",
+    "make": "Ford",
+    "model": "Explorer",
+    "years": [
+      2020,
+      2026
+    ]
+  },
+  "nissan-rogue-3g": {
+    "uid": "48fa53c7743745949b9cb518b7b67579",
+    "make": "Nissan",
+    "model": "Rogue",
+    "years": [
+      2021,
+      2026
+    ]
+  },
+  "jeep-grand-cherokee-wk2": {
+    "uid": "f8024595e11c48119877c9c7cc554abc",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2014,
+      2021
+    ]
+  },
+  "chevrolet-trax-1g": {
+    "uid": "76e12f46be1743c591ac01544fb97399",
+    "make": "Chevrolet",
+    "model": "Trax",
+    "years": [
+      2017,
+      2022
+    ]
+  },
+  "subaru-crosstrek-3g": {
+    "uid": "3db2af63b4e24d8d8b3de368f19507d1",
+    "make": "Subaru",
+    "model": "Crosstrek",
+    "years": [
+      2024,
+      2026
+    ],
+    "verify": "0 likes - check render"
+  },
+  "subaru-crosstrek-2g": {
+    "uid": "a5263a4756cd4e4f9bad818502c76d91",
+    "make": "Subaru",
+    "model": "Crosstrek",
+    "years": [
+      2018,
+      2023
+    ],
+    "verify": "0 likes - check render"
+  },
+  "kia-sportage-5g": {
+    "uid": "98a84407998a4bc6b4dee912b289f15b",
+    "make": "Kia",
+    "model": "Sportage",
+    "years": [
+      2023,
+      2026
+    ]
+  },
+  "kia-sportage-4g": {
+    "uid": "8f794775950041d7a9ae867e40646a33",
+    "make": "Kia",
+    "model": "Sportage",
+    "years": [
+      2017,
+      2022
+    ]
+  },
+  "subaru-forester-5g": {
+    "uid": "611ae23685c14134b5a4f3decde248e9",
+    "make": "Subaru",
+    "model": "Forester",
+    "years": [
+      2019,
+      2024
+    ]
+  },
+  "jeep-wrangler-jl": {
+    "uid": "49a2914dff81428998a76a3043487404",
+    "make": "Jeep",
+    "model": "Wrangler",
+    "aliases": [
+      "Wrangler",
+      "Wrangler Unlimited"
+    ],
+    "years": [
+      2018,
+      2026
+    ]
+  },
+  "subaru-outback-6g": {
+    "uid": "a44abee6689e429881209fc6299f505c",
+    "make": "Subaru",
+    "model": "Outback",
+    "years": [
+      2020,
+      2025
+    ]
+  },
+  "ford-maverick-1g": {
+    "uid": "ceedc3541a004014b7f02fccb78c3146",
+    "make": "Ford",
+    "model": "Maverick",
+    "years": [
+      2022,
+      2026
+    ],
+    "verify": "0 likes - check render"
+  },
+  "nissan-sentra-b18": {
+    "uid": "74d274c8ad8e49c1b882dca3a199383d",
+    "make": "Nissan",
+    "model": "Sentra",
+    "years": [
+      2020,
+      2026
+    ],
+    "verify": "0 likes - check render"
+  },
+  "nissan-sentra-b17": {
+    "uid": "4e261bd2d93a438ebdabf8cc6b41cf58",
+    "make": "Nissan",
+    "model": "Sentra",
+    "years": [
+      2013,
+      2019
+    ]
+  },
+  "tesla-model-y": {
+    "uid": "59e2ead369984b1a85c800ff6cf6789d",
+    "make": "Tesla",
+    "model": "Model Y",
+    "years": [
+      2020,
+      2024
+    ]
+  },
+  "bmw-m3-f80": {
+    "uid": "3be9ac82a47e4639b7d0698e1697feb9",
+    "make": "BMW",
+    "model": "M3",
+    "years": [
+      2014,
+      2018
+    ]
+  },
+  "chevrolet-equinox-3g-b": {
+    "uid": "9065adb2dcd44424b08e59cfba90c62d",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2018,
+      2024
+    ],
+    "note": "titled 2014 but the thumbnail is the 2018+ body"
+  },
+  "subaru-crosstrek-1g": {
+    "uid": "3d97c4d69dcf4cf8b8c774b724861cc1",
+    "make": "Subaru",
+    "model": "Crosstrek",
+    "aliases": [
+      "Crosstrek",
+      "XV Crosstrek"
+    ],
+    "years": [
+      2013,
+      2017
+    ]
+  }
+}

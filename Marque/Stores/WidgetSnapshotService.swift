@@ -49,13 +49,17 @@ enum WidgetSnapshotService {
     // MARK: - Hero image
 
     /// Whichever of the two the Garage hero would already show is cached —
-    /// the cut-out if the cover photo qualified, else the body-style model —
+    /// the cut-out if the cover photo qualified, else the studio render, else
+    /// the body-style model —
     /// copied into the shared container under the car's id. nil if neither
     /// is cached yet.
     private static func copyCachedHeroImageIfAvailable(for car: Car) -> String? {
         if let fileName = car.primaryPhotoFileName,
            let cutout = CarCutoutRenderer.cachedCutout(fileName: fileName) {
             return copyToSharedContainer(cutout, carID: car.id)
+        }
+        if let still = CarRenderLibrary.cachedStill(for: car) {
+            return copyToSharedContainer(still, carID: car.id)
         }
         if let model = CarModelRenderer.cachedImage(for: car) {
             return copyToSharedContainer(model, carID: car.id)
@@ -68,6 +72,9 @@ enum WidgetSnapshotService {
         if let fileName = car.primaryPhotoFileName,
            let cutout = await CarCutoutRenderer.cutout(fileName: fileName, storageURL: car.primaryPhotoStorageURL) {
             return copyToSharedContainer(cutout, carID: car.id)
+        }
+        if let still = await CarRenderLibrary.still(for: car) {
+            return copyToSharedContainer(still, carID: car.id)
         }
         if let model = await CarModelRenderer.image(for: car) {
             return copyToSharedContainer(model, carID: car.id)

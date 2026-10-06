@@ -549,6 +549,30 @@ enum CarPaint {
     ]
     static let fallback = UIColor(white: 0.62, alpha: 1)
 
+    /// The pre-rendered palette color (`scripts/car-render/palette.json`) a
+    /// free-text color is shown in: the same keywords as `table`, collapsed
+    /// onto the 12 colors every studio render exists in. Unknown → silver,
+    /// matching `fallback`.
+    static func paletteKey(for name: String) -> String {
+        let lowered = name.lowercased()
+        let dark = lowered.contains("dark"), light = lowered.contains("light")
+        let groups: [(keywords: [String], key: String)] = [
+            (["black", "onyx", "obsidian", "ebony"], "black"),
+            (["white", "pearl", "ivory", "alpine", "chalk"], "white"),
+            (["charcoal", "gunmetal", "graphite"], "charcoal"),
+            (["gray", "grey", "slate"], dark ? "charcoal" : (light ? "silver" : "gray")),
+            (["silver", "platinum", "titanium", "aluminum"], "silver"),
+            (["burgundy", "maroon", "wine", "brown", "mocha", "espresso"], "burgundy"),
+            (["red", "crimson", "ruby", "scarlet", "pink", "rose"], dark ? "burgundy" : "red"),
+            (["orange", "yellow", "bronze", "copper"], "orange"),
+            (["gold", "champagne", "beige", "tan", "sand", "khaki"], "beige"),
+            (["navy", "midnight", "purple", "violet", "plum"], "navy"),
+            (["teal", "turquoise", "cyan", "aqua", "green", "emerald", "olive", "forest", "sage"], "green"),
+            (["blue", "sapphire", "cobalt"], dark ? "navy" : "blue"),
+        ]
+        return groups.first(where: { $0.keywords.contains(where: lowered.contains) })?.key ?? "silver"
+    }
+
     static func color(for name: String) -> UIColor {
         let lowered = name.lowercased()
         var color = table.first(where: { $0.keywords.contains(where: lowered.contains) })?.color ?? fallback

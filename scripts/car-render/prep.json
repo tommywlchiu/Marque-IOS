@@ -1,0 +1,157 @@
+{
+  "toyota-rav4-5g": {
+    "paintmat": "Silver_Sky_Metallic",
+    "flip": true
+  },
+  "chevrolet-silverado-4g": {
+    "paintmat": "Carpaint",
+    "flip": true
+  },
+  "ford-f150-13g": {
+    "paintmat": "Magnetic_Metallic",
+    "flip": true
+  },
+  "ford-f150-lightning": {
+    "paintmat": "M_2023_Ford_F150_Lightning_Platinum_Iced_Blue_Silver",
+    "flip": true
+  },
+  "honda-crv-6g": {
+    "paintmat": "paintBlue",
+    "flip": true
+  },
+  "honda-crv-5g": {
+    "paintmat": "body_color2",
+    "flip": true
+  },
+  "ram-1500-5g": {
+    "paintmat": "body",
+    "flip": true,
+    "known_issue": "roof renders light"
+  },
+  "gmc-sierra-2022": {
+    "paintmat": "CarPaint",
+    "flip": true
+  },
+  "toyota-camry-xv70": {
+    "paintmat": "Paint_Color",
+    "flip": true
+  },
+  "toyota-camry-xv80": {
+    "paintmat": "BLACK12.001",
+    "flip": false,
+    "rejected": "body material is a mottled scan texture; no clean paint surface"
+  },
+  "toyota-camry-xv40": {
+    "paintmat": "Material.005",
+    "flip": true
+  },
+  "toyota-tacoma-3g": {
+    "paintmat": "Mat_rancher..012",
+    "flip": false
+  },
+  "honda-civic-11g": {
+    "paintmat": "carpaint",
+    "flip": false,
+    "known_issue": "roof renders light (likely the glass roof material)"
+  },
+  "chevrolet-equinox-3g": {
+    "paintmat": "material",
+    "flip": true,
+    "rejected": "single texture/material \u2014 cannot repaint"
+  },
+  "chevrolet-equinox-3g-facelift": {
+    "paintmat": "transparent-clipping_undercarriage",
+    "flip": true,
+    "rejected": "single texture/material \u2014 cannot repaint"
+  },
+  "toyota-corolla-12g": {
+    "paintmat": "Paint_Color",
+    "flip": true
+  },
+  "hyundai-tucson-4g": {
+    "paintmat": "Material_134",
+    "flip": false,
+    "rejected": "source model is untextured; body split over many unnamed materials"
+  },
+  "hyundai-tucson-3g": {
+    "paintmat": "varnish",
+    "flip": true
+  },
+  "ford-explorer-6g": {
+    "paintmat": "Trim_Bumper|Trim_FrontDoor|Trim_Hood|Trim_RearDoor|Trim_RearFender|Trim_Roof|Trim_Trunk|Base_Hood|Base_FrontDoor|Base_RearDoor|Base_Roof|Base_Bumper|Base_Trunk|Base_Nocolor_RearFender",
+    "flip": true,
+    "known_issue": "one rear quarter panel stays dark"
+  },
+  "nissan-rogue-3g": {
+    "paintmat": "M_2022_Nissan_Rogue_Pearl_White_Tricoat|M_2022_Nissan_Rogue_UnderCarrier",
+    "flip": true,
+    "rejected": "upper body stays white with every material tried"
+  },
+  "jeep-grand-cherokee-wk2": {
+    "paintmat": "Body",
+    "flip": true
+  },
+  "chevrolet-trax-1g": {
+    "paintmat": "Paint_Color",
+    "flip": true
+  },
+  "subaru-crosstrek-3g": {
+    "paintmat": "Material",
+    "flip": true,
+    "rejected": "single texture/material \u2014 cannot repaint"
+  },
+  "subaru-crosstrek-2g": {
+    "paintmat": "Material",
+    "flip": true,
+    "rejected": "single texture/material \u2014 cannot repaint"
+  },
+  "kia-sportage-5g": {
+    "paintmat": "M_2022_Kia_Sportage__WO_Wheels__Wolf_Gray.001",
+    "flip": true
+  },
+  "kia-sportage-4g": {
+    "paintmat": "Carro_Pintura",
+    "flip": true
+  },
+  "subaru-forester-5g": {
+    "paintmat": "M_2020_Subaru_Forester_Brilliant_Bronze_Metallic",
+    "flip": true
+  },
+  "jeep-wrangler-jl": {
+    "paintmat": "Carro_Pintura",
+    "flip": true
+  },
+  "subaru-outback-6g": {
+    "paintmat": "M_2022_Subaru_Outback_Autumn_Green_Metallic",
+    "flip": true
+  },
+  "ford-maverick-1g": {
+    "paintmat": "Material",
+    "flip": true,
+    "rejected": "single texture/material \u2014 cannot repaint"
+  },
+  "nissan-sentra-b18": {
+    "paintmat": "Paint",
+    "flip": true
+  },
+  "nissan-sentra-b17": {
+    "paintmat": "wire_008008136_3",
+    "flip": false
+  },
+  "tesla-model-y": {
+    "paintmat": "Carro_Pintura",
+    "flip": true
+  },
+  "bmw-m3-f80": {
+    "paintmat": "body",
+    "flip": true
+  },
+  "chevrolet-equinox-3g-b": {
+    "paintmat": "Paint_MAT",
+    "flip": false
+  },
+  "subaru-crosstrek-1g": {
+    "paintmat": "paint",
+    "flip": false
+  }
+}

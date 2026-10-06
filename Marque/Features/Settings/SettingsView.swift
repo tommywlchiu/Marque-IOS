@@ -205,6 +205,9 @@ struct SettingsView: View {
                 Label("Terms of Service", systemImage: "doc.text")
                     .foregroundColor(.primary)
             }
+            NavigationLink(destination: AcknowledgementsView()) {
+                Label("Acknowledgements", systemImage: "heart.text.square")
+            }
         }
     }
 

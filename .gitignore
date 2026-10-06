@@ -17,3 +17,6 @@ firestore-debug.log
 
 # Rules test dependencies
 tests/rules/node_modules/
+
+# Rendered car frames (scripts/car-render) — build output, served by Firebase Hosting
+public/carRenders/
