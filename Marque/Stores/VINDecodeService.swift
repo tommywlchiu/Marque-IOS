@@ -91,16 +91,21 @@ struct VINDecodeService {
 
     private static func normalizedBodyStyle(_ raw: String) -> String {
         let lower = raw.lowercased()
+        // NHTSA "Body Class" values. Order matters: "Sport Utility Truck (SUT)"
+        // (Avalanche, Santa Cruz) is a pickup, not an SUV.
+        if lower.contains("sport utility truck") || lower.contains("sut") { return "Pickup" }
         if lower.contains("sport utility") || lower.contains("suv") { return "SUV" }
         if lower.contains("crossover") || lower.contains("cuv") { return "Crossover" }
         if lower.contains("pickup") { return "Pickup" }
         if lower.contains("sedan") { return "Sedan" }
         if lower.contains("hatchback") || lower.contains("liftback") { return "Hatchback" }
         if lower.contains("coupe") { return "Coupe" }
-        if lower.contains("convertible") || lower.contains("cabriolet") { return "Convertible" }
+        if lower.contains("convertible") || lower.contains("cabriolet") || lower.contains("roadster") { return "Convertible" }
         if lower.contains("minivan") { return "Minivan" }
         if lower.contains("van") { return "Van" }
         if lower.contains("wagon") { return "Wagon" }
+        if lower.contains("truck") { return "Pickup" }
+        if lower.contains("limousine") { return "Sedan" }
         return ""
     }
 

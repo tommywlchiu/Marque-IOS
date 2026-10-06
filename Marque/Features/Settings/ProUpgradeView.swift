@@ -133,6 +133,12 @@ struct ProUpgradeView: View {
                 }
             }
         }
+        // Opened from the Garage, which forces dark mode on its content
+        // (`.environment(\.colorScheme, .dark)`), the text went white while
+        // the sheet itself kept the system's light background — white on
+        // white. An explicit adaptive background follows the same scheme as
+        // the text: dark from the Garage, the system's own elsewhere.
+        .presentationBackground(Color(.systemBackground))
     }
 
     // MARK: - Sections

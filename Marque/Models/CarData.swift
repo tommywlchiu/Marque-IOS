@@ -97,6 +97,15 @@ struct CarData {
         "Other"
     ]
 
+    /// Body-style picker options (Add Car, Edit Details). The Garage turns a
+    /// car's style into its generic studio render when its exact model has
+    /// none (`CarModelRenderer.normalizedStyle`), so a blank one reads as a
+    /// sedan — which is why Add Car requires it.
+    static let bodyStyles = [
+        "Sedan", "Coupe", "Hatchback", "SUV", "Crossover", "Pickup",
+        "Van", "Minivan", "Wagon", "Convertible"
+    ]
+
     static let warrantyTypes = [
         "Factory",
         "Powertrain",

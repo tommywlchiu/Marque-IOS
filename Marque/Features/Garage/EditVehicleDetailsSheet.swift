@@ -56,16 +56,7 @@ struct EditVehicleDetailsSheet: View {
                         .autocorrectionDisabled()
                     Picker("Body Style", selection: $bodyStyle) {
                         Text("Select").tag("")
-                        Text("Sedan").tag("Sedan")
-                        Text("Coupe").tag("Coupe")
-                        Text("Hatchback").tag("Hatchback")
-                        Text("SUV").tag("SUV")
-                        Text("Crossover").tag("Crossover")
-                        Text("Pickup").tag("Pickup")
-                        Text("Van").tag("Van")
-                        Text("Minivan").tag("Minivan")
-                        Text("Wagon").tag("Wagon")
-                        Text("Convertible").tag("Convertible")
+                        ForEach(CarData.bodyStyles, id: \.self) { Text($0).tag($0) }
                     }
                     Picker("Drive Type", selection: $driveType) {
                         Text("Select").tag("")
