@@ -47,7 +47,7 @@
   "honda-civic-11g": {
     "paintmat": "carpaint",
     "flip": false,
-    "known_issue": "roof renders light (likely the glass roof material)"
+    "styles": "darkglass|windowglass:glass;black:trim;redglass:redlight;orangeglass:amber;clearglass:lamp;chrome:chrome;rim_second|material|brakedisk:satin"
   },
   "chevrolet-equinox-3g": {
     "paintmat": "material",
@@ -73,9 +73,9 @@
     "flip": true
   },
   "ford-explorer-6g": {
-    "paintmat": "Trim_Bumper|Trim_FrontDoor|Trim_Hood|Trim_RearDoor|Trim_RearFender|Trim_Roof|Trim_Trunk|Base_Hood|Base_FrontDoor|Base_RearDoor|Base_Roof|Base_Bumper|Base_Trunk|Base_Nocolor_RearFender",
+    "paintmat": "Trim_Bumper|Trim_FrontDoor|Trim_Hood|Trim_RearDoor|Trim_RearFender|Trim_Roof|Trim_Trunk|Base_Hood|Base_FrontDoor|Base_RearDoor|Base_Roof|Base_Bumper|Base_Trunk|Base_RearFender",
     "flip": true,
-    "known_issue": "one rear quarter panel stays dark"
+    "styles": "Glass_FrontDoor|Glass_Roof|Glass_Tint_RearDoor|Glass_Tint_RearFender|Glass_Tint_Trunk:glass"
   },
   "nissan-rogue-3g": {
     "paintmat": "M_2022_Nissan_Rogue_Pearl_White_Tricoat",

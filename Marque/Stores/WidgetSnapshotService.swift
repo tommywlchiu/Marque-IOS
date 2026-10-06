@@ -7,8 +7,9 @@ import WidgetKit
 /// changes, the same way `NotificationManager.scheduleAll` already is.
 ///
 /// Hero images are opportunistic, not a second rendering pipeline: a car
-/// whose hero hasn't been rendered anywhere in the app yet (Vision cut-out
-/// or the SceneKit body-style model) gets no image in this pass, but `sync`
+/// whose hero hasn't been rendered anywhere in the app yet (Vision cut-out,
+/// studio render, or the SceneKit body-style model) gets no image — or only
+/// the cached body-style model — in this pass, but `sync`
 /// kicks off that exact same render in the background — `CarCutoutRenderer`
 /// / `CarModelRenderer`, the pair `GarageHeroView` itself calls — and
 /// re-syncs once it lands, so the widget picks up the real image without
@@ -16,13 +17,18 @@ import WidgetKit
 /// Garage briefly shows no image, same as the Garage home would on first load.
 @MainActor
 enum WidgetSnapshotService {
-    static func sync(cars: [Car]) {
+    /// `retryRenders` is false only for the re-sync after a background
+    /// render, so a car that still has no better image can't loop.
+    static func sync(cars: [Car], retryRenders: Bool = true) {
         var snapshots: [WidgetCarSnapshot] = []
         var pendingRenders: [Car] = []
 
         for car in cars {
-            let heroFileName = copyCachedHeroImageIfAvailable(for: car)
-            if heroFileName == nil { pendingRenders.append(car) }
+            let (heroFileName, isFinal) = copyCachedHeroImageIfAvailable(for: car)
+            // A cached body-style model isn't final: the studio render may
+            // just not be downloaded yet (it is only fetched for the car on
+            // screen in the Garage), and a stale model would otherwise stick.
+            if !isFinal && retryRenders { pendingRenders.append(car) }
             let status = GarageSummary.statusLine(for: car)
             snapshots.append(WidgetCarSnapshot(
                 id: car.id.uuidString,
@@ -42,7 +48,7 @@ enum WidgetSnapshotService {
             for car in pendingRenders {
                 _ = await renderAndCopyHeroImage(for: car)
             }
-            sync(cars: cars)
+            sync(cars: cars, retryRenders: false)
         }
     }
 
@@ -51,20 +57,20 @@ enum WidgetSnapshotService {
     /// Whichever of the two the Garage hero would already show is cached —
     /// the cut-out if the cover photo qualified, else the studio render, else
     /// the body-style model —
-    /// copied into the shared container under the car's id. nil if neither
-    /// is cached yet.
-    private static func copyCachedHeroImageIfAvailable(for car: Car) -> String? {
+    /// copied into the shared container under the car's id. nil if none is
+    /// cached yet. `isFinal` is false unless it's the cut-out or the render.
+    private static func copyCachedHeroImageIfAvailable(for car: Car) -> (fileName: String?, isFinal: Bool) {
         if let fileName = car.primaryPhotoFileName,
            let cutout = CarCutoutRenderer.cachedCutout(fileName: fileName) {
-            return copyToSharedContainer(cutout, carID: car.id)
+            return (copyToSharedContainer(cutout, carID: car.id), true)
         }
         if let still = CarRenderLibrary.cachedStill(for: car) {
-            return copyToSharedContainer(still, carID: car.id)
+            return (copyToSharedContainer(still, carID: car.id), true)
         }
         if let model = CarModelRenderer.cachedImage(for: car) {
-            return copyToSharedContainer(model, carID: car.id)
+            return (copyToSharedContainer(model, carID: car.id), false)
         }
-        return nil
+        return (nil, false)
     }
 
     /// Renders a hero image exactly the way `GarageHeroView` would.
