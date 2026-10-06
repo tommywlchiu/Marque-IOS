@@ -124,36 +124,39 @@ struct CarBodyProfile {
         return p
     }
 
-    // Lower body: nose, hood, beltline, deck, tail, and a bottom with two wheel arches.
-    var lowerBodyPath: CGPath {
-        let path = CGMutablePath()
+    // Nose -> hood -> cowl -> beltline -> deck -> tail: the visible top/side
+    // silhouette only (no wheel arches / underbody — CarBodyMesh opens those
+    // itself via `archLift`, evaluated per spine sample). Sampled rather than
+    // built as a CGPath (the old flat-extrusion approach) since CarBodyMesh
+    // sweeps a true 3D cross-section along these points. The long near-flat
+    // cowl -> rear-glass-base run is still sampled at a regular interval,
+    // not jumped in one line: it's long enough to contain an axle position,
+    // and a localized per-x effect like the arch lift needs nearby ring
+    // samples or it linearly interpolates into a long diagonal ramp instead
+    // of a notch — found by rendering and visually inspecting a first attempt
+    // that skipped this (see the SCNShape zero-geometry pitfall's sibling:
+    // always render and look, never trust the math alone).
+    var sideSilhouette: [CGPoint] {
         let L = length, c = clearance, deckY = max(belt, deckHeight - 0.02)
-        path.move(to: CGPoint(x: 0.14, y: c + 0.07))
-        path.addQuadCurve(to: CGPoint(x: 0.0, y: noseHeight - 0.14), control: CGPoint(x: -0.01, y: c + 0.1))
-        path.addQuadCurve(to: CGPoint(x: 0.32, y: noseHeight + 0.05), control: CGPoint(x: 0.02, y: noseHeight + 0.04))
-        path.addQuadCurve(to: CGPoint(x: cowlX, y: belt), control: CGPoint(x: cowlX - 0.45, y: belt - 0.01))
-        path.addLine(to: CGPoint(x: rearGlassBaseX, y: deckY))
+        var pts: [CGPoint] = [CGPoint(x: 0.14, y: c + 0.07)]
+        CarBodyMesh.sampleQuad(pts[0], CGPoint(x: -0.01, y: c + 0.1), CGPoint(x: 0.0, y: noseHeight - 0.14), steps: 10, into: &pts)
+        CarBodyMesh.sampleQuad(pts.last!, CGPoint(x: 0.02, y: noseHeight + 0.04), CGPoint(x: 0.32, y: noseHeight + 0.05), steps: 8, into: &pts)
+        CarBodyMesh.sampleQuad(pts.last!, CGPoint(x: cowlX - 0.45, y: belt - 0.01), CGPoint(x: cowlX, y: belt), steps: 14, into: &pts)
+        let cabinRunStart = pts.last!
+        let cabinSteps = max(1, Int((rearGlassBaseX - cabinRunStart.x) / 0.12))
+        for i in 1...cabinSteps {
+            let t = CGFloat(i) / CGFloat(cabinSteps)
+            pts.append(CGPoint(x: cabinRunStart.x + (rearGlassBaseX - cabinRunStart.x) * t,
+                                y: cabinRunStart.y + (deckY - cabinRunStart.y) * t))
+        }
         if rearGlassBaseX < L - 0.3 {
-            path.addQuadCurve(to: CGPoint(x: L - 0.12, y: deckHeight), control: CGPoint(x: (rearGlassBaseX + L) / 2, y: deckHeight + 0.03))
-            path.addQuadCurve(to: CGPoint(x: L, y: tailHeight - 0.22), control: CGPoint(x: L, y: deckHeight))
+            CarBodyMesh.sampleQuad(pts.last!, CGPoint(x: (rearGlassBaseX + L) / 2, y: deckHeight + 0.03), CGPoint(x: L - 0.12, y: deckHeight), steps: 10, into: &pts)
+            CarBodyMesh.sampleQuad(pts.last!, CGPoint(x: L, y: deckHeight), CGPoint(x: L, y: tailHeight - 0.22), steps: 8, into: &pts)
         } else {
-            path.addQuadCurve(to: CGPoint(x: L, y: tailHeight - 0.22), control: CGPoint(x: L + 0.01, y: deckY))
+            CarBodyMesh.sampleQuad(pts.last!, CGPoint(x: L + 0.01, y: deckY), CGPoint(x: L, y: tailHeight - 0.22), steps: 10, into: &pts)
         }
-        path.addQuadCurve(to: CGPoint(x: L - 0.1, y: c + 0.07), control: CGPoint(x: L + 0.02, y: c + 0.09))
-        for axle in [rearAxle, frontAxle] {
-            let r = wheelRadius + 0.07, cy = wheelRadius
-            let dx = sqrt(max(0, r * r - (cy - c) * (cy - c)))
-            path.addLine(to: CGPoint(x: axle + dx, y: c))
-            let a0 = atan2(c - cy, dx)
-            let steps = 28
-            for i in 1..<steps {
-                let a = a0 + (.pi - 2 * a0) * CGFloat(i) / CGFloat(steps)
-                path.addLine(to: CGPoint(x: axle + r * cos(a), y: cy + r * sin(a)))
-            }
-            path.addLine(to: CGPoint(x: axle - dx, y: c))
-        }
-        path.closeSubpath()
-        return path
+        CarBodyMesh.sampleQuad(pts.last!, CGPoint(x: L + 0.02, y: c + 0.09), CGPoint(x: L - 0.1, y: c + 0.07), steps: 10, into: &pts)
+        return pts
     }
 
     // Glass: windshield, side windows and rear window as one shape above the beltline.
@@ -188,15 +191,194 @@ struct CarBodyProfile {
     }
 }
 
+// MARK: - Domed-cross-section body mesh
+//
+// A true 3D compound-curved body, not a flat extrusion: at every point along
+// `CarBodyProfile.sideSilhouette`, instead of a flat line straight across the
+// width, we sweep a cross-section that's full height at the centerline
+// (z = 0, matching the tuned silhouette exactly) and domes downward toward
+// the sides — like a real fender/roof's rounded shoulder. Width also varies
+// along the body's length (narrow at the nose/tail tips, full width through
+// the cabin) via `widthFactor`, and each cross-section opens a wheel-arch gap
+// above the axles via `archLift`. A hand-built `SCNGeometry` (explicit
+// positions, smooth per-vertex normals, triangle indices) rather than
+// `SCNShape` — sidesteps the SCNShape zero-geometry cliff entirely, as a side
+// benefit. Every cross-section is a closed loop (dome arc + two floor
+// corners, not a single collapsed centerline point) — an earlier version
+// that collapsed both side walls to one point per spine sample went
+// degenerate wherever the half-width was small (nose/tail), producing a
+// self-intersecting "hook" visible from the side and a bowtie-shaped
+// silhouette head-on; found only by rendering multiple camera angles and
+// looking at the actual pixels, not by inspecting the math.
+enum CarBodyMesh {
+    static func quadPoint(_ p0: CGPoint, _ c: CGPoint, _ p1: CGPoint, _ t: CGFloat) -> CGPoint {
+        let mt = 1 - t
+        let x = mt * mt * p0.x + 2 * mt * t * c.x + t * t * p1.x
+        let y = mt * mt * p0.y + 2 * mt * t * c.y + t * t * p1.y
+        return CGPoint(x: x, y: y)
+    }
+
+    static func sampleQuad(_ p0: CGPoint, _ c: CGPoint, _ p1: CGPoint, steps: Int, into out: inout [CGPoint]) {
+        for i in 1...steps { out.append(quadPoint(p0, c, p1, CGFloat(i) / CGFloat(steps))) }
+    }
+
+    private static func smoothstep(_ a: CGFloat, _ b: CGFloat, _ x: CGFloat) -> CGFloat {
+        let t = max(0, min(1, (x - a) / max(b - a, 0.0001)))
+        return t * t * (3 - 2 * t)
+    }
+
+    /// 0...1 fraction of full half-width at this point along the body's length.
+    private static func widthFactor(x: CGFloat, length: CGFloat) -> CGFloat {
+        let noseRamp = smoothstep(0, 1.8, x)
+        let tailRamp = smoothstep(0, 1.5, length - x)
+        return max(0.06, min(noseRamp, tailRamp))
+    }
+
+    /// How far the cross-section domes downward (in meters) at the full
+    /// half-width edge, relative to the centerline silhouette height.
+    private static func dropAmount(y: CGFloat, p: CarBodyProfile) -> CGFloat {
+        let bulgeY = p.clearance + 0.3
+        if y < bulgeY {
+            // Lower body (doors/rocker area): modest shoulder taper.
+            return 0.07
+        } else {
+            // Hood/deck/greenhouse-base area: a bit more dome, like a
+            // crowned hood or a rounded decklid.
+            return 0.11
+        }
+    }
+
+    /// How far (in meters, above `clearance`) to lift the cross-section's
+    /// outer edges and floor at this x, to open a wheel-arch gap above each
+    /// axle — the same semicircle (centered at wheel height, radius
+    /// wheelRadius + 0.07) the old flat extrusion cut as a notch into its 2D
+    /// profile, just evaluated as a lift instead of a path cut.
+    private static func archLift(x: CGFloat, p: CarBodyProfile) -> CGFloat {
+        let c = p.clearance, cy = p.wheelRadius, r = p.wheelRadius + 0.07
+        let dxMax = sqrt(max(0, r * r - (cy - c) * (cy - c)))
+        var lift: CGFloat = 0
+        for axle in [p.frontAxle, p.rearAxle] {
+            let ddx = x - axle
+            guard abs(ddx) < dxMax else { continue }
+            let ceiling = cy + sqrt(max(0, r * r - ddx * ddx))
+            lift = max(lift, ceiling - c)
+        }
+        return lift
+    }
+
+    static func lowerBody(_ p: CarBodyProfile, ringSamples: Int = 19) -> SCNGeometry {
+        let spine = p.sideSilhouette
+        let m = spine.count
+
+        var positions: [SCNVector3] = []
+        var topRingIndex: [[Int32]] = []  // [spineIndex][ringJ] -> vertex index, top dome arc
+        var bottomLeftIndex: [Int32] = [] // [spineIndex] -> vertex index, floor corner at z = -hw
+        var bottomRightIndex: [Int32] = [] // [spineIndex] -> vertex index, floor corner at z = +hw
+
+        // bottomLeft/Right sit directly under the arc's own edges (same z as
+        // ring[0]/ring[last]), so every side wall is a true vertical strip —
+        // no point collapses onto another spine index's geometry.
+        for i in 0..<m {
+            let pt = spine[i]
+            let hw = (p.width / 2) * widthFactor(x: pt.x, length: p.length)
+            let drop = dropAmount(y: pt.y, p: p)
+            let lift = archLift(x: pt.x, p: p)
+            var ring: [Int32] = []
+            for j in 0..<ringSamples {
+                let s = -1 + 2 * CGFloat(j) / CGFloat(ringSamples - 1)  // -1...1
+                let z = s * hw
+                // Lift blends in toward the edges (s*s) and leaves the
+                // centerline (s=0, the hood/beltline silhouette) untouched —
+                // only the outer edges open up for the wheel arch.
+                let y = max(pt.y - drop * (s * s), p.clearance + lift * (s * s))
+                positions.append(SCNVector3(Float(pt.x), Float(y), Float(z)))
+                ring.append(Int32(positions.count - 1))
+            }
+            topRingIndex.append(ring)
+            let floorY = p.clearance + lift
+            positions.append(SCNVector3(Float(pt.x), Float(floorY), Float(-hw)))
+            bottomLeftIndex.append(Int32(positions.count - 1))
+            positions.append(SCNVector3(Float(pt.x), Float(floorY), Float(hw)))
+            bottomRightIndex.append(Int32(positions.count - 1))
+        }
+
+        var indices: [Int32] = []
+        func quad(_ a: Int32, _ b: Int32, _ c: Int32, _ d: Int32) {
+            indices.append(contentsOf: [a, b, c, a, c, d])
+        }
+
+        // Top dome surface between consecutive spine rings.
+        for i in 0..<(m - 1) {
+            for j in 0..<(ringSamples - 1) {
+                let a = topRingIndex[i][j], b = topRingIndex[i][j + 1]
+                let c = topRingIndex[i + 1][j + 1], d = topRingIndex[i + 1][j]
+                quad(a, b, c, d)
+            }
+        }
+        // Side walls: top ring edge (j=0 and j=last) down to its own floor corner.
+        for i in 0..<(m - 1) {
+            let aTop0 = topRingIndex[i][0], bTop0 = topRingIndex[i + 1][0]
+            quad(aTop0, bottomLeftIndex[i], bottomLeftIndex[i + 1], bTop0)
+            let lastJ = ringSamples - 1
+            let aTopL = topRingIndex[i][lastJ], bTopL = topRingIndex[i + 1][lastJ]
+            quad(bottomRightIndex[i], aTopL, bTopL, bottomRightIndex[i + 1])
+        }
+        // Flat floor between the two side walls — never seen from this
+        // hero's camera angles, but a proper (non-degenerate) loft quad.
+        for i in 0..<(m - 1) {
+            quad(bottomLeftIndex[i], bottomRightIndex[i], bottomRightIndex[i + 1], bottomLeftIndex[i + 1])
+        }
+        // Nose and tail end caps: fan the closed loop from its bottomLeft corner.
+        func cap(spineIndex: Int, reversed: Bool) {
+            var loop: [Int32] = [bottomLeftIndex[spineIndex]]
+            loop.append(contentsOf: topRingIndex[spineIndex])
+            loop.append(bottomRightIndex[spineIndex])
+            let apex = loop[0]
+            for k in 1..<(loop.count - 1) {
+                let a = loop[k], b = loop[k + 1]
+                if reversed { quad(apex, b, a, a) } else { quad(apex, a, b, b) }
+            }
+        }
+        cap(spineIndex: 0, reversed: true)
+        cap(spineIndex: m - 1, reversed: false)
+
+        var normalAccum = [SCNVector3](repeating: SCNVector3Zero, count: positions.count)
+        var t = 0
+        while t < indices.count {
+            let ia = Int(indices[t]), ib = Int(indices[t + 1]), ic = Int(indices[t + 2])
+            let a = positions[ia], b = positions[ib], c = positions[ic]
+            let e1 = SCNVector3(b.x - a.x, b.y - a.y, b.z - a.z)
+            let e2 = SCNVector3(c.x - a.x, c.y - a.y, c.z - a.z)
+            let n = SCNVector3(e1.y * e2.z - e1.z * e2.y, e1.z * e2.x - e1.x * e2.z, e1.x * e2.y - e1.y * e2.x)
+            for idx in [ia, ib, ic] {
+                normalAccum[idx] = SCNVector3(normalAccum[idx].x + n.x, normalAccum[idx].y + n.y, normalAccum[idx].z + n.z)
+            }
+            t += 3
+        }
+        let normals: [SCNVector3] = normalAccum.map { n in
+            let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
+            return len > 0.0001 ? SCNVector3(n.x / len, n.y / len, n.z / len) : SCNVector3(0, 1, 0)
+        }
+
+        let source = SCNGeometrySource(vertices: positions)
+        let normalSource = SCNGeometrySource(normals: normals)
+        let element = SCNGeometryElement(indices: indices, primitiveType: .triangles)
+        return SCNGeometry(sources: [source, normalSource], elements: [element])
+    }
+}
+
 enum ProceduralCarModel {
     private static func vec(_ x: CGFloat, _ y: CGFloat, _ z: CGFloat) -> SCNVector3 {
         SCNVector3(Float(x), Float(y), Float(z))
     }
 
-    fileprivate static func node(for p: CarBodyProfile, paint color: UIColor) -> SCNNode {
+    /// Internal (not fileprivate): SpinnableCarModelView builds a live scene
+    /// from the same node graph as the static bake below.
+    static func node(for p: CarBodyProfile, paint color: UIColor) -> SCNNode {
         let car = SCNNode()
         let paint = paintMaterial(color)
-        add(shape(p.lowerBodyPath, depth: p.width, chamfer: 0.07), paint, to: car)
+        paint.isDoubleSided = true
+        add(CarBodyMesh.lowerBody(p), paint, to: car)
         add(shape(p.greenhousePath, depth: p.width * 0.84, chamfer: 0.08),
             material(UIColor(white: 0.03, alpha: 1), metalness: 0.3, roughness: 0.06), to: car)
         if p.hasRoof {
@@ -376,7 +558,7 @@ private extension UIColor {
 /// by style + color + `version`, so each combination renders once per device.
 enum CarModelRenderer {
     /// Bump when the model or lighting changes, to retire old cached renders.
-    private static let version = 4
+    private static let version = 5
     /// Rendered image size, in pixels (the renderer is given a pixel size and
     /// the result is re-wrapped at scale 1 — see the image-size pitfall).
     private static let renderSize = CGSize(width: 2400, height: 1200)
@@ -470,8 +652,9 @@ enum CarModelRenderer {
     }
 
     /// A dark studio with an overhead softbox and a few vertical strips, so the
-    /// clear coat picks up highlights.
-    private static func studioEnvironment() -> UIImage {
+    /// clear coat picks up highlights. Internal (not private): reused by
+    /// SpinnableCarModelView's live scene for the same lighting look.
+    static func studioEnvironment() -> UIImage {
         let size = CGSize(width: 1024, height: 512)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1

@@ -214,8 +214,20 @@ struct GarageHeroView: View {
         ZStack {
             spotlight
             if let loaded, loaded.key == key {
-                staged(loaded.image.image)
-                    .transition(.opacity)
+                Group {
+                    switch loaded.image {
+                    case .cutout(let image):
+                        staged(image)
+                    case .model:
+                        // Live and interactive (drag to spin), not the baked
+                        // PNG `loaded.image` itself holds — that bake still
+                        // exists for cachedImage's first-frame probe and for
+                        // contexts that can't host a live SCNView (the widget,
+                        // the car-switcher thumbnails).
+                        stagedSpinnable
+                    }
+                }
+                .transition(.opacity)
             }
         }
         .frame(maxWidth: .infinity)
@@ -250,6 +262,30 @@ struct GarageHeroView: View {
         if let model = await CarModelRenderer.image(for: car), !Task.isCancelled {
             loaded = (key, .model(model))
         }
+    }
+
+    /// Live, interactive turntable for the model-fallback case. No device-
+    /// tilt parallax or floor reflection here — the user's own drag is the
+    /// more meaningful motion, and a live-mirrored second SCNView isn't
+    /// worth the extra render cost for a minor flourish the static-image
+    /// case already covers.
+    private var stagedSpinnable: some View {
+        VStack(spacing: 0) {
+            SpinnableCarModelView(profile: modelProfile, paint: modelPaint, autoRotates: !reduceMotion)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(alignment: .bottom) { groundShadow.offset(y: 10) }
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 28)
+        .padding(.top, 12)
+    }
+
+    private var modelProfile: CarBodyProfile {
+        CarBodyProfile.forCar(make: car.make, model: car.model, bodyStyle: car.bodyStyle)
+    }
+
+    private var modelPaint: UIColor {
+        CarPaint.color(for: car.color)
     }
 
     private func staged(_ image: UIImage) -> some View {

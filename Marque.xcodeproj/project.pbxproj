@@ -136,6 +136,7 @@
 		6A4E0B000000000000000002 /* GarageTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000002 /* GarageTheme.swift */; };
 		6A4E0B000000000000000003 /* GarageCarSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000003 /* GarageCarSummary.swift */; };
 		6A4E0B000000000000000004 /* GarageHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000004 /* GarageHeroView.swift */; };
+		9D000B00000000000000SP01 /* SpinnableCarModelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D000F00000000000000SP01 /* SpinnableCarModelView.swift */; };
 		6A4E0B0000000000000000C1 /* GarageCarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F0000000000000000C1 /* GarageCarModel.swift */; };
 		6A4E0B000000000000000005 /* GarageCarSwitcherSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */; };
 		6A4E0B000000000000000006 /* GarageHomeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000006 /* GarageHomeComponents.swift */; };
@@ -304,6 +305,7 @@
 		6A4E0F000000000000000002 /* GarageTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageTheme.swift; sourceTree = "<group>"; };
 		6A4E0F000000000000000003 /* GarageCarSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarSummary.swift; sourceTree = "<group>"; };
 		6A4E0F000000000000000004 /* GarageHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageHeroView.swift; sourceTree = "<group>"; };
+		9D000F00000000000000SP01 /* SpinnableCarModelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnableCarModelView.swift; sourceTree = "<group>"; };
 		6A4E0F0000000000000000C1 /* GarageCarModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarModel.swift; sourceTree = "<group>"; };
 		6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarSwitcherSheet.swift; sourceTree = "<group>"; };
 		6A4E0F000000000000000006 /* GarageHomeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageHomeComponents.swift; sourceTree = "<group>"; };
@@ -636,6 +638,7 @@
 				6A4E0F000000000000000002 /* GarageTheme.swift */,
 				6A4E0F000000000000000003 /* GarageCarSummary.swift */,
 				6A4E0F000000000000000004 /* GarageHeroView.swift */,
+				9D000F00000000000000SP01 /* SpinnableCarModelView.swift */,
 				6A4E0F0000000000000000C1 /* GarageCarModel.swift */,
 				6A4E0F000000000000000005 /* GarageCarSwitcherSheet.swift */,
 				6A4E0F000000000000000006 /* GarageHomeComponents.swift */,
@@ -841,6 +844,7 @@
 				6A4E0B000000000000000002 /* GarageTheme.swift in Sources */,
 				6A4E0B000000000000000003 /* GarageCarSummary.swift in Sources */,
 				6A4E0B000000000000000004 /* GarageHeroView.swift in Sources */,
+				9D000B00000000000000SP01 /* SpinnableCarModelView.swift in Sources */,
 				6A4E0B0000000000000000C1 /* GarageCarModel.swift in Sources */,
 				6A4E0B000000000000000005 /* GarageCarSwitcherSheet.swift in Sources */,
 				6A4E0B000000000000000006 /* GarageHomeComponents.swift in Sources */,
