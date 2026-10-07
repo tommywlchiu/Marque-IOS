@@ -22,7 +22,7 @@ struct VehicleSpecs {
         fuelType = car.fuelType
         if let kind = car.rangeKind, let text = car.rangeText {
             rangeLabel = kind.label
-            range = text
+            range = car.fullRangeIsEstimate ? "\(text) · EPA est." : text
         }
         tankSize = car.tankSizeText ?? ""
         transmission = car.transmission

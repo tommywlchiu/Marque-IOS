@@ -160,6 +160,8 @@
 		9D0001000000000000000007 /* GarageTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4E0F000000000000000002 /* GarageTheme.swift */; };
 		9D0001000000000000000008 /* WidgetSharedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000006 /* WidgetSharedData.swift */; };
 		9D0001000000000000000009 /* WidgetSnapshotService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000009 /* WidgetSnapshotService.swift */; };
+		BF0001000000000000000002 /* FuelEconomyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0002000000000000000002 /* FuelEconomyService.swift */; };
+		BF0001000000000000000003 /* RangeBackfill.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0002000000000000000003 /* RangeBackfill.swift */; };
 		BF0001000000000000000001 /* BodyStyleBackfill.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0002000000000000000001 /* BodyStyleBackfill.swift */; };
 		9D000100000000000000000A /* MarqueWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9D000200000000000000000A /* MarqueWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -334,6 +336,8 @@
 		9D0002000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9D0002000000000000000008 /* MarqueWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MarqueWidget.entitlements; sourceTree = "<group>"; };
 		9D0002000000000000000009 /* WidgetSnapshotService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotService.swift; sourceTree = "<group>"; };
+		BF0002000000000000000002 /* FuelEconomyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuelEconomyService.swift; sourceTree = "<group>"; };
+		BF0002000000000000000003 /* RangeBackfill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RangeBackfill.swift; sourceTree = "<group>"; };
 		BF0002000000000000000001 /* BodyStyleBackfill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyStyleBackfill.swift; sourceTree = "<group>"; };
 		9D000200000000000000000A /* MarqueWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MarqueWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -472,6 +476,8 @@
 				63B35D4AABF04F78AC0B2395 /* AccountExportService.swift */,
 				9D0002000000000000000009 /* WidgetSnapshotService.swift */,
 				BF0002000000000000000001 /* BodyStyleBackfill.swift */,
+				BF0002000000000000000003 /* RangeBackfill.swift */,
+				BF0002000000000000000002 /* FuelEconomyService.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -837,6 +843,8 @@
 				9D0001000000000000000008 /* WidgetSharedData.swift in Sources */,
 				9D0001000000000000000009 /* WidgetSnapshotService.swift in Sources */,
 				BF0001000000000000000001 /* BodyStyleBackfill.swift in Sources */,
+				BF0001000000000000000003 /* RangeBackfill.swift in Sources */,
+				BF0001000000000000000002 /* FuelEconomyService.swift in Sources */,
 				FE50B1000000000000000001 /* LikeButton.swift in Sources */,
 				FE50B1000000000000000002 /* PushPermissionPrePrompt.swift in Sources */,
 				FE50B1000000000000000003 /* EngineSoundPlayback.swift in Sources */,

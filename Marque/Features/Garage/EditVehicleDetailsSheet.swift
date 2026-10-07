@@ -2,7 +2,7 @@ import SwiftUI
 
 // Focused sheet for editing just a car's vehicle-details fields:
 // color, mileage, trim, body style, drive type, engine, fuel type,
-// range (electric/hybrid/diesel only), tank size (diesel only),
+// range (electric/hybrid/diesel only), tank size (diesel/hybrid),
 // transmission. Presented from the Vehicle Details section of
 // CarDetailView. Mirrors the same shape/save pattern as
 // EditRegistrationSheet and EditInsuranceSheet so all four section
@@ -43,17 +43,17 @@ struct EditVehicleDetailsSheet: View {
                         Text("Plug-in Hybrid").tag("Plug-in Hybrid")
                         Text("Flex Fuel").tag("Flex Fuel")
                     }
-                    if let kind = Car.RangeKind(fuelType: fuelType) {
-                        LabeledContent(kind.label) {
-                            TextField("e.g. \(kind == .charge ? "310" : "520") mi", text: $fullRange)
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                        }
-                    }
                     if Car.tracksTankSize(fuelType: fuelType) {
                         LabeledContent("Tank Size") {
                             TextField("e.g. 18.5 gal", text: $tankGallons)
                                 .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    if let kind = Car.RangeKind(fuelType: fuelType) {
+                        LabeledContent(kind.label) {
+                            TextField(rangePlaceholder(kind), text: $fullRange)
+                                .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
                         }
                     }
@@ -123,11 +123,26 @@ struct EditVehicleDetailsSheet: View {
         updated.fuelType = fuelType
         // Kept even if the fuel type no longer shows a range, so switching
         // the picker back and forth doesn't lose it.
-        updated.fullRange = NumberParsing.mileage(from: fullRange)
+        let typedRange = NumberParsing.mileage(from: fullRange)
+        if typedRange != car.fullRange {
+            // The owner changed it (or cleared it, which lets the EPA
+            // estimate fill it back in): their number, not an estimate.
+            updated.fullRange = typedRange
+            updated.fullRangeIsEstimate = false
+        }
         updated.tankGallons = Self.gallons(from: tankGallons)
         updated.transmission = transmission
         onSave(updated)
         dismiss()
+    }
+
+    /// Blank range: says the EPA estimate fills it in (for a hybrid or
+    /// diesel, once there's a tank size).
+    private func rangePlaceholder(_ kind: Car.RangeKind) -> String {
+        if Car.tracksTankSize(fuelType: fuelType) && Self.gallons(from: tankGallons) == nil {
+            return "Add tank size for EPA est."
+        }
+        return "EPA estimate"
     }
 
     /// "18.5", "18,5" or "18.5 gal" -> 18.5; nil if blank, zero or absurd.

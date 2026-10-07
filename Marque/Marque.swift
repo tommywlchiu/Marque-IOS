@@ -122,6 +122,7 @@ struct Marque_PrototypeApp: App {
                     // onChange(of: carStore.cars) is paired with an onAppear.
                     WidgetSnapshotService.sync(cars: carStore.cars)
                     BodyStyleBackfill.run(carStore: carStore)
+                    RangeBackfill.run(carStore: carStore)
                 }
                 .environmentObject(carStore)
                 .environmentObject(authService)
@@ -180,6 +181,7 @@ struct Marque_PrototypeApp: App {
                 .onChange(of: carStore.cars) { _, cars in
                     WidgetSnapshotService.sync(cars: cars)
                     BodyStyleBackfill.run(carStore: carStore)
+                    RangeBackfill.run(carStore: carStore)
                 }
                 .onChange(of: subscriptionStore.isPro) { oldValue, newValue in
                     guard oldValue != newValue else { return }

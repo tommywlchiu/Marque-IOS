@@ -31,7 +31,11 @@ struct Car: Identifiable, Codable, Equatable {
     // the owner entered it. Only shown for those fuel types (`rangeKind`).
     // Private: not in PublicCar.
     var fullRange: Int?
-    // Fuel tank size in US gallons; diesel cars only (`tracksTankSize`). Private.
+    // True when `fullRange` is an EPA estimate filled in by `RangeBackfill`
+    // (refreshed when the car's details change); false once the owner types one.
+    var fullRangeIsEstimate: Bool
+    // Fuel tank size in US gallons; diesel and hybrid cars (`tracksTankSize`),
+    // where the EPA estimate is tank size × MPG. Private.
     var tankGallons: Double?
     var transmission: String
     var insuranceProvider: String
@@ -103,6 +107,7 @@ struct Car: Identifiable, Codable, Equatable {
         engine: String = "",
         fuelType: String = "",
         fullRange: Int? = nil,
+        fullRangeIsEstimate: Bool = false,
         tankGallons: Double? = nil,
         transmission: String = "",
         insuranceProvider: String = "",
@@ -144,6 +149,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.engine = engine
         self.fuelType = fuelType
         self.fullRange = fullRange
+        self.fullRangeIsEstimate = fullRangeIsEstimate
         self.tankGallons = tankGallons
         self.transmission = transmission
         self.insuranceProvider = insuranceProvider
@@ -177,7 +183,7 @@ struct Car: Identifiable, Codable, Equatable {
         case photoStorageURLs
         case photoOffsetY
         case licensePlate, vinNumber, color, mileage, mileageUpdatedAt, trim, bodyStyle, driveType, engine
-        case fuelType, fullRange, tankGallons, transmission
+        case fuelType, fullRange, fullRangeIsEstimate, tankGallons, transmission
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
         case warrantyProvider, warrantyType
@@ -218,6 +224,7 @@ struct Car: Identifiable, Codable, Equatable {
         engine = try c.decodeIfPresent(String.self, forKey: .engine) ?? ""
         fuelType = try c.decode(String.self, forKey: .fuelType)
         fullRange = try? c.decodeIfPresent(Int.self, forKey: .fullRange)
+        fullRangeIsEstimate = (try? c.decodeIfPresent(Bool.self, forKey: .fullRangeIsEstimate)) ?? false
         tankGallons = try? c.decodeIfPresent(Double.self, forKey: .tankGallons)
         transmission = try c.decode(String.self, forKey: .transmission)
         insuranceProvider = try c.decode(String.self, forKey: .insuranceProvider)
@@ -275,6 +282,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(engine, forKey: .engine)
         try c.encode(fuelType, forKey: .fuelType)
         try c.encodeIfPresent(fullRange, forKey: .fullRange)
+        try c.encode(fullRangeIsEstimate, forKey: .fullRangeIsEstimate)
         try c.encodeIfPresent(tankGallons, forKey: .tankGallons)
         try c.encode(transmission, forKey: .transmission)
         try c.encode(insuranceProvider, forKey: .insuranceProvider)
@@ -355,11 +363,15 @@ struct Car: Identifiable, Codable, Equatable {
         return "\(fullRange.formatted()) mi"
     }
 
+    /// Diesel and (non-plug-in) hybrid: the EPA has no tank sizes, so their
+    /// range estimate needs the owner's. A plug-in hybrid's EPA range is
+    /// already its total.
     static func tracksTankSize(fuelType: String) -> Bool {
-        fuelType.lowercased().contains("diesel")
+        let s = fuelType.lowercased()
+        return s.contains("diesel") || (s.contains("hybrid") && !s.contains("plug"))
     }
 
-    /// "18.5 gal", or nil unless this is a diesel car with a tank size set.
+    /// "18.5 gal", or nil unless this car tracks tank size and has one set.
     var tankSizeText: String? {
         guard Car.tracksTankSize(fuelType: fuelType), let tankGallons, tankGallons > 0 else { return nil }
         return "\(tankGallons.formatted(.number.precision(.fractionLength(0...1)))) gal"
