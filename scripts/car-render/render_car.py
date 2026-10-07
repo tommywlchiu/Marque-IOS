@@ -438,6 +438,10 @@ if WHEEL_MODE == "wheelpack":
     wheel.data.transform(Matrix.Translation(-wcenter))
     wheel.data.transform(axis_vec.rotation_difference(V((0, 1, 0))).to_matrix().to_4x4())
     wheel.data.transform(Matrix.Scale(1 / wradius, 4))
+    # Width along the axle in the unit frame, to match the car's own tire
+    # width: a deep-dish wheel scaled only by height pokes out of the body.
+    ys = [v.co.y for v in wheel.data.vertices]
+    unit_width = max(max(ys) - min(ys), 1e-3)
     for i, w in enumerate(wheels):
         inst = wheel if i == 0 else wheel.copy()
         if i: bpy.context.scene.collection.objects.link(inst)
@@ -446,7 +450,8 @@ if WHEEL_MODE == "wheelpack":
         # glTF imports in quaternion mode, where rotation_euler is ignored.
         inst.rotation_mode = "XYZ"
         inst.rotation_euler = (0, 0, 0 if w["side"] > 0 else math.pi)
-        inst.scale = (w["radius"],) * 3
+        width = min(max(w["width"], w["radius"] * 0.45), w["radius"] * 0.9)
+        inst.scale = (w["radius"], width / unit_width, w["radius"])
     turn.rotation_euler.z = yaw  # measured at 0; the render (or the frame loop) turns it
     print("WHEEL_PACK axis", axis, "out", out_sign, "radius", round(wradius, 3))
 
