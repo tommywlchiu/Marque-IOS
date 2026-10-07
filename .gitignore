@@ -20,3 +20,6 @@ tests/rules/node_modules/
 
 # Rendered car frames (scripts/car-render) — build output, served by Firebase Hosting
 public/carRenders/
+
+# Firebase CLI deploy cache (rewritten on every hosting deploy)
+.firebase/

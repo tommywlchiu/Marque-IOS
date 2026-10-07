@@ -72,7 +72,7 @@ Build with `cd functions && npm run build` (runs `tsc`). Silent output means suc
 
 ## Never deploy
 
-`firebase deploy` (functions, rules, or anything else), `npm publish`, or any command that pushes to a live environment requires **explicit user approval**. Build and typecheck locally, then stop and report. Never deploy on your own judgment.
+`firebase deploy` (functions, rules, or anything else), `npm publish`, or any command that pushes to a live environment requires **explicit user approval**. Build and typecheck locally, then stop and report. Never deploy on your own judgment. `.claude/settings.json` puts these commands (and the Firebase MCP tools that write production data) on a permission prompt; a prompt appearing is not approval — don't attempt the command at all, hand it back to the orchestrator.
 
 ## How you work
 
