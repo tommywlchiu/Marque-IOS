@@ -616,6 +616,7 @@ def write_plates():
         hit, loc, nrm, _, obj, _ = bpy.context.scene.ray_cast(deps, origin, Vector((-s, 0, 0)))
         if hit and obj in car_objs:
             normal = Vector((nrm.x, 0, nrm.z)).normalized() if abs(nrm.x) > 0.3 else Vector((s, 0, 0))
+            if normal.x * s < 0: normal = -normal  # some models' normals point inward
             w = float(opt.get(f"plate_{side}_w", 0.305))
             plates[side] = rect(loc + normal * 0.004, normal, w, w / 2 if w <= 0.33 else 0.115) + ("ray",)
 
@@ -626,7 +627,9 @@ def write_plates():
         for _ in range(6):
             hit, loc, _, _, obj, _ = bpy.context.scene.ray_cast(deps, start, d)
             if not hit: return True
-            if obj in car_objs: return (loc - cam_pos).length > dist - 0.05
+            # plate_tol: how much geometry may sit in front of the plate (a
+            # model with a doubled hatch shell needs more than the default).
+            if obj in car_objs: return (loc - cam_pos).length > dist - float(opt.get("plate_tol", 0.05))
             start = loc + d * 0.01
         return True
 

@@ -20,7 +20,7 @@ for key in sys.argv[3:] or list(manifest):
             "engine=BLENDER_EEVEE", "res=1200x675"]
     for opt in ("flip", "invert"):
         if car.get(opt): args.append(f"{opt}=1")
-    for opt in ("roll", "hide", "keep", "platemat", "plate_rear_z", "plate_front_z"):
+    for opt in ("roll", "hide", "keep", "platemat", "plate_rear_z", "plate_front_z", "plate_rear_w", "plate_tol"):
         if car.get(opt) not in (None, ""): args.append(f"{opt}={car[opt]}")
     result = subprocess.run(args, capture_output=True, text=True)
     line = next((l for l in result.stdout.splitlines() if l.startswith("PLATES")), "FAILED " + result.stderr[-300:])
