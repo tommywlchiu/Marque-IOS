@@ -443,6 +443,8 @@ if WHEEL_MODE == "wheelpack":
         if i: bpy.context.scene.collection.objects.link(inst)
         inst.parent = turn
         inst.location = w["center"]
+        # glTF imports in quaternion mode, where rotation_euler is ignored.
+        inst.rotation_mode = "XYZ"
         inst.rotation_euler = (0, 0, 0 if w["side"] > 0 else math.pi)
         inst.scale = (w["radius"],) * 3
     turn.rotation_euler.z = yaw  # measured at 0; the render (or the frame loop) turns it

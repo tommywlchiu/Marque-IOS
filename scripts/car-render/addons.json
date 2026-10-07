@@ -1,13 +1,46 @@
 {
   "_note": "Add-on layers drawn over a car's frames in the app. wheels: one style per node of a CC BY wheel pack; wheelout flips which side faces out (checked by eye on the M4).",
   "wheelPacks": {
-    "sport5": {"sketchfab": "daa0945e2a6f44d9a417f9e3d8c3cc6e", "file": "wheels5.glb"}
+    "sport5": {
+      "sketchfab": "daa0945e2a6f44d9a417f9e3d8c3cc6e",
+      "file": "wheels5.glb"
+    }
   },
   "wheels": [
-    {"id": "twin-green",  "title": "Twin Spoke · Green Lip",  "pack": "sport5", "node": "Circle.005_0",   "wheelout": -1},
-    {"id": "multi-gold",  "title": "Multi Spoke · Gold Lip",  "pack": "sport5", "node": "Circle.000_1",   "wheelout": 1},
-    {"id": "multi-bronze","title": "Multi Spoke · Bronze",    "pack": "sport5", "node": "Cube.026_2",     "wheelout": -1},
-    {"id": "mesh-red",    "title": "Mesh · Red Lip",          "pack": "sport5", "node": "tire04_3",       "wheelout": 1},
-    {"id": "five-blue",   "title": "Five Spoke · Blue",       "pack": "sport5", "node": "Object03.000_4", "wheelout": 1}
+    {
+      "id": "twin-green",
+      "title": "Twin Spoke \u00b7 Green Lip",
+      "pack": "sport5",
+      "node": "Circle.005_0",
+      "wheelout": 1
+    },
+    {
+      "id": "multi-gold",
+      "title": "Multi Spoke \u00b7 Gold Lip",
+      "pack": "sport5",
+      "node": "Circle.000_1",
+      "wheelout": -1
+    },
+    {
+      "id": "multi-bronze",
+      "title": "Multi Spoke \u00b7 Bronze",
+      "pack": "sport5",
+      "node": "Cube.026_2",
+      "wheelout": 1
+    },
+    {
+      "id": "mesh-red",
+      "title": "Mesh \u00b7 Red Lip",
+      "pack": "sport5",
+      "node": "tire04_3",
+      "wheelout": -1
+    },
+    {
+      "id": "five-blue",
+      "title": "Five Spoke \u00b7 Blue",
+      "pack": "sport5",
+      "node": "Object03.000_4",
+      "wheelout": -1
+    }
   ]
 }

@@ -470,5 +470,21 @@
     "uid": "20f9af9b8a404d5cb022ac6fe87f21f5",
     "generic": "van",
     "keep": "minivan body"
+  },
+  "audi-a5-b9": {
+    "uid": "aa9b8d495d324fa1adfe6eab519e21a9",
+    "make": "Audi",
+    "model": "A5",
+    "years": [
+      2020,
+      2024
+    ],
+    "aliases": [
+      "A5",
+      "A5 Sportback",
+      "A5 Coupe",
+      "S5",
+      "S5 Sportback"
+    ]
   }
 }
