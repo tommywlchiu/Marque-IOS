@@ -34,16 +34,40 @@ struct CarCustomization: Codable, Equatable {
         }
     }
 
-    var tint: Tint = .none
+    enum Stance: String, Codable, CaseIterable, Identifiable {
+        case stock, lowered, lifted
 
-    init(tint: Tint = .none) {
-        self.tint = tint
+        var id: String { rawValue }
+        var title: String { rawValue.capitalized }
+
+        /// How far the body moves relative to the wheels, in meters.
+        var lift: Double {
+            switch self {
+            case .stock: return 0
+            case .lowered: return -0.05
+            case .lifted: return 0.06
+            }
+        }
     }
 
-    private enum CodingKeys: String, CodingKey { case tint }
+    var tint: Tint = .none
+    var stance: Stance = .stock
+    /// A wheel style id from the render catalog's `wheelStyles`; nil = the
+    /// car's own wheels.
+    var wheels: String?
+
+    init(tint: Tint = .none, stance: Stance = .stock, wheels: String? = nil) {
+        self.tint = tint
+        self.stance = stance
+        self.wheels = wheels
+    }
+
+    private enum CodingKeys: String, CodingKey { case tint, stance, wheels }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         tint = (try? c.decodeIfPresent(Tint.self, forKey: .tint)) ?? .none
+        stance = (try? c.decodeIfPresent(Stance.self, forKey: .stance)) ?? .stock
+        wheels = try? c.decodeIfPresent(String.self, forKey: .wheels)
     }
 }

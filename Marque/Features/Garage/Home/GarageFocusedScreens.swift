@@ -330,6 +330,32 @@ struct GarageCustomizeScreen: View {
                 }
                 .garageRowBackground()
 
+                if CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.canChangeStance == true {
+                    Section(header: Text("Stance")) {
+                        Picker("Stance", selection: Binding(
+                            get: { car.customization.stance },
+                            set: { stance in
+                                var updated = car
+                                updated.customization.stance = stance
+                                carStore.updateCar(updated)
+                            }
+                        )) {
+                            ForEach(CarCustomization.Stance.allCases) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                    .garageRowBackground()
+                }
+
+                let styles = wheelStyles(for: car)
+                if !styles.isEmpty {
+                    Section(header: Text("Wheels")) {
+                        wheelRow(car, id: nil, title: "Stock")
+                        ForEach(styles) { wheelRow(car, id: $0.id, title: $0.title) }
+                    }
+                    .garageRowBackground()
+                }
+
                 Section(header: Text("License Plate"),
                         footer: Text("Shown on your car in your Garage only — never in Explore.")) {
                     HStack {
@@ -342,6 +368,29 @@ struct GarageCustomizeScreen: View {
                 .garageRowBackground()
             }
             .scrollContentBackground(.hidden)
+        }
+    }
+
+    /// The wheel styles rendered for this car, in the catalog's order.
+    private func wheelStyles(for car: Car) -> [CarRenderLibrary.WheelStyle] {
+        let catalog = CarRenderLibrary.cachedCatalog()
+        guard let match = CarRenderLibrary.match(car, in: catalog) else { return [] }
+        return (catalog?.wheelStyles ?? []).filter { match.wheelStyles.contains($0.id) }
+    }
+
+    private func wheelRow(_ car: Car, id: String?, title: String) -> some View {
+        Button {
+            var updated = car
+            updated.customization.wheels = id
+            carStore.updateCar(updated)
+        } label: {
+            HStack {
+                Text(title).foregroundColor(.primary)
+                Spacer()
+                if car.customization.wheels == id {
+                    Image(systemName: "checkmark").foregroundColor(.accentColor)
+                }
+            }
         }
     }
 }

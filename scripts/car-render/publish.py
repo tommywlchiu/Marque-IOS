@@ -52,6 +52,10 @@ def publish_frames(key, pngs):
         sizes = {side: {"aspect": round(v["w"] / v["h"], 3)} for side, v in meta["plates"].items()}
         json.dump({"plates": sizes, "frames": frames}, open(os.path.join(dst, key, "plates.json"), "w"))
         has_plates = True
+    # One meter of height as a fraction of the cropped frame (the camera is
+    # fixed: ~208.5 px/m at 1200x675), so the app can shift the body a given
+    # height for the stance add-on.
+    json.dump({"meter": round(208.5 / (box[3] - box[1]), 4)}, open(os.path.join(dst, key, "scale.json"), "w"))
     # Window masks (tints.py), cropped the same way: the app darkens through
     # them for the tint add-on. Lossless — a soft edge would halo.
     tint_src = sorted(glob.glob(os.path.join(sys.argv[1], "_tint", key, "tint", "*.png")))
@@ -60,6 +64,14 @@ def publish_frames(key, pngs):
             out = os.path.join(dst, key, "tint", os.path.basename(p).replace(".png", ".webp"))
             os.makedirs(os.path.dirname(out), exist_ok=True)
             Image.open(p).crop(box).save(out, "WEBP", lossless=True, method=4)
+    # Wheel add-on layers (wheels.py), one folder per style, same crop.
+    for style_dir in sorted(glob.glob(os.path.join(sys.argv[1], "_wheels", key, "*"))):
+        layer = sorted(glob.glob(os.path.join(style_dir, "*.png")))
+        if len(layer) != FRAMES: continue
+        for p in layer:
+            out = os.path.join(dst, key, "wheels", os.path.basename(style_dir), os.path.basename(p).replace(".png", ".webp"))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            Image.open(p).crop(box).save(out, "WEBP", quality=85, method=4)
     return has_plates
 
 # --catalog-only: rewrite catalog.json from what's already published (no
@@ -84,15 +96,23 @@ for key, car in manifest.items():
     if convert:
         has_plates = publish_frames(key, pngs)
     has_tint = len(glob.glob(os.path.join(dst, key, "tint", "*.webp"))) == FRAMES
+    wheels = sorted(os.path.basename(d) for d in glob.glob(os.path.join(dst, key, "wheels", "*"))
+                    if len(glob.glob(os.path.join(d, "*.webp"))) == FRAMES)
+    scale_path = os.path.join(dst, key, "scale.json")
+    meter = json.load(open(scale_path))["meter"] if os.path.exists(scale_path) else None
     if "bodyStyles" in car:  # an unbadged stand-in for every car of these body styles
         generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]),
-                         "plates": has_plates, "tint": has_tint})
+                         "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter})
     else:
         c = car["covers"]
         cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
-                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint})
+                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter})
     print(f"PUBLISHED {key}")
 
-json.dump({"version": 1, "frames": FRAMES, "colors": palette, "cars": cars, "generics": generics},
+addons = json.load(open(os.path.join(here, "addons.json")))
+wheel_styles = [{"id": w["id"], "title": w["title"], "credit": credit(addons["wheelPacks"][w["pack"]]["sketchfab"])}
+                for w in addons["wheels"]]
+json.dump({"version": 1, "frames": FRAMES, "colors": palette, "cars": cars, "generics": generics,
+           "wheelStyles": wheel_styles},
           open(os.path.join(dst, "catalog.json"), "w"), indent=2)
 print("catalog:", len(cars), "cars,", len(generics), "generics")

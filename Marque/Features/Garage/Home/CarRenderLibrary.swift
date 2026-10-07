@@ -27,13 +27,22 @@ enum CarRenderLibrary {
         /// Unbadged stand-ins, one per body style. Optional so a catalog
         /// written before they existed still decodes.
         let generics: [Generic]?
+        /// The wheels add-on's styles (optional: older catalogs).
+        let wheelStyles: [WheelStyle]?
 
         /// Every model credited, once each (one pack can supply several
         /// generics) — for Settings › Acknowledgements.
         var credits: [Credit] {
             var seen = Set<String>()
-            return (cars.map(\.credit) + (generics ?? []).map(\.credit)).filter { seen.insert($0.url).inserted }
+            return (cars.map(\.credit) + (generics ?? []).map(\.credit) + (wheelStyles ?? []).map(\.credit))
+                .filter { seen.insert($0.url).inserted }
         }
+    }
+
+    struct WheelStyle: Codable, Identifiable, Equatable {
+        let id: String
+        let title: String
+        let credit: Credit
     }
 
     struct Generic: Codable {
@@ -43,6 +52,8 @@ enum CarRenderLibrary {
         let credit: Credit
         let plates: Bool?
         let tint: Bool?
+        let wheels: [String]?
+        let meter: Double?
     }
 
     struct Entry: Codable, Identifiable {
@@ -55,6 +66,11 @@ enum CarRenderLibrary {
         let plates: Bool?
         /// Whether `<key>/tint/NN.webp` window masks exist.
         let tint: Bool?
+        /// Wheel styles rendered for this car (`<key>/wheels/<style>/NN.webp`);
+        /// "stock" is the car's own wheels alone, for the stance add-on.
+        let wheels: [String]?
+        /// One meter of height as a fraction of the frame's height.
+        let meter: Double?
         var id: String { key }
     }
 
@@ -72,7 +88,7 @@ enum CarRenderLibrary {
         let frames: [[String: Placement]]
     }
 
-    struct Credit: Codable, Identifiable {
+    struct Credit: Codable, Identifiable, Equatable {
         let title: String
         let author: String
         let authorURL: String
@@ -89,6 +105,9 @@ enum CarRenderLibrary {
         let frameCount: Int
         var hasPlates = false
         var hasTint = false
+        var wheelStyles: [String] = []
+        var meter: Double?
+        var canChangeStance: Bool { wheelStyles.contains("stock") && meter != nil }
 
         fileprivate func remoteURL(_ frame: Int) -> URL {
             CarRenderLibrary.baseURL.appendingPathComponent("\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp")
@@ -176,7 +195,9 @@ enum CarRenderLibrary {
         guard catalog.colors.contains(color) else { return nil }
         return Match(carKey: key, colorKey: color, frameCount: catalog.frames,
                      hasPlates: (entry?.plates ?? generic?.plates) == true,
-                     hasTint: (entry?.tint ?? generic?.tint) == true)
+                     hasTint: (entry?.tint ?? generic?.tint) == true,
+                     wheelStyles: entry?.wheels ?? generic?.wheels ?? [],
+                     meter: entry?.meter ?? generic?.meter)
     }
 
     // MARK: - Frames
@@ -197,14 +218,27 @@ enum CarRenderLibrary {
         return image
     }
 
+    /// One wheel style's layer frames for this car (the new wheels over a
+    /// transparent background), or nil if it has none or any is missing.
+    static func wheelLayers(of match: Match, style: String) async -> [UIImage]? {
+        guard match.wheelStyles.contains(style) else { return nil }
+        return await layers(of: match, folder: "wheels/\(style)")
+    }
+
     /// The car's window masks for the tint add-on, one per frame (white =
     /// glass), or nil if it has none or any is missing.
     static func tintMasks(of match: Match) async -> [UIImage]? {
         guard match.hasTint else { return nil }
-        return await withTaskGroup(of: (Int, UIImage?).self) { group in
+        return await layers(of: match, folder: "tint")
+    }
+
+    /// A per-frame layer folder under the car (`tint`, `wheels/<style>`),
+    /// disk-cached like the frames; nil if any frame is missing.
+    private static func layers(of match: Match, folder: String) async -> [UIImage]? {
+        await withTaskGroup(of: (Int, UIImage?).self) { group in
             for i in 0..<match.frameCount {
                 group.addTask {
-                    let path = "\(match.carKey)/tint/\(String(format: "%02d", i)).webp"
+                    let path = "\(match.carKey)/\(folder)/\(String(format: "%02d", i)).webp"
                     let local = cacheDirectory.appendingPathComponent(path)
                     if let image = UIImage(contentsOfFile: local.path) { return (i, image) }
                     guard let (data, response) = try? await URLSession.shared.data(from: baseURL.appendingPathComponent(path)),

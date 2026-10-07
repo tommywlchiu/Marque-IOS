@@ -299,7 +299,7 @@ struct GarageHomeView: View {
                 GarageSummary.sharingSubtitle(car),
                 dot: CarSharingSummary.needsReview(car))
             row(.customize(car.id), "paintbrush", "Customize",
-                car.customization.tint == .none ? "Window tint & plate" : "\(car.customization.tint.title) tint")
+                GarageSummary.customizeSubtitle(car))
             row(.details(car.id), "info.circle", "Details",
                 GarageSummary.detailsSubtitle(car))
         }

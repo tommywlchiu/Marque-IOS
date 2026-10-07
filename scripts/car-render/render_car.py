@@ -211,6 +211,246 @@ if opt.get("mask") == "glass":
             m.surface_render_method = "DITHERED"
     print("GLASS", sorted(glass))
 
+# wheelpack=<glb> wheelnode=<node>: the wheels add-on layer — the car's own
+# wheels made invisible, the rest of the car a holdout (the fenders still
+# hide what they should), and the pack's wheel (rim + its own tire) placed at
+# each of the car's wheels, scaled to its tire. The app draws this over the
+# car's frames. Tires are `tiremat=a|b`, else found by name.
+# wheelstock=1: the car's own wheels alone (the body a holdout). Its alpha is
+# also where the wheels show in the frame, so with the frame shifted over it
+# the app fakes a lowered/lifted stance without re-rendering the car.
+WHEEL_MODE = "wheelpack" if "wheelpack" in opt else "stock" if opt.get("wheelstock") == "1" else None
+if WHEEL_MODE:
+    import re
+    from mathutils import Vector as V
+    turn.rotation_euler.z = 0; bpy.context.view_layer.update()
+    tire_pat = re.compile(r"tire|tyre|pneu|reifen|gomma|llanta|shina", re.I)
+    def is_tire(m): return bool(m) and bool(tire_pat.search(m.name))
+    # The car's wheels, found by geometry (names are unreliable — one
+    # model's "Rubber" is its door seals; and many models merge the tires
+    # into the body mesh): in each corner, the connected piece of geometry
+    # that touches the floor and is wheel-sized is the tire.
+    import numpy as np
+    def world_verts(o):
+        co = np.empty(len(o.data.vertices) * 3); o.data.vertices.foreach_get("co", co)
+        co = co.reshape(-1, 3); m = np.array(o.matrix_world)
+        return co @ m[:3, :3].T + m[:3, 3]
+    def components(o):
+        """Connected pieces of a mesh: a component id per vertex (union-find)."""
+        n = len(o.data.vertices); parent = np.arange(n)
+        ev = np.empty(len(o.data.edges) * 2, dtype=np.int32); o.data.edges.foreach_get("vertices", ev)
+        ev = ev.reshape(-1, 2)
+        def find(a):
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]; a = parent[a]
+            return a
+        for a, b in ev:
+            ra, rb = find(a), find(b)
+            if ra != rb: parent[ra] = rb
+        return np.array([find(i) for i in range(n)])
+    verts = {o.name: world_verts(o) for o in meshes}
+    floor = min(v[:, 2].min() for v in verts.values() if len(v))
+    comp_cache = {}
+    def comps(o):
+        if o.name not in comp_cache: comp_cache[o.name] = components(o)
+        return comp_cache[o.name]
+    def box(o):
+        v = verts[o.name]; return V(v.min(0)), V(v.max(0))
+    # Tire-named geometry per corner, when a model has it (most reliable).
+    named = {}
+    for o in meshes:
+        v = verts[o.name]; mw = o.matrix_world
+        for p in o.data.polygons:
+            if p.material_index < len(o.material_slots) and is_tire(o.material_slots[p.material_index].material):
+                pts = v[list(p.vertices)]
+                c = pts.mean(0)
+                named.setdefault((c[0] > 0, c[1] > 0), []).append(pts)
+    wheels = []
+    for sx in (1, -1):
+        for sy in (1, -1):
+            best = None
+            tire = named.get((sx > 0, sy > 0))
+            if tire:
+                pts = np.vstack(tire); lo, hi = V(pts.min(0)), V(pts.max(0)); size = hi - lo
+                if 0.3 <= size.z <= 1.2 and size.y <= size.z and size.x <= size.z * 1.4:
+                    wheels.append({"center": (lo + hi) / 2, "radius": size.z / 2, "width": size.y,
+                                   "side": sy, "axle": sx, "floor": lo.z})
+                    continue
+            # The lowest point in this corner (a model can carry something
+            # lower than its tires elsewhere, like a shadow plane).
+            corner_floor = min((v[(v[:, 0] * sx > 0.4) & (v[:, 1] * sy > 0.2)][:, 2].min()
+                                for v in verts.values() if ((v[:, 0] * sx > 0.4) & (v[:, 1] * sy > 0.2)).any()), default=floor)
+            for o in meshes:
+                v = verts[o.name]
+                touch = np.where((v[:, 2] <= corner_floor + 0.03) & (v[:, 0] * sx > 0.4) & (v[:, 1] * sy > 0.2))[0]
+                if not len(touch): continue
+                cid = comps(o)
+                for c in np.unique(cid[touch]):
+                    piece = v[cid == c]; lo, hi = V(piece.min(0)), V(piece.max(0)); size = hi - lo
+                    if not (0.3 <= size.z <= 1.2) or size.y > size.z or size.x > size.z * 1.4: continue
+                    if best is None or size.z > best[0]: best = (size.z, lo, hi)
+            if best:
+                _, lo, hi = best
+                wheels.append({"center": (lo + hi) / 2, "radius": (hi.z - lo.z) / 2, "width": hi.y - lo.y,
+                               "side": sy, "axle": sx, "floor": corner_floor})
+            else:
+                # A tire fused to the body (no separate piece): place it at the
+                # contact patch, with the manifest's radius (wheel_r) or a typical one.
+                pts = np.vstack([v[(v[:, 2] <= corner_floor + 0.03) & (v[:, 0] * sx > 0.4) & (v[:, 1] * sy > 0.2)]
+                                 for v in verts.values()])
+                if len(pts):
+                    r = float(opt.get("wheel_r", 0.36)); cx, cy = float(np.median(pts[:, 0])), float(np.median(pts[:, 1]))
+                    wheels.append({"center": V((cx, cy, corner_floor + r)), "radius": r, "width": 0.26,
+                                   "side": sy, "axle": sx, "floor": corner_floor, "guessed": True})
+    # Cars are symmetric: per axle, keep the more plausible side (its center
+    # sits one radius above the floor) and mirror it to the other.
+    def badness(w):
+        return abs(w["center"].z - (w["floor"] + w["radius"])) + (0.5 if w.get("guessed") else 0) + (0 if 0.26 <= w["radius"] <= 0.5 else 1)
+    fixed = []
+    for sx in (1, -1):
+        pair = [w for w in wheels if w["axle"] == sx]
+        if not pair: continue
+        good = min(pair, key=badness)
+        for sy in (1, -1):
+            c = good["center"].copy(); c.y = abs(c.y) * sy
+            fixed.append(dict(good, center=c, side=sy))
+    # Front and rear tracks are nearly equal; an axle that picked an inboard
+    # piece (hidden in the body) takes the other axle's wider track.
+    if len({w["axle"] for w in fixed}) == 2:
+        track = max(abs(w["center"].y) for w in fixed)
+        for w in fixed:
+            if abs(w["center"].y) < track - 0.08:
+                w["center"] = w["center"].copy(); w["center"].y = track * w["side"]
+    wheels = fixed
+    # wheelfix=front_x,rear_x,y,z,r: placed by hand, for a model detection gets wrong.
+    if opt.get("wheelfix"):
+        fx, rx, y, z, r = (float(t) for t in opt["wheelfix"].split(","))
+        wheels = [{"center": V((x, sy * y, z)), "radius": r, "width": 0.26, "side": sy, "axle": 1 if x > 0 else -1}
+                  for x in (fx, rx) for sy in (1, -1)]
+    if len(wheels) != 4:
+        print("WHEELS_NOT_FOUND", len(wheels)); sys.exit(1)
+    print("WHEELS", [(tuple(round(v, 2) for v in w["center"]), round(w["radius"], 3)) for w in wheels])
+    # The car: its wheels invisible, everything else a holdout.
+    invisible = bpy.data.materials.new("WheelGone"); invisible.use_nodes = True
+    nt = invisible.node_tree; nt.nodes.clear()
+    nt.links.new(nt.nodes.new("ShaderNodeBsdfTransparent").outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+    invisible.surface_render_method = "DITHERED"
+    hold = bpy.data.materials.new("CarHoldout"); hold.use_nodes = True
+    nt = hold.node_tree; nt.nodes.clear()
+    nt.links.new(nt.nodes.new("ShaderNodeHoldout").outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+    # Every connected piece that sits inside a wheel's volume (tire, rim,
+    # brake, caliper) goes invisible — even when it shares a mesh with the
+    # body; everything else (fenders, bumpers) stays a holdout so it still
+    # covers the new wheel where it should.
+    def inside(lo, hi):
+        for w in wheels:
+            c, r, half = w["center"], w["radius"] * 1.08, w["width"] / 2 + 0.25
+            if (lo[0] >= c.x - r and hi[0] <= c.x + r and lo[2] >= c.z - r and hi[2] <= c.z + r
+                    and lo[1] >= c.y - half and hi[1] <= c.y + half):
+                return True
+        return False
+    for o in meshes:
+        o.data = o.data.copy()
+        if WHEEL_MODE == "stock":
+            # The car's own materials on its wheels; the body's polygons
+            # all move to an appended holdout slot.
+            o.data.materials.append(hold); hold_index = len(o.data.materials) - 1
+        else:
+            o.data.materials.clear(); o.data.materials.append(hold); o.data.materials.append(invisible)
+        v = verts[o.name]
+        if not len(v): continue
+        lo, hi = v.min(0), v.max(0)
+        gone_vert = np.zeros(len(v), dtype=bool)
+        if inside(lo, hi):
+            gone_vert[:] = True
+        elif any(lo[2] < w["center"].z + w["radius"] and abs((lo[0] + hi[0]) / 2) < 99 for w in wheels):
+            cid = comps(o)
+            for c in np.unique(cid):
+                piece = v[cid == c]
+                if inside(piece.min(0), piece.max(0)): gone_vert[cid == c] = True
+        pv = np.empty(len(o.data.polygons), dtype=np.int32)
+        o.data.polygons.foreach_get("loop_start", pv)
+        loops = np.empty(len(o.data.loops), dtype=np.int32); o.data.loops.foreach_get("vertex_index", loops)
+        wheel_poly = gone_vert[loops[pv]] if len(pv) else np.zeros(0, dtype=bool)
+        if WHEEL_MODE == "stock":
+            idx = np.empty(len(pv), dtype=np.int32); o.data.polygons.foreach_get("material_index", idx)
+            idx[~wheel_poly] = hold_index
+        else:
+            idx = wheel_poly.astype(np.int32)
+        o.data.polygons.foreach_set("material_index", idx)
+if WHEEL_MODE == "wheelpack":
+    # The pack wheel, in its own frame: axle = its thinnest extent, outward
+    # = away from where its non-tire mass (barrel, brake) sits.
+    before = set(bpy.context.scene.objects)
+    bpy.ops.import_scene.gltf(filepath=opt["wheelpack"])
+    new = [o for o in bpy.context.scene.objects if o not in before]
+    new_names = [o.name for o in new]
+    node = bpy.data.objects[opt["wheelnode"]]
+    keep = set(node.children_recursive) | {node}
+    for o in new:
+        if o not in keep and o.type == "MESH": bpy.data.objects.remove(o, do_unlink=True)
+    parts = [o for o in node.children_recursive if o.type == "MESH"] + ([node] if node.type == "MESH" else [])
+    # The pack may hold its wheel at any angle. The axle is the direction the
+    # tire's vertices vary least along (the smallest principal axis, by power
+    # iteration on trace·I − covariance); the radius is the farthest tire
+    # vertex from it.
+    tire_pts = [o.matrix_world @ v.co for o in parts
+                for p in o.data.polygons if p.material_index < len(o.material_slots)
+                and is_tire(o.material_slots[p.material_index].material) for v in [o.data.vertices[i] for i in p.vertices]]
+    if not tire_pts:
+        tire_pts = [o.matrix_world @ v.co for o in parts for v in o.data.vertices]
+    wcenter = sum(tire_pts, V()) / len(tire_pts)
+    cov = Matrix(((0.0,) * 3,) * 3)
+    for q in tire_pts:
+        d = q - wcenter
+        for i in range(3):
+            for j in range(3): cov[i][j] += d[i] * d[j]
+    tr = cov[0][0] + cov[1][1] + cov[2][2]
+    m = Matrix.Identity(3) * tr - cov
+    axis_dir = V((0.3, 0.5, 0.8)).normalized()
+    for _ in range(60): axis_dir = (m @ axis_dir).normalized()
+    # Outer radius of the whole wheel (a low-profile tire can sit inside a
+    # bigger rim lip), so nothing ends up bigger than the car's own tire.
+    all_pts = [o.matrix_world @ v.co for o in parts for v in o.data.vertices]
+    wradius = max(((q - wcenter) - axis_dir * (q - wcenter).dot(axis_dir)).length for q in all_pts)
+    mass = [o.matrix_world @ p.center for o in parts for p in o.data.polygons
+            if not is_tire(o.material_slots[p.material_index].material if p.material_index < len(o.material_slots) else None)]
+    inward = sum(((c - wcenter).dot(axis_dir) for c in mass), 0.0) / max(len(mass), 1)
+    # The barrel and brake sit inside; spokes at the outer face. wheelout=-1
+    # flips it for a pack where that guess is wrong.
+    out_sign = (-1 if inward > 0 else 1) * int(opt.get("wheelout", 1))
+    axis = "pca"
+    # Bake the kept parts into one mesh in the wheel's own unit frame:
+    # center at the origin, outward along +Y, radius 1.
+    for o in parts:
+        o.data = o.data.copy(); o.data.transform(o.matrix_world)
+        o.parent = None; o.matrix_world = Matrix.Identity(4)
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in parts: o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    wheel = bpy.context.view_layer.objects.active
+    for name in new_names:
+        o = bpy.data.objects.get(name)
+        if o is not None and o is not wheel and o.type != "MESH":
+            bpy.data.objects.remove(o, do_unlink=True)
+    axis_vec = axis_dir * out_sign
+    wheel.data.transform(Matrix.Translation(-wcenter))
+    wheel.data.transform(axis_vec.rotation_difference(V((0, 1, 0))).to_matrix().to_4x4())
+    wheel.data.transform(Matrix.Scale(1 / wradius, 4))
+    for i, w in enumerate(wheels):
+        inst = wheel if i == 0 else wheel.copy()
+        if i: bpy.context.scene.collection.objects.link(inst)
+        inst.parent = turn
+        inst.location = w["center"]
+        inst.rotation_euler = (0, 0, 0 if w["side"] > 0 else math.pi)
+        inst.scale = (w["radius"],) * 3
+    turn.rotation_euler.z = yaw  # measured at 0; the render (or the frame loop) turns it
+    print("WHEEL_PACK axis", axis, "out", out_sign, "radius", round(wradius, 3))
+
+if WHEEL_MODE:
+    turn.rotation_euler.z = yaw  # wheels were measured at 0
+
 scene = bpy.context.scene
 # World: Blender's bundled studio HDRI for reflections, kept out of the shot.
 world = bpy.data.worlds.new("Studio"); scene.world = world

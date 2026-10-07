@@ -307,6 +307,17 @@ enum GarageSummary {
         return groups.isEmpty ? "Public" : "Public · " + groups.joined(separator: ", ")
     }
 
+    /// What's set in Customize (wheels, tint), or what can be.
+    static func customizeSubtitle(_ car: Car) -> String {
+        var parts: [String] = []
+        if let id = car.customization.wheels {
+            parts.append(CarRenderLibrary.cachedCatalog()?.wheelStyles?.first { $0.id == id }?.title ?? "Custom wheels")
+        }
+        if car.customization.stance != .stock { parts.append(car.customization.stance.title) }
+        if car.customization.tint != .none { parts.append("\(car.customization.tint.title) tint") }
+        return parts.isEmpty ? "Wheels, stance, tint & plate" : parts.joined(separator: " · ")
+    }
+
     static func detailsSubtitle(_ car: Car) -> String {
         let parts = [car.trim, car.engine, car.transmission, car.color].filter { !$0.isEmpty }
         return parts.isEmpty ? "Add specs" : parts.prefix(3).joined(separator: " · ")

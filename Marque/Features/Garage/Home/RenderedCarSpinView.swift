@@ -17,12 +17,21 @@ struct RenderedCarSpinView: UIViewRepresentable {
     /// Window masks, one per frame, for the tint add-on.
     var tintMasks: [UIImage]? = nil
     var tint: CarCustomization.Tint = .none
+    /// The chosen wheel style's layer, one per frame (nil = stock wheels).
+    var wheelLayers: [UIImage]? = nil
+    /// The car's own wheels alone, one per frame — what the stance add-on
+    /// shifts the body over.
+    var stockWheels: [UIImage]? = nil
+    /// How far the body moves relative to the wheels, as a fraction of the
+    /// frame's height (meters × the catalog's `meter`); 0 = stock stance.
+    var stanceLift: CGFloat = 0
 
     func makeUIView(context: Context) -> StageView {
         let view = StageView()
         view.plateText = plateText
         view.tintOpacity = tint.opacity
-        view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first)
+        view.stanceLift = stanceLift
+        view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first)
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
@@ -34,14 +43,18 @@ struct RenderedCarSpinView: UIViewRepresentable {
         let coordinator = context.coordinator
         view.plateText = plateText
         view.tintOpacity = tint.opacity
+        view.stanceLift = stanceLift
         let platesChanged = coordinator.plates != plates || coordinator.tintMasks.count != (tintMasks?.count ?? 0)
+            || coordinator.wheelLayers.first !== wheelLayers?.first || coordinator.stockWheels.first !== stockWheels?.first
         coordinator.plates = plates
         coordinator.tintMasks = tintMasks ?? []
+        coordinator.wheelLayers = wheelLayers ?? []
+        coordinator.stockWheels = stockWheels ?? []
         if let frames, coordinator.frames.count != frames.count {
             coordinator.frames = frames
             coordinator.show(coordinator.index)
         } else if coordinator.frames.isEmpty {
-            view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first)
+            view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first)
         } else if platesChanged {
             coordinator.show(coordinator.index)
         }
@@ -79,7 +92,18 @@ struct RenderedCarSpinView: UIViewRepresentable {
         private var plateLayers: [String: CALayer] = [:]
         /// Black, shown through the current frame's window mask.
         private let tintLayer = CALayer()
+        /// The wheels add-on: its layer over the car, and mirrored in the floor.
+        private let wheelView = UIImageView()
+        private let reflectionWheelView = UIImageView()
         private let tintMask = CALayer()
+        /// The stance add-on: the frame shifted over the wheels, with its
+        /// own wheels cut out, and a dark wheel well where they were.
+        private let wellLayer = CALayer()
+        private let wellMask = CALayer()
+        private let carCut = CALayer()
+        private var stockImage: UIImage?
+        private var cutImages: [ObjectIdentifier: CGImage] = [:]
+        var stanceLift: CGFloat = 0 { didSet { if stanceLift != oldValue { setNeedsLayout() } } }
         var tintOpacity: Float = 0 {
             didSet { tintLayer.opacity = tintOpacity }
         }
@@ -103,10 +127,18 @@ struct RenderedCarSpinView: UIViewRepresentable {
             reflectionView.layer.anchorPoint = .zero
             reflectionView.alpha = 0.3
             reflectionClip.addSubview(reflectionView)
+            reflectionView.addSubview(reflectionWheelView)
             reflectionFade.colors = [UIColor.black.cgColor, UIColor.clear.cgColor]
             reflectionClip.layer.mask = reflectionFade
             addSubview(reflectionClip)
+            wellLayer.backgroundColor = UIColor(white: 0.03, alpha: 1).cgColor
+            wellMask.contentsGravity = .resize
+            wellLayer.mask = wellMask
+            wellLayer.isHidden = true
+            layer.addSublayer(wellLayer)
+            carCut.contentsGravity = .resize
             addSubview(carView)
+            addSubview(wheelView)
             tintLayer.backgroundColor = UIColor.black.cgColor
             tintLayer.opacity = 0
             tintMask.contentsGravity = .resize
@@ -116,8 +148,12 @@ struct RenderedCarSpinView: UIViewRepresentable {
 
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-        func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil, tintMask mask: UIImage? = nil) {
+        func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil,
+                  tintMask mask: UIImage? = nil, wheels: UIImage? = nil, stock: UIImage? = nil) {
             placements = plates ?? [:]
+            stockImage = stock
+            wheelView.image = wheels ?? (stanceLift != 0 ? stock : nil)
+            reflectionWheelView.image = wheels
             tintMask.contents = mask?.cgImage
             tintLayer.isHidden = mask == nil
             carView.image = image
@@ -191,8 +227,28 @@ struct RenderedCarSpinView: UIViewRepresentable {
 
             CATransaction.begin()
             CATransaction.setDisableActions(true)
-            carView.frame = car
-            tintLayer.frame = car
+            // Stance: the body (frame, tint, plates) moves; the wheels don't.
+            let stanced = stanceLift != 0 && stockImage != nil
+            let body = stanced ? car.offsetBy(dx: 0, dy: -stanceLift * car.height) : car
+            carView.frame = body
+            wheelView.frame = car
+            if stanced, let stock = stockImage {
+                if wheelView.image == nil { wheelView.image = stock }
+                insertSubview(wheelView, belowSubview: carView)
+                wellLayer.isHidden = false
+                wellLayer.frame = body
+                wellMask.frame = CGRect(origin: .zero, size: body.size)
+                wellMask.contents = stock.cgImage
+                carCut.frame = CGRect(origin: .zero, size: body.size)
+                carCut.contents = cutImage(for: stock)
+                carView.layer.mask = carCut
+            } else {
+                insertSubview(wheelView, aboveSubview: carView)
+                wellLayer.isHidden = true
+                carView.layer.mask = nil
+            }
+            reflectionWheelView.frame = CGRect(origin: .zero, size: size)
+            tintLayer.frame = body
             tintMask.frame = CGRect(origin: .zero, size: car.size)
             reflectionClip.frame = clip
             // Each column mirrored about its own point on the contact line
@@ -210,8 +266,25 @@ struct RenderedCarSpinView: UIViewRepresentable {
             let midY = a + b * car.midX
             shadow.frame = CGRect(x: car.minX + car.width * 0.06, y: midY - car.height * 0.07,
                                   width: car.width * 0.88, height: car.height * 0.14)
-            layoutPlates(in: car)
+            layoutPlates(in: body)
             CATransaction.commit()
+        }
+
+        /// Opaque everywhere except where the car's own wheels show: the
+        /// frame's mask when the body is shifted over the wheels.
+        private func cutImage(for stock: UIImage) -> CGImage? {
+            let id = ObjectIdentifier(stock)
+            if let cached = cutImages[id] { return cached }
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            let size = CGSize(width: stock.size.width * stock.scale, height: stock.size.height * stock.scale)
+            let image = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+                UIColor.white.setFill()
+                UIRectFill(CGRect(origin: .zero, size: size))
+                stock.draw(in: CGRect(origin: .zero, size: size), blendMode: .destinationOut, alpha: 1)
+            }.cgImage
+            cutImages[id] = image
+            return image
         }
 
         /// Each visible plate: the plate artwork mapped onto its quad in this
@@ -279,13 +352,17 @@ struct RenderedCarSpinView: UIViewRepresentable {
 
         var plates: CarRenderLibrary.PlateTrack?
         var tintMasks: [UIImage] = []
+        var wheelLayers: [UIImage] = []
+        var stockWheels: [UIImage] = []
 
         func show(_ i: Int) {
             guard !frames.isEmpty else { return }
             index = ((i % frames.count) + frames.count) % frames.count
             stage?.show(frames[index],
                         plates: plates.flatMap { index < $0.frames.count ? $0.frames[index] : nil },
-                        tintMask: index < tintMasks.count ? tintMasks[index] : nil)
+                        tintMask: index < tintMasks.count ? tintMasks[index] : nil,
+                        wheels: index < wheelLayers.count ? wheelLayers[index] : nil,
+                        stock: index < stockWheels.count ? stockWheels[index] : nil)
         }
 
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
