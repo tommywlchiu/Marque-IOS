@@ -90,7 +90,8 @@ only = [a for a in sys.argv[2:] if not a.startswith("--")]
 cars, generics = [], []
 for key, car in manifest.items():
     if catalog_only or (only and key not in only):
-        if len(glob.glob(os.path.join(dst, key, "*", "*.webp"))) != FRAMES * len(palette):
+        # Only the color frames — tint/ and wheels/ hold more webp files.
+        if sum(len(glob.glob(os.path.join(dst, key, c, "*.webp"))) for c in palette) != FRAMES * len(palette):
             continue
         has_plates = os.path.exists(os.path.join(dst, key, "plates.json"))
     else:

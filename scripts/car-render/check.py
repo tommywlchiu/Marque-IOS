@@ -116,6 +116,13 @@ for e in entries:
                 if runs(prof, 6) < 2: bad(f"wheels: {s} shows {runs(prof, 6)} wheel(s) side-on at frame {f}")
     if "stock" in rendered and not e.get("meter"): bad("stance: no meter")
 
+# Every manifest car must be in the catalog (a partial publish once wrote a
+# catalog with one car in it).
+if not only:
+    manifest = json.load(open(os.path.join(here, "manifest.json")))
+    missing = sorted(set(manifest) - {e["key"] for e in entries})
+    for k in missing: problems.append(f"{k}: in the manifest but not in catalog.json")
+
 total = len([e for e in entries if not only or e["key"] in only])
 for p in problems: print("FAIL", p)
 print(f"checked {checked}/{total} renders, {len(problems)} problem(s)")
