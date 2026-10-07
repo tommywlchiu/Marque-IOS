@@ -227,6 +227,16 @@ struct GarageHomeView: View {
                 Text(GarageSummary.mileageText(car) ?? "Mileage not set")
                     .font(.headline)
                     .foregroundColor(GarageTheme.primaryText)
+                if let kind = car.rangeKind, let range = car.rangeText {
+                    Image(systemName: kind.systemImage)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(GarageTheme.secondaryText)
+                        .padding(.leading, 10)
+                    Text(range)
+                        .font(.headline)
+                        .foregroundColor(GarageTheme.primaryText)
+                        .accessibilityLabel("\(range) on a full \(kind == .charge ? "charge" : "tank")")
+                }
             }
             HStack(spacing: 6) {
                 if status.needsAttention {

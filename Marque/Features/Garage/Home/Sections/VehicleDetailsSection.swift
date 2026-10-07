@@ -7,6 +7,9 @@ struct VehicleSpecs {
     var color = ""
     var mileage = ""
     var fuelType = ""
+    var rangeLabel = ""  // "Range (full charge)" / "Range (full tank)"
+    var range = ""       // owner's car only; range isn't public
+    var tankSize = ""    // diesel, owner's car only
     var transmission = ""
     var trim = ""
     var bodyStyle = ""
@@ -17,6 +20,11 @@ struct VehicleSpecs {
         color = car.color
         mileage = car.mileage
         fuelType = car.fuelType
+        if let kind = car.rangeKind, let text = car.rangeText {
+            rangeLabel = kind.label
+            range = text
+        }
+        tankSize = car.tankSizeText ?? ""
         transmission = car.transmission
         trim = car.trim
         bodyStyle = car.bodyStyle
@@ -36,7 +44,7 @@ struct VehicleSpecs {
     }
 
     var isEmpty: Bool {
-        [color, mileage, fuelType, transmission, trim, bodyStyle, driveType, engine].allSatisfy(\.isEmpty)
+        [color, mileage, fuelType, range, tankSize, transmission, trim, bodyStyle, driveType, engine].allSatisfy(\.isEmpty)
     }
 }
 
@@ -55,6 +63,8 @@ struct VehicleDetailsSection: View {
                 if !specs.color.isEmpty        { DetailRow(label: "Color", value: specs.color) }
                 if !specs.mileage.isEmpty      { DetailRow(label: "Mileage", value: specs.mileage) }
                 if !specs.fuelType.isEmpty     { DetailRow(label: "Fuel Type", value: specs.fuelType) }
+                if !specs.range.isEmpty        { DetailRow(label: specs.rangeLabel, value: specs.range) }
+                if !specs.tankSize.isEmpty     { DetailRow(label: "Tank Size", value: specs.tankSize) }
                 if !specs.transmission.isEmpty { DetailRow(label: "Transmission", value: specs.transmission) }
                 if !specs.trim.isEmpty         { DetailRow(label: "Trim", value: specs.trim) }
                 if !specs.bodyStyle.isEmpty    { DetailRow(label: "Body Style", value: specs.bodyStyle) }

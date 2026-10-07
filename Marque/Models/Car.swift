@@ -27,6 +27,12 @@ struct Car: Identifiable, Codable, Equatable {
     var driveType: String
     var engine: String
     var fuelType: String
+    // Miles on a full charge (electric) or a full tank (hybrid, diesel), as
+    // the owner entered it. Only shown for those fuel types (`rangeKind`).
+    // Private: not in PublicCar.
+    var fullRange: Int?
+    // Fuel tank size in US gallons; diesel cars only (`tracksTankSize`). Private.
+    var tankGallons: Double?
     var transmission: String
     var insuranceProvider: String
     var insurancePolicyNumber: String
@@ -96,6 +102,8 @@ struct Car: Identifiable, Codable, Equatable {
         driveType: String = "",
         engine: String = "",
         fuelType: String = "",
+        fullRange: Int? = nil,
+        tankGallons: Double? = nil,
         transmission: String = "",
         insuranceProvider: String = "",
         insurancePolicyNumber: String = "",
@@ -135,6 +143,8 @@ struct Car: Identifiable, Codable, Equatable {
         self.driveType = driveType
         self.engine = engine
         self.fuelType = fuelType
+        self.fullRange = fullRange
+        self.tankGallons = tankGallons
         self.transmission = transmission
         self.insuranceProvider = insuranceProvider
         self.insurancePolicyNumber = insurancePolicyNumber
@@ -167,7 +177,7 @@ struct Car: Identifiable, Codable, Equatable {
         case photoStorageURLs
         case photoOffsetY
         case licensePlate, vinNumber, color, mileage, mileageUpdatedAt, trim, bodyStyle, driveType, engine
-        case fuelType, transmission
+        case fuelType, fullRange, tankGallons, transmission
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
         case warrantyProvider, warrantyType
@@ -207,6 +217,8 @@ struct Car: Identifiable, Codable, Equatable {
         driveType = try c.decodeIfPresent(String.self, forKey: .driveType) ?? ""
         engine = try c.decodeIfPresent(String.self, forKey: .engine) ?? ""
         fuelType = try c.decode(String.self, forKey: .fuelType)
+        fullRange = try? c.decodeIfPresent(Int.self, forKey: .fullRange)
+        tankGallons = try? c.decodeIfPresent(Double.self, forKey: .tankGallons)
         transmission = try c.decode(String.self, forKey: .transmission)
         insuranceProvider = try c.decode(String.self, forKey: .insuranceProvider)
         insurancePolicyNumber = try c.decode(String.self, forKey: .insurancePolicyNumber)
@@ -262,6 +274,8 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(driveType, forKey: .driveType)
         try c.encode(engine, forKey: .engine)
         try c.encode(fuelType, forKey: .fuelType)
+        try c.encodeIfPresent(fullRange, forKey: .fullRange)
+        try c.encodeIfPresent(tankGallons, forKey: .tankGallons)
         try c.encode(transmission, forKey: .transmission)
         try c.encode(insuranceProvider, forKey: .insuranceProvider)
         try c.encode(insurancePolicyNumber, forKey: .insurancePolicyNumber)
@@ -330,6 +344,42 @@ struct Car: Identifiable, Codable, Equatable {
     /// unit — always go through this (or `mileageValue`) instead of reading
     /// `mileage` raw wherever a unit-suffixed display string is needed.
     var mileageText: String? { mileageValue.map { "\($0.formatted()) mi" } }
+
+    /// What `fullRange` measures for this car's fuel type, or nil when the
+    /// app doesn't track range for it (gasoline, flex fuel, unset).
+    var rangeKind: RangeKind? { RangeKind(fuelType: fuelType) }
+
+    /// "310 mi", or nil when there's no range to show for this car.
+    var rangeText: String? {
+        guard rangeKind != nil, let fullRange, fullRange > 0 else { return nil }
+        return "\(fullRange.formatted()) mi"
+    }
+
+    static func tracksTankSize(fuelType: String) -> Bool {
+        fuelType.lowercased().contains("diesel")
+    }
+
+    /// "18.5 gal", or nil unless this is a diesel car with a tank size set.
+    var tankSizeText: String? {
+        guard Car.tracksTankSize(fuelType: fuelType), let tankGallons, tankGallons > 0 else { return nil }
+        return "\(tankGallons.formatted(.number.precision(.fractionLength(0...1)))) gal"
+    }
+
+    enum RangeKind {
+        case charge  // electric
+        case tank    // hybrid, plug-in hybrid, diesel
+
+        init?(fuelType: String) {
+            let s = fuelType.lowercased()
+            // "hybrid" first: a "Plug-in Hybrid Electric Vehicle" contains both words.
+            if s.contains("hybrid") || s.contains("diesel") { self = .tank }
+            else if s.contains("electric") { self = .charge }
+            else { return nil }
+        }
+
+        var label: String { self == .charge ? "Range (full charge)" : "Range (full tank)" }
+        var systemImage: String { self == .charge ? "bolt.batteryblock" : "fuelpump" }
+    }
 
     // Drives NotificationManager's mileage check-in alert (FR-14-adjacent):
     // a mileage-only reminder can never fire a date-based local notification,
