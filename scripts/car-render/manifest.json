@@ -462,7 +462,8 @@
     },
     "sketchfab": "3d97c4d69dcf4cf8b8c774b724861cc1",
     "paintmat": "paint",
-    "flip": false
+    "flip": false,
+    "plate_rear_z": 0.6
   },
   "hyundai-tucson-4g": {
     "covers": {
@@ -592,7 +593,8 @@
     "flip": true,
     "bodyStyles": [
       "sedan"
-    ]
+    ],
+    "tintmat": "UCB_Lights_and_Glass_Transperent"
   },
   "generic-coupe": {
     "sketchfab": "20f9af9b8a404d5cb022ac6fe87f21f5",
@@ -602,7 +604,8 @@
     "bodyStyles": [
       "coupe",
       "convertible"
-    ]
+    ],
+    "noWheels": true
   },
   "generic-hatchback": {
     "sketchfab": "2866efdfa943484391ef8313768e074d",
@@ -610,7 +613,8 @@
     "flip": true,
     "bodyStyles": [
       "hatchback"
-    ]
+    ],
+    "tintmat": "UCB_Lights_and_Glass_Transperent"
   },
   "generic-wagon": {
     "sketchfab": "cfaabdec76a74b68a48ba5657b6d9aee",

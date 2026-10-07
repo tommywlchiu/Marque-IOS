@@ -314,6 +314,16 @@ if WHEEL_MODE:
         for sy in (1, -1):
             c = good["center"].copy(); c.y = abs(c.y) * sy
             fixed.append(dict(good, center=c, side=sy))
+    # Front and rear wheels are close to the same size; an axle whose pick
+    # is >20% bigger caught something else (a fender, a mud flap) — it takes
+    # the other axle's radius, sitting on its own floor.
+    axles = {w["axle"]: w["radius"] for w in fixed}
+    if len(axles) == 2:
+        small = min(axles.values())
+        for w in fixed:
+            if w["radius"] > small * 1.2:
+                w["radius"] = small
+                w["center"] = w["center"].copy(); w["center"].z = w["floor"] + small
     # Front and rear tracks are nearly equal; an axle that picked an inboard
     # piece (hidden in the body) takes the other axle's wider track.
     if len({w["axle"] for w in fixed}) == 2:
@@ -344,19 +354,24 @@ if WHEEL_MODE:
     # covers the new wheel where it should.
     def inside(lo, hi):
         for w in wheels:
-            c, r, half = w["center"], w["radius"] * 1.08, w["width"] / 2 + 0.25
+            c, r, half = w["center"], w["radius"] * 1.15, w["width"] / 2 + 0.3
             if (lo[0] >= c.x - r and hi[0] <= c.x + r and lo[2] >= c.z - r and hi[2] <= c.z + r
                     and lo[1] >= c.y - half and hi[1] <= c.y + half):
                 return True
         return False
+    white = bpy.data.materials.new("WheelWhite"); white.use_nodes = True
+    nt = white.node_tree; nt.nodes.clear()
+    em = nt.nodes.new("ShaderNodeEmission"); em.inputs["Color"].default_value = (1, 1, 1, 1)
+    nt.links.new(em.outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
     for o in meshes:
+        for slot in o.material_slots: slot.link = "DATA"
         o.data = o.data.copy()
-        if WHEEL_MODE == "stock":
-            # The car's own materials on its wheels; the body's polygons
-            # all move to an appended holdout slot.
-            o.data.materials.append(hold); hold_index = len(o.data.materials) - 1
-        else:
-            o.data.materials.clear(); o.data.materials.append(hold); o.data.materials.append(invisible)
+        # stock: a mask — the car's own wheels flat white, the body a holdout
+        # (publish.py takes the frame's own pixels through it). Rendering the
+        # wheels with their own materials instead leaked: some models link
+        # materials per object, so the appended holdout slot didn't take.
+        o.data.materials.clear(); o.data.materials.append(hold)
+        o.data.materials.append(white if WHEEL_MODE == "stock" else invisible)
         v = verts[o.name]
         if not len(v): continue
         lo, hi = v.min(0), v.max(0)
@@ -372,11 +387,7 @@ if WHEEL_MODE:
         o.data.polygons.foreach_get("loop_start", pv)
         loops = np.empty(len(o.data.loops), dtype=np.int32); o.data.loops.foreach_get("vertex_index", loops)
         wheel_poly = gone_vert[loops[pv]] if len(pv) else np.zeros(0, dtype=bool)
-        if WHEEL_MODE == "stock":
-            idx = np.empty(len(pv), dtype=np.int32); o.data.polygons.foreach_get("material_index", idx)
-            idx[~wheel_poly] = hold_index
-        else:
-            idx = wheel_poly.astype(np.int32)
+        idx = wheel_poly.astype(np.int32)
         o.data.polygons.foreach_set("material_index", idx)
 if WHEEL_MODE == "wheelpack":
     # The pack wheel, in its own frame: axle = its thinnest extent, outward
@@ -538,7 +549,7 @@ scene.render.resolution_x, scene.render.resolution_y = w, h
 scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - Punchy"
 # EEVEE has less bounce light than Cycles; lift it so white paint isn't gray.
 if engine != "CYCLES": scene.view_settings.exposure = float(opt.get("exposure", 0.45))
-if opt.get("matid") == "1" or "mask" in opt: scene.view_settings.view_transform = "Standard"; scene.view_settings.look = "None"; scene.view_settings.exposure = 0
+if opt.get("matid") == "1" or "mask" in opt or opt.get("wheelstock") == "1": scene.view_settings.view_transform = "Standard"; scene.view_settings.look = "None"; scene.view_settings.exposure = 0
 scene.render.image_settings.file_format = "PNG"
 scene.render.image_settings.color_mode = "RGBA"
 

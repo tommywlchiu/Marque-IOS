@@ -68,10 +68,17 @@ def publish_frames(key, pngs):
     for style_dir in sorted(glob.glob(os.path.join(sys.argv[1], "_wheels", key, "*"))):
         layer = sorted(glob.glob(os.path.join(style_dir, "*.png")))
         if len(layer) != FRAMES: continue
+        stock = os.path.basename(style_dir) == "stock"
         for p in layer:
             out = os.path.join(dst, key, "wheels", os.path.basename(style_dir), os.path.basename(p).replace(".png", ".webp"))
             os.makedirs(os.path.dirname(out), exist_ok=True)
-            Image.open(p).crop(box).save(out, "WEBP", quality=85, method=4)
+            img = Image.open(p)
+            if stock:
+                # The mask (car's own wheels white) applied to the frame itself.
+                frame = Image.open(os.path.join(src, key, "silver", os.path.basename(p))).convert("RGBA")
+                a = Image.composite(frame.getchannel("A"), Image.new("L", frame.size, 0), img.convert("RGBA").getchannel("A"))
+                frame.putalpha(a); img = frame
+            img.crop(box).save(out, "WEBP", quality=85, method=4)
     return has_plates
 
 # --catalog-only: rewrite catalog.json from what's already published (no

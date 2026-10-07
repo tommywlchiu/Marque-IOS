@@ -14,6 +14,8 @@ manifest = json.load(open(os.path.join(here, "manifest.json")))
 addons = json.load(open(os.path.join(here, "addons.json")))
 for key in sys.argv[4:] or list(manifest):
     car = manifest[key]
+    if car.get("noWheels"):  # detection can't place wheels on this model
+        continue
     # "stock" = the car's own wheels alone: the stance add-on draws the car's
     # frame shifted over it (and its alpha says where the wheels show).
     for style in addons["wheels"] + [{"id": "stock"}]:
