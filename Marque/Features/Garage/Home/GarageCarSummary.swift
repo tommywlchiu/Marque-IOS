@@ -307,7 +307,7 @@ enum GarageSummary {
         return groups.isEmpty ? "Public" : "Public · " + groups.joined(separator: ", ")
     }
 
-    /// What's set in Customize (wheels, tint), or what can be.
+    /// What's set in Customize (wheels, stance, tint, extras), or what can be.
     static func customizeSubtitle(_ car: Car) -> String {
         var parts: [String] = []
         if let id = car.customization.wheels {
@@ -315,7 +315,8 @@ enum GarageSummary {
         }
         if car.customization.stance != .stock { parts.append(car.customization.stance.title) }
         if car.customization.tint != .none { parts.append("\(car.customization.tint.title) tint") }
-        return parts.isEmpty ? "Wheels, stance, tint & plate" : parts.joined(separator: " · ")
+        parts += car.customization.extras.map(\.title)
+        return parts.isEmpty ? "Wheels, stance, tint & extras" : parts.joined(separator: " · ")
     }
 
     static func detailsSubtitle(_ car: Car) -> String {

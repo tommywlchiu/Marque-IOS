@@ -469,6 +469,15 @@ if WHEEL_MODE == "wheelpack":
 if WHEEL_MODE:
     turn.rotation_euler.z = yaw  # wheels were measured at 0
 
+# extra=<id>: a roof/body extras add-on layer — the whole car a holdout and
+# the extra built here, fitted to this car's roof or trunk (measured with
+# rays down onto the body), so it needs no third-party model. Ids: rack
+# (crossbars), box (cargo box on crossbars), lightbar (LED bar over the
+# windshield), spoiler (trunk wing). extra=measure prints the measurements
+# (EXTRAS line) and which extras fit this body, without rendering.
+if "extra" in opt:
+    exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "extras_scene.py")).read())
+
 scene = bpy.context.scene
 # World: Blender's bundled studio HDRI for reflections, kept out of the shot.
 world = bpy.data.worlds.new("Studio"); scene.world = world

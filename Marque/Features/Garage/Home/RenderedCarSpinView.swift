@@ -25,13 +25,24 @@ struct RenderedCarSpinView: UIViewRepresentable {
     /// How far the body moves relative to the wheels, as a fraction of the
     /// frame's height (meters × the catalog's `meter`); 0 = stock stance.
     var stanceLift: CGFloat = 0
+    /// Roof/body extras, back to front: each one's layer frames and where
+    /// the layer sits relative to the frame (fractions; it can stand above
+    /// the frame — a roof box is taller than the car's own crop).
+    var extras: [ExtraLayer] = []
+
+    struct ExtraLayer {
+        let rect: CGRect
+        let frames: [UIImage]
+    }
 
     func makeUIView(context: Context) -> StageView {
         let view = StageView()
         view.plateText = plateText
         view.tintOpacity = tint.opacity
         view.stanceLift = stanceLift
-        view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first)
+        view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first,
+                  extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } })
+        context.coordinator.extras = extras
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
@@ -46,15 +57,18 @@ struct RenderedCarSpinView: UIViewRepresentable {
         view.stanceLift = stanceLift
         let platesChanged = coordinator.plates != plates || coordinator.tintMasks.count != (tintMasks?.count ?? 0)
             || coordinator.wheelLayers.first !== wheelLayers?.first || coordinator.stockWheels.first !== stockWheels?.first
+            || coordinator.extras.map { $0.frames.first } != extras.map { $0.frames.first }
         coordinator.plates = plates
         coordinator.tintMasks = tintMasks ?? []
         coordinator.wheelLayers = wheelLayers ?? []
         coordinator.stockWheels = stockWheels ?? []
+        coordinator.extras = extras
         if let frames, coordinator.frames.count != frames.count {
             coordinator.frames = frames
             coordinator.show(coordinator.index)
         } else if coordinator.frames.isEmpty {
-            view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first)
+            view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first,
+                      extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } })
         } else if platesChanged {
             coordinator.show(coordinator.index)
         }
@@ -102,6 +116,10 @@ struct RenderedCarSpinView: UIViewRepresentable {
         private let wellMask = CALayer()
         private let carCut = CALayer()
         private var stockImage: UIImage?
+        /// The extras' layers over everything else (the car is already cut
+        /// out of them where it hides them), placed by their rects.
+        private var extraViews: [UIImageView] = []
+        private var extraRects: [CGRect] = []
         private var cutImages: [ObjectIdentifier: CGImage] = [:]
         var stanceLift: CGFloat = 0 { didSet { if stanceLift != oldValue { setNeedsLayout() } } }
         var tintOpacity: Float = 0 {
@@ -149,8 +167,18 @@ struct RenderedCarSpinView: UIViewRepresentable {
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
         func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil,
-                  tintMask mask: UIImage? = nil, wheels: UIImage? = nil, stock: UIImage? = nil) {
+                  tintMask mask: UIImage? = nil, wheels: UIImage? = nil, stock: UIImage? = nil,
+                  extras: [(CGRect, UIImage)] = []) {
             placements = plates ?? [:]
+            while extraViews.count < extras.count {
+                let view = UIImageView(); addSubview(view); extraViews.append(view)
+            }
+            for (i, view) in extraViews.enumerated() {
+                view.image = i < extras.count ? extras[i].1 : nil
+                view.isHidden = i >= extras.count
+                bringSubviewToFront(view)
+            }
+            extraRects = extras.map(\.0)
             stockImage = stock
             wheelView.image = wheels ?? (stanceLift != 0 ? stock : nil)
             reflectionWheelView.image = wheels
@@ -207,13 +235,18 @@ struct RenderedCarSpinView: UIViewRepresentable {
         override func layoutSubviews() {
             super.layoutSubviews()
             guard let image = carView.image, image.size.width > 0, image.size.height > 0 else { return }
-            // Fit the car plus its reflection inside our bounds, car on top.
+            // Fit the car plus its reflection inside our bounds, car on top —
+            // and room for any extra standing above or beside the car (in
+            // fractions of the car's frame), the car itself kept centered.
             let r = Self.reflectionFraction
-            let scale = min(bounds.width / image.size.width, bounds.height / (image.size.height * (1 + r)))
+            let above = max(0, -(extraRects.map(\.minY).min() ?? 0))
+            let side = max(0, -(extraRects.map(\.minX).min() ?? 0), (extraRects.map(\.maxX).max() ?? 1) - 1)
+            let scale = min(bounds.width / (image.size.width * (1 + 2 * side)),
+                            bounds.height / (image.size.height * (1 + r + above)))
             let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
             let car = CGRect(
                 x: (bounds.width - size.width) / 2,
-                y: (bounds.height - size.height * (1 + r)) / 2,
+                y: (bounds.height - size.height * (1 + r + above)) / 2 + size.height * above,
                 width: size.width, height: size.height
             )
             // The contact line in our coordinates: y = a + b·x.
@@ -267,6 +300,11 @@ struct RenderedCarSpinView: UIViewRepresentable {
             shadow.frame = CGRect(x: car.minX + car.width * 0.06, y: midY - car.height * 0.07,
                                   width: car.width * 0.88, height: car.height * 0.14)
             layoutPlates(in: body)
+            // Extras ride on the body, so they follow the stance too.
+            for (view, rect) in zip(extraViews, extraRects) {
+                view.frame = CGRect(x: body.minX + rect.minX * body.width, y: body.minY + rect.minY * body.height,
+                                    width: rect.width * body.width, height: rect.height * body.height)
+            }
             CATransaction.commit()
         }
 
@@ -354,6 +392,7 @@ struct RenderedCarSpinView: UIViewRepresentable {
         var tintMasks: [UIImage] = []
         var wheelLayers: [UIImage] = []
         var stockWheels: [UIImage] = []
+        var extras: [ExtraLayer] = []
 
         func show(_ i: Int) {
             guard !frames.isEmpty else { return }
@@ -362,7 +401,8 @@ struct RenderedCarSpinView: UIViewRepresentable {
                         plates: plates.flatMap { index < $0.frames.count ? $0.frames[index] : nil },
                         tintMask: index < tintMasks.count ? tintMasks[index] : nil,
                         wheels: index < wheelLayers.count ? wheelLayers[index] : nil,
-                        stock: index < stockWheels.count ? stockWheels[index] : nil)
+                        stock: index < stockWheels.count ? stockWheels[index] : nil,
+                        extras: extras.compactMap { e in index < e.frames.count ? (e.rect, e.frames[index]) : nil })
         }
 
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {

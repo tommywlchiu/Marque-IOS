@@ -54,6 +54,7 @@ enum CarRenderLibrary {
         let tint: Bool?
         let wheels: [String]?
         let meter: Double?
+        let extras: [String: [Double]]?
     }
 
     struct Entry: Codable, Identifiable {
@@ -71,6 +72,11 @@ enum CarRenderLibrary {
         let wheels: [String]?
         /// One meter of height as a fraction of the frame's height.
         let meter: Double?
+        /// Roof/body extras rendered for this car (`<key>/extras/<id>/NN.webp`,
+        /// ids in `CarCustomization.Extra`), each with where its layer sits:
+        /// x, y, width, height as fractions of the frame (y < 0 = above it —
+        /// a roof box stands higher than the car's own crop).
+        let extras: [String: [Double]]?
         var id: String { key }
     }
 
@@ -107,6 +113,8 @@ enum CarRenderLibrary {
         var hasTint = false
         var wheelStyles: [String] = []
         var meter: Double?
+        /// Each rendered extra's layer rect, in fractions of the frame.
+        var extras: [String: CGRect] = [:]
         var canChangeStance: Bool { wheelStyles.contains("stock") && meter != nil }
 
         fileprivate func remoteURL(_ frame: Int) -> URL {
@@ -197,7 +205,10 @@ enum CarRenderLibrary {
                      hasPlates: (entry?.plates ?? generic?.plates) == true,
                      hasTint: (entry?.tint ?? generic?.tint) == true,
                      wheelStyles: entry?.wheels ?? generic?.wheels ?? [],
-                     meter: entry?.meter ?? generic?.meter)
+                     meter: entry?.meter ?? generic?.meter,
+                     extras: (entry?.extras ?? generic?.extras ?? [:]).compactMapValues { r in
+                         r.count == 4 ? CGRect(x: r[0], y: r[1], width: r[2], height: r[3]) : nil
+                     })
     }
 
     // MARK: - Frames
@@ -225,6 +236,13 @@ enum CarRenderLibrary {
         return await layers(of: match, folder: "wheels/\(style)")
     }
 
+    /// One roof/body extra's layer frames for this car (the extra alone, the
+    /// car's own body cut out of it), or nil if it has none or any is missing.
+    static func extraLayers(of match: Match, extra: String) async -> [UIImage]? {
+        guard match.extras[extra] != nil else { return nil }
+        return await layers(of: match, folder: "extras/\(extra)")
+    }
+
     /// The car's window masks for the tint add-on, one per frame (white =
     /// glass), or nil if it has none or any is missing.
     static func tintMasks(of match: Match) async -> [UIImage]? {
@@ -232,7 +250,7 @@ enum CarRenderLibrary {
         return await layers(of: match, folder: "tint")
     }
 
-    /// A per-frame layer folder under the car (`tint`, `wheels/<style>`),
+    /// A per-frame layer folder under the car (`tint`, `wheels/<style>`, `extras/<id>`),
     /// disk-cached like the frames; nil if any frame is missing.
     private static func layers(of match: Match, folder: String) async -> [UIImage]? {
         await withTaskGroup(of: (Int, UIImage?).self) { group in

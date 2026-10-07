@@ -297,9 +297,10 @@ struct GarageDetailsScreen: View {
 
 // MARK: - Customize
 
-/// How the car's studio render is dressed in the Garage hero: window tint
-/// now; the license plate shown here is edited where it lives (Wallet ›
-/// Registration). Private — none of it reaches Explore.
+/// How the car's studio render is dressed in the Garage hero: window tint,
+/// stance, wheels, roof and body extras; the license plate shown here is
+/// edited where it lives (Wallet › Registration). Private — none of it
+/// reaches Explore.
 struct GarageCustomizeScreen: View {
     let carID: UUID
 
@@ -356,6 +357,40 @@ struct GarageCustomizeScreen: View {
                     .garageRowBackground()
                 }
 
+                let extras = availableExtras(for: car)
+                if !extras.isEmpty {
+                    Section(header: Text("Roof & Body")) {
+                        if extras.contains(.rack) || extras.contains(.box) {
+                            Picker("Roof", selection: Binding(
+                                get: { car.customization.extras.first { $0 == .rack || $0 == .box } },
+                                set: { roof in
+                                    var updated = car
+                                    updated.customization.setExtra(.rack, on: roof == .rack)
+                                    updated.customization.setExtra(.box, on: roof == .box)
+                                    carStore.updateCar(updated)
+                                }
+                            )) {
+                                Text("None").tag(CarCustomization.Extra?.none)
+                                ForEach([CarCustomization.Extra.rack, .box].filter(extras.contains)) {
+                                    Text($0.title).tag(Optional($0))
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                        ForEach([CarCustomization.Extra.lightbar, .spoiler].filter(extras.contains)) { extra in
+                            Toggle(extra.title, isOn: Binding(
+                                get: { car.customization.extras.contains(extra) },
+                                set: { on in
+                                    var updated = car
+                                    updated.customization.setExtra(extra, on: on)
+                                    carStore.updateCar(updated)
+                                }
+                            ))
+                        }
+                    }
+                    .garageRowBackground()
+                }
+
                 Section(header: Text("License Plate"),
                         footer: Text("Shown on your car in your Garage only — never in Explore.")) {
                     HStack {
@@ -376,6 +411,12 @@ struct GarageCustomizeScreen: View {
         let catalog = CarRenderLibrary.cachedCatalog()
         guard let match = CarRenderLibrary.match(car, in: catalog) else { return [] }
         return (catalog?.wheelStyles ?? []).filter { match.wheelStyles.contains($0.id) }
+    }
+
+    /// The roof/body extras rendered for this car.
+    private func availableExtras(for car: Car) -> [CarCustomization.Extra] {
+        guard let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()) else { return [] }
+        return CarCustomization.Extra.allCases.filter { match.extras[$0.rawValue] != nil }
     }
 
     private func wheelRow(_ car: Car, id: String?, title: String) -> some View {

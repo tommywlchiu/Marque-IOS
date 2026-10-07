@@ -5,7 +5,8 @@ Per car: every color × frame exists and shares one size; plates.json has a
 quad per frame that lies on the car (opaque frame pixels under it); the tint
 masks sit inside the car and cover a plausible share of it; each wheel layer
 sits low on the car, over the stock wheels, and shows two separate wheels in
-the side views; stance data (stock layer + meter) is present. Prints one
+the side views; stance data (stock layer + meter) is present; the roof/body
+extras are all there and sit on the upper part of the car. Prints one
 line per problem and a summary; exits 1 if anything failed."""
 import json, os, sys
 from PIL import Image
@@ -115,6 +116,28 @@ for e in entries:
                 prof = list(w.resize((W, 1), Image.BOX).getdata())
                 if runs(prof, 6) < 2: bad(f"wheels: {s} shows {runs(prof, 6)} wheel(s) side-on at frame {f}")
     if "stock" in rendered and not e.get("meter"): bad("stance: no meter")
+
+    # Roof/body extras: crossbars and a cargo box on every car, plus a rear
+    # wing (trunk) or a light bar (everything else); each layer present in
+    # every frame and standing on the upper half of the car.
+    extras = e.get("extras") or {}
+    for need in ("rack", "box"):
+        if need not in extras: bad(f"extras: {need} missing")
+    if ("spoiler" in extras) == ("lightbar" in extras): bad(f"extras: expected one of spoiler/lightbar, got {sorted(extras)}")
+    for x, (rx, ry, rw, rh) in extras.items():
+        if not (-0.15 <= rx and rx + rw <= 1.15 and -0.8 <= ry and ry + rh <= 1.0 and rw > 0.02 and rh > 0.01):
+            bad(f"extras: {x} rect {[rx, ry, rw, rh]} off the car"); continue
+        for f in (0, 15, 33):
+            pth = os.path.join(d, "extras", x, f"{f:02d}.webp")
+            if not os.path.exists(pth): bad(f"extras: {x} missing frame {f}"); continue
+            a = alpha(pth)
+            box = a.point(lambda v: 255 if v > 128 else 0).getbbox()
+            if not box: bad(f"extras: {x} empty at frame {f}"); continue
+            cbox = car[f].point(lambda v: 255 if v > 128 else 0).getbbox()
+            # The layer's lowest point, in the car frame's pixels.
+            bottom = (ry + rh * box[3] / a.size[1]) * H
+            if bottom > cbox[1] + (cbox[3] - cbox[1]) * 0.6:
+                bad(f"extras: {x} reaches too low at frame {f}")
 
 # Every manifest car must be in the catalog (a partial publish once wrote a
 # catalog with one car in it).

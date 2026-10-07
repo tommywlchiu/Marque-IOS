@@ -28,13 +28,51 @@ def credit(uid):
             "authorURL": m["user"]["profileUrl"], "license": lic.get("label", ""),
             "licenseURL": lic.get("url", ""), "url": m["viewerUrl"]}
 
-def publish_frames(key, pngs):
+def alpha_box(pngs, pad):
+    """The union of the images' opaque pixels, padded (clamped to the image)."""
     box = None
     for p in pngs:
         b = Image.open(p).getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox()
         if b: box = b if box is None else (min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3]))
+    if box is None: return None
     w, h = Image.open(pngs[0]).size
-    box = (max(box[0] - PAD, 0), max(box[1] - PAD, 0), min(box[2] + PAD, w), min(box[3] + PAD, h))
+    return (max(box[0] - pad, 0), max(box[1] - pad, 0), min(box[2] + pad, w), min(box[3] + pad, h))
+
+def car_box(key):
+    """The car's crop box: from its published scale.json, else re-derived
+    from its raw frames (cars published before the box was recorded)."""
+    scale_path = os.path.join(dst, key, "scale.json")
+    scale = json.load(open(scale_path)) if os.path.exists(scale_path) else {}
+    if "box" not in scale:
+        pngs = sorted(glob.glob(os.path.join(src, key, "*", "*.png")))
+        if len(pngs) != FRAMES * len(palette): return None
+        scale["box"] = list(alpha_box(pngs, PAD))
+        json.dump(scale, open(scale_path, "w"))
+    return tuple(scale["box"])
+
+def publish_extras(key, box):
+    """Roof/body extras layers (extras.py). Each is cropped to its own box —
+    a roof box stands well above the car's — and placed by a rect in
+    fractions of the car's cropped frame (y < 0 = above it), written to
+    <car>/extras.json for the catalog."""
+    rects = {}
+    bw, bh = box[2] - box[0], box[3] - box[1]
+    for extra_dir in sorted(glob.glob(os.path.join(sys.argv[1], "_extras", key, "*"))):
+        layer = sorted(glob.glob(os.path.join(extra_dir, "*.png")))
+        if len(layer) != FRAMES: continue
+        ebox = alpha_box(layer, 4)
+        if ebox is None: continue
+        extra = os.path.basename(extra_dir)
+        for p in layer:
+            out = os.path.join(dst, key, "extras", extra, os.path.basename(p).replace(".png", ".webp"))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            Image.open(p).crop(ebox).save(out, "WEBP", quality=85, method=4)
+        rects[extra] = [round((ebox[0] - box[0]) / bw, 4), round((ebox[1] - box[1]) / bh, 4),
+                        round((ebox[2] - ebox[0]) / bw, 4), round((ebox[3] - ebox[1]) / bh, 4)]
+    json.dump(rects, open(os.path.join(dst, key, "extras.json"), "w"))
+
+def publish_frames(key, pngs):
+    box = alpha_box(pngs, PAD)
     for p in pngs:
         color, name = p.split(os.sep)[-2:]
         out = os.path.join(dst, key, color, name.replace(".png", ".webp"))
@@ -55,7 +93,8 @@ def publish_frames(key, pngs):
     # One meter of height as a fraction of the cropped frame (the camera is
     # fixed: ~208.5 px/m at 1200x675), so the app can shift the body a given
     # height for the stance add-on.
-    json.dump({"meter": round(208.5 / (box[3] - box[1]), 4)}, open(os.path.join(dst, key, "scale.json"), "w"))
+    json.dump({"meter": round(208.5 / (box[3] - box[1]), 4), "box": list(box)}, open(os.path.join(dst, key, "scale.json"), "w"))
+    publish_extras(key, box)
     # Window masks (tints.py), cropped the same way: the app darkens through
     # them for the tint add-on. Lossless — a soft edge would halo.
     tint_src = sorted(glob.glob(os.path.join(sys.argv[1], "_tint", key, "tint", "*.png")))
@@ -84,19 +123,24 @@ def publish_frames(key, pngs):
 # --catalog-only: rewrite catalog.json from what's already published (no
 # frame conversion) — for a manifest change that touches no pixels.
 catalog_only = "--catalog-only" in sys.argv
+# --extras: publish only the extras layers (no frame conversion), then the catalog.
+extras_only = "--extras" in sys.argv
 # Optional car keys after the render dir: publish just those; every other
 # car keeps its published files and stays in the catalog.
 only = [a for a in sys.argv[2:] if not a.startswith("--")]
 cars, generics = [], []
 for key, car in manifest.items():
-    if catalog_only or (only and key not in only):
-        # Only the color frames — tint/ and wheels/ hold more webp files.
+    if extras_only and (not only or key in only):
+        box = car_box(key)
+        if box: publish_extras(key, box)
+    if catalog_only or extras_only or (only and key not in only):
+        # Only the color frames — tint/, wheels/ and extras/ hold more webp files.
         if sum(len(glob.glob(os.path.join(dst, key, c, "*.webp"))) for c in palette) != FRAMES * len(palette):
             continue
         has_plates = os.path.exists(os.path.join(dst, key, "plates.json"))
     else:
         has_plates = None
-    convert = not catalog_only and (not only or key in only)
+    convert = not catalog_only and not extras_only and (not only or key in only)
     pngs = sorted(glob.glob(os.path.join(src, key, "*", "*.png"))) if convert else []
     if convert and len(pngs) != FRAMES * len(palette):
         print(f"SKIP {key}: {len(pngs)} frames, expected {FRAMES * len(palette)}")
@@ -108,13 +152,18 @@ for key, car in manifest.items():
                     if len(glob.glob(os.path.join(d, "*.webp"))) == FRAMES)
     scale_path = os.path.join(dst, key, "scale.json")
     meter = json.load(open(scale_path))["meter"] if os.path.exists(scale_path) else None
+    extras_path = os.path.join(dst, key, "extras.json")
+    extras = {e: r for e, r in (json.load(open(extras_path)) if os.path.exists(extras_path) else {}).items()
+              if len(glob.glob(os.path.join(dst, key, "extras", e, "*.webp"))) == FRAMES}
     if "bodyStyles" in car:  # an unbadged stand-in for every car of these body styles
         generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]),
-                         "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter})
+                         "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter,
+                         "extras": extras})
     else:
         c = car["covers"]
         cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
-                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter})
+                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter,
+                     "extras": extras})
     print(f"PUBLISHED {key}")
 
 addons = json.load(open(os.path.join(here, "addons.json")))

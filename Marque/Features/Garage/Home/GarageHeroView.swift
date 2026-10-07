@@ -218,6 +218,8 @@ struct GarageHeroView: View {
     @State private var renderWheels: (key: String, layers: [UIImage])?
     /// The car's own wheels alone (for the stance add-on), keyed by car.
     @State private var renderStock: (key: String, layers: [UIImage])?
+    /// The chosen roof/body extras' layers, keyed by car + extras.
+    @State private var renderExtras: (key: String, layers: [RenderedCarSpinView.ExtraLayer])?
     /// The match behind the rendered hero, for loading add-on layers later.
     @State private var renderMatch: CarRenderLibrary.Match?
 
@@ -252,6 +254,7 @@ struct GarageHeroView: View {
         .animation(.easeOut(duration: 0.35), value: loaded?.key)
         .task(id: key) { await load() }
         .task(id: wheelsKey) { await loadWheels() }
+        .task(id: extrasKey) { await loadExtras() }
         .onAppear { if !reduceMotion { tilt.start() } }
         .onDisappear { tilt.stop() }
         .onChange(of: reduceMotion) { _, reduce in reduce ? tilt.stop() : tilt.start() }
@@ -327,6 +330,24 @@ struct GarageHeroView: View {
         renderWheels = (wheelsKey, layers)
     }
 
+    /// Car + chosen extras: changes when either does.
+    private var extrasKey: String {
+        ([key, renderMatch?.carKey ?? ""] + car.customization.extras.map(\.rawValue)).joined(separator: "|")
+    }
+
+    private func loadExtras() async {
+        let extrasKey = extrasKey
+        guard let match = renderMatch, renderExtras?.key != extrasKey else { return }
+        var layers: [RenderedCarSpinView.ExtraLayer] = []
+        for extra in car.customization.extras {
+            guard let rect = match.extras[extra.rawValue],
+                  let frames = await CarRenderLibrary.extraLayers(of: match, extra: extra.rawValue) else { continue }
+            layers.append(.init(rect: rect, frames: frames))
+        }
+        guard !Task.isCancelled else { return }
+        renderExtras = (extrasKey, layers)
+    }
+
     private func loadFrames(_ match: CarRenderLibrary.Match, key: String) async {
         if renderPlates?.key != key, let track = await CarRenderLibrary.plates(of: match), !Task.isCancelled {
             renderPlates = (key, track)
@@ -355,7 +376,8 @@ struct GarageHeroView: View {
                 tint: car.customization.tint,
                 wheelLayers: renderWheels?.key == wheelsKey ? renderWheels?.layers : nil,
                 stockWheels: renderStock?.key == key ? renderStock?.layers : nil,
-                stanceLift: stanceLift
+                stanceLift: stanceLift,
+                extras: renderExtras?.key == extrasKey ? renderExtras?.layers ?? [] : []
             )
             // A new car/color must get a fresh view: the coordinator holds the
             // previous car's frames, and SwiftUI would otherwise reuse it.
