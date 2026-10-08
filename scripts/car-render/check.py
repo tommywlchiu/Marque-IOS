@@ -35,6 +35,28 @@ def runs(column_profile, threshold):
     return count
 
 
+def wheel_spans(a):
+    """A wheel layer's box and its tyres: the horizontal runs across the
+    lower 40% of the box, tallest first, as (x0, x1, column height). The
+    stock layer's two tallest are its near-side wheels; the rest are the
+    far-side wheels showing under the body — a few pixels of tyre under a
+    car's sill, much more under a truck (a deep-dish style's far wheel can
+    stand taller there than the near rear one) — a mud-flap lip, or a liner
+    piece split off its wheel by a pixel. A fender liner above a stock wheel
+    stays out of the band."""
+    solid = a.point(lambda v: 255 if v > 128 else 0)
+    box = solid.getbbox()
+    if not box: return None, []
+    top = int(box[3] - (box[3] - box[1]) * 0.4)
+    band = list(solid.crop((0, top, solid.width, box[3])).resize((solid.width, 1), Image.BOX).getdata())
+    height = list(solid.resize((solid.width, 1), Image.BOX).getdata())  # column height, in 255ths of the frame
+    spans, start = [], None
+    for x, v in enumerate(band + [0]):
+        if v and start is None: start = x
+        elif not v and start is not None: spans.append((start, x, max(height[start:x]))); start = None
+    return box, sorted(spans, key=lambda s: -s[2])
+
+
 for e in entries:
     key = e["key"]
     if only and key not in only: continue
@@ -95,23 +117,34 @@ for e in entries:
         if s not in rendered: bad(f"wheels: {s} missing"); continue
         for f in (0, 6, 15, 18, 33):
             w = alpha(os.path.join(d, "wheels", s, f"{f:02d}.webp"), (W, H))
-            box = w.point(lambda a: 255 if a > 128 else 0).getbbox()
+            box, tyres = wheel_spans(w)
             if not box:
                 if f != 6: bad(f"wheels: {s} empty at frame {f}")  # head-on, a narrow wheel can hide entirely
                 continue
             cbox = car[f].point(lambda a: 255 if a > 128 else 0).getbbox()
             ch = cbox[3] - cbox[1]
             if s == "stock":
-                stock_box[f] = box
+                stock_box[f] = box, tyres[:2]
                 if box[1] < cbox[1] + ch * 0.25: bad(f"wheels: stock layer reaches too high at frame {f}")
             elif f in stock_box:
-                sb = stock_box[f]
-                # The new wheels stand where the car's own do.
+                sb, near = stock_box[f]
+                # The new wheels stand where the car's own do: each of the
+                # stock near wheels has a new tyre over it, side to side.
                 # (Head-on, frame 6, how much tire peeks past the bumper
-                # depends on the wheel's offset — only its bottom must match.)
-                if (f != 6 and abs(box[1] - sb[1]) > ch * 0.1) or abs(box[3] - sb[3]) > ch * 0.06 \
-                        or (f != 6 and (abs(box[0] - sb[0]) > W * 0.06 or abs(box[2] - sb[2]) > W * 0.06)):
-                    bad(f"wheels: {s} off the car's wheels at frame {f} ({box} vs stock {sb})")
+                # depends on the wheel's offset — only its bottom must match.
+                # The top only bounds a wheel standing taller than the car's
+                # own: a stock layer can carry a fender liner above its tyre,
+                # and a too-small wheel already fails on its sides.)
+                # A deep-dish tyre can merge with the far wheel touching it
+                # under a truck: it may run on past one side, but only into
+                # where the stock layer shows wheel too.
+                tol = W * 0.06
+                def over(t, x0, x1):
+                    return (t[0] <= x0 + tol and t[1] >= x1 - tol and t[0] >= sb[0] - tol and t[1] <= sb[2] + tol
+                            and (abs(t[0] - x0) <= tol or abs(t[1] - x1) <= tol))
+                missed = [] if f == 6 else [(x0, x1) for x0, x1, _ in near if not any(over(t, x0, x1) for t in tyres)]
+                if (f != 6 and sb[1] - box[1] > ch * 0.1) or abs(box[3] - sb[3]) > ch * 0.06 or missed:
+                    bad(f"wheels: {s} off the car's wheels at frame {f} (box {box} vs stock {sb}; no new tyre over {missed})")
             if f in (15, 33):  # side views: two wheels, apart
                 prof = list(w.resize((W, 1), Image.BOX).getdata())
                 if runs(prof, 6) < 2: bad(f"wheels: {s} shows {runs(prof, 6)} wheel(s) side-on at frame {f}")
