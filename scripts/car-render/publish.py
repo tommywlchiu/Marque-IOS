@@ -66,7 +66,7 @@ def publish_extras(key, box):
         for p in layer:
             out = os.path.join(dst, key, "extras", extra, os.path.basename(p).replace(".png", ".webp"))
             os.makedirs(os.path.dirname(out), exist_ok=True)
-            Image.open(p).crop(ebox).save(out, "WEBP", quality=85, method=4)
+            Image.open(p).crop(ebox).save(out, "WEBP", quality=95, method=4)
         rects[extra] = [round((ebox[0] - box[0]) / bw, 4), round((ebox[1] - box[1]) / bh, 4),
                         round((ebox[2] - ebox[0]) / bw, 4), round((ebox[3] - ebox[1]) / bh, 4)]
     json.dump(rects, open(os.path.join(dst, key, "extras.json"), "w"))
@@ -77,7 +77,7 @@ def publish_frames(key, pngs):
         color, name = p.split(os.sep)[-2:]
         out = os.path.join(dst, key, color, name.replace(".png", ".webp"))
         os.makedirs(os.path.dirname(out), exist_ok=True)
-        Image.open(p).crop(box).save(out, "WEBP", quality=82, method=4)
+        Image.open(p).crop(box).save(out, "WEBP", quality=95, method=4)
     # Plate positions (plates.py), as fractions of the cropped frame, so the
     # app can draw the owner's plate on whatever size it shows the frame at.
     has_plates = False
@@ -117,7 +117,7 @@ def publish_frames(key, pngs):
                 frame = Image.open(os.path.join(src, key, "silver", os.path.basename(p))).convert("RGBA")
                 a = Image.composite(frame.getchannel("A"), Image.new("L", frame.size, 0), img.convert("RGBA").getchannel("A"))
                 frame.putalpha(a); img = frame
-            img.crop(box).save(out, "WEBP", quality=85, method=4)
+            img.crop(box).save(out, "WEBP", quality=95, method=4)
     # Seat-color add-on layers (seats.py), one folder per option, same crop
     # — the isolated seat geometry, lit normally (not a stencil), so the app
     # overlays it straight over the frame.
@@ -127,7 +127,7 @@ def publish_frames(key, pngs):
         for p in layer:
             out = os.path.join(dst, key, "seats", os.path.basename(opt_dir), os.path.basename(p).replace(".png", ".webp"))
             os.makedirs(os.path.dirname(out), exist_ok=True)
-            Image.open(p).crop(box).save(out, "WEBP", quality=85, method=4)
+            Image.open(p).crop(box).save(out, "WEBP", quality=95, method=4)
     return has_plates
 
 # --catalog-only: rewrite catalog.json from what's already published (no
