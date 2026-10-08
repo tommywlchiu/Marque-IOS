@@ -15,7 +15,7 @@ os.makedirs(os.path.join(outdir, "_plates"), exist_ok=True)
 for key in sys.argv[3:] or list(manifest):
     car = manifest[key]
     out = os.path.join(outdir, "_plates", f"{key}.json")
-    args = ["blender", "-b", "-P", os.path.join(here, "render_car.py"), "--",
+    args = ["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--",
             f"in={os.path.join(glbdir, key + '.glb')}", f"out={out}", "plates=1", "frames=36",
             "engine=BLENDER_EEVEE", "res=1200x675"]
     for opt in ("flip", "invert"):

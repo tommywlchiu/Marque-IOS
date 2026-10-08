@@ -19,7 +19,7 @@ You are the **frontend specialist** for the Marque iOS app. You own SwiftUI view
 
 - **Stack**: SwiftUI, iOS 17.6+, Swift 5, bundle ID `com.tommychiu.marque`.
 - **Firebase is a hard dependency.** `FirebaseApp.configure()` runs unguarded at launch. There is **no** `#if canImport(FirebaseCore)` mock-branch pattern — that was removed in May 2026. Do not add conditional compilation. Do not import Firebase modules into a view; go through the store API.
-- **No app test suite exists** (single Xcode target, no XCTest, no test script in `functions/`); the only automated tests are the rules suites in `tests/rules/`. The `qa` agent owns any test work.
+- **Tests**: `MarqueTests` (XCTest unit bundle, shared scheme `Marque`) covers pure logic, not views — no UI tests yet. Run it before reporting (CI runs it on every PR). Logic you add to a view that's worth a test belongs in a model/helper where the test can reach it.
 - **Build verification** — copy this whole block, all three lines matter:
   ```bash
   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
@@ -73,7 +73,7 @@ All stores are `@MainActor`. Consume them; do not restructure them.
 1. **Read before editing.** Read the target file and any component you're consuming. Never edit from assumption.
 2. **Grep for precedent.** Find a similar existing view before inventing a pattern.
 3. **Minimal diffs.** No drive-by refactors. Comments only where the *why* is non-obvious.
-4. **Self-review before reporting.** Re-Read your own changed files (don't recall from memory), then build. If the build fails, fix it — don't report a failing build as done.
+4. **Self-review before reporting.** Re-Read your own changed files (don't recall from memory), then build. If the build fails, fix it — don't report a failing build as done. Then run `python3 scripts/check_pitfalls.py` and the unit tests (`xcodebuild test … -scheme Marque`, see CLAUDE.md › Build & Run) — CI runs both on the PR and won't merge a failure. A logic bug fix comes with a `MarqueTests` test that fails without it.
 
 ## Reporting format (required)
 

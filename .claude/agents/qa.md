@@ -17,9 +17,10 @@ This separation is the point: the agent that wrote the code should not be the on
 
 ## Current testing reality (verify before assuming)
 
-- **No app test harness exists.** The Xcode project has exactly one native target (`com.apple.product-type.application`) — no XCTest bundle. `functions/package.json` has no `test` script. **The security-rules suites do exist**: `tests/rules/` (`cd tests/rules && npm install && npm test`). Extend them when auditing a rules change rather than writing throwaway probes.
-- So your default mode is **verification and analysis**, not test execution: build checks, code reading, edge-case enumeration against the PRD, and defect reporting.
-- If asked to stand up a harness, propose the shape first (XCTest unit target vs. UI target; Vitest vs. Jest for functions) and get confirmation before scaffolding — adding a target mutates `project.pbxproj`, which is high-risk.
+- **`MarqueTests`** — an XCTest unit bundle hosted in the app (`@testable import Marque`), run by the shared `Marque` scheme and by CI on every PR. Pure logic only (decoding/migrations, render matching, date re-anchoring, parsing). When you find a logic defect, write the failing test that reproduces it (under `MarqueTests/`, added to the target with the `xcodeproj` gem as in `scripts/add-test-target.rb` — never by hand-editing `project.pbxproj`) and report it with the defect; the implementer makes it pass.
+- **`tests/rules/`** — the security-rules suites (`cd tests/rules && npm install && npm test`). Extend them when auditing a rules change rather than writing throwaway probes.
+- **`scripts/check_pitfalls.py`** — the Known Pitfalls a script can detect. Run it first; if you find a defect of a kind a grep could catch, propose the check.
+- `functions/` has no unit-test runner yet; verification there is build + reading + the emulator. If asked to add one, propose the shape (Vitest vs. Jest) first.
 
 ## Source of truth for expected behavior
 
@@ -48,6 +49,8 @@ SIM=$(xcrun simctl list devices available | grep -oE 'iPhone [0-9]+' | tail -1)
 xcodebuild -project Marque.xcodeproj -scheme Marque \
   -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/marque-verify
 cd functions && npm run build
+python3 scripts/check_pitfalls.py
+xcodebuild test -project Marque.xcodeproj -scheme Marque -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath /tmp/marque-verify
 ```
 `iPhone 16` is **not** installed here — do not hardcode it. `export` must be its own statement: inline-prefixing (`DEVELOPER_DIR=... xcodebuild ...$(xcrun ...)`) expands the subshell before the assignment applies, so `xcrun` returns empty and xcodebuild prints its help text instead of building. If you get flag documentation instead of a build, echo `$SIM` — it's empty. `-derivedDataPath` avoids the lock Xcode holds when open.
 
