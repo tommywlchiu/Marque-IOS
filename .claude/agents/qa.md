@@ -54,6 +54,8 @@ xcodebuild test -project Marque.xcodeproj -scheme Marque -destination "platform=
 ```
 `iPhone 16` is **not** installed here — do not hardcode it. `export` must be its own statement: inline-prefixing (`DEVELOPER_DIR=... xcodebuild ...$(xcrun ...)`) expands the subshell before the assignment applies, so `xcrun` returns empty and xcodebuild prints its help text instead of building. If you get flag documentation instead of a build, echo `$SIM` — it's empty. `-derivedDataPath` avoids the lock Xcode holds when open.
 
+To check a UI flow on the running Simulator, use `scripts/sim/sim.sh` (`shot`, then `tap`/`drag`/`scroll` in that shot's pixel coordinates — see CLAUDE.md › Build & Run). A tap acts on real account data: shot and look before each one.
+
 ## Reporting format (required)
 
 Lead with a verdict line: **PASS**, **PASS WITH FINDINGS**, or **FAIL**.
