@@ -144,6 +144,43 @@ GLOSS = principled("ExtraGloss", (0.008, 0.008, 0.009), 0.12, coat=1.0)
 RUBBER = principled("ExtraRubber", (0.02, 0.02, 0.02), 0.8)
 LENS = principled("ExtraLens", (0.85, 0.86, 0.88), 0.18, metal=1.0)
 
+
+def carbon_material(name="ExtraCarbon"):
+    """A woven carbon-fiber look built from a checker texture (no third-party
+    image, so no credit needed) — two near-black tones in a tight diagonal
+    grid under a glossy clearcoat, which reads as a 2x2 twill weave at the
+    render's distance and resolution."""
+    m = bpy.data.materials.new(name); m.use_nodes = True
+    nt = m.node_tree
+    bsdf = nt.nodes["Principled BSDF"]
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    mapping = nt.nodes.new("ShaderNodeMapping")
+    mapping.inputs["Rotation"].default_value = (0, 0, 0.7854)  # 45°, off the panel lines
+    checker = nt.nodes.new("ShaderNodeTexChecker")
+    checker.inputs["Scale"].default_value = 140  # object-space coords are already in meters
+    checker.inputs["Color1"].default_value = (0.006, 0.006, 0.007, 1)
+    checker.inputs["Color2"].default_value = (0.055, 0.056, 0.062, 1)
+    nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
+    nt.links.new(mapping.outputs["Vector"], checker.inputs["Vector"])
+    nt.links.new(checker.outputs["Color"], bsdf.inputs["Base Color"])
+    # The weave reads mainly through how the specular highlight breaks up,
+    # not the (dark, subtle) base color alone — vary roughness per cell too.
+    rough_ramp = nt.nodes.new("ShaderNodeMapRange")
+    rough_ramp.inputs["To Min"].default_value = 0.18
+    rough_ramp.inputs["To Max"].default_value = 0.42
+    nt.links.new(checker.outputs["Fac"], rough_ramp.inputs["Value"])
+    nt.links.new(rough_ramp.outputs["Result"], bsdf.inputs["Roughness"])
+    bsdf.inputs["Metallic"].default_value = 0.0
+    if "Coat Weight" in bsdf.inputs: bsdf.inputs["Coat Weight"].default_value = 1.0
+    if "Coat Roughness" in bsdf.inputs: bsdf.inputs["Coat Roughness"].default_value = 0.1
+    return m
+
+
+CARBON = carbon_material()
+# finish=carbon: the spoiler wing in woven carbon fiber instead of gloss
+# black, a selectable alternate finish rather than a new extra.
+FINISH_MAT = {"carbon": CARBON}.get(opt.get("finish"), GLOSS)
+
 # The car: a holdout, so it still hides whatever part of the extra is behind it.
 hold = bpy.data.materials.new("CarHoldout"); hold.use_nodes = True
 _nt = hold.node_tree; _nt.nodes.clear()
@@ -257,15 +294,15 @@ def spoiler():
     # trailing edge is higher (front is -X).
     def airfoil(v):
         if v.co.x > 0: v.co.z *= 0.35
-    wing = block("Wing", (x, 0, z), (chord, span, thick), GLOSS, bevel=0.012 * K, segments=4, shape=airfoil)
+    wing = block("Wing", (x, 0, z), (chord, span, thick), FINISH_MAT, bevel=0.012 * K, segments=4, shape=airfoil)
     wing.rotation_euler = (0, math.radians(-8), 0)
     for s in (1, -1):
         y = s * span * 0.32
         z0 = down(x, y)
         h = z - z0
-        block(f"Upright{s}", (x + 0.01, y, z0 + h / 2 - 0.005), (0.11 * K, 0.022 * K, h), GLOSS, bevel=0.006)
+        block(f"Upright{s}", (x + 0.01, y, z0 + h / 2 - 0.005), (0.11 * K, 0.022 * K, h), FINISH_MAT, bevel=0.006)
         block(f"Endplate{s}", (x + 0.01, s * (span / 2 + 0.004), z + 0.012 * K),
-              (chord * 1.05, 0.008, 0.075 * K), GLOSS, bevel=0.003)
+              (chord * 1.05, 0.008, 0.075 * K), FINISH_MAT, bevel=0.003)
 
 
 {"rack": crossbars, "box": cargo_box, "lightbar": lightbar, "spoiler": spoiler}[EXTRA]()

@@ -35,12 +35,19 @@ def run(key):
     if not os.path.exists(fits_path):
         return [f"FAILED {key} measure {(result.stdout + result.stderr).strip().splitlines()[-1:]}"]
     lines = []
-    for extra in json.load(open(fits_path))["fits"]:
+    fits = json.load(open(fits_path))["fits"]
+    # spoiler-carbon: the same wing, in woven carbon fiber instead of gloss
+    # black — a selectable alternate finish, published as its own layer
+    # (same geometry/position as "spoiler", so it shares its crop box).
+    jobs = list(fits) + (["spoiler-carbon"] if "spoiler" in fits else [])
+    for extra in jobs:
         if len(glob.glob(os.path.join(raw, extra, "*.png"))) == 36:
             continue
+        base_extra = "spoiler" if extra == "spoiler-carbon" else extra
+        finish = ["finish=carbon"] if extra == "spoiler-carbon" else []
         result = subprocess.run(base_args(key, car, raw) + [
-            f"extra={extra}", f"colors={extra}:1,1,1", "frames=36", "engine=BLENDER_EEVEE", "samples=32",
-            "res=1200x675"], capture_output=True, text=True)
+            f"extra={base_extra}", f"colors={extra}:1,1,1", "frames=36", "engine=BLENDER_EEVEE", "samples=32",
+            "res=1200x675"] + finish, capture_output=True, text=True)
         made = len(glob.glob(os.path.join(raw, extra, "*.png")))
         lines.append(("DONE" if made == 36 else f"FAILED ({made})") + f" {key} {extra}"
                      + ("" if made == 36 else f" {(result.stdout + result.stderr).strip().splitlines()[-1:]}"))
