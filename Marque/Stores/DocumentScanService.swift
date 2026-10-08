@@ -325,7 +325,7 @@ struct DocumentScanService {
         return data
     }
 
-    private static func parseISODate(_ s: String) -> Date? {
+    static func parseISODate(_ s: String) -> Date? {  // internal for MarqueTests
         guard !s.isEmpty, let utcMidnight = isoDateFormatter.date(from: s) else { return nil }
         // isoDateFormatter (.withFullDate, no time/zone in the string) parses
         // "yyyy-MM-dd" as midnight UTC. Every other date in the app — DatePicker

@@ -24,7 +24,7 @@ for key, car in picks.items():
         if not url: print("NO GLB", key, list(d)); continue
         urllib.request.urlretrieve(url, glb)
     js = os.path.join(testdir, f"{key}.mats.json")
-    subprocess.run(["blender", "-b", "-P", os.path.join(here, "inspect_car.py"), "--", glb, js], stdout=subprocess.DEVNULL, check=True)
+    subprocess.run(["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "inspect_car.py"), "--", glb, js], stdout=subprocess.DEVNULL, check=True)
     mats = json.load(open(js))
     named = [n for n in mats if any(h in n.lower() for h in HINTS) and not any(s in n.lower() for s in SKIP) and mats[n]["alpha"] > 0.9]
     pool = named or [n for n in mats if not any(s in n.lower() for s in SKIP) and mats[n]["alpha"] > 0.9]
@@ -33,7 +33,7 @@ for key, car in picks.items():
     entry.setdefault("paintmat", paint); entry.setdefault("flip", False)
     prep[key] = entry
     json.dump(prep, open(out_path, "w"), indent=2)
-    subprocess.run(["blender", "-b", "-P", os.path.join(here, "render_car.py"), "--", f"in={glb}",
+    subprocess.run(["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--", f"in={glb}",
                     f"out={os.path.join(testdir, key + '.png')}", "paint=0.6,0.02,0.02", f"paintmat={entry['paintmat']}",
                     "engine=BLENDER_EEVEE", "samples=24", "res=800x450"] + (["flip=1"] if entry["flip"] else []),
                    stdout=subprocess.DEVNULL, check=True)
