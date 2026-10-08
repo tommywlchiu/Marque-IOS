@@ -387,6 +387,37 @@ struct GarageCustomizeScreen: View {
                                 }
                             ))
                         }
+                        if car.customization.extras.contains(.spoiler), hasCarbonSpoiler(for: car) {
+                            Picker("Spoiler Finish", selection: Binding(
+                                get: { car.customization.spoilerFinish },
+                                set: { finish in
+                                    var updated = car
+                                    updated.customization.spoilerFinish = finish
+                                    carStore.updateCar(updated)
+                                }
+                            )) {
+                                ForEach(CarCustomization.SpoilerFinish.allCases) { Text($0.title).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                    }
+                    .garageRowBackground()
+                }
+
+                let seatColors = availableSeatColors(for: car)
+                if seatColors.count > 1 {
+                    Section(header: Text("Seats")) {
+                        Picker("Seats", selection: Binding(
+                            get: { car.customization.seatColor },
+                            set: { color in
+                                var updated = car
+                                updated.customization.seatColor = color
+                                carStore.updateCar(updated)
+                            }
+                        )) {
+                            ForEach(seatColors) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
                     }
                     .garageRowBackground()
                 }
@@ -417,6 +448,19 @@ struct GarageCustomizeScreen: View {
     private func availableExtras(for car: Car) -> [CarCustomization.Extra] {
         guard let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()) else { return [] }
         return CarCustomization.Extra.allCases.filter { match.extras[$0.rawValue] != nil }
+    }
+
+    /// Whether this car's spoiler has a carbon-fiber finish rendered.
+    private func hasCarbonSpoiler(for car: Car) -> Bool {
+        CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.extras["spoiler-carbon"] != nil
+    }
+
+    /// The seat-color options rendered for this car, `.standard` (the car's
+    /// own seats) always first. A car with no seats add-on returns just
+    /// `[.standard]`, which hides the section entirely (nothing to choose).
+    private func availableSeatColors(for car: Car) -> [CarCustomization.SeatColor] {
+        guard let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()) else { return [.standard] }
+        return [.standard] + CarCustomization.SeatColor.allCases.filter { $0 != .standard && match.seats.contains($0.rawValue) }
     }
 
     private func wheelRow(_ car: Car, id: String?, title: String) -> some View {

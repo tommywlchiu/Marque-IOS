@@ -77,6 +77,28 @@ struct CarCustomization: Codable, Equatable {
         }
     }
 
+    /// A seat-color option from the render catalog's `<car>/seats/` layers
+    /// (`CarRenderLibrary.Entry.seats`); `.standard` draws nothing extra —
+    /// the car's own seats, already baked into its frames. Most cars have no
+    /// seats add-on at all (the model's interior isn't a separable material),
+    /// so this only ever shows as a choice for the few that do.
+    enum SeatColor: String, Codable, CaseIterable, Identifiable {
+        case standard, black
+
+        var id: String { rawValue }
+        var title: String { self == .standard ? "Standard" : "Black" }
+    }
+
+    /// The rear-wing spoiler's finish — a selectable material on the same
+    /// extra, not a second extra: `carbon` draws the `spoiler-carbon` layer
+    /// in place of `spoiler`.
+    enum SpoilerFinish: String, Codable, CaseIterable, Identifiable {
+        case gloss, carbon
+
+        var id: String { rawValue }
+        var title: String { self == .gloss ? "Gloss Black" : "Carbon Fiber" }
+    }
+
     var tint: Tint = .none
     var stance: Stance = .stock
     /// A wheel style id from the render catalog's `wheelStyles`; nil = the
@@ -84,12 +106,17 @@ struct CarCustomization: Codable, Equatable {
     var wheels: String?
     /// The extras shown, in drawing order (never both rack and box).
     private(set) var extras: [Extra] = []
+    var seatColor: SeatColor = .standard
+    var spoilerFinish: SpoilerFinish = .gloss
 
-    init(tint: Tint = .none, stance: Stance = .stock, wheels: String? = nil, extras: [Extra] = []) {
+    init(tint: Tint = .none, stance: Stance = .stock, wheels: String? = nil, extras: [Extra] = [],
+         seatColor: SeatColor = .standard, spoilerFinish: SpoilerFinish = .gloss) {
         self.tint = tint
         self.stance = stance
         self.wheels = wheels
         self.extras = Self.normalized(extras)
+        self.seatColor = seatColor
+        self.spoilerFinish = spoilerFinish
     }
 
     /// Turns one extra on or off; a cargo box and plain crossbars replace
@@ -110,7 +137,7 @@ struct CarCustomization: Codable, Equatable {
         return set.sorted { ($0.order, $0.rawValue) < ($1.order, $1.rawValue) }
     }
 
-    private enum CodingKeys: String, CodingKey { case tint, stance, wheels, extras }
+    private enum CodingKeys: String, CodingKey { case tint, stance, wheels, extras, seatColor, spoilerFinish }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -120,6 +147,8 @@ struct CarCustomization: Codable, Equatable {
         // An id this build doesn't know is dropped, not the whole list.
         let ids = (try? c.decodeIfPresent([String].self, forKey: .extras)) ?? []
         extras = Self.normalized(ids.compactMap(Extra.init(rawValue:)))
+        seatColor = (try? c.decodeIfPresent(SeatColor.self, forKey: .seatColor)) ?? .standard
+        spoilerFinish = (try? c.decodeIfPresent(SpoilerFinish.self, forKey: .spoilerFinish)) ?? .gloss
     }
 
     func encode(to encoder: Encoder) throws {
@@ -128,5 +157,7 @@ struct CarCustomization: Codable, Equatable {
         try c.encode(stance, forKey: .stance)
         try c.encodeIfPresent(wheels, forKey: .wheels)
         if !extras.isEmpty { try c.encode(extras, forKey: .extras) }
+        if seatColor != .standard { try c.encode(seatColor, forKey: .seatColor) }
+        if spoilerFinish != .gloss { try c.encode(spoilerFinish, forKey: .spoilerFinish) }
     }
 }

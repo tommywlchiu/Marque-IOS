@@ -55,6 +55,10 @@ enum CarRenderLibrary {
         let wheels: [String]?
         let meter: Double?
         let extras: [String: [Double]]?
+        /// Seat-color options rendered for this car (`<key>/seats/<option>/NN.webp`,
+        /// options in `CarCustomization.SeatColor`); optional (older catalogs,
+        /// or a car whose model has no separable seat material).
+        let seats: [String]?
     }
 
     struct Entry: Codable, Identifiable {
@@ -77,6 +81,8 @@ enum CarRenderLibrary {
         /// x, y, width, height as fractions of the frame (y < 0 = above it —
         /// a roof box stands higher than the car's own crop).
         let extras: [String: [Double]]?
+        /// Seat-color options rendered for this car, same shape as `Generic.seats`.
+        let seats: [String]?
         var id: String { key }
     }
 
@@ -115,6 +121,8 @@ enum CarRenderLibrary {
         var meter: Double?
         /// Each rendered extra's layer rect, in fractions of the frame.
         var extras: [String: CGRect] = [:]
+        /// Seat-color option ids rendered for this car (`CarCustomization.SeatColor`).
+        var seats: [String] = []
         var canChangeStance: Bool { wheelStyles.contains("stock") && meter != nil }
 
         fileprivate func remoteURL(_ frame: Int) -> URL {
@@ -208,7 +216,8 @@ enum CarRenderLibrary {
                      meter: entry?.meter ?? generic?.meter,
                      extras: (entry?.extras ?? generic?.extras ?? [:]).compactMapValues { r in
                          r.count == 4 ? CGRect(x: r[0], y: r[1], width: r[2], height: r[3]) : nil
-                     })
+                     },
+                     seats: entry?.seats ?? generic?.seats ?? [])
     }
 
     // MARK: - Frames
@@ -241,6 +250,15 @@ enum CarRenderLibrary {
     static func extraLayers(of match: Match, extra: String) async -> [UIImage]? {
         guard match.extras[extra] != nil else { return nil }
         return await layers(of: match, folder: "extras/\(extra)")
+    }
+
+    /// One seat-color option's layer, over the car the same way its own
+    /// frame is (not positioned by a rect like an extra — it sits exactly
+    /// where the body does), or nil if this car has no seats add-on or
+    /// doesn't render this option.
+    static func seatLayers(of match: Match, option: String) async -> [UIImage]? {
+        guard match.seats.contains(option) else { return nil }
+        return await layers(of: match, folder: "seats/\(option)")
     }
 
     /// The car's window masks for the tint add-on, one per frame (white =

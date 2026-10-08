@@ -7,11 +7,28 @@ final class CarCustomizationTests: XCTestCase {
     }
 
     func testUnknownValuesFromANewerAppFallBackInsteadOfFailing() throws {
-        let c = try decode(#"{"tint":"mirror","stance":"slammed","wheels":"x","extras":["snorkel","rack"]}"#)
+        let c = try decode(#"{"tint":"mirror","stance":"slammed","wheels":"x","extras":["snorkel","rack"],"seatColor":"plaid","spoilerFinish":"chrome"}"#)
         XCTAssertEqual(c.tint, .none)
         XCTAssertEqual(c.stance, .stock)
         XCTAssertEqual(c.wheels, "x")
         XCTAssertEqual(c.extras, [.rack])
+        XCTAssertEqual(c.seatColor, .standard)
+        XCTAssertEqual(c.spoilerFinish, .gloss)
+    }
+
+    func testSeatColorAndSpoilerFinishRoundTrip() throws {
+        var c = CarCustomization()
+        c.seatColor = .black
+        c.spoilerFinish = .carbon
+        let decoded = try JSONDecoder().decode(CarCustomization.self, from: JSONEncoder().encode(c))
+        XCTAssertEqual(decoded.seatColor, .black)
+        XCTAssertEqual(decoded.spoilerFinish, .carbon)
+    }
+
+    func testDefaultSeatColorAndSpoilerFinishAreNotWritten() throws {
+        let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(CarCustomization())) as? [String: Any]
+        XCTAssertNil(object?["seatColor"])
+        XCTAssertNil(object?["spoilerFinish"])
     }
 
     func testEmptyObjectIsTheDefault() throws {
