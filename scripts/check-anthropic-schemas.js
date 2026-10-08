@@ -62,7 +62,12 @@ function findFunctions() {
     const oc = region.indexOf("output_config:");
     if (oc < 0) return; // no structured output here (e.g. askMarque)
     const open = region.indexOf("{", oc);
-    const model = (region.match(/model:\s*"([^"]+)"/) || [])[1] || "claude-haiku-4-5";
+    // `model:` is usually a named constant (HAIKU_MODEL, MARQUE_MODEL), not a
+    // string literal — resolve it against the file's own `const NAME = "..."`.
+    const modelRef = region.match(/model:\s*(?:"([^"]+)"|(\w+))/);
+    const model = modelRef?.[1]
+      || (modelRef?.[2] && (src.match(new RegExp(`const ${modelRef[2]}\\s*=\\s*"([^"]+)"`)) || [])[1])
+      || "claude-haiku-4-5";
     found.push({
       name: s.name,
       model,
