@@ -23,7 +23,7 @@ firebase deploy --only functions --project marque-173c3            # or --only f
 Verify:
 - `firebase functions:list --project marque-173c3` — all exported functions present (22 today).
 - `curl -s -o /dev/null -w "%{http_code}" -X GET https://us-central1-marque-173c3.cloudfunctions.net/appStoreNotifications` → **405** (a 403 means the webhook went private — see CLAUDE.md pitfall).
-- A few minutes later: `firebase functions:log --project marque-173c3 --lines 100` — no new errors on cold start.
+- A few minutes later, errors since the deploy (`firebase functions:log` sometimes fails to fetch; the Firebase MCP `functions_get_logs` with `min_severity: ERROR` and a `start_time` works). **Expected noise:** a pair of `Invalid request, unable to process` errors per callable within a minute of its update — deploy-time probes, seen on every deploy since at least 2026-09-29. Anything else is real.
 - First deploy of a function that calls Anthropic: `node scripts/check-anthropic-schemas.js --live` beforehand (~$0.01).
 
 ## Rules
