@@ -29,6 +29,10 @@ struct RenderedCarSpinView: UIViewRepresentable {
     /// the layer sits relative to the frame (fractions; it can stand above
     /// the frame — a roof box is taller than the car's own crop).
     var extras: [ExtraLayer] = []
+    /// The chosen seat-color option's layer, one per frame (nil = the car's
+    /// own seats, already in the frame). Sits exactly where the body frame
+    /// does, so it rides along under stance the same way.
+    var seatLayer: [UIImage]? = nil
 
     struct ExtraLayer {
         let rect: CGRect
@@ -41,8 +45,9 @@ struct RenderedCarSpinView: UIViewRepresentable {
         view.tintOpacity = tint.opacity
         view.stanceLift = stanceLift
         view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first,
-                  extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } })
+                  extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } }, seat: seatLayer?.first)
         context.coordinator.extras = extras
+        context.coordinator.seatLayers = seatLayer ?? []
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
@@ -58,17 +63,19 @@ struct RenderedCarSpinView: UIViewRepresentable {
         let platesChanged = coordinator.plates != plates || coordinator.tintMasks.count != (tintMasks?.count ?? 0)
             || coordinator.wheelLayers.first !== wheelLayers?.first || coordinator.stockWheels.first !== stockWheels?.first
             || coordinator.extras.map { $0.frames.first } != extras.map { $0.frames.first }
+            || coordinator.seatLayers.first !== seatLayer?.first
         coordinator.plates = plates
         coordinator.tintMasks = tintMasks ?? []
         coordinator.wheelLayers = wheelLayers ?? []
         coordinator.stockWheels = stockWheels ?? []
         coordinator.extras = extras
+        coordinator.seatLayers = seatLayer ?? []
         if let frames, coordinator.frames.count != frames.count {
             coordinator.frames = frames
             coordinator.show(coordinator.index)
         } else if coordinator.frames.isEmpty {
             view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first,
-                      extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } })
+                      extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } }, seat: seatLayer?.first)
         } else if platesChanged {
             coordinator.show(coordinator.index)
         }
@@ -99,6 +106,9 @@ struct RenderedCarSpinView: UIViewRepresentable {
         }
 
         private let carView = UIImageView()
+        /// The chosen seat-color layer, drawn directly over the car — same
+        /// frame as `carView`, so it moves with the body under stance.
+        private let seatView = UIImageView()
         private let reflectionClip = UIView()
         private let reflectionView = UIImageView()
         private let reflectionFade = CAGradientLayer()
@@ -156,6 +166,7 @@ struct RenderedCarSpinView: UIViewRepresentable {
             layer.addSublayer(wellLayer)
             carCut.contentsGravity = .resize
             addSubview(carView)
+            addSubview(seatView)
             addSubview(wheelView)
             tintLayer.backgroundColor = UIColor.black.cgColor
             tintLayer.opacity = 0
@@ -168,7 +179,8 @@ struct RenderedCarSpinView: UIViewRepresentable {
 
         func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil,
                   tintMask mask: UIImage? = nil, wheels: UIImage? = nil, stock: UIImage? = nil,
-                  extras: [(CGRect, UIImage)] = []) {
+                  extras: [(CGRect, UIImage)] = [], seat: UIImage? = nil) {
+            seatView.image = seat
             placements = plates ?? [:]
             while extraViews.count < extras.count {
                 let view = UIImageView(); addSubview(view); extraViews.append(view)
@@ -264,6 +276,7 @@ struct RenderedCarSpinView: UIViewRepresentable {
             let stanced = stanceLift != 0 && stockImage != nil
             let body = stanced ? car.offsetBy(dx: 0, dy: -stanceLift * car.height) : car
             carView.frame = body
+            seatView.frame = body
             wheelView.frame = car
             if stanced, let stock = stockImage {
                 if wheelView.image == nil { wheelView.image = stock }
@@ -393,6 +406,7 @@ struct RenderedCarSpinView: UIViewRepresentable {
         var wheelLayers: [UIImage] = []
         var stockWheels: [UIImage] = []
         var extras: [ExtraLayer] = []
+        var seatLayers: [UIImage] = []
 
         func show(_ i: Int) {
             guard !frames.isEmpty else { return }
@@ -402,7 +416,8 @@ struct RenderedCarSpinView: UIViewRepresentable {
                         tintMask: index < tintMasks.count ? tintMasks[index] : nil,
                         wheels: index < wheelLayers.count ? wheelLayers[index] : nil,
                         stock: index < stockWheels.count ? stockWheels[index] : nil,
-                        extras: extras.compactMap { e in index < e.frames.count ? (e.rect, e.frames[index]) : nil })
+                        extras: extras.compactMap { e in index < e.frames.count ? (e.rect, e.frames[index]) : nil },
+                        seat: index < seatLayers.count ? seatLayers[index] : nil)
         }
 
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {

@@ -220,6 +220,8 @@ struct GarageHeroView: View {
     @State private var renderStock: (key: String, layers: [UIImage])?
     /// The chosen roof/body extras' layers, keyed by car + extras.
     @State private var renderExtras: (key: String, layers: [RenderedCarSpinView.ExtraLayer])?
+    /// The chosen seat-color layer frames, keyed by car + seat color.
+    @State private var renderSeats: (key: String, layers: [UIImage])?
     /// The match behind the rendered hero, for loading add-on layers later.
     @State private var renderMatch: CarRenderLibrary.Match?
 
@@ -255,6 +257,7 @@ struct GarageHeroView: View {
         .task(id: key) { await load() }
         .task(id: wheelsKey) { await loadWheels() }
         .task(id: extrasKey) { await loadExtras() }
+        .task(id: seatsKey) { await loadSeats() }
         .onAppear { if !reduceMotion { tilt.start() } }
         .onDisappear { tilt.stop() }
         .onChange(of: reduceMotion) { _, reduce in reduce ? tilt.stop() : tilt.start() }
@@ -330,9 +333,11 @@ struct GarageHeroView: View {
         renderWheels = (wheelsKey, layers)
     }
 
-    /// Car + chosen extras: changes when either does.
+    /// Car + chosen extras (+ the spoiler's finish, which picks a different
+    /// rendered layer for the same extra): changes when any of those does.
     private var extrasKey: String {
-        ([key, renderMatch?.carKey ?? ""] + car.customization.extras.map(\.rawValue)).joined(separator: "|")
+        ([key, renderMatch?.carKey ?? "", car.customization.spoilerFinish.rawValue] + car.customization.extras.map(\.rawValue))
+            .joined(separator: "|")
     }
 
     private func loadExtras() async {
@@ -340,12 +345,32 @@ struct GarageHeroView: View {
         guard let match = renderMatch, renderExtras?.key != extrasKey else { return }
         var layers: [RenderedCarSpinView.ExtraLayer] = []
         for extra in car.customization.extras {
-            guard let rect = match.extras[extra.rawValue],
-                  let frames = await CarRenderLibrary.extraLayers(of: match, extra: extra.rawValue) else { continue }
+            // Carbon fiber is a finish on the spoiler, not a second extra —
+            // same position, a different rendered layer — and only when the
+            // car actually has that layer (every car with a spoiler fit
+            // does, but an older cached catalog might not).
+            let wantsCarbon = extra == .spoiler && car.customization.spoilerFinish == .carbon
+                && match.extras["spoiler-carbon"] != nil
+            let layerID = wantsCarbon ? "spoiler-carbon" : extra.rawValue
+            guard let rect = match.extras[layerID],
+                  let frames = await CarRenderLibrary.extraLayers(of: match, extra: layerID) else { continue }
             layers.append(.init(rect: rect, frames: frames))
         }
         guard !Task.isCancelled else { return }
         renderExtras = (extrasKey, layers)
+    }
+
+    /// Car + chosen seat color: changes when either does.
+    private var seatsKey: String {
+        [key, renderMatch?.carKey ?? "", car.customization.seatColor.rawValue].joined(separator: "|")
+    }
+
+    private func loadSeats() async {
+        let seatsKey = seatsKey
+        guard car.customization.seatColor != .standard, let match = renderMatch, renderSeats?.key != seatsKey,
+              let layers = await CarRenderLibrary.seatLayers(of: match, option: car.customization.seatColor.rawValue),
+              !Task.isCancelled else { return }
+        renderSeats = (seatsKey, layers)
     }
 
     private func loadFrames(_ match: CarRenderLibrary.Match, key: String) async {
@@ -377,7 +402,8 @@ struct GarageHeroView: View {
                 wheelLayers: renderWheels?.key == wheelsKey ? renderWheels?.layers : nil,
                 stockWheels: renderStock?.key == key ? renderStock?.layers : nil,
                 stanceLift: stanceLift,
-                extras: renderExtras?.key == extrasKey ? renderExtras?.layers ?? [] : []
+                extras: renderExtras?.key == extrasKey ? renderExtras?.layers ?? [] : [],
+                seatLayer: renderSeats?.key == seatsKey ? renderSeats?.layers : nil
             )
             // A new car/color must get a fresh view: the coordinator holds the
             // previous car's frames, and SwiftUI would otherwise reuse it.
