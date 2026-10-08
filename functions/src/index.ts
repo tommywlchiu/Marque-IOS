@@ -27,6 +27,12 @@ import { randomUUID } from "crypto";
 admin.initializeApp();
 const db = admin.firestore();
 
+// The small, cheap model for the five high-volume, low-reasoning Anthropic
+// calls (document parsing, service suggestions, value estimation) — never
+// askMarque, which is full Assistant chat and stays on MARQUE_MODEL. One
+// constant so a version bump changes all five together.
+const HAIKU_MODEL = "claude-haiku-5-5";
+
 const BUNDLE_ID = "com.tommychiu.marque";
 
 // The app's numeric App Store Connect identifier. Required by
@@ -993,7 +999,7 @@ export const parseDriverLicense = onCall(
     let response;
     try {
       response = await client.messages.create({
-        model: "claude-haiku-4-5",
+        model: HAIKU_MODEL,
         max_tokens: 1024,
         // System prompt with cache_control. Falls under the 4K cacheable
         // minimum today and won't actually cache, but the breakpoint is
@@ -1161,7 +1167,7 @@ export const parseInsuranceCard = onCall(
     let response;
     try {
       response = await client.messages.create({
-        model: "claude-haiku-4-5",
+        model: HAIKU_MODEL,
         max_tokens: 1024,
         system: [
           {
@@ -1329,7 +1335,7 @@ export const parseMaintenanceReceipt = onCall(
     let response;
     try {
       response = await client.messages.create({
-        model: "claude-haiku-4-5",
+        model: HAIKU_MODEL,
         max_tokens: 1024,
         system: [
           {
@@ -1745,7 +1751,7 @@ export const suggestServiceReminders = onCall(
     const startedAt = Date.now();
     try {
       response = await client.messages.create({
-        model: "claude-haiku-4-5",
+        model: HAIKU_MODEL,
         max_tokens: 2048,
         system: [
           {
@@ -1880,7 +1886,6 @@ export const suggestServiceReminders = onCall(
 // users/{uid}/usage/valuation_{carId}, the ONLY source of the public value
 // range (owner decision; see syncPublicValueRange and valueRange.ts).
 
-const VALUATION_MODEL = "claude-haiku-4-5";
 const VALUATION_DAILY_CAP = 10;
 const VALUATION_MAX_NAME_LEN = 64;
 const VALUATION_MAX_REGION_LEN = 32;
@@ -2174,7 +2179,7 @@ export const estimateCarValue = onCall(
     const startedAt = Date.now();
     try {
       response = await client.messages.create({
-        model: VALUATION_MODEL,
+        model: HAIKU_MODEL,
         max_tokens: 512,
         system: [
           {
