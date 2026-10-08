@@ -99,6 +99,20 @@ struct CarCustomization: Codable, Equatable {
         var title: String { self == .gloss ? "Gloss Black" : "Carbon Fiber" }
     }
 
+    /// The studio pass to show: `day` is the original, always-rendered set;
+    /// `night` swaps in the catalog's `<car>/night/<color>/` frames (same
+    /// crop as day, so the car never jumps on toggle) — the studio dimmed
+    /// and cooled, headlights/taillights/signals actually glowing. Only cars
+    /// with a night pass rendered offer the choice; everything else (tint,
+    /// wheels, extras, seats) still composites from its day-lit layer either
+    /// way — those don't have night variants yet.
+    enum LightingMode: String, Codable, CaseIterable, Identifiable {
+        case day, night
+
+        var id: String { rawValue }
+        var title: String { self == .day ? "Day" : "Night" }
+    }
+
     var tint: Tint = .none
     var stance: Stance = .stock
     /// A wheel style id from the render catalog's `wheelStyles`; nil = the
@@ -108,15 +122,17 @@ struct CarCustomization: Codable, Equatable {
     private(set) var extras: [Extra] = []
     var seatColor: SeatColor = .standard
     var spoilerFinish: SpoilerFinish = .gloss
+    var lightingMode: LightingMode = .day
 
     init(tint: Tint = .none, stance: Stance = .stock, wheels: String? = nil, extras: [Extra] = [],
-         seatColor: SeatColor = .standard, spoilerFinish: SpoilerFinish = .gloss) {
+         seatColor: SeatColor = .standard, spoilerFinish: SpoilerFinish = .gloss, lightingMode: LightingMode = .day) {
         self.tint = tint
         self.stance = stance
         self.wheels = wheels
         self.extras = Self.normalized(extras)
         self.seatColor = seatColor
         self.spoilerFinish = spoilerFinish
+        self.lightingMode = lightingMode
     }
 
     /// Turns one extra on or off; a cargo box and plain crossbars replace
@@ -137,7 +153,7 @@ struct CarCustomization: Codable, Equatable {
         return set.sorted { ($0.order, $0.rawValue) < ($1.order, $1.rawValue) }
     }
 
-    private enum CodingKeys: String, CodingKey { case tint, stance, wheels, extras, seatColor, spoilerFinish }
+    private enum CodingKeys: String, CodingKey { case tint, stance, wheels, extras, seatColor, spoilerFinish, lightingMode }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -149,6 +165,7 @@ struct CarCustomization: Codable, Equatable {
         extras = Self.normalized(ids.compactMap(Extra.init(rawValue:)))
         seatColor = (try? c.decodeIfPresent(SeatColor.self, forKey: .seatColor)) ?? .standard
         spoilerFinish = (try? c.decodeIfPresent(SpoilerFinish.self, forKey: .spoilerFinish)) ?? .gloss
+        lightingMode = (try? c.decodeIfPresent(LightingMode.self, forKey: .lightingMode)) ?? .day
     }
 
     func encode(to encoder: Encoder) throws {
@@ -159,5 +176,6 @@ struct CarCustomization: Codable, Equatable {
         if !extras.isEmpty { try c.encode(extras, forKey: .extras) }
         if seatColor != .standard { try c.encode(seatColor, forKey: .seatColor) }
         if spoilerFinish != .gloss { try c.encode(spoilerFinish, forKey: .spoilerFinish) }
+        if lightingMode != .day { try c.encode(lightingMode, forKey: .lightingMode) }
     }
 }
