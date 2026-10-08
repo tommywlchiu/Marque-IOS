@@ -208,5 +208,14 @@
     "invert": true,
     "platemat": "material",
     "tintmat": "2021_Audi_A5_Sportback_S-Line_Windows"
+  },
+  "acura-mdx-yd1": {
+    "paintmat": "carpaint.010",
+    "flip": true
+  },
+  "porsche-911-991": {
+    "paintmat": "Body_t",
+    "flip": true,
+    "hide": "Icosphere"
   }
 }

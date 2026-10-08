@@ -486,5 +486,28 @@
       "S5",
       "S5 Sportback"
     ]
+  },
+  "acura-mdx-yd1": {
+    "uid": "2aa71e7fe1fa4de48b23ee335be96947",
+    "make": "Acura",
+    "model": "MDX",
+    "years": [
+      2001,
+      2006
+    ]
+  },
+  "porsche-911-991": {
+    "uid": "4cef7c1e22ab40fd937507eae9a62cd8",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      2012,
+      2019
+    ],
+    "aliases": [
+      "911",
+      "911 Carrera",
+      "911 Carrera S"
+    ]
   }
 }

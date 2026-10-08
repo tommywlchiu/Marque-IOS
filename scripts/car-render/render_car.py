@@ -14,11 +14,14 @@ FLIP = opt.get("flip") == "1"
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src)
 # hide=mat|mat: delete objects made only of these materials (a baked shadow
-# plane, say) before orienting — they'd skew the bounding box.
+# plane, say) before orienting — they'd skew the bounding box. An object
+# with no material at all (a bare reflection-probe sphere some exports
+# leave in) can't be matched by material name, so hide= also matches it
+# directly by object name.
 hidden = set(opt.get("hide", "").split("|")) - {""}
 for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
     names = {s.material.name for s in o.material_slots if s.material}
-    if hidden and names and names <= hidden:
+    if hidden and (o.name in hidden or (names and names <= hidden)):
         bpy.data.objects.remove(o, do_unlink=True)
 # keep=<node>: a multi-car pack — keep only the car under this node (its
 # wheels are separate objects, so keep every mesh whose center falls inside
@@ -155,6 +158,33 @@ for entry in filter(None, opt.get("styles", "").split(";")):
         b.inputs["Metallic"].default_value = metal
         b.inputs["Roughness"].default_value = rough
         if "Coat Weight" in b.inputs: b.inputs["Coat Weight"].default_value = coat
+
+# isolate=mat|mat: a named-material layer add-on (black optic trim, seat
+# color) — the listed materials keep their real (already styled/painted)
+# look, lit normally; everything else becomes a holdout, same technique as
+# mask=glass but for opaque parts instead of a flat stencil, so the app can
+# overlay a recolored trim or seat piece on the base frame without
+# re-rendering the whole car. Independent of body paint (colors=<label>:1,1,1
+# is just the output subfolder name).
+if "isolate" in opt:
+    keep = set(opt["isolate"].split("|"))
+    hold = bpy.data.materials.new("IsolateHoldout"); hold.use_nodes = True
+    nt = hold.node_tree; nt.nodes.clear()
+    nt.links.new(nt.nodes.new("ShaderNodeHoldout").outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+    for o in meshes:
+        names = {s.material.name for s in o.material_slots if s.material}
+        if not names & keep:
+            # Nothing on this object is kept — the whole thing is a holdout.
+            for slot in o.material_slots: slot.link = "DATA"
+            o.data = o.data.copy(); o.data.materials.clear(); o.data.materials.append(hold)
+            o.data.polygons.foreach_set("material_index", [0] * len(o.data.polygons))
+            continue
+        if names <= keep:
+            continue  # every material on this object is kept — render as-is
+        # A mix: remap each slot that isn't in `keep` to the holdout material.
+        for slot in o.material_slots:
+            if slot.material and slot.material.name not in keep:
+                slot.material = hold
 
 # matid=1: every material a flat, distinct color (printed as MATID lines), to
 # tell which unnamed material is which on a model that needs `styles`.
