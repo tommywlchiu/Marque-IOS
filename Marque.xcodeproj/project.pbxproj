@@ -1142,7 +1142,7 @@
 				CODE_SIGN_ENTITLEMENTS = MarqueWidget/MarqueWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MarqueWidget/Info.plist;
@@ -1171,7 +1171,7 @@
 				CODE_SIGN_ENTITLEMENTS = MarqueWidget/MarqueWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MarqueWidget/Info.plist;
@@ -1324,7 +1324,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Marque/Marque-Prototype.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1353,7 +1353,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Marque/Marque-Prototype.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 7DZTSZ3299;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
