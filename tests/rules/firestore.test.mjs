@@ -194,6 +194,16 @@ await check("prefs with a non-bool", false, () => setDoc(doc(as("fan"), "users/f
 await check("prefs with an extra key", false, () => setDoc(doc(as("fan"), "users/fan/settings/notifications"), { likes: true, marketing: true }));
 await check("some other settings doc", false, () => setDoc(doc(as("fan"), "users/fan/settings/other"), { likes: true }));
 
+// ---- Favorites (private bookmarks, FavoriteStore) ----
+await check("owner favorites a car", true, () => setDoc(doc(as("fan"), "users/fan/favorites/carX"), { createdAt: serverTimestamp() }));
+await check("owner reads own favorites", true, () => getDoc(doc(as("fan"), "users/fan/favorites/carX")));
+await check("other user reads someone's favorites", false, () => getDoc(doc(as("stranger"), "users/fan/favorites/carX")));
+await check("other user lists favorites", false, () => getDocs(collection(as("stranger"), "users/fan/favorites")));
+await check("other user favorites on someone else's behalf", false, () => setDoc(doc(as("stranger"), "users/fan/favorites/carY"), { createdAt: serverTimestamp() }));
+await check("favorite doc with extra key", false, () => setDoc(doc(as("fan"), "users/fan/favorites/carZ"), { createdAt: serverTimestamp(), note: "nice" }));
+await check("favorite doc with wrong timestamp", false, () => setDoc(doc(as("fan"), "users/fan/favorites/carZ"), { createdAt: Timestamp.fromMillis(1) }));
+await check("owner removes a favorite", true, () => deleteDoc(doc(as("fan"), "users/fan/favorites/carX")));
+
 // ---- Private car: likes/comments kept but hidden (publicCars doc absent) ----
 await seed(async (db) => {
   await setDoc(doc(db, "users/owner1/cars/priv1"), { make: "Honda", isPublic: false });

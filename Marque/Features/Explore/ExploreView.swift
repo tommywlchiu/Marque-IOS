@@ -197,6 +197,12 @@ struct ExploreView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
+                    NavigationLink(destination: FavoritesListView()) {
+                        Image(systemName: "bookmark")
+                    }
+                    .accessibilityLabel("Favorites")
+                }
+                ToolbarItem(placement: .primaryAction) {
                     NavigationLink(destination: NotificationsInboxView()) {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: notificationStore.badgeCount > 0 ? "bell.badge.fill" : "bell")
@@ -236,6 +242,7 @@ struct ExploreView: View {
         }
         // On the stack, not its root, so it can present over a pushed car page.
         .modifier(LikeErrorAlert())
+        .modifier(FavoriteErrorAlert())
         .modifier(FollowPushRouter())
     }
 

@@ -487,6 +487,18 @@ service cloud.firestore {
       }
     }
 
+    // Private per-user bookmarks on other users' public cars (FavoriteStore).
+    // Doc ID is the carId; the whole thing lives under the owner's own tree
+    // (unlike likes, which bind to the car's own publicCars/{carId}/likes/),
+    // so no cross-user principal binding is needed and onAuthUserDeleted's
+    // recursiveDelete already sweeps it along with the rest of users/{uid}.
+    match /users/{uid}/favorites/{carId} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly(['createdAt'])
+                    && request.resource.data.createdAt == request.time;
+    }
+
     // FCM device tokens (PushStore). Doc ID is the token. Owner-only; nobody
     // else can read another user's tokens. Deleted on sign-out; also swept by
     // onAuthUserDeleted's recursiveDelete and onDeviceTokenCreated (a token

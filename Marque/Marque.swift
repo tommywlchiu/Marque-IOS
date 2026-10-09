@@ -62,6 +62,7 @@ struct Marque_PrototypeApp: App {
     @StateObject private var scanAllowanceStore = ScanAllowanceStore()
     @StateObject private var featureFlagsStore = FeatureFlagsStore()
     @StateObject private var likeStore = LikeStore()
+    @StateObject private var favoriteStore = FavoriteStore()
     @StateObject private var commentStore = CommentStore()
     @StateObject private var pushStore = PushStore()
 
@@ -135,6 +136,7 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(scanAllowanceStore)
                 .environmentObject(featureFlagsStore)
                 .environmentObject(likeStore)
+                .environmentObject(favoriteStore)
                 .environmentObject(commentStore)
                 .environmentObject(pushStore)
                 .environmentObject(appDelegate)
@@ -154,6 +156,7 @@ struct Marque_PrototypeApp: App {
                         chatStore.startListening(uid: user.id)
                         scanAllowanceStore.startListening(uid: user.id)
                         likeStore.startListening(uid: user.id)
+                        favoriteStore.startListening(uid: user.id)
                         commentStore.startListening(uid: user.id)
                         pushStore.startListening(uid: user.id)
                         Task { await subscriptionStore.load() }
@@ -166,6 +169,7 @@ struct Marque_PrototypeApp: App {
                         chatStore.stopListening()
                         scanAllowanceStore.stopListening()
                         likeStore.stopListening()
+                        favoriteStore.stopListening()
                         commentStore.stopListening()
                         pushStore.stopListening()
                         subscriptionStore.reset()
