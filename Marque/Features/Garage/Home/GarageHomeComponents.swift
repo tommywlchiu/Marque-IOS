@@ -51,46 +51,86 @@ struct GarageListRow: View {
     }
 }
 
-/// One row of the grouped "attention" card.
+/// One row of the grouped "attention" card. Takes its own tap action rather
+/// than being wrapped in an outer `Button` — `onDismiss` is only passed (and
+/// only then does a close button appear) for a "missing info" suggestion, as
+/// a sibling tap target next to the row's own, never nested inside it (two
+/// `Button`s nested in SwiftUI fight over the gesture; siblings don't). An
+/// expiry or reminder row is never dismissible.
 struct GarageAttentionRow: View {
     let item: GarageSummary.AttentionItem
+    let onTap: () -> Void
+    var onDismiss: (() -> Void)? = nil
 
     @ScaledMetric(relativeTo: .title3) private var iconSize: CGFloat = 20
     @ScaledMetric(relativeTo: .title3) private var iconColumn: CGFloat = 32
 
     var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: item.icon)
-                .font(.system(size: iconSize))
-                .foregroundColor(GarageTheme.icon)
-                .frame(width: iconColumn)
-                .overlay(alignment: .topTrailing) {
-                    if item.isUrgent {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 7, height: 7)
-                            .offset(x: 2, y: -2)
+        HStack(spacing: 4) {
+            Button(action: onTap) {
+                HStack(spacing: 16) {
+                    Image(systemName: item.icon)
+                        .font(.system(size: iconSize))
+                        .foregroundColor(GarageTheme.icon)
+                        .frame(width: iconColumn)
+                        .overlay(alignment: .topTrailing) {
+                            if item.isUrgent {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 7, height: 7)
+                                    .offset(x: 2, y: -2)
+                            }
+                        }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(item.title)
+                            .font(.title3.weight(.semibold))
+                            .foregroundColor(GarageTheme.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(item.subtitle)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(GarageTheme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 8)
+                    if onDismiss == nil {
+                        Image(systemName: "chevron.right")
+                            .font(.body.weight(.semibold))
+                            .foregroundColor(GarageTheme.chevron)
                     }
                 }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.title)
-                    .font(.title3.weight(.semibold))
-                    .foregroundColor(GarageTheme.primaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(item.subtitle)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(GarageTheme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 16)
+                .contentShape(Rectangle())
             }
-            Spacer(minLength: 8)
-            Image(systemName: "chevron.right")
-                .font(.body.weight(.semibold))
-                .foregroundColor(GarageTheme.chevron)
+            .buttonStyle(GaragePressStyle())
+
+            if let onDismiss {
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.body)
+                        .foregroundColor(GarageTheme.chevron)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Dismiss suggestion")
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        .padding(.leading, 16)
+        .padding(.trailing, onDismiss == nil ? 16 : 4)
+        // Combining into one VoiceOver element only makes sense with a
+        // single action — with a dismiss button too, each needs to stay
+        // reachable as its own element, or the "Dismiss" action is lost.
+        .modifier(CombineAccessibilityIfNoDismiss(enabled: onDismiss == nil))
+    }
+}
+
+private struct CombineAccessibilityIfNoDismiss: ViewModifier {
+    let enabled: Bool
+    func body(content: Content) -> some View {
+        if enabled {
+            content.accessibilityElement(children: .combine)
+        } else {
+            content
+        }
     }
 }
 
