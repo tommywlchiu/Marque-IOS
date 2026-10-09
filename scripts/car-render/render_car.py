@@ -174,6 +174,13 @@ if NIGHT:
     # common enough to be worth matching (tesla-model3's own breaklight_l/r).
     TAIL_RE = re.compile(r"tail.?light|taillamp|brea[kc].?light|stop.?light|rear.?light|feux.?arri|rucklicht", re.I)
     SIGNAL_RE = re.compile(r"indicator|turn.?signal|turnsignal|blinker|clignot", re.I)
+    # A lower-detail model (a single "Lights" material for the whole car,
+    # head and tail combined undifferentiated) is common enough on the
+    # budget end of the catalog to be worth a fallback rather than silently
+    # lighting up nothing — white (a headlight look) is the safer guess than
+    # red, since it's wrong less often (most of a car's glass-lensed lamp
+    # area, front and rear combined, reads closer to white/clear than red).
+    GENERIC_LIGHT_RE = re.compile(r"\blights?\b", re.I)
     styled_lamp_preset = {}
     for entry in filter(None, opt.get("styles", "").split(";")):
         names, preset = entry.rsplit(":", 1)
@@ -187,6 +194,7 @@ if NIGHT:
         if HEAD_RE.search(name): return "head"
         if TAIL_RE.search(name): return "tail"
         if SIGNAL_RE.search(name): return "signal"
+        if GENERIC_LIGHT_RE.search(name): return "head"
         return None
     lit_materials = []
     for m in list(bpy.data.materials):
