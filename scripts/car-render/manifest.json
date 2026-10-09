@@ -653,30 +653,6 @@
       "minivan"
     ]
   },
-  "audi-a5-b9": {
-    "covers": {
-      "make": "Audi",
-      "model": "A5",
-      "years": [
-        2020,
-        2024
-      ],
-      "aliases": [
-        "A5",
-        "A5 Sportback",
-        "A5 Coupe",
-        "S5",
-        "S5 Sportback"
-      ]
-    },
-    "sketchfab": "aa9b8d495d324fa1adfe6eab519e21a9",
-    "paintmat": "2021_Audi_A5_Sportback_S-Line_Ibis_White",
-    "flip": true,
-    "styles": "2021_Audi_A5_Sportback_S-Line_Windows|2021_Audi_A5_Sportback_S-Line_HeadLightsGlass|2021_Audi_A5_Sportback_S-Line_BrakeLightsGlass:glass;2021_Audi_A5_Sportback_S-Line_Black1|2021_Audi_A5_Sportback_S-Line_BlackTrims|2021_Audi_A5_Sportback_S-Line_Grille1|2021_Audi_A5_Sportback_S-Line_Mirrors|2021_Audi_A5_Sportback_S-Line_UnderCarrier|2021_Audi_A5_Sportback_S-Line_WindowsTrims:trim;2021_Audi_A5_Sportback_S-Line_BlackChrome:gloss;2021_Audi_A5_Sportback_S-Line_ChromeTrims:chrome;2021_Audi_A5_Sportback_S-Line_Rims1|2021_Audi_A5_Sportback_S-Line_Rims2|2021_Audi_A5_Sportback_S-Line_BrakeRotors1|2021_Audi_A5_Sportback_S-Line_BrakeRotors1_0|2021_Audi_A5_Sportback_S-Line_BrakeRotors1_1|2021_Audi_A5_Sportback_S-Line_BrakeRotors2:satin;2021_Audi_A5_Sportback_S-Line_RedMain|2021_Audi_A5_Sportback_S-Line_Red1|2021_Audi_A5_Sportback_S-Line_DarkRed:redlight;2021_Audi_A5_Sportback_S-Line_DRLs:lamp",
-    "invert": true,
-    "platemat": "material",
-    "tintmat": "2021_Audi_A5_Sportback_S-Line_Windows"
-  },
   "acura-mdx-yd1": {
     "covers": {
       "make": "Acura",
@@ -709,5 +685,30 @@
     "paintmat": "Body_t",
     "hide": "Icosphere",
     "flip": true
+  },
+  "audi-a5-b9-v2": {
+    "covers": {
+      "make": "Audi",
+      "model": "A5",
+      "years": [
+        2020,
+        2024
+      ],
+      "aliases": [
+        "A5",
+        "A5 Sportback",
+        "A5 Coupe",
+        "S5",
+        "S5 Sportback"
+      ]
+    },
+    "sketchfab": "aa9b8d495d324fa1adfe6eab519e21a9",
+    "paintmat": "2021_Audi_A5_Sportback_S-Line_Ibis_White",
+    "flip": true,
+    "styles": "2021_Audi_A5_Sportback_S-Line_Windows|2021_Audi_A5_Sportback_S-Line_HeadLightsGlass|2021_Audi_A5_Sportback_S-Line_BrakeLightsGlass:glass;2021_Audi_A5_Sportback_S-Line_Black1|2021_Audi_A5_Sportback_S-Line_BlackTrims|2021_Audi_A5_Sportback_S-Line_UnderCarrier:trim;2021_Audi_A5_Sportback_S-Line_BlackChrome:gloss;2021_Audi_A5_Sportback_S-Line_ChromeTrims|2021_Audi_A5_Sportback_S-Line_Grille1|2021_Audi_A5_Sportback_S-Line_Mirrors|2021_Audi_A5_Sportback_S-Line_WindowsTrims:chrome;2021_Audi_A5_Sportback_S-Line_Rims1|2021_Audi_A5_Sportback_S-Line_Rims2|2021_Audi_A5_Sportback_S-Line_BrakeRotors1|2021_Audi_A5_Sportback_S-Line_BrakeRotors1_0|2021_Audi_A5_Sportback_S-Line_BrakeRotors1_1|2021_Audi_A5_Sportback_S-Line_BrakeRotors2:satin;2021_Audi_A5_Sportback_S-Line_RedMain|2021_Audi_A5_Sportback_S-Line_Red1|2021_Audi_A5_Sportback_S-Line_DarkRed:redlight;2021_Audi_A5_Sportback_S-Line_DRLs:lamp",
+    "invert": true,
+    "platemat": "material",
+    "tintmat": "2021_Audi_A5_Sportback_S-Line_Windows",
+    "blackOpticMats": "2021_Audi_A5_Sportback_S-Line_ChromeTrims|2021_Audi_A5_Sportback_S-Line_Grille1|2021_Audi_A5_Sportback_S-Line_Mirrors|2021_Audi_A5_Sportback_S-Line_WindowsTrims"
   }
 }
