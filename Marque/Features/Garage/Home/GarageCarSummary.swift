@@ -178,6 +178,57 @@ enum GarageSummary {
         let subtitle: String
         let isUrgent: Bool
         let target: AttentionTarget
+        /// Set only for a "fill this in" suggestion (never an expiry/reminder
+        /// one) — `CarStore.dismissMissingInfo(_:for:)` takes this value.
+        /// `AttentionItem.id` happens to equal it for these rows, but the
+        /// row view takes it explicitly rather than assuming that.
+        var dismissKey: String? = nil
+    }
+
+    /// A specs field worth nudging the owner to fill in — the "missing info"
+    /// suggestions (owner: car specs only, not insurance/registration, which
+    /// already have their own "Add…" cards in Wallet and their own expiry
+    /// tracking here). `rawValue` is both the attention-row id and the key
+    /// stored in `Car.dismissedMissingInfo`.
+    enum MissingInfo: String, CaseIterable {
+        case vin, mileage, bodyStyle, color
+
+        var title: String {
+            switch self {
+            case .vin: return "Add your VIN"
+            case .mileage: return "Add your mileage"
+            case .bodyStyle: return "Set the body style"
+            case .color: return "Add the color"
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .vin: return "Helps with recalls and resale lookups"
+            case .mileage: return "Keeps service reminders on track"
+            case .bodyStyle: return "Used to pick the right studio render"
+            case .color: return "Shown on your car's spec sheet"
+            }
+        }
+
+        func isMissing(on car: Car) -> Bool {
+            switch self {
+            case .vin: return car.vinNumber.isEmpty
+            case .mileage: return car.mileage.isEmpty
+            case .bodyStyle: return car.bodyStyle.isEmpty
+            case .color: return car.color.isEmpty
+            }
+        }
+    }
+
+    /// `car.dismissedMissingInfo`, dropping any key whose field has since
+    /// been filled in — so a dismissal only ever suppresses the suggestion
+    /// while the field stays blank, never permanently. `CarStore.updateCar`
+    /// calls this before every save; nothing else needs to.
+    static func prunedDismissals(for car: Car) -> Set<String> {
+        car.dismissedMissingInfo.filter { key in
+            MissingInfo(rawValue: key)?.isMissing(on: car) ?? false
+        }
     }
 
     /// At most this many reminder rows; the rest fold into one "N more" row.
@@ -248,6 +299,20 @@ enum GarageSummary {
                 subtitle: "Hide mileage, notes and more from your public page",
                 isUrgent: false,
                 target: .publicSharing
+            ))
+        }
+
+        // "Fill this in" suggestions, lowest priority (after anything time-
+        // sensitive above) and the only dismissible kind — see MissingInfo.
+        for field in MissingInfo.allCases where field.isMissing(on: car) && !car.dismissedMissingInfo.contains(field.rawValue) {
+            items.append(AttentionItem(
+                id: field.rawValue,
+                icon: "square.and.pencil",
+                title: field.title,
+                subtitle: field.subtitle,
+                isUrgent: false,
+                target: .documents,
+                dismissKey: field.rawValue
             ))
         }
         return items

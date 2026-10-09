@@ -239,6 +239,11 @@ class CarStore: ObservableObject {
     }
 
     func updateCar(_ car: Car) {
+        var car = car
+        // Drop any dismissal whose field has since been filled in, so a
+        // dismissed "missing info" suggestion only stays hidden while the
+        // field is actually still blank — see GarageSummary.prunedDismissals.
+        car.dismissedMissingInfo = GarageSummary.prunedDismissals(for: car)
         guard let userId = currentUserId else {
             if let i = cars.firstIndex(where: { $0.id == car.id }) {
                 cars[i] = car
@@ -259,6 +264,17 @@ class CarStore: ObservableObject {
            previous.map({ publicProjectionChanged(from: $0, to: car) }) ?? true {
             pushPublicFields(of: car)
         }
+    }
+
+    /// Closes out one "missing info" attention-card suggestion
+    /// (`GarageSummary.AttentionItem.dismissKey`) for this car. Stays
+    /// dismissed only while the field is still blank — see
+    /// `GarageSummary.prunedDismissals`, which `updateCar` runs on every
+    /// save, including this one.
+    func dismissMissingInfo(_ key: String, for car: Car) {
+        var updated = car
+        updated.dismissedMissingInfo.insert(key)
+        updateCar(updated)
     }
 
     /// Makes `fileName` the car's cover (first) photo. Reorders the local file

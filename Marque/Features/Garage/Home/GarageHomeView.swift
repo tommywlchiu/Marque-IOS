@@ -268,10 +268,13 @@ struct GarageHomeView: View {
                             .frame(height: 1)
                             .padding(.leading, 64)
                     }
-                    Button { open(item.target, carID: car.id) } label: {
-                        GarageAttentionRow(item: item)
-                    }
-                    .buttonStyle(GaragePressStyle())
+                    GarageAttentionRow(
+                        item: item,
+                        onTap: { open(item.target, carID: car.id) },
+                        onDismiss: item.dismissKey.map { key in
+                            { carStore.dismissMissingInfo(key, for: car) }
+                        }
+                    )
                 }
             }
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(GarageTheme.card))

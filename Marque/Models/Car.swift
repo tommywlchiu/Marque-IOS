@@ -80,6 +80,16 @@ struct Car: Identifiable, Codable, Equatable {
     /// extras). Private: only the owner's own Garage hero uses it.
     var customization: CarCustomization
 
+    /// "Missing info" attention-card suggestions (`GarageSummary.MissingInfo`
+    /// raw values, e.g. "vin") the owner has closed out. A dismissal only
+    /// suppresses the suggestion while its field stays blank — filling the
+    /// field in later (CarStore.updateCar) drops its key here, so if the
+    /// field is ever cleared again the suggestion starts showing fresh
+    /// rather than staying silently dismissed forever. Private: never
+    /// reaches PublicCar, nobody else's business which fields you've
+    /// chosen to leave blank.
+    var dismissedMissingInfo: Set<String>
+
     /// The most modifications a car can carry. Enforced client-side by
     /// `CarStore.addMod` (the private `users/{uid}/cars` doc has no deep
     /// rules validation, same as maintenanceRecords/serviceReminders); the
@@ -129,7 +139,8 @@ struct Car: Identifiable, Codable, Equatable {
         maintenanceRecords: [MaintenanceRecord] = [],
         serviceReminders: [ServiceReminder] = [],
         mods: [CarMod] = [],
-        customization: CarCustomization = CarCustomization()
+        customization: CarCustomization = CarCustomization(),
+        dismissedMissingInfo: Set<String> = []
     ) {
         self.id = id
         self.make = make
@@ -172,6 +183,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.serviceReminders = serviceReminders
         self.mods = mods
         self.customization = customization
+        self.dismissedMissingInfo = dismissedMissingInfo
     }
 
     // Includes a legacy `photoFileName` key so previously-saved single-photo
@@ -194,6 +206,7 @@ struct Car: Identifiable, Codable, Equatable {
         case maintenanceRecords, serviceReminders
         case mods
         case customization
+        case dismissedMissingInfo
     }
 
     init(from decoder: Decoder) throws {
@@ -259,6 +272,7 @@ struct Car: Identifiable, Codable, Equatable {
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
         mods = try c.decodeIfPresent([CarMod].self, forKey: .mods) ?? []
         customization = try c.decodeIfPresent(CarCustomization.self, forKey: .customization) ?? CarCustomization()
+        dismissedMissingInfo = (try? c.decodeIfPresent(Set<String>.self, forKey: .dismissedMissingInfo)) ?? []
     }
 
     // Skip writing the legacy key — new data is written under photoFileNames.
@@ -305,6 +319,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(serviceReminders, forKey: .serviceReminders)
         try c.encode(mods, forKey: .mods)
         try c.encode(customization, forKey: .customization)
+        if !dismissedMissingInfo.isEmpty { try c.encode(dismissedMissingInfo, forKey: .dismissedMissingInfo) }
     }
 
     var primaryPhotoFileName: String? {
