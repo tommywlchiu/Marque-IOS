@@ -110,6 +110,76 @@ private struct RevealButton: View {
     }
 }
 
+// MARK: - Binder tab strip
+
+/// The row of folder-style dividers across the top of the documents area —
+/// License, then one per car. The selected tab reads as the front folder
+/// (full brand-color fill, full height); the rest sit a little shorter and
+/// muted, like dividers peeking out behind it, until tapped.
+struct WalletTabStrip: View {
+    let tabs: [WalletTab]
+    let selected: WalletTab
+    let title: (WalletTab) -> String
+    let icon: (WalletTab) -> String
+    let onSelect: (WalletTab) -> Void
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .bottom, spacing: 4) {
+                    ForEach(tabs, id: \.self) { tab in
+                        FolderTab(
+                            title: title(tab),
+                            icon: icon(tab),
+                            isSelected: tab == selected
+                        ) {
+                            onSelect(tab)
+                        }
+                        .id(tab)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+            }
+            .onChange(of: selected) { _, newValue in
+                withAnimation { proxy.scrollTo(newValue, anchor: .center) }
+            }
+        }
+        .background(Color(.systemGray6))
+    }
+}
+
+private struct FolderTab: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.subheadline)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 14)
+            .frame(height: isSelected ? 52 : 40, alignment: .top)
+            .padding(.top, isSelected ? 8 : 14)
+            .frame(minWidth: 64)
+            .foregroundStyle(isSelected ? .white : Color.secondary)
+            .background(
+                UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 12, style: .continuous)
+                    .fill(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.systemGray4)))
+            )
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: isSelected)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+}
+
 // MARK: - Card shell
 
 /// Apple-Wallet-style rounded card: gradient fill, icon + chevron header row,
