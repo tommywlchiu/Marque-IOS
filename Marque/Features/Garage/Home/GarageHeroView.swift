@@ -204,6 +204,10 @@ enum CarCutoutRenderer {
 struct GarageHeroView: View {
     let car: Car
     let height: CGFloat
+    /// Flips the car's day/night lighting; nil hides the quick toggle. Shown
+    /// only once a studio render with a night pass has actually loaded, so
+    /// there's never a toggle with nothing for it to change.
+    var onToggleLighting: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var tilt = HeroMotionTilt()
@@ -237,6 +241,27 @@ struct GarageHeroView: View {
     /// owner's own photo and has no night version.
     private var night: Bool { car.customization.lightingMode == .night }
 
+    /// A one-tap sun/moon toggle over the hero itself — the only control for
+    /// day/night lighting (no second picker elsewhere, see the "one entry
+    /// point per feature" convention). Only appears once the loaded hero is
+    /// a studio render whose match actually has a night pass.
+    @ViewBuilder
+    private var lightingToggleButton: some View {
+        if let onToggleLighting, let loaded, loaded.key == key,
+           case .rendered(_, let match) = loaded.image, match.hasNight {
+            Button(action: onToggleLighting) {
+                Image(systemName: night ? "moon.stars.fill" : "sun.max.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(night ? .indigo : .yellow)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Color.black.opacity(0.35)))
+            }
+            .buttonStyle(GaragePressStyle())
+            .padding(12)
+            .accessibilityLabel(night ? "Switch to day lighting" : "Switch to night lighting")
+        }
+    }
+
     var body: some View {
         ZStack {
             spotlight
@@ -260,6 +285,7 @@ struct GarageHeroView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
+        .overlay(alignment: .topTrailing) { lightingToggleButton }
         .animation(.easeOut(duration: 0.35), value: loaded?.key)
         .task(id: key) { await load() }
         .task(id: wheelsKey) { await loadWheels() }

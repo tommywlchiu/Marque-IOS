@@ -311,27 +311,10 @@ struct GarageCustomizeScreen: View {
         GarageCarScreen(carID: carID, title: "Customize") { car in
             List {
                 Section {
-                    GarageHeroView(car: car, height: 220)
+                    GarageHeroView(car: car, height: 220, onToggleLighting: { toggleLighting(for: car) })
                         .listRowInsets(EdgeInsets())
                 }
                 .garageRowBackground()
-
-                if hasNightPass(for: car) {
-                    Section(header: Text("Lighting")) {
-                        Picker("Lighting", selection: Binding(
-                            get: { car.customization.lightingMode },
-                            set: { mode in
-                                var updated = car
-                                updated.customization.lightingMode = mode
-                                carStore.updateCar(updated)
-                            }
-                        )) {
-                            ForEach(CarCustomization.LightingMode.allCases) { Text($0.title).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    .garageRowBackground()
-                }
 
                 Section(header: Text("Window Tint")) {
                     Picker("Window Tint", selection: Binding(
@@ -487,9 +470,10 @@ struct GarageCustomizeScreen: View {
         CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.extras["spoiler-carbon"] != nil
     }
 
-    /// Whether this car has a night-lighting pass rendered.
-    private func hasNightPass(for car: Car) -> Bool {
-        CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.hasNight == true
+    private func toggleLighting(for car: Car) {
+        var updated = car
+        updated.customization.lightingMode = updated.customization.lightingMode == .night ? .day : .night
+        carStore.updateCar(updated)
     }
 
     /// Whether this car has a Black Optic trim layer rendered.
