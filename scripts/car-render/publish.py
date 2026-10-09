@@ -113,6 +113,15 @@ def publish_frames(key, pngs):
             out = os.path.join(dst, key, "tint", os.path.basename(p).replace(".png", ".webp"))
             os.makedirs(os.path.dirname(out), exist_ok=True)
             Image.open(p).crop(box).save(out, "WEBP", lossless=True, method=4)
+    # Black Optic add-on layer (blackoptic.py), cropped the same way: the
+    # isolated trim geometry, lit normally (not a stencil, like seats), one
+    # set of frames for every body color.
+    black_optic_src = sorted(glob.glob(os.path.join(sys.argv[1], "_blackoptic", key, "blackoptic", "*.png")))
+    if len(black_optic_src) == FRAMES:
+        for p in black_optic_src:
+            out = os.path.join(dst, key, "blackOptic", os.path.basename(p).replace(".png", ".webp"))
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            Image.open(p).crop(box).save(out, "WEBP", quality=95, method=4)
     # Wheel add-on layers (wheels.py), one folder per style, same crop.
     for style_dir in sorted(glob.glob(os.path.join(sys.argv[1], "_wheels", key, "*"))):
         layer = sorted(glob.glob(os.path.join(style_dir, "*.png")))
@@ -169,6 +178,7 @@ for key, car in manifest.items():
         has_plates = publish_frames(key, pngs)
     has_tint = len(glob.glob(os.path.join(dst, key, "tint", "*.webp"))) == FRAMES
     has_night = len(glob.glob(os.path.join(dst, key, "night", "*", "*.webp"))) == FRAMES * len(palette)
+    has_black_optic = len(glob.glob(os.path.join(dst, key, "blackOptic", "*.webp"))) == FRAMES
     wheels = sorted(os.path.basename(d) for d in glob.glob(os.path.join(dst, key, "wheels", "*"))
                     if len(glob.glob(os.path.join(d, "*.webp"))) == FRAMES)
     seats = sorted(os.path.basename(d) for d in glob.glob(os.path.join(dst, key, "seats", "*"))
@@ -181,12 +191,12 @@ for key, car in manifest.items():
     if "bodyStyles" in car:  # an unbadged stand-in for every car of these body styles
         generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]),
                          "plates": has_plates, "tint": has_tint, "night": has_night, "wheels": wheels, "meter": meter,
-                         "extras": extras, "seats": seats})
+                         "extras": extras, "seats": seats, "blackOptic": has_black_optic})
     else:
         c = car["covers"]
         cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
                      "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint, "night": has_night,
-                     "wheels": wheels, "meter": meter, "extras": extras, "seats": seats})
+                     "wheels": wheels, "meter": meter, "extras": extras, "seats": seats, "blackOptic": has_black_optic})
     print(f"PUBLISHED {key}")
 
 addons = json.load(open(os.path.join(here, "addons.json")))
