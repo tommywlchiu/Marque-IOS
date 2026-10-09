@@ -15,8 +15,10 @@ enum GarageTheme {
     static let icon = Color.white.opacity(0.78)
     static let chevron = Color.white.opacity(0.32)
     static let hairline = Color.white.opacity(0.07)
-    /// Used sparingly: the tiny "needs attention" dot.
-    static let accentDot = Color(red: 0.25, green: 0.5, blue: 1.0)
+    /// Used sparingly: the tiny "needs attention" dot. The app's one accent
+    /// color (Assets › AccentColor), not a Garage-only blue — so a glance at
+    /// any screen reads as the same brand, not a generic default tint.
+    static let accentDot = Color.accentColor
 }
 
 // MARK: - "Am I inside the Garage tab?"
