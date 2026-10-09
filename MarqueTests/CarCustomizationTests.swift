@@ -7,7 +7,7 @@ final class CarCustomizationTests: XCTestCase {
     }
 
     func testUnknownValuesFromANewerAppFallBackInsteadOfFailing() throws {
-        let c = try decode(#"{"tint":"mirror","stance":"slammed","wheels":"x","extras":["snorkel","rack"],"seatColor":"plaid","spoilerFinish":"chrome","lightingMode":"dusk"}"#)
+        let c = try decode(#"{"tint":"mirror","stance":"slammed","wheels":"x","extras":["snorkel","rack"],"seatColor":"plaid","spoilerFinish":"chrome","lightingMode":"dusk","blackOptic":"maybe"}"#)
         XCTAssertEqual(c.tint, .none)
         XCTAssertEqual(c.stance, .stock)
         XCTAssertEqual(c.wheels, "x")
@@ -15,6 +15,7 @@ final class CarCustomizationTests: XCTestCase {
         XCTAssertEqual(c.seatColor, .standard)
         XCTAssertEqual(c.spoilerFinish, .gloss)
         XCTAssertEqual(c.lightingMode, .day)
+        XCTAssertEqual(c.blackOptic, false)
     }
 
     func testLightingModeRoundTrip() throws {
@@ -42,6 +43,18 @@ final class CarCustomizationTests: XCTestCase {
         let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(CarCustomization())) as? [String: Any]
         XCTAssertNil(object?["seatColor"])
         XCTAssertNil(object?["spoilerFinish"])
+    }
+
+    func testBlackOpticRoundTrip() throws {
+        var c = CarCustomization()
+        c.blackOptic = true
+        let decoded = try JSONDecoder().decode(CarCustomization.self, from: JSONEncoder().encode(c))
+        XCTAssertEqual(decoded.blackOptic, true)
+    }
+
+    func testDefaultBlackOpticIsNotWritten() throws {
+        let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(CarCustomization())) as? [String: Any]
+        XCTAssertNil(object?["blackOptic"])
     }
 
     func testEmptyObjectIsTheDefault() throws {

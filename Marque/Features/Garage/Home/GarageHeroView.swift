@@ -222,6 +222,8 @@ struct GarageHeroView: View {
     @State private var renderExtras: (key: String, layers: [RenderedCarSpinView.ExtraLayer])?
     /// The chosen seat-color layer frames, keyed by car + seat color.
     @State private var renderSeats: (key: String, layers: [UIImage])?
+    /// The Black Optic trim layer frames, keyed by car + on/off.
+    @State private var renderBlackOptic: (key: String, layers: [UIImage])?
     /// The match behind the rendered hero, for loading add-on layers later.
     @State private var renderMatch: CarRenderLibrary.Match?
 
@@ -263,6 +265,7 @@ struct GarageHeroView: View {
         .task(id: wheelsKey) { await loadWheels() }
         .task(id: extrasKey) { await loadExtras() }
         .task(id: seatsKey) { await loadSeats() }
+        .task(id: blackOpticKey) { await loadBlackOptic() }
         .onAppear { if !reduceMotion { tilt.start() } }
         .onDisappear { tilt.stop() }
         .onChange(of: reduceMotion) { _, reduce in reduce ? tilt.stop() : tilt.start() }
@@ -379,6 +382,19 @@ struct GarageHeroView: View {
         renderSeats = (seatsKey, layers)
     }
 
+    /// Car + Black Optic on/off: changes when either does.
+    private var blackOpticKey: String {
+        [key, renderMatch?.carKey ?? "", car.customization.blackOptic ? "on" : "off"].joined(separator: "|")
+    }
+
+    private func loadBlackOptic() async {
+        let blackOpticKey = blackOpticKey
+        guard car.customization.blackOptic, let match = renderMatch, renderBlackOptic?.key != blackOpticKey,
+              let layers = await CarRenderLibrary.blackOpticLayers(of: match),
+              !Task.isCancelled else { return }
+        renderBlackOptic = (blackOpticKey, layers)
+    }
+
     private func loadFrames(_ match: CarRenderLibrary.Match, key: String) async {
         if renderPlates?.key != key, let track = await CarRenderLibrary.plates(of: match), !Task.isCancelled {
             renderPlates = (key, track)
@@ -409,7 +425,8 @@ struct GarageHeroView: View {
                 stockWheels: renderStock?.key == key ? renderStock?.layers : nil,
                 stanceLift: stanceLift,
                 extras: renderExtras?.key == extrasKey ? renderExtras?.layers ?? [] : [],
-                seatLayer: renderSeats?.key == seatsKey ? renderSeats?.layers : nil
+                seatLayer: renderSeats?.key == seatsKey ? renderSeats?.layers : nil,
+                blackOpticLayer: renderBlackOptic?.key == blackOpticKey ? renderBlackOptic?.layers : nil
             )
             // A new car/color must get a fresh view: the coordinator holds the
             // previous car's frames, and SwiftUI would otherwise reuse it.

@@ -33,6 +33,10 @@ struct RenderedCarSpinView: UIViewRepresentable {
     /// own seats, already in the frame). Sits exactly where the body frame
     /// does, so it rides along under stance the same way.
     var seatLayer: [UIImage]? = nil
+    /// The Black Optic trim layer (blacked-out grille, rings, mirrors,
+    /// window trim), one per frame (nil = the car's own chrome trim,
+    /// already in the frame). Same positioning as `seatLayer`.
+    var blackOpticLayer: [UIImage]? = nil
 
     struct ExtraLayer {
         let rect: CGRect
@@ -45,9 +49,10 @@ struct RenderedCarSpinView: UIViewRepresentable {
         view.tintOpacity = tint.opacity
         view.stanceLift = stanceLift
         view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first,
-                  extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } }, seat: seatLayer?.first)
+                  extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } }, seat: seatLayer?.first, blackOptic: blackOpticLayer?.first)
         context.coordinator.extras = extras
         context.coordinator.seatLayers = seatLayer ?? []
+        context.coordinator.blackOpticLayers = blackOpticLayer ?? []
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
         pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
@@ -64,18 +69,20 @@ struct RenderedCarSpinView: UIViewRepresentable {
             || coordinator.wheelLayers.first !== wheelLayers?.first || coordinator.stockWheels.first !== stockWheels?.first
             || coordinator.extras.map { $0.frames.first } != extras.map { $0.frames.first }
             || coordinator.seatLayers.first !== seatLayer?.first
+            || coordinator.blackOpticLayers.first !== blackOpticLayer?.first
         coordinator.plates = plates
         coordinator.tintMasks = tintMasks ?? []
         coordinator.wheelLayers = wheelLayers ?? []
         coordinator.stockWheels = stockWheels ?? []
         coordinator.extras = extras
         coordinator.seatLayers = seatLayer ?? []
+        coordinator.blackOpticLayers = blackOpticLayer ?? []
         if let frames, coordinator.frames.count != frames.count {
             coordinator.frames = frames
             coordinator.show(coordinator.index)
         } else if coordinator.frames.isEmpty {
             view.show(still, plates: plates?.frames.first, tintMask: tintMasks?.first, wheels: wheelLayers?.first, stock: stockWheels?.first,
-                      extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } }, seat: seatLayer?.first)
+                      extras: extras.compactMap { e in e.frames.first.map { (e.rect, $0) } }, seat: seatLayer?.first, blackOptic: blackOpticLayer?.first)
         } else if platesChanged {
             coordinator.show(coordinator.index)
         }
@@ -179,7 +186,7 @@ struct RenderedCarSpinView: UIViewRepresentable {
 
         func show(_ image: UIImage, plates: [String: CarRenderLibrary.PlateTrack.Placement]? = nil,
                   tintMask mask: UIImage? = nil, wheels: UIImage? = nil, stock: UIImage? = nil,
-                  extras: [(CGRect, UIImage)] = [], seat: UIImage? = nil) {
+                  extras: [(CGRect, UIImage)] = [], seat: UIImage? = nil, blackOptic: UIImage? = nil) {
             seatView.image = seat
             placements = plates ?? [:]
             while extraViews.count < extras.count {
@@ -196,13 +203,30 @@ struct RenderedCarSpinView: UIViewRepresentable {
             reflectionWheelView.image = wheels
             tintMask.contents = mask?.cgImage
             tintLayer.isHidden = mask == nil
-            carView.image = image
-            reflectionView.image = image
-            let id = ObjectIdentifier(image)
-            let line = floorLines[id] ?? Self.floorLine(of: image)
+            // Black Optic is composited straight into the frame (not a
+            // separate overlay view like seat/wheels) so it shows correctly
+            // in the floor reflection too, and the still/spin frame always
+            // stays a single flattened image.
+            let composed = blackOptic.map { Self.composite($0, over: image) } ?? image
+            carView.image = composed
+            reflectionView.image = composed
+            let id = ObjectIdentifier(composed)
+            let line = floorLines[id] ?? Self.floorLine(of: composed)
             floorLines[id] = line
             floorLine = line
             setNeedsLayout()
+        }
+
+        /// Draws `overlay` straight over `base` (its own alpha decides what
+        /// shows), both already the same pixel size.
+        private static func composite(_ overlay: UIImage, over base: UIImage) -> UIImage {
+            let format = UIGraphicsImageRendererFormat()
+            format.opaque = false
+            format.scale = base.scale
+            return UIGraphicsImageRenderer(size: base.size, format: format).image { _ in
+                base.draw(at: .zero)
+                overlay.draw(at: .zero)
+            }
         }
 
         /// Reads the tyre contact points from a small alpha-only copy of the
@@ -407,6 +431,7 @@ struct RenderedCarSpinView: UIViewRepresentable {
         var stockWheels: [UIImage] = []
         var extras: [ExtraLayer] = []
         var seatLayers: [UIImage] = []
+        var blackOpticLayers: [UIImage] = []
 
         func show(_ i: Int) {
             guard !frames.isEmpty else { return }
@@ -417,7 +442,8 @@ struct RenderedCarSpinView: UIViewRepresentable {
                         wheels: index < wheelLayers.count ? wheelLayers[index] : nil,
                         stock: index < stockWheels.count ? stockWheels[index] : nil,
                         extras: extras.compactMap { e in index < e.frames.count ? (e.rect, e.frames[index]) : nil },
-                        seat: index < seatLayers.count ? seatLayers[index] : nil)
+                        seat: index < seatLayers.count ? seatLayers[index] : nil,
+                        blackOptic: index < blackOpticLayers.count ? blackOpticLayers[index] : nil)
         }
 
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {

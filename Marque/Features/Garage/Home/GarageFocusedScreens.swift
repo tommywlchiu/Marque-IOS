@@ -439,6 +439,21 @@ struct GarageCustomizeScreen: View {
                     .garageRowBackground()
                 }
 
+                if hasBlackOpticPass(for: car) {
+                    Section(header: Text("Black Optic"),
+                            footer: Text("Blacks out the grille, rings, mirror caps and window trim.")) {
+                        Toggle("Black Optic", isOn: Binding(
+                            get: { car.customization.blackOptic },
+                            set: { on in
+                                var updated = car
+                                updated.customization.blackOptic = on
+                                carStore.updateCar(updated)
+                            }
+                        ))
+                    }
+                    .garageRowBackground()
+                }
+
                 Section(header: Text("License Plate"),
                         footer: Text("Shown on your car in your Garage only — never in Explore.")) {
                     HStack {
@@ -475,6 +490,11 @@ struct GarageCustomizeScreen: View {
     /// Whether this car has a night-lighting pass rendered.
     private func hasNightPass(for car: Car) -> Bool {
         CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.hasNight == true
+    }
+
+    /// Whether this car has a Black Optic trim layer rendered.
+    private func hasBlackOpticPass(for car: Car) -> Bool {
+        CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.hasBlackOptic == true
     }
 
     /// The seat-color options rendered for this car, `.standard` (the car's
