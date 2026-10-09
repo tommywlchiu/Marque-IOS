@@ -112,7 +112,7 @@ struct GarageHomeView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 6)
 
-                PinnedHero(car: car, height: heroHeight)
+                PinnedHero(car: car, height: heroHeight, onToggleLighting: { toggleLighting(for: car) })
                     .padding(.top, 8)
                     .zIndex(-1)
 
@@ -201,6 +201,12 @@ struct GarageHomeView: View {
         if featureFlagsStore.assistantEnabled {
             headerIcon("text.bubble", label: "Ask Marque about this car") { showingChat = true }
         }
+    }
+
+    private func toggleLighting(for car: Car) {
+        var updated = car
+        updated.customization.lightingMode = updated.customization.lightingMode == .night ? .day : .night
+        carStore.updateCar(updated)
     }
 
     private func headerIcon(_ systemImage: String, label: String, action: @escaping () -> Void) -> some View {
@@ -473,13 +479,14 @@ private struct PinnedHero: View {
 
     let car: Car
     let height: CGFloat
+    var onToggleLighting: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let height = height
         let reduceMotion = reduceMotion
-        GarageHeroView(car: car, height: height)
+        GarageHeroView(car: car, height: height, onToggleLighting: onToggleLighting)
             .visualEffect { content, proxy in
                 let scrolled = proxy.frame(in: .named(Self.contentSpace)).minY
                     - proxy.frame(in: .scrollView(axis: .vertical)).minY
