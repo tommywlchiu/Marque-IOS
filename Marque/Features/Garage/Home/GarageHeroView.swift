@@ -227,8 +227,13 @@ struct GarageHeroView: View {
 
     /// Changes whenever what the hero should show changes.
     private var key: String {
-        [car.primaryPhotoFileName ?? "-", car.make, car.model, car.year, car.bodyStyle, car.color].joined(separator: "|")
+        [car.primaryPhotoFileName ?? "-", car.make, car.model, car.year, car.bodyStyle, car.color,
+         car.customization.lightingMode.rawValue].joined(separator: "|")
     }
+
+    /// Only meaningful for the `.rendered` studio hero — a cutout is the
+    /// owner's own photo and has no night version.
+    private var night: Bool { car.customization.lightingMode == .night }
 
     var body: some View {
         ZStack {
@@ -279,14 +284,15 @@ struct GarageHeroView: View {
                 return
             }
         }
+        let night = night
         if let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()),
-           let still = CarRenderLibrary.cachedStill(for: match) {
+           let still = CarRenderLibrary.cachedStill(for: match, night: night && match.hasNight) {
             loaded = (key, .rendered(still, match))
             // The disk catalog is last launch's. Re-check against this
             // launch's: it can match the car differently (a new model in
             // place of its generic) or add plate positions.
             if let fresh = CarRenderLibrary.match(car, in: await CarRenderLibrary.catalog()), fresh != match,
-               let freshStill = await CarRenderLibrary.frame(0, of: fresh), !Task.isCancelled {
+               let freshStill = await CarRenderLibrary.frame(0, of: fresh, night: night && fresh.hasNight), !Task.isCancelled {
                 loaded = (key, .rendered(freshStill, fresh))
                 await loadFrames(fresh, key: key)
                 return
@@ -295,7 +301,7 @@ struct GarageHeroView: View {
             return
         }
         if let match = CarRenderLibrary.match(car, in: await CarRenderLibrary.catalog()),
-           let still = await CarRenderLibrary.frame(0, of: match) {
+           let still = await CarRenderLibrary.frame(0, of: match, night: night && match.hasNight) {
             guard !Task.isCancelled else { return }
             loaded = (key, .rendered(still, match))
             await loadFrames(match, key: key)
@@ -382,7 +388,7 @@ struct GarageHeroView: View {
             renderTintMasks = (key, masks)
         }
         guard renderFrames?.key != key else { return }
-        if let frames = await CarRenderLibrary.allFrames(of: match), !Task.isCancelled {
+        if let frames = await CarRenderLibrary.allFrames(of: match, night: night && match.hasNight), !Task.isCancelled {
             renderFrames = (key, frames)
         }
     }

@@ -159,6 +159,56 @@ for entry in filter(None, opt.get("styles", "").split(";")):
         b.inputs["Roughness"].default_value = rough
         if "Coat Weight" in b.inputs: b.inputs["Coat Weight"].default_value = coat
 
+# lighting=night: headlights, taillights and turn signals actually glow (the
+# studio rig is dimmed further down). A `styles` preset already named as
+# lamp/redlight/amber is trusted outright — that mapping was vetted by eye
+# when the car was added; everything else is found by material name, the
+# same way mask=glass's lens list already excludes these from being treated
+# as window glass. Narrower than that list on purpose: it must not light up
+# a red-painted body panel or a mirror, only the actual lamp clusters.
+NIGHT = opt.get("lighting") == "night"
+if NIGHT:
+    import re
+    HEAD_RE = re.compile(r"head.?light|headlamp|\bdrl\b|fog.?light|front.?light|phare|lampu.?depan|rev.?light|reverse|backup.?light", re.I)
+    # brea[k|c]light: a Sketchfab model that misspells "brake" as "break" is
+    # common enough to be worth matching (tesla-model3's own breaklight_l/r).
+    TAIL_RE = re.compile(r"tail.?light|taillamp|brea[kc].?light|stop.?light|rear.?light|feux.?arri|rucklicht", re.I)
+    SIGNAL_RE = re.compile(r"indicator|turn.?signal|turnsignal|blinker|clignot", re.I)
+    # A lower-detail model (a single "Lights" material for the whole car,
+    # head and tail combined undifferentiated) is common enough on the
+    # budget end of the catalog to be worth a fallback rather than silently
+    # lighting up nothing — white (a headlight look) is the safer guess than
+    # red, since it's wrong less often (most of a car's glass-lensed lamp
+    # area, front and rear combined, reads closer to white/clear than red).
+    GENERIC_LIGHT_RE = re.compile(r"\blights?\b", re.I)
+    styled_lamp_preset = {}
+    for entry in filter(None, opt.get("styles", "").split(";")):
+        names, preset = entry.rsplit(":", 1)
+        if preset in ("lamp", "redlight", "amber"):
+            for n in names.split("|"): styled_lamp_preset[n] = preset
+    EMIT = {"head": (6.0, (1.0, 0.97, 0.9)), "tail": (5.0, (1.0, 0.05, 0.03)), "signal": (5.0, (1.0, 0.55, 0.05))}
+    def lamp_kind(name):
+        if name in styled_lamp_preset:
+            p = styled_lamp_preset[name]
+            return "tail" if p == "redlight" else "signal" if p == "amber" else "head"
+        if HEAD_RE.search(name): return "head"
+        if TAIL_RE.search(name): return "tail"
+        if SIGNAL_RE.search(name): return "signal"
+        if GENERIC_LIGHT_RE.search(name): return "head"
+        return None
+    lit_materials = []
+    for m in list(bpy.data.materials):
+        kind = lamp_kind(m.name)
+        if not kind: continue
+        strength, rgb = EMIT[kind]
+        m.use_nodes = True; nt4 = m.node_tree; nt4.nodes.clear()
+        em = nt4.nodes.new("ShaderNodeEmission")
+        em.inputs["Color"].default_value = (*rgb, 1)
+        em.inputs["Strength"].default_value = strength
+        nt4.links.new(em.outputs[0], nt4.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+        lit_materials.append((m.name, kind))
+    print("NIGHT_LAMPS", lit_materials)
+
 # isolate=mat|mat: a named-material layer add-on (black optic trim, seat
 # color) — the listed materials keep their real (already styled/painted)
 # look, lit normally; everything else becomes a holdout, same technique as
@@ -544,14 +594,19 @@ def softbox(name, loc, rot, size, strength):
 # reflects — without it dark paint goes flat black), and two tall side strips
 # (the vertical streaks that show a body's shape). The world HDRI is turned
 # down so the softboxes, not its blur, make the reflections.
-bg.inputs["Strength"].default_value = float(opt.get("world", 0.5))
-softbox("Overhead", (0, 0, 7), (0, 0, 0), (7, 3.2), 9)
-softbox("Front", (0, -11, 3.6), (math.radians(80), 0, 0), (9, 2.2), 3.5)
-softbox("StripL", (-6, -6, 2.4), (math.radians(90), 0, math.radians(-45)), (1.4, 4.5), 6)
-softbox("StripR", (7, 1.5, 2.4), (math.radians(90), 0, math.radians(95)), (1.4, 4.5), 6)
+# lighting=night: the same rig, dimmed and cooled, so the lamp emission
+# above actually reads as the brightest thing in the shot instead of being
+# washed out by a full-brightness studio.
+night_dim = 0.22 if NIGHT else 1.0
+bg.inputs["Strength"].default_value = float(opt.get("world", 0.05 if NIGHT else 0.5))
+if NIGHT: bg.inputs["Color"].default_value = (0.012, 0.016, 0.03, 1)
+softbox("Overhead", (0, 0, 7), (0, 0, 0), (7, 3.2), 9 * night_dim)
+softbox("Front", (0, -11, 3.6), (math.radians(80), 0, 0), (9, 2.2), 3.5 * night_dim)
+softbox("StripL", (-6, -6, 2.4), (math.radians(90), 0, math.radians(-45)), (1.4, 4.5), 6 * night_dim)
+softbox("StripR", (7, 1.5, 2.4), (math.radians(90), 0, math.radians(95)), (1.4, 4.5), 6 * night_dim)
 # Area lights shape the body but cast no shadows, so a Cycles shadow catcher
 # gets only a soft contact shadow, not a long one that would widen the crop.
-for l in (area_light("Key", (5, -7, 5), 450, 5), area_light("Rim", (-5, 7, 4), 400, 6)):
+for l in (area_light("Key", (5, -7, 5), 450 * night_dim, 5), area_light("Rim", (-5, 7, 4), 400 * night_dim, 6)):
     l.data.use_shadow = False
 if engine == "CYCLES":
     bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0))

@@ -113,6 +113,24 @@ for e in entries:
     else:
         bad("no tint masks")
 
+    # Night pass: same crop as day (so the two never jump against each
+    # other), visibly dimmer overall (the studio is turned down), and at
+    # least one lamp cluster genuinely lit (mean brightness alone could
+    # still pass with the dimming working but the emissive-lamp detection
+    # silently matching nothing for this car).
+    if e.get("night"):
+        for f in (0, 9, 18, 27):
+            day = Image.open(os.path.join(d, "silver", f"{f:02d}.webp")).convert("RGB").resize((W, H))
+            night_p = os.path.join(d, "night", "silver", f"{f:02d}.webp")
+            if not os.path.exists(night_p): bad(f"night: missing silver/{f:02d}"); continue
+            night = Image.open(night_p).convert("RGB")
+            if night.size != (W, H): bad(f"night: silver/{f:02d} size {night.size} != {(W, H)}"); continue
+            day_mean = sum(day.resize((1, 1), Image.BOX).getpixel((0, 0))) / 3
+            night_mean = sum(night.resize((1, 1), Image.BOX).getpixel((0, 0))) / 3
+            if night_mean >= day_mean * 0.85: bad(f"night: frame {f} isn't meaningfully dimmer than day ({night_mean:.0f} vs {day_mean:.0f})")
+            if night.getextrema()[0][1] < 200 and night.getextrema()[1][1] < 200 and night.getextrema()[2][1] < 200:
+                bad(f"night: frame {f} has no bright (lit-lamp) pixels at all")
+
     # Wheels
     # Frames 15 and 33 are the side views (yaw 185° / 5°).
     rendered = e.get("wheels") or []
