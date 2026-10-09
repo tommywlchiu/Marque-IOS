@@ -62,6 +62,9 @@ enum CarRenderLibrary {
         /// Whether `<key>/night/<color>/NN.webp` (the night-lighting pass,
         /// same crop as day) exists for every palette color.
         let night: Bool?
+        /// Whether `<key>/blackOptic/NN.webp` (the blacked-out chrome trim
+        /// add-on, `CarCustomization.blackOptic`) exists for every frame.
+        let blackOptic: Bool?
     }
 
     struct Entry: Codable, Identifiable {
@@ -88,6 +91,8 @@ enum CarRenderLibrary {
         let seats: [String]?
         /// Same meaning as `Generic.night`.
         let night: Bool?
+        /// Same meaning as `Generic.blackOptic`.
+        let blackOptic: Bool?
         var id: String { key }
     }
 
@@ -123,6 +128,7 @@ enum CarRenderLibrary {
         var hasPlates = false
         var hasTint = false
         var hasNight = false
+        var hasBlackOptic = false
         var wheelStyles: [String] = []
         var meter: Double?
         /// Each rendered extra's layer rect, in fractions of the frame.
@@ -223,6 +229,7 @@ enum CarRenderLibrary {
                      hasPlates: (entry?.plates ?? generic?.plates) == true,
                      hasTint: (entry?.tint ?? generic?.tint) == true,
                      hasNight: (entry?.night ?? generic?.night) == true,
+                     hasBlackOptic: (entry?.blackOptic ?? generic?.blackOptic) == true,
                      wheelStyles: entry?.wheels ?? generic?.wheels ?? [],
                      meter: entry?.meter ?? generic?.meter,
                      extras: (entry?.extras ?? generic?.extras ?? [:]).compactMapValues { r in
@@ -277,6 +284,15 @@ enum CarRenderLibrary {
     static func tintMasks(of match: Match) async -> [UIImage]? {
         guard match.hasTint else { return nil }
         return await layers(of: match, folder: "tint")
+    }
+
+    /// The Black Optic trim layer (blacked-out grille, rings, mirrors,
+    /// window trim), over the car the same way a seat-color layer is — one
+    /// fixed set of frames, no per-color variants — or nil if this car has
+    /// no Black Optic add-on or any frame is missing.
+    static func blackOpticLayers(of match: Match) async -> [UIImage]? {
+        guard match.hasBlackOptic else { return nil }
+        return await layers(of: match, folder: "blackOptic")
     }
 
     /// A per-frame layer folder under the car (`tint`, `wheels/<style>`, `extras/<id>`),

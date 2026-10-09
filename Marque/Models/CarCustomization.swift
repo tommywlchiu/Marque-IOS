@@ -123,9 +123,15 @@ struct CarCustomization: Codable, Equatable {
     var seatColor: SeatColor = .standard
     var spoilerFinish: SpoilerFinish = .gloss
     var lightingMode: LightingMode = .day
+    /// Blacks out the car's chrome/bright trim — grille surround and rings,
+    /// mirror caps, window trim — the catalog's `<car>/blackOptic/` layer
+    /// (`CarRenderLibrary.Entry.blackOptic`). Only a car with that layer
+    /// rendered offers the toggle; everything else keeps its default chrome.
+    var blackOptic: Bool = false
 
     init(tint: Tint = .none, stance: Stance = .stock, wheels: String? = nil, extras: [Extra] = [],
-         seatColor: SeatColor = .standard, spoilerFinish: SpoilerFinish = .gloss, lightingMode: LightingMode = .day) {
+         seatColor: SeatColor = .standard, spoilerFinish: SpoilerFinish = .gloss, lightingMode: LightingMode = .day,
+         blackOptic: Bool = false) {
         self.tint = tint
         self.stance = stance
         self.wheels = wheels
@@ -133,6 +139,7 @@ struct CarCustomization: Codable, Equatable {
         self.seatColor = seatColor
         self.spoilerFinish = spoilerFinish
         self.lightingMode = lightingMode
+        self.blackOptic = blackOptic
     }
 
     /// Turns one extra on or off; a cargo box and plain crossbars replace
@@ -153,7 +160,7 @@ struct CarCustomization: Codable, Equatable {
         return set.sorted { ($0.order, $0.rawValue) < ($1.order, $1.rawValue) }
     }
 
-    private enum CodingKeys: String, CodingKey { case tint, stance, wheels, extras, seatColor, spoilerFinish, lightingMode }
+    private enum CodingKeys: String, CodingKey { case tint, stance, wheels, extras, seatColor, spoilerFinish, lightingMode, blackOptic }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -166,6 +173,7 @@ struct CarCustomization: Codable, Equatable {
         seatColor = (try? c.decodeIfPresent(SeatColor.self, forKey: .seatColor)) ?? .standard
         spoilerFinish = (try? c.decodeIfPresent(SpoilerFinish.self, forKey: .spoilerFinish)) ?? .gloss
         lightingMode = (try? c.decodeIfPresent(LightingMode.self, forKey: .lightingMode)) ?? .day
+        blackOptic = (try? c.decodeIfPresent(Bool.self, forKey: .blackOptic)) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -177,5 +185,6 @@ struct CarCustomization: Codable, Equatable {
         if seatColor != .standard { try c.encode(seatColor, forKey: .seatColor) }
         if spoilerFinish != .gloss { try c.encode(spoilerFinish, forKey: .spoilerFinish) }
         if lightingMode != .day { try c.encode(lightingMode, forKey: .lightingMode) }
+        if blackOptic { try c.encode(blackOptic, forKey: .blackOptic) }
     }
 }
