@@ -116,9 +116,6 @@ struct RenderedCarSpinView: UIViewRepresentable {
         /// The chosen seat-color layer, drawn directly over the car — same
         /// frame as `carView`, so it moves with the body under stance.
         private let seatView = UIImageView()
-        /// The Black Optic trim layer, drawn directly over the car — same
-        /// frame as `carView`, so it moves with the body under stance.
-        private let blackOpticView = UIImageView()
         private let reflectionClip = UIView()
         private let reflectionView = UIImageView()
         private let reflectionFade = CAGradientLayer()
@@ -177,7 +174,6 @@ struct RenderedCarSpinView: UIViewRepresentable {
             carCut.contentsGravity = .resize
             addSubview(carView)
             addSubview(seatView)
-            addSubview(blackOpticView)
             addSubview(wheelView)
             tintLayer.backgroundColor = UIColor.black.cgColor
             tintLayer.opacity = 0
@@ -192,7 +188,6 @@ struct RenderedCarSpinView: UIViewRepresentable {
                   tintMask mask: UIImage? = nil, wheels: UIImage? = nil, stock: UIImage? = nil,
                   extras: [(CGRect, UIImage)] = [], seat: UIImage? = nil, blackOptic: UIImage? = nil) {
             seatView.image = seat
-            blackOpticView.image = blackOptic
             placements = plates ?? [:]
             while extraViews.count < extras.count {
                 let view = UIImageView(); addSubview(view); extraViews.append(view)
@@ -208,13 +203,30 @@ struct RenderedCarSpinView: UIViewRepresentable {
             reflectionWheelView.image = wheels
             tintMask.contents = mask?.cgImage
             tintLayer.isHidden = mask == nil
-            carView.image = image
-            reflectionView.image = image
-            let id = ObjectIdentifier(image)
-            let line = floorLines[id] ?? Self.floorLine(of: image)
+            // Black Optic is composited straight into the frame (not a
+            // separate overlay view like seat/wheels) so it shows correctly
+            // in the floor reflection too, and the still/spin frame always
+            // stays a single flattened image.
+            let composed = blackOptic.map { Self.composite($0, over: image) } ?? image
+            carView.image = composed
+            reflectionView.image = composed
+            let id = ObjectIdentifier(composed)
+            let line = floorLines[id] ?? Self.floorLine(of: composed)
             floorLines[id] = line
             floorLine = line
             setNeedsLayout()
+        }
+
+        /// Draws `overlay` straight over `base` (its own alpha decides what
+        /// shows), both already the same pixel size.
+        private static func composite(_ overlay: UIImage, over base: UIImage) -> UIImage {
+            let format = UIGraphicsImageRendererFormat()
+            format.opaque = false
+            format.scale = base.scale
+            return UIGraphicsImageRenderer(size: base.size, format: format).image { _ in
+                base.draw(at: .zero)
+                overlay.draw(at: .zero)
+            }
         }
 
         /// Reads the tyre contact points from a small alpha-only copy of the
@@ -289,7 +301,6 @@ struct RenderedCarSpinView: UIViewRepresentable {
             let body = stanced ? car.offsetBy(dx: 0, dy: -stanceLift * car.height) : car
             carView.frame = body
             seatView.frame = body
-            blackOpticView.frame = body
             wheelView.frame = car
             if stanced, let stock = stockImage {
                 if wheelView.image == nil { wheelView.image = stock }
