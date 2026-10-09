@@ -371,29 +371,63 @@ struct WarrantyCard: View {
 // MARK: - Add-document prompt
 
 /// Dashed "Add X" card for a document type the user hasn't filled in yet —
-/// matches the dashed "Add a Car" affordance already used on Garage.
+/// matches the dashed "Add a Car" affordance already used on Garage. Two
+/// layouts: the original full-width horizontal row (License, which still
+/// gets the whole tab to itself) and `compact` — stacked like
+/// `WalletCardShell`'s filled cards (icon row, then title, then subtitle) —
+/// for a car's 2-column document grid, where the horizontal layout wrapped
+/// "Add Insurance" character-by-character in the ~160pt column width.
 struct AddDocumentCard: View {
     let title: String
     let subtitle: String
     let icon: String
+    var compact: Bool = false
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(Color.accentColor.opacity(0.12)).frame(width: 44, height: 44)
-                    Image(systemName: icon).foregroundStyle(Color.accentColor)
+            Group {
+                if compact {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: icon)
+                                .font(.title3)
+                                .foregroundStyle(Color.accentColor)
+                            Spacer()
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(Color.accentColor)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text(subtitle)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+                } else {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            Circle().fill(Color.accentColor.opacity(0.12)).frame(width: 44, height: 44)
+                            Image(systemName: icon).foregroundStyle(Color.accentColor)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                            Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "plus.circle.fill").foregroundStyle(Color.accentColor)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "plus.circle.fill").foregroundStyle(Color.accentColor)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(Color.accentColor.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))

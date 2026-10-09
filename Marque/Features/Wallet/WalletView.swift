@@ -256,7 +256,8 @@ struct WalletView: View {
                 AddDocumentCard(
                     title: "Add Specs",
                     subtitle: "Trim, engine and more",
-                    icon: "list.bullet.rectangle.fill"
+                    icon: "list.bullet.rectangle.fill",
+                    compact: true
                 ) {
                     editingSpecsCar = car
                 }
@@ -268,7 +269,8 @@ struct WalletView: View {
                 AddDocumentCard(
                     title: "Add Insurance",
                     subtitle: "Track the policy",
-                    icon: "shield.fill"
+                    icon: "shield.fill",
+                    compact: true
                 ) {
                     editingInsuranceCar = car
                 }
@@ -280,7 +282,8 @@ struct WalletView: View {
                 AddDocumentCard(
                     title: "Add Registration",
                     subtitle: "Track the registration",
-                    icon: "doc.text.fill"
+                    icon: "doc.text.fill",
+                    compact: true
                 ) {
                     editingRegistrationCar = car
                 }
@@ -292,7 +295,8 @@ struct WalletView: View {
                 AddDocumentCard(
                     title: "Add Warranty",
                     subtitle: "Track coverage",
-                    icon: "checkmark.seal.fill"
+                    icon: "checkmark.seal.fill",
+                    compact: true
                 ) {
                     editingWarrantyCar = car
                 }
