@@ -23,6 +23,10 @@ struct EditVehicleDetailsSheet: View {
     @State private var fullRange: String = ""
     @State private var tankGallons: String = ""
     @State private var transmission: String = ""
+    /// A known Tesla range-variant name picked from `TeslaRangeCatalog`, or
+    /// "" ("Custom") when the owner's number doesn't match one — typed by
+    /// hand, or a Tesla model/year the catalog doesn't cover.
+    @State private var rangeVariant: String = ""
 
     var body: some View {
         NavigationStack {
@@ -51,10 +55,31 @@ struct EditVehicleDetailsSheet: View {
                         }
                     }
                     if let kind = Car.RangeKind(fuelType: fuelType) {
+                        if let variants = TeslaRangeCatalog.variants(model: car.model, year: car.year) {
+                            Picker("Range Type", selection: $rangeVariant) {
+                                Text("Custom").tag("")
+                                ForEach(variants) { Text("\($0.name) (\($0.miles) mi)").tag($0.name) }
+                            }
+                            .onChange(of: rangeVariant) { _, newValue in
+                                if let picked = variants.first(where: { $0.name == newValue }) {
+                                    fullRange = String(picked.miles)
+                                }
+                            }
+                        }
                         LabeledContent(kind.label) {
                             TextField(rangePlaceholder(kind), text: $fullRange)
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
+                                // Typing a number by hand that no longer
+                                // matches the picked variant falls back to
+                                // "Custom" rather than silently disagreeing
+                                // with the picker above it.
+                                .onChange(of: fullRange) { _, newValue in
+                                    guard let variants = TeslaRangeCatalog.variants(model: car.model, year: car.year) else { return }
+                                    if variants.first(where: { $0.name == rangeVariant })?.miles.description != newValue {
+                                        rangeVariant = variants.first(where: { $0.miles.description == newValue })?.name ?? ""
+                                    }
+                                }
                         }
                     }
                     Picker("Transmission", selection: $transmission) {
@@ -110,6 +135,8 @@ struct EditVehicleDetailsSheet: View {
         fullRange = car.fullRange.map(String.init) ?? ""
         tankGallons = car.tankGallons.map { $0.formatted(.number.precision(.fractionLength(0...1)).grouping(.never)) } ?? ""
         transmission = car.transmission
+        rangeVariant = TeslaRangeCatalog.variants(model: car.model, year: car.year)?
+            .first(where: { $0.miles == car.fullRange })?.name ?? ""
     }
 
     private func save() {

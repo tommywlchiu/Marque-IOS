@@ -37,6 +37,7 @@
 		76ED376E9DFC7EA40152FB83 /* CarCustomizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5ADEC1E6ED8CB8FE0D47875 /* CarCustomizationTests.swift */; };
 		79453226BB33D5D9700AC1E3 /* CarComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB586A35A4161F192DA3958 /* CarComment.swift */; };
 		7EA680C2C5354143A6723C58 /* PublicSharingSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FA7577767C45F799AA60C1 /* PublicSharingSettings.swift */; };
+		8C9AA103665CEEA22D8C59D4 /* TeslaRangeCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2110FABDDBA24F37801B2918 /* TeslaRangeCatalogTests.swift */; };
 		933E40BE568E2F6AB5467C73 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB40D4C6DC749CA610E8C2F7 /* Foundation.framework */; };
 		9D0001000000000000000001 /* MarqueWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000001 /* MarqueWidgetBundle.swift */; };
 		9D0001000000000000000002 /* MarqueGarageWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0002000000000000000002 /* MarqueGarageWidget.swift */; };
@@ -122,6 +123,7 @@
 		DDEA61B1FDB94D958EBFE896 /* AccountExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B35D4AABF04F78AC0B2395 /* AccountExportService.swift */; };
 		DE3D6FA75140385BC2E1475C /* CarCodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2FBE763E28657A76696437E /* CarCodingTests.swift */; };
 		E0000003E0000003E0000003 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E0000002E0000002E0000002 /* PostHog */; };
+		E49218C63530079BE655B421 /* TeslaRangeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03882A2683E99C13FE59201 /* TeslaRangeCatalog.swift */; };
 		E64384DAD01BCC101BC4750B /* ScanAllowanceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */; };
 		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
 		F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */; };
@@ -206,6 +208,7 @@
 /* Begin PBXFileReference section */
 		000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceViews.swift; sourceTree = "<group>"; };
 		20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrashReportingService.swift; sourceTree = "<group>"; };
+		2110FABDDBA24F37801B2918 /* TeslaRangeCatalogTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TeslaRangeCatalogTests.swift; sourceTree = "<group>"; };
 		24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthTheme.swift; sourceTree = "<group>"; };
 		3C6FF6721A83D1C02383FB69 /* CommentFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentFilter.swift; sourceTree = "<group>"; };
 		50C328DBE2A2B11D1AB02033 /* CarRenderMatchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarRenderMatchTests.swift; sourceTree = "<group>"; };
@@ -304,6 +307,7 @@
 		A30001 /* Marque.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marque.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5FE84F2B957FAF989D9E05A /* MarqueTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarqueTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A70462D0DA6364B648A4441D /* CarValueService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarValueService.swift; sourceTree = "<group>"; };
+		B03882A2683E99C13FE59201 /* TeslaRangeCatalog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TeslaRangeCatalog.swift; sourceTree = "<group>"; };
 		BB40D4C6DC749CA610E8C2F7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		BF0002000000000000000001 /* BodyStyleBackfill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyStyleBackfill.swift; sourceTree = "<group>"; };
 		BF0002000000000000000002 /* FuelEconomyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuelEconomyService.swift; sourceTree = "<group>"; };
@@ -554,6 +558,7 @@
 				BF0002000000000000000001 /* BodyStyleBackfill.swift */,
 				BF0002000000000000000003 /* RangeBackfill.swift */,
 				BF0002000000000000000002 /* FuelEconomyService.swift */,
+				B03882A2683E99C13FE59201 /* TeslaRangeCatalog.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -717,6 +722,7 @@
 				50C328DBE2A2B11D1AB02033 /* CarRenderMatchTests.swift */,
 				F2DE2B3941325D66D0FE2F47 /* ParsingTests.swift */,
 				9842CDB9CC1BD8E761C42D9D /* GarageMissingInfoTests.swift */,
+				2110FABDDBA24F37801B2918 /* TeslaRangeCatalogTests.swift */,
 			);
 			name = MarqueTests;
 			path = MarqueTests;
@@ -926,6 +932,7 @@
 				0CEB915F07151F797FB83A0D /* CarRenderMatchTests.swift in Sources */,
 				25A2F943288D8C6643339A5C /* ParsingTests.swift in Sources */,
 				0331F551731172BB78346AA6 /* GarageMissingInfoTests.swift in Sources */,
+				8C9AA103665CEEA22D8C59D4 /* TeslaRangeCatalogTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1081,6 +1088,7 @@
 				762DB52FDC1C87C394523FB6 /* CelebrationEffects.swift in Sources */,
 				65B797A53B1D4533B9DFCDDE /* AuthTheme.swift in Sources */,
 				1B445AF9F26D417AAE319543 /* GarageEntranceView.swift in Sources */,
+				E49218C63530079BE655B421 /* TeslaRangeCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
