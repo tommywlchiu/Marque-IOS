@@ -7,6 +7,16 @@ import SwiftUI
 /// (EditProfileView, EditVehicleDetailsSheet, EditInsuranceSheet,
 /// EditRegistrationSheet, EditWarrantySheet); this file never duplicates
 /// that logic.
+/// One divider in the Wallet's binder: the driver's license, or one car.
+/// Selecting a tab shows only that section's cards — the old layout stacked
+/// every car's four cards one after another in a single scroll, which grew
+/// unreadable past two or three cars (owner: "more compact and easier to
+/// navigate through, binder/folder organization").
+enum WalletTab: Hashable {
+    case license
+    case car(UUID)
+}
+
 struct WalletView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var carStore: CarStore
@@ -20,18 +30,65 @@ struct WalletView: View {
     @State private var editingInsuranceCar: Car?
     @State private var editingRegistrationCar: Car?
     @State private var editingWarrantyCar: Car?
+    @State private var selectedTab: WalletTab?
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
+    /// License first (always present, filled or an "Add" prompt — the one
+    /// entry point into it), then one tab per car in garage order.
+    private var tabs: [WalletTab] {
+        [.license] + carStore.cars.map { .car($0.id) }
+    }
+
+    /// Falls back to the first tab if nothing's been picked yet, or the
+    /// selected car was deleted out from under the open tab.
+    private var currentTab: WalletTab {
+        if let selectedTab, tabs.contains(selectedTab) { return selectedTab }
+        return tabs.first ?? .license
+    }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    profileHeader
-                    Divider().padding(.vertical, 8)
-                    documentsSection
+            VStack(spacing: 0) {
+                // Fixed, not scrolled away: short and bounded (avatar, name,
+                // one-line bio, stats), and keeping it in view means the tab
+                // strip below is always reachable without scrolling back up
+                // — part of "more compact and easier to navigate."
+                profileHeader
+                Divider().padding(.top, 8)
+
+                if hasAnyDocumentSurface {
+                    WalletTabStrip(tabs: tabs, selected: currentTab, title: tabTitle, icon: tabIcon) { tab in
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.84)) {
+                            selectedTab = tab
+                        }
+                    }
+                    ScrollView {
+                        tabContent(for: currentTab)
+                            // A fresh identity per tab, so SwiftUI treats a
+                            // switch as the old content leaving and the new
+                            // one entering — not a diff of two card stacks —
+                            // which is what makes the transition read as one
+                            // card pulling up to replace another rather than
+                            // everything just fading.
+                            .id(currentTab)
+                            .padding(16)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .move(edge: .top).combined(with: .opacity)
+                            ))
+                    }
+                } else {
+                    MarqueEmptyState(
+                        icon: "wallet.pass.fill",
+                        title: "No Documents Yet",
+                        subtitle: "Add your driver's license or a car to see its insurance and registration here.",
+                        actionTitle: "Add Driver's License",
+                        action: { showingEditProfile = true }
+                    )
+                    .padding(.top, 12)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.bottom, 24)
             }
             .navigationTitle("Wallet")
             .navigationBarTitleDisplayMode(.inline)
@@ -138,7 +195,7 @@ struct WalletView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    // MARK: - Documents
+    // MARK: - Documents (binder tabs)
 
     /// True once there's at least one document surface to show — either the
     /// license card or a car (which always gets Insurance/Registration cards,
@@ -148,32 +205,30 @@ struct WalletView: View {
         !user.driverLicenseNumber.isEmpty || !carStore.cars.isEmpty
     }
 
-    private var documentsSection: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            MarqueSectionHeader(title: "Documents")
-                .padding(.horizontal, 16)
+    private func tabTitle(_ tab: WalletTab) -> String {
+        switch tab {
+        case .license: return "License"
+        case .car(let id): return carStore.cars.first { $0.id == id }?.displayName ?? "Car"
+        }
+    }
 
-            if !hasAnyDocumentSurface {
-                MarqueEmptyState(
-                    icon: "wallet.pass.fill",
-                    title: "No Documents Yet",
-                    subtitle: "Add your driver's license or a car to see its insurance and registration here.",
-                    actionTitle: "Add Driver's License",
-                    action: { showingEditProfile = true }
-                )
-                .padding(.top, 12)
-                .frame(maxWidth: .infinity)
-            } else {
-                VStack(spacing: 20) {
-                    licenseCard
-                    ForEach(carStore.cars) { car in
-                        carDocumentsGroup(for: car)
-                    }
-                }
-                .padding(.horizontal, 16)
+    private func tabIcon(_ tab: WalletTab) -> String {
+        switch tab {
+        case .license: return "person.text.rectangle.fill"
+        case .car: return "car.fill"
+        }
+    }
+
+    @ViewBuilder
+    private func tabContent(for tab: WalletTab) -> some View {
+        switch tab {
+        case .license:
+            licenseCard
+        case .car(let id):
+            if let car = carStore.cars.first(where: { $0.id == id }) {
+                carDocumentsGroup(for: car)
             }
         }
-        .padding(.top, 8)
     }
 
     @ViewBuilder
@@ -191,18 +246,16 @@ struct WalletView: View {
         }
     }
 
+    /// The four document cards in a 2-column grid (not stacked full-width)
+    /// so one car's whole binder tab fits without much scrolling.
     @ViewBuilder
     private func carDocumentsGroup(for car: Car) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(car.displayName)
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(.secondary)
-
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible())], spacing: 12) {
             if car.trim.isEmpty && car.bodyStyle.isEmpty && car.driveType.isEmpty
                 && car.engine.isEmpty && car.fuelType.isEmpty && car.transmission.isEmpty && car.color.isEmpty {
                 AddDocumentCard(
                     title: "Add Specs",
-                    subtitle: "Track \(car.displayName)'s trim, engine and more",
+                    subtitle: "Trim, engine and more",
                     icon: "list.bullet.rectangle.fill"
                 ) {
                     editingSpecsCar = car
@@ -214,7 +267,7 @@ struct WalletView: View {
             if car.insuranceProvider.isEmpty && car.insurancePolicyNumber.isEmpty && car.insuranceExpiryDate == nil {
                 AddDocumentCard(
                     title: "Add Insurance",
-                    subtitle: "Track \(car.displayName)'s policy",
+                    subtitle: "Track the policy",
                     icon: "shield.fill"
                 ) {
                     editingInsuranceCar = car
@@ -226,7 +279,7 @@ struct WalletView: View {
             if car.licensePlate.isEmpty && car.registrationExpiryDate == nil {
                 AddDocumentCard(
                     title: "Add Registration",
-                    subtitle: "Track \(car.displayName)'s registration",
+                    subtitle: "Track the registration",
                     icon: "doc.text.fill"
                 ) {
                     editingRegistrationCar = car
@@ -238,7 +291,7 @@ struct WalletView: View {
             if car.warrantyProvider.isEmpty && car.warrantyType.isEmpty {
                 AddDocumentCard(
                     title: "Add Warranty",
-                    subtitle: "Track \(car.displayName)'s coverage",
+                    subtitle: "Track coverage",
                     icon: "checkmark.seal.fill"
                 ) {
                     editingWarrantyCar = car
