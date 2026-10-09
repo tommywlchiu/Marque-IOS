@@ -16,8 +16,6 @@
       "Bash(firebase auth:import*)",
       "Bash(firebase remoteconfig:*)",
       "Bash(firebase apps:create*)",
-      "Bash(git push*)",
-      "Bash(gh pr merge*)",
       "Bash(gh release create*)",
       "Bash(xcrun altool*)",
       "mcp__firebase__firebase_deploy",
