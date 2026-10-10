@@ -597,9 +597,9 @@ def softbox(name, loc, rot, size, strength):
 # lighting=night: the same rig, dimmed and cooled, so the lamp emission
 # above actually reads as the brightest thing in the shot instead of being
 # washed out by a full-brightness studio.
-night_dim = 0.22 if NIGHT else 1.0
-bg.inputs["Strength"].default_value = float(opt.get("world", 0.05 if NIGHT else 0.5))
-if NIGHT: bg.inputs["Color"].default_value = (0.012, 0.016, 0.03, 1)
+night_dim = 0.5 if NIGHT else 1.0
+bg.inputs["Strength"].default_value = float(opt.get("world", 0.16 if NIGHT else 0.5))
+if NIGHT: bg.inputs["Color"].default_value = (0.03, 0.04, 0.07, 1)
 softbox("Overhead", (0, 0, 7), (0, 0, 0), (7, 3.2), 9 * night_dim)
 softbox("Front", (0, -11, 3.6), (math.radians(80), 0, 0), (9, 2.2), 3.5 * night_dim)
 softbox("StripL", (-6, -6, 2.4), (math.radians(90), 0, math.radians(-45)), (1.4, 4.5), 6 * night_dim)

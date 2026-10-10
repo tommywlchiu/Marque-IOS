@@ -97,12 +97,17 @@ def publish_frames(key, pngs):
     publish_extras(key, box)
     # Night-lighting pass (night.py), same crop box as day so the two frame
     # sets line up pixel-for-pixel and swapping between them never jumps.
+    # Published as "night2", not "night": the first pass had a lighting bug
+    # (render_car.py's night_dim dimmed the whole studio so far the body read
+    # as near-black regardless of paint color) and was already live behind
+    # Hosting's 1-year immutable cache — a fixed render at the same path
+    # would stay invisible to anyone who'd already cached the broken one.
     night_pngs = sorted(glob.glob(os.path.join(sys.argv[1], "_png_night", key, "*", "*.png")))
     has_night = len(night_pngs) == FRAMES * len(palette)
     if has_night:
         for p in night_pngs:
             color, name = p.split(os.sep)[-2:]
-            out = os.path.join(dst, key, "night", color, name.replace(".png", ".webp"))
+            out = os.path.join(dst, key, "night2", color, name.replace(".png", ".webp"))
             os.makedirs(os.path.dirname(out), exist_ok=True)
             Image.open(p).crop(box).save(out, "WEBP", quality=95, method=4)
     # Window masks (tints.py), cropped the same way: the app darkens through
@@ -177,7 +182,7 @@ for key, car in manifest.items():
     if convert:
         has_plates = publish_frames(key, pngs)
     has_tint = len(glob.glob(os.path.join(dst, key, "tint", "*.webp"))) == FRAMES
-    has_night = len(glob.glob(os.path.join(dst, key, "night", "*", "*.webp"))) == FRAMES * len(palette)
+    has_night = len(glob.glob(os.path.join(dst, key, "night2", "*", "*.webp"))) == FRAMES * len(palette)
     has_black_optic = len(glob.glob(os.path.join(dst, key, "blackOptic", "*.webp"))) == FRAMES
     wheels = sorted(os.path.basename(d) for d in glob.glob(os.path.join(dst, key, "wheels", "*"))
                     if len(glob.glob(os.path.join(d, "*.webp"))) == FRAMES)
