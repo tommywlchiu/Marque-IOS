@@ -100,7 +100,7 @@ struct CarCustomization: Codable, Equatable {
     }
 
     /// The studio pass to show: `day` is the original, always-rendered set;
-    /// `night` swaps in the catalog's `<car>/night/<color>/` frames (same
+    /// `night` swaps in the catalog's `<car>/night2/<color>/` frames (same
     /// crop as day, so the car never jumps on toggle) — the studio dimmed
     /// and cooled, headlights/taillights/signals actually glowing. Only cars
     /// with a night pass rendered offer the choice; everything else (tint,

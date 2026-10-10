@@ -81,6 +81,7 @@ struct PublicCarHighlightsSection: View {
         Section {
             HStack(spacing: 10) {
                 LikeButton(car: car, style: .prominent, onLiked: onLiked)
+                FavoriteButton(car: car, style: .prominent)
                 Button(action: onOpenComments) {
                     HStack(spacing: 6) {
                         Image(systemName: "bubble.left").font(.title3)

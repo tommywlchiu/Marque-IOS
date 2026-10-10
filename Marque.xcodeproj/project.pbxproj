@@ -13,6 +13,7 @@
 		1489DDA28A8A529A6872FB29 /* CarValueService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70462D0DA6364B648A4441D /* CarValueService.swift */; };
 		1B445AF9F26D417AAE319543 /* GarageEntranceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9412D7442710420CB0A6B6F6 /* GarageEntranceView.swift */; };
 		25A2F943288D8C6643339A5C /* ParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DE2B3941325D66D0FE2F47 /* ParsingTests.swift */; };
+		2BF92C2A2BB56EA620F88CED /* FavoritesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6CBA42985052405FA06D25A /* FavoritesListView.swift */; };
 		32C371DFB4E4D8C66823FA9D /* PushStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A4AF4B9E5F7A1D6F764D04 /* PushStore.swift */; };
 		354479B93708046E0B3BECBD /* RecallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0CC1FE0F564FEFE13C7015 /* RecallService.swift */; };
 		3B7ACC811DB39F1ABC8C9720 /* RecallServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 079BEA97965CF75996DD1E88 /* RecallServiceTests.swift */; };
@@ -127,6 +128,7 @@
 		DE3D6FA75140385BC2E1475C /* CarCodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2FBE763E28657A76696437E /* CarCodingTests.swift */; };
 		E0000003E0000003E0000003 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E0000002E0000002E0000002 /* PostHog */; };
 		E49218C63530079BE655B421 /* TeslaRangeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B03882A2683E99C13FE59201 /* TeslaRangeCatalog.swift */; };
+		E510E86E1D6623DFB9F22A60 /* FavoriteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20CE66A7EB36D50B8B54963 /* FavoriteButton.swift */; };
 		E64384DAD01BCC101BC4750B /* ScanAllowanceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */; };
 		F421FDE42FA44C19000DBF3C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE32FA44C19000DBF3C /* GoogleSignIn */; };
 		F421FDE62FA44C19000DBF3C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F421FDE52FA44C19000DBF3C /* GoogleSignInSwift */; };
@@ -175,6 +177,7 @@
 		FE60A2000000000000000001 /* WalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60A1000000000000000001 /* WalletView.swift */; };
 		FE60A2000000000000000002 /* WalletDocumentCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60A1000000000000000002 /* WalletDocumentCards.swift */; };
 		FE60B2000000000000000001 /* PhotosTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE60B1000000000000000001 /* PhotosTabView.swift */; };
+		FE7AF73D084AA1DDBA5A6029 /* FavoriteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897FE62E8FD89759B252F4C0 /* FavoriteStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -235,6 +238,7 @@
 		6A4E0F00000000000000000E /* OwnCarPublicProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnCarPublicProjection.swift; sourceTree = "<group>"; };
 		6A4E0F0000000000000000C1 /* GarageCarModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageCarModel.swift; sourceTree = "<group>"; };
 		7AB586A35A4161F192DA3958 /* CarComment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarComment.swift; sourceTree = "<group>"; };
+		897FE62E8FD89759B252F4C0 /* FavoriteStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FavoriteStore.swift; path = FavoriteStore.swift; sourceTree = "<group>"; };
 		8E66130704EB13A9BBF06D35 /* ScanAllowanceStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceStore.swift; sourceTree = "<group>"; };
 		8EE1EA3597AC9528E98F8622 /* CarMod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarMod.swift; sourceTree = "<group>"; };
 		9412D7442710420CB0A6B6F6 /* GarageEntranceView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GarageEntranceView.swift; sourceTree = "<group>"; };
@@ -319,6 +323,8 @@
 		BF0002000000000000000003 /* RangeBackfill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RangeBackfill.swift; sourceTree = "<group>"; };
 		C5A4AF4B9E5F7A1D6F764D04 /* PushStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushStore.swift; sourceTree = "<group>"; };
 		CC0002000000000000000001 /* CarCustomization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarCustomization.swift; sourceTree = "<group>"; };
+		D20CE66A7EB36D50B8B54963 /* FavoriteButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FavoriteButton.swift; path = FavoriteButton.swift; sourceTree = "<group>"; };
+		D6CBA42985052405FA06D25A /* FavoritesListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FavoritesListView.swift; path = FavoritesListView.swift; sourceTree = "<group>"; };
 		D9FA7577767C45F799AA60C1 /* PublicSharingSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicSharingSettings.swift; sourceTree = "<group>"; };
 		DE0CC1FE0F564FEFE13C7015 /* RecallService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecallService.swift; sourceTree = "<group>"; };
 		E2FBE763E28657A76696437E /* CarCodingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarCodingTests.swift; sourceTree = "<group>"; };
@@ -567,6 +573,7 @@
 				B03882A2683E99C13FE59201 /* TeslaRangeCatalog.swift */,
 				DE0CC1FE0F564FEFE13C7015 /* RecallService.swift */,
 				2A753BEDA312550F02B36218 /* RecallStore.swift */,
+				897FE62E8FD89759B252F4C0 /* FavoriteStore.swift */,
 			);
 			path = Stores;
 			sourceTree = "<group>";
@@ -646,6 +653,7 @@
 				FE50D200000000000000000F /* CarTaxonomy.swift */,
 				FE50D200000000000000001F /* PopularModelsRow.swift */,
 				FE50D2000000000000000020 /* ExploreFiltersSheet.swift */,
+				D6CBA42985052405FA06D25A /* FavoritesListView.swift */,
 			);
 			path = Explore;
 			sourceTree = "<group>";
@@ -710,6 +718,7 @@
 				FE50F1000000000000000001 /* CarShareCard.swift */,
 				FE50F1000000000000000002 /* ShareCardSheet.swift */,
 				FE50F1000000000000000003 /* PublicSharingSheet.swift */,
+				D20CE66A7EB36D50B8B54963 /* FavoriteButton.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -1101,6 +1110,9 @@
 				E49218C63530079BE655B421 /* TeslaRangeCatalog.swift in Sources */,
 				354479B93708046E0B3BECBD /* RecallService.swift in Sources */,
 				4BB450C15600D4859E185F9B /* RecallStore.swift in Sources */,
+				FE7AF73D084AA1DDBA5A6029 /* FavoriteStore.swift in Sources */,
+				E510E86E1D6623DFB9F22A60 /* FavoriteButton.swift in Sources */,
+				2BF92C2A2BB56EA620F88CED /* FavoritesListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

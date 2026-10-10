@@ -230,6 +230,14 @@ struct GarageHeroView: View {
     @State private var renderBlackOptic: (key: String, layers: [UIImage])?
     /// The match behind the rendered hero, for loading add-on layers later.
     @State private var renderMatch: CarRenderLibrary.Match?
+    /// Bumped every time `renderMatch` is (re)assigned, including the silent
+    /// disk-cache-then-network upgrade hop in `load()` that can replace it
+    /// in place without `carKey` changing. The add-on keys below fold this
+    /// in so a flag that only the fresh match has (e.g. a just-shipped
+    /// `hasBlackOptic`) doesn't get stuck on a stale "no such add-on" result
+    /// from the first, disk-cached match — `.task(id:)` only reruns when the
+    /// id actually changes, and `carKey` alone doesn't catch that case.
+    @State private var matchVersion = 0
 
     /// Changes whenever what the hero should show changes.
     private var key: String {
@@ -347,7 +355,7 @@ struct GarageHeroView: View {
 
     /// Car + chosen wheel style: changes when either does.
     private var wheelsKey: String {
-        [key, car.customization.wheels ?? "-", car.customization.stance.rawValue, renderMatch?.carKey ?? ""].joined(separator: "|")
+        [key, car.customization.wheels ?? "-", car.customization.stance.rawValue, renderMatch?.carKey ?? "", String(matchVersion)].joined(separator: "|")
     }
 
     /// The stance as a fraction of the frame's height (0 without the data).
@@ -371,7 +379,7 @@ struct GarageHeroView: View {
     /// Car + chosen extras (+ the spoiler's finish, which picks a different
     /// rendered layer for the same extra): changes when any of those does.
     private var extrasKey: String {
-        ([key, renderMatch?.carKey ?? "", car.customization.spoilerFinish.rawValue] + car.customization.extras.map(\.rawValue))
+        ([key, renderMatch?.carKey ?? "", String(matchVersion), car.customization.spoilerFinish.rawValue] + car.customization.extras.map(\.rawValue))
             .joined(separator: "|")
     }
 
@@ -397,7 +405,7 @@ struct GarageHeroView: View {
 
     /// Car + chosen seat color: changes when either does.
     private var seatsKey: String {
-        [key, renderMatch?.carKey ?? "", car.customization.seatColor.rawValue].joined(separator: "|")
+        [key, renderMatch?.carKey ?? "", String(matchVersion), car.customization.seatColor.rawValue].joined(separator: "|")
     }
 
     private func loadSeats() async {
@@ -410,7 +418,7 @@ struct GarageHeroView: View {
 
     /// Car + Black Optic on/off: changes when either does.
     private var blackOpticKey: String {
-        [key, renderMatch?.carKey ?? "", car.customization.blackOptic ? "on" : "off"].joined(separator: "|")
+        [key, renderMatch?.carKey ?? "", String(matchVersion), car.customization.blackOptic ? "on" : "off"].joined(separator: "|")
     }
 
     private func loadBlackOptic() async {
@@ -426,6 +434,7 @@ struct GarageHeroView: View {
             renderPlates = (key, track)
         }
         renderMatch = match
+        matchVersion += 1
         if renderTintMasks?.key != key, let masks = await CarRenderLibrary.tintMasks(of: match), !Task.isCancelled {
             renderTintMasks = (key, masks)
         }

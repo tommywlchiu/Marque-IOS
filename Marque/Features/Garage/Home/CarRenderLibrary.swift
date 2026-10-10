@@ -59,7 +59,7 @@ enum CarRenderLibrary {
         /// options in `CarCustomization.SeatColor`); optional (older catalogs,
         /// or a car whose model has no separable seat material).
         let seats: [String]?
-        /// Whether `<key>/night/<color>/NN.webp` (the night-lighting pass,
+        /// Whether `<key>/night2/<color>/NN.webp` (the night-lighting pass,
         /// same crop as day) exists for every palette color.
         let night: Bool?
         /// Whether `<key>/blackOptic/NN.webp` (the blacked-out chrome trim
@@ -137,14 +137,20 @@ enum CarRenderLibrary {
         var seats: [String] = []
         var canChangeStance: Bool { wheelStyles.contains("stock") && meter != nil }
 
+        // "night2", not "night": the first night pass shipped with a lighting
+        // bug (the whole body read as near-black, not just dimmed — see the
+        // render_car.py night_dim fix) and was already live on Hosting, which
+        // serves *.webp with a 1-year immutable cache. A fixed render at the
+        // same path would stay invisible to any client (or CDN edge) that had
+        // already cached the broken one; a new path is the only way to bust it.
         fileprivate func remoteURL(_ frame: Int, night: Bool = false) -> URL {
-            let path = night ? "\(carKey)/night/\(colorKey)/\(String(format: "%02d", frame)).webp"
+            let path = night ? "\(carKey)/night2/\(colorKey)/\(String(format: "%02d", frame)).webp"
                               : "\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp"
             return CarRenderLibrary.baseURL.appendingPathComponent(path)
         }
 
         fileprivate func localURL(_ frame: Int, night: Bool = false) -> URL {
-            let path = night ? "\(carKey)/night/\(colorKey)/\(String(format: "%02d", frame)).webp"
+            let path = night ? "\(carKey)/night2/\(colorKey)/\(String(format: "%02d", frame)).webp"
                               : "\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp"
             return CarRenderLibrary.cacheDirectory.appendingPathComponent(path)
         }
