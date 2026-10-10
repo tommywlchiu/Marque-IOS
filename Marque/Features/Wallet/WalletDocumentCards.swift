@@ -352,16 +352,22 @@ struct WarrantyCard: View {
     let car: Car
     let onTap: () -> Void
 
+    private var status: DocumentExpiryStatus { DocumentExpiryStatus(car.warrantyExpiryDate) }
+
     var body: some View {
         WalletCardShell(gradient: [.purple, .indigo], icon: "checkmark.seal.fill", title: "Warranty", onTap: onTap) {
             Text(car.warrantyType.isEmpty ? "Type not set" : car.warrantyType)
                 .font(.system(.title3, design: .rounded).weight(.semibold))
                 .lineLimit(1)
-            if !car.warrantyProvider.isEmpty {
-                Text(car.warrantyProvider)
-                    .font(.footnote.weight(.medium))
-                    .opacity(0.9)
-                    .lineLimit(1)
+            HStack {
+                if !car.warrantyProvider.isEmpty {
+                    Text(car.warrantyProvider)
+                        .font(.footnote.weight(.medium))
+                        .opacity(0.9)
+                        .lineLimit(1)
+                }
+                Spacer()
+                ExpiryBadge(status: status)
             }
         }
         .accessibilityLabel("\(car.displayName) warranty, edit")

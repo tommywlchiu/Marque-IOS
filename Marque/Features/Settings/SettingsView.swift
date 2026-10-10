@@ -237,6 +237,7 @@ private struct NotificationsSettingsView: View {
     @EnvironmentObject var authService: AuthService
     @AppStorage(NotificationManager.insuranceAlertsKey) private var insuranceAlerts = true
     @AppStorage(NotificationManager.registrationAlertsKey) private var registrationAlerts = true
+    @AppStorage(NotificationManager.warrantyAlertsKey) private var warrantyAlerts = true
     // NotificationManager treats an absent key as "on" (see its gates in
     // scheduleAll), so the UI default here must match that, not read as off
     // until the user has ever touched the toggle.
@@ -256,6 +257,13 @@ private struct NotificationsSettingsView: View {
                     }
                 Toggle("Registration Expiry", isOn: $registrationAlerts)
                     .onChange(of: registrationAlerts) { _, _ in
+                        NotificationManager.scheduleAll(
+                            for: carStore.cars,
+                            licenseExpiry: authService.currentUser?.driverLicenseExpiryDate
+                        )
+                    }
+                Toggle("Warranty Expiry", isOn: $warrantyAlerts)
+                    .onChange(of: warrantyAlerts) { _, _ in
                         NotificationManager.scheduleAll(
                             for: carStore.cars,
                             licenseExpiry: authService.currentUser?.driverLicenseExpiryDate

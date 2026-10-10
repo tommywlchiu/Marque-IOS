@@ -3,6 +3,7 @@ import UserNotifications
 struct NotificationManager {
     static let insuranceAlertsKey = "marque_notif_insurance_enabled"
     static let registrationAlertsKey = "marque_notif_registration_enabled"
+    static let warrantyAlertsKey = "marque_notif_warranty_enabled"
     static let maintenanceRemindersKey = "marque_notif_maintenance_enabled"
 
     static func requestPermission() {
@@ -88,7 +89,7 @@ struct NotificationManager {
         ].compactMap { $0 }
     }
 
-    // MARK: - Expiry alerts (registration & insurance)
+    // MARK: - Expiry alerts (registration, insurance & warranty)
 
     private static func expiryAlerts(for car: Car) -> [PendingAlert] {
         var alerts: [PendingAlert?] = []
@@ -145,6 +146,34 @@ struct NotificationManager {
                     title: "Insurance Expired",
                     body: "\(car.displayName) insurance has expired. Renew it as soon as possible.",
                     day: insDate
+                ),
+            ]
+        }
+
+        if UserDefaults.standard.object(forKey: warrantyAlertsKey) == nil
+            || UserDefaults.standard.bool(forKey: warrantyAlertsKey),
+           let warrantyDate = car.warrantyExpiryDate {
+            alerts += [
+                alert(
+                    id: "warranty-30-\(car.id)",
+                    carId: car.id,
+                    title: "Warranty Expiring Soon",
+                    body: "\(car.displayName) warranty expires in 30 days.",
+                    day: Calendar.current.date(byAdding: .day, value: -30, to: warrantyDate)
+                ),
+                alert(
+                    id: "warranty-7-\(car.id)",
+                    carId: car.id,
+                    title: "Warranty Expiring This Week",
+                    body: "\(car.displayName) warranty expires in 7 days.",
+                    day: Calendar.current.date(byAdding: .day, value: -7, to: warrantyDate)
+                ),
+                alert(
+                    id: "warranty-0-\(car.id)",
+                    carId: car.id,
+                    title: "Warranty Expired",
+                    body: "\(car.displayName) warranty has expired.",
+                    day: warrantyDate
                 ),
             ]
         }

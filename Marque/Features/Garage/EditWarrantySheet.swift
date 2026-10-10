@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Focused sheet for editing just a car's warranty fields: who covers it and
-/// what kind. No expiry tracking (owner decision — unlike Insurance/
-/// Registration, a warranty here doesn't drive attention-card badges or
-/// notifications) and no document scanner — warranty paperwork isn't a
+/// Focused sheet for editing a car's warranty fields: who covers it, what
+/// kind, and (since 2026-10-10) an optional expiry that drives the same
+/// attention-card badge, status line and 30d/7d/on-day notifications as
+/// Insurance/Registration. No document scanner — warranty paperwork isn't a
 /// standardized card like an insurance ID. Mirrors the same shape/save
 /// pattern as EditInsuranceSheet/EditRegistrationSheet.
 struct EditWarrantySheet: View {
@@ -14,6 +14,8 @@ struct EditWarrantySheet: View {
 
     @State private var provider: String = ""
     @State private var type: String = ""
+    @State private var hasExpiry = false
+    @State private var expiryDate = Date()
 
     var body: some View {
         NavigationStack {
@@ -24,6 +26,13 @@ struct EditWarrantySheet: View {
                     Picker("Type", selection: $type) {
                         Text("Select a type").tag("")
                         ForEach(CarData.warrantyTypes, id: \.self) { Text($0).tag($0) }
+                    }
+                    Toggle("Expiration", isOn: $hasExpiry.animation())
+                        .onChange(of: hasExpiry) { _, isOn in
+                            if isOn { NotificationManager.requestPermission() }
+                        }
+                    if hasExpiry {
+                        DatePicker("Expires", selection: $expiryDate, displayedComponents: .date)
                     }
                 }
             }
@@ -45,12 +54,17 @@ struct EditWarrantySheet: View {
     private func populate() {
         provider = car.warrantyProvider
         type = car.warrantyType
+        if let date = car.warrantyExpiryDate {
+            hasExpiry = true
+            expiryDate = date
+        }
     }
 
     private func save() {
         var updated = car
         updated.warrantyProvider = provider.trimmingCharacters(in: .whitespaces)
         updated.warrantyType = type
+        updated.warrantyExpiryDate = hasExpiry ? expiryDate : nil
         onSave(updated)
         dismiss()
     }

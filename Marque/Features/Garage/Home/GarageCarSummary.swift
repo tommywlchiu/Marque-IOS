@@ -125,6 +125,7 @@ enum GarageSummary {
         }
         if car.isRegistrationExpired { return StatusLine(text: "Registration expired", needsAttention: true) }
         if car.isInsuranceExpired { return StatusLine(text: "Insurance expired", needsAttention: true) }
+        if car.isWarrantyExpired { return StatusLine(text: "Warranty expired", needsAttention: true) }
 
         // Candidates within the look-ahead window, ranked by days-away.
         var candidates: [(soonness: Double, line: StatusLine)] = []
@@ -133,7 +134,7 @@ enum GarageSummary {
             let dueSoon = next.status(currentMileage: mileage, today: today) == .dueSoon
             candidates.append((soonness, StatusLine(text: ReminderUrgency.headline(next, currentMileage: mileage, today: today), needsAttention: dueSoon)))
         }
-        for (label, date) in [("Registration", car.registrationExpiryDate), ("Insurance", car.insuranceExpiryDate)] {
+        for (label, date) in [("Registration", car.registrationExpiryDate), ("Insurance", car.insuranceExpiryDate), ("Warranty", car.warrantyExpiryDate)] {
             guard let date, let days = daysUntil(date, today: today), days <= statusLookaheadDays else { continue }
             candidates.append((Double(days), StatusLine(text: expiryPhrase(label, days: days, date: date, today: today), needsAttention: days <= 30)))
         }
@@ -283,6 +284,8 @@ enum GarageSummary {
                  expired: car.isRegistrationExpired, soon: car.isRegistrationExpiringSoon)
         document("Insurance", date: car.insuranceExpiryDate,
                  expired: car.isInsuranceExpired, soon: car.isInsuranceExpiringSoon)
+        document("Warranty", date: car.warrantyExpiryDate,
+                 expired: car.isWarrantyExpired, soon: car.isWarrantyExpiringSoon)
 
         let mileage = ServiceReminderEngine.mileage(from: car.mileage)
         let due = ReminderUrgency.openReminders(of: car, today: today)
