@@ -169,6 +169,7 @@ enum GarageSummary {
         case documents
         case reminders
         case publicSharing
+        case recalls
     }
 
     struct AttentionItem: Identifiable {
@@ -236,9 +237,27 @@ enum GarageSummary {
 
     /// Expired / expiring-within-30-days documents, overdue / due-soon
     /// reminders, and the one-time sharing review. Empty when nothing needs
-    /// the owner (the card is then not rendered at all).
-    static func attentionItems(for car: Car, today: Date = Date()) -> [AttentionItem] {
+    /// the owner (the card is then not rendered at all). `recalls` comes
+    /// from `RecallStore` — not a `Car` field, since a recall belongs to the
+    /// make/model/year, not to one owner's car — and is deliberately never
+    /// dismissible (no `dismissKey`), unlike the "fill this in" suggestions
+    /// below: a missed recall is a safety issue, not a nice-to-have.
+    static func attentionItems(for car: Car, recalls: [Recall] = [], today: Date = Date()) -> [AttentionItem] {
         var items: [AttentionItem] = []
+
+        // Highest priority of everything on the card — ahead of expired
+        // documents and overdue service, which are inconvenient but never
+        // a safety hazard the way an open recall can be.
+        for recall in recalls {
+            items.append(AttentionItem(
+                id: "recall-\(recall.campaignNumber)",
+                icon: recall.parkIt ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill",
+                title: "Recall: \(recall.displayComponent)",
+                subtitle: recall.parkIt ? "Do not drive — contact your dealer" : "Free manufacturer repair available",
+                isUrgent: true,
+                target: .recalls
+            ))
+        }
 
         func document(_ label: String, date: Date?, expired: Bool, soon: Bool) {
             guard let date, expired || soon else { return }

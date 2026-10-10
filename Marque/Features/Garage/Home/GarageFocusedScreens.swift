@@ -13,6 +13,7 @@ enum GarageRoute: Hashable {
     case customize(UUID)
     /// Public Sharing with the comments sheet open (a comment notification).
     case carComments(UUID)
+    case recalls(UUID)
 }
 
 /// Shell for a focused screen about one car: resolves the live car from
@@ -500,6 +501,76 @@ struct GarageCustomizeScreen: View {
                 Spacer()
                 if car.customization.wheels == id {
                     Image(systemName: "checkmark").foregroundColor(.accentColor)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Recalls
+
+/// Full detail for every open NHTSA recall on this car's make/model/year
+/// (`RecallStore`, free/keyless, no `Car` field — see its doc comment).
+/// Reachable only from the attention card's recall row; there's no separate
+/// "Recalls" row in the main list since this never has useful content when
+/// the card itself doesn't already show it.
+struct GarageRecallsScreen: View {
+    let carID: UUID
+
+    @EnvironmentObject private var recallStore: RecallStore
+
+    var body: some View {
+        GarageCarScreen(carID: carID, title: "Recalls") { car in
+            let recalls = recallStore.recalls(for: car)
+            Group {
+                if recalls.isEmpty {
+                    MarqueEmptyState(
+                        icon: "checkmark.shield",
+                        title: "No open recalls",
+                        subtitle: "NHTSA has no open recall campaigns for this make, model and year."
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List(recalls) { recall in
+                        RecallDetailSection(recall: recall)
+                    }
+                }
+            }
+            .task { recallStore.ensureLoaded(for: car) }
+        }
+    }
+}
+
+private struct RecallDetailSection: View {
+    let recall: Recall
+
+    var body: some View {
+        Section {
+            if recall.parkIt || recall.parkOutside {
+                Label(recall.parkIt ? "Do not drive" : "Park away from structures — fire risk",
+                      systemImage: "exclamationmark.octagon.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.red)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Summary").font(.caption).foregroundColor(.secondary)
+                Text(recall.summary)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Consequence").font(.caption).foregroundColor(.secondary)
+                Text(recall.consequence)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Free remedy").font(.caption).foregroundColor(.secondary)
+                Text(recall.remedy)
+            }
+        } header: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(recall.displayComponent).font(.headline)
+                if let date = recall.reportDate {
+                    Text("Campaign \(recall.campaignNumber) · \(date.formatted(date: .abbreviated, time: .omitted))")
+                } else {
+                    Text("Campaign \(recall.campaignNumber)")
                 }
             }
         }

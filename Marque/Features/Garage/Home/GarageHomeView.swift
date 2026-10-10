@@ -19,6 +19,7 @@ struct GarageHomeView: View {
     @EnvironmentObject private var subscriptionStore: SubscriptionStore
     @EnvironmentObject private var featureFlagsStore: FeatureFlagsStore
     @EnvironmentObject private var appDelegate: AppDelegate
+    @EnvironmentObject private var recallStore: RecallStore
     @Environment(\.selectMainTab) private var selectMainTab
 
     @AppStorage("garage.selectedCarID") private var selectedCarIDString = ""
@@ -133,6 +134,7 @@ struct GarageHomeView: View {
         }
         .scrollIndicators(.hidden)
         .overlay(alignment: .top) { statusBarFade }
+        .task(id: car.id) { recallStore.ensureLoaded(for: car) }
     }
 
     /// Keeps rows that scroll up from colliding with the status bar text.
@@ -264,7 +266,7 @@ struct GarageHomeView: View {
 
     @ViewBuilder
     private func attentionCard(for car: Car) -> some View {
-        let items = GarageSummary.attentionItems(for: car)
+        let items = GarageSummary.attentionItems(for: car, recalls: recallStore.recalls(for: car))
         if !items.isEmpty {
             VStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
@@ -294,6 +296,7 @@ struct GarageHomeView: View {
         case .documents: selectMainTab(.wallet)  // documents are edited in Wallet
         case .reminders: path.append(.reminders(carID))
         case .publicSharing: path.append(.publicSharing(carID))
+        case .recalls: path.append(.recalls(carID))
         }
     }
 
@@ -459,6 +462,7 @@ struct GarageHomeView: View {
         case .details(let id): GarageDetailsScreen(carID: id)
         case .customize(let id): GarageCustomizeScreen(carID: id)
         case .carComments(let id): GaragePublicSharingScreen(carID: id, openCommentsOnAppear: true)
+        case .recalls(let id): GarageRecallsScreen(carID: id)
         }
     }
 
