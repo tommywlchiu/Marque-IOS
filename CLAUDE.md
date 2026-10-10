@@ -33,6 +33,8 @@ Definitions live in `.claude/agents/*.md`. Agents are `sonnet` by default; bump 
 
 **Parallel dispatch requires disjoint file sets.** Assign file ownership explicitly in the dispatch prompt. If two agents would touch the same file, run them sequentially instead. If B depends on A's output, sequence them.
 
+**Frontend and backend agents run in their own git worktree** (`isolation: worktree` in their definitions), so parallel agents never share a working tree, index or build directory. Their changes come back on a branch for the orchestrator to review and merge; the first build in each worktree is a cold one. `qa` runs in the main checkout (read-only).
+
 **Never delegate a deploy.** See Key Conventions.
 
 ## Review gate (orchestrator — mandatory)
