@@ -1,6 +1,6 @@
 //
 //  CrashReportingService.swift
-//  Marque-Prototype
+//  Marque
 //
 //  FR-11.8: crash reporting is explicitly NOT PostHog's job (see AnalyticsService)
 //  — the >99.5% crash-free target in Section 9 requires a dedicated crash

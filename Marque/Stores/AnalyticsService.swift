@@ -1,6 +1,6 @@
 //
 //  AnalyticsService.swift
-//  Marque-Prototype
+//  Marque
 //
 //  FR-11: Analytics & Instrumentation. PostHog-backed product analytics.
 //

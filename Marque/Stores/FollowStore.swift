@@ -57,7 +57,7 @@ class FollowStore: ObservableObject {
     }
 
     /// Optimistically drops `uid` from both local follow sets. Called from
-    /// Marque_PrototypeApp when BlockStore reports a fresh block, so a mutual
+    /// MarqueApp when BlockStore reports a fresh block, so a mutual
     /// follow/follower relationship disappears from the UI immediately rather
     /// than waiting on the server-side cascade (the `onUserBlocked` trigger,
     /// which deletes the actual Firestore edges) and this store's own

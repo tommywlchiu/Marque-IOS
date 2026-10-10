@@ -1,6 +1,6 @@
 //
 //  ScanAllowanceViews.swift
-//  Marque-Prototype
+//  Marque
 //
 //  FR-14.4 UI shared by every document-scan entry point (license, insurance
 //  card, receipt): the remaining-allowance caption and the paywall shown when
