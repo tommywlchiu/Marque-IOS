@@ -24,7 +24,7 @@ for key in sys.argv[3:] or list(manifest):
         print("SKIP (already done)", key, flush=True); continue
     args = ["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--",
             f"in={os.path.join(glbdir, key + '.glb')}", f"out={raw}",
-            f"styles={car['seatmat']}:interior", f"isolate={car['seatmat']}",
+            f"styles={car['seatmat']}:interior", f"isolate={car['seatmat']}", "seethrough=1",
             "colors=black:1,1,1", "frames=36", "engine=BLENDER_EEVEE", "samples=32", "res=1200x675"]
     for opt in ("flip", "invert"):
         if car.get(opt): args.append(f"{opt}=1")

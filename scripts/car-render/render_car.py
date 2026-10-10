@@ -221,8 +221,27 @@ if "isolate" in opt:
     hold = bpy.data.materials.new("IsolateHoldout"); hold.use_nodes = True
     nt = hold.node_tree; nt.nodes.clear()
     nt.links.new(nt.nodes.new("ShaderNodeHoldout").outputs[0], nt.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+    # seethrough=1: window glass is clear, not a holdout, so a part inside the
+    # cabin (the seats) shows through it — the app composites the layer
+    # through the glass mask, so the body shell stays a holdout either way.
+    import re
+    clear = None
+    if opt.get("seethrough") == "1":
+        clear = bpy.data.materials.new("IsolateClear")
+        glass_re = re.compile(r"glass|window|windshield|vidro|vitre|steklo|kaca|backlight", re.I)
+        def is_glass(m):
+            bsdf = next((n for n in (m.node_tree.nodes if m.node_tree else []) if n.type == "BSDF_PRINCIPLED"), None)
+            return bool(glass_re.search(m.name)) or (bsdf is not None and (bsdf.inputs["Alpha"].default_value < 0.95 or bsdf.inputs["Transmission Weight"].default_value > 0.3))
+        for m in list(bpy.data.materials):
+            if m.name not in keep and m is not clear and is_glass(m):
+                m.use_nodes = True; m.node_tree.nodes.clear()
+                tr = m.node_tree.nodes.new("ShaderNodeBsdfTransparent")
+                m.node_tree.links.new(tr.outputs[0], m.node_tree.nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
+                m["isolate_clear"] = True
     for o in meshes:
         names = {s.material.name for s in o.material_slots if s.material}
+        if clear and names and not names & keep and all(bpy.data.materials[n].get("isolate_clear") for n in names):
+            continue  # an all-glass object stays as the transparent glass
         if not names & keep:
             # Nothing on this object is kept — the whole thing is a holdout.
             for slot in o.material_slots: slot.link = "DATA"
@@ -233,7 +252,7 @@ if "isolate" in opt:
             continue  # every material on this object is kept — render as-is
         # A mix: remap each slot that isn't in `keep` to the holdout material.
         for slot in o.material_slots:
-            if slot.material and slot.material.name not in keep:
+            if slot.material and slot.material.name not in keep and not slot.material.get("isolate_clear"):
                 slot.material = hold
 
 # matid=1: every material a flat, distinct color (printed as MATID lines), to
