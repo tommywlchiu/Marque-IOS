@@ -77,16 +77,19 @@ struct CarCustomization: Codable, Equatable {
         }
     }
 
-    /// A seat-color option from the render catalog's `<car>/seats/` layers
-    /// (`CarRenderLibrary.Entry.seats`); `.standard` draws nothing extra —
-    /// the car's own seats, already baked into its frames. Most cars have no
-    /// seats add-on at all (the model's interior isn't a separable material),
-    /// so this only ever shows as a choice for the few that do.
+    /// Seat color for a car whose render catalog entry has a `black` seat
+    /// layer (`CarRenderLibrary.Entry.seats`) — today the Tesla Model 3,
+    /// whose real options are black (the standard) and white. Its frames are
+    /// rendered with the model's own white seats, so `.standard` (black)
+    /// draws the `black` layer over them and `.white` draws nothing. A car
+    /// with no seats add-on (most — the interior isn't a separable material)
+    /// never shows the choice. Builds before 2026-10-10 stored `black` for
+    /// the overlay; it now decodes as `.standard`, which is the same look.
     enum SeatColor: String, Codable, CaseIterable, Identifiable {
-        case standard, black
+        case standard, white
 
         var id: String { rawValue }
-        var title: String { self == .standard ? "Standard" : "Black" }
+        var title: String { self == .standard ? "Black" : "White" }
     }
 
     /// The rear-wing spoiler's finish — a selectable material on the same

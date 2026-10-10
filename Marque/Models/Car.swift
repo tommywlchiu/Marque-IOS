@@ -93,6 +93,12 @@ struct Car: Identifiable, Codable, Equatable {
     /// chosen to leave blank.
     var dismissedMissingInfo: Set<String>
 
+    /// NHTSA campaign numbers the owner has marked fixed (or not applicable)
+    /// for this car. NHTSA's make/model/year lookup can't say whether a given
+    /// VIN is affected or repaired, so this is the only record of it.
+    /// Private: never reaches PublicCar.
+    var resolvedRecalls: Set<String>
+
     /// The most modifications a car can carry. Enforced client-side by
     /// `CarStore.addMod` (the private `users/{uid}/cars` doc has no deep
     /// rules validation, same as maintenanceRecords/serviceReminders); the
@@ -144,7 +150,8 @@ struct Car: Identifiable, Codable, Equatable {
         serviceReminders: [ServiceReminder] = [],
         mods: [CarMod] = [],
         customization: CarCustomization = CarCustomization(),
-        dismissedMissingInfo: Set<String> = []
+        dismissedMissingInfo: Set<String> = [],
+        resolvedRecalls: Set<String> = []
     ) {
         self.id = id
         self.make = make
@@ -189,6 +196,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.mods = mods
         self.customization = customization
         self.dismissedMissingInfo = dismissedMissingInfo
+        self.resolvedRecalls = resolvedRecalls
     }
 
     // Includes a legacy `photoFileName` key so previously-saved single-photo
@@ -212,6 +220,7 @@ struct Car: Identifiable, Codable, Equatable {
         case mods
         case customization
         case dismissedMissingInfo
+        case resolvedRecalls
     }
 
     init(from decoder: Decoder) throws {
@@ -279,6 +288,7 @@ struct Car: Identifiable, Codable, Equatable {
         mods = try c.decodeIfPresent([CarMod].self, forKey: .mods) ?? []
         customization = try c.decodeIfPresent(CarCustomization.self, forKey: .customization) ?? CarCustomization()
         dismissedMissingInfo = (try? c.decodeIfPresent(Set<String>.self, forKey: .dismissedMissingInfo)) ?? []
+        resolvedRecalls = (try? c.decodeIfPresent(Set<String>.self, forKey: .resolvedRecalls)) ?? []
     }
 
     // Skip writing the legacy key — new data is written under photoFileNames.
@@ -327,6 +337,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(mods, forKey: .mods)
         try c.encode(customization, forKey: .customization)
         if !dismissedMissingInfo.isEmpty { try c.encode(dismissedMissingInfo, forKey: .dismissedMissingInfo) }
+        if !resolvedRecalls.isEmpty { try c.encode(resolvedRecalls, forKey: .resolvedRecalls) }
     }
 
     var primaryPhotoFileName: String? {

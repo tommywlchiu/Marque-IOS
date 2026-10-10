@@ -482,12 +482,12 @@ struct GarageCustomizeScreen: View {
         CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.hasBlackOptic == true
     }
 
-    /// The seat-color options rendered for this car, `.standard` (the car's
-    /// own seats) always first. A car with no seats add-on returns just
-    /// `[.standard]`, which hides the section entirely (nothing to choose).
+    /// The seat colors this car offers: black (standard) and white when its
+    /// render has a black seat layer, otherwise just `[.standard]`, which
+    /// hides the section entirely (nothing to choose).
     private func availableSeatColors(for car: Car) -> [CarCustomization.SeatColor] {
         guard let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()) else { return [.standard] }
-        return [.standard] + CarCustomization.SeatColor.allCases.filter { $0 != .standard && match.seats.contains($0.rawValue) }
+        return match.seats.contains("black") ? [.standard, .white] : [.standard]
     }
 
     private func wheelRow(_ car: Car, id: String?, title: String) -> some View {
@@ -509,34 +509,86 @@ struct GarageCustomizeScreen: View {
 
 // MARK: - Recalls
 
-/// Full detail for every open NHTSA recall on this car's make/model/year
-/// (`RecallStore`, free/keyless, no `Car` field — see its doc comment).
-/// Reachable only from the attention card's recall row; there's no separate
-/// "Recalls" row in the main list since this never has useful content when
-/// the card itself doesn't already show it.
+/// NHTSA campaigns issued for this car's make/model/year (`RecallStore`,
+/// free/keyless). NHTSA's lookup can't say whether a given VIN is affected
+/// or already repaired, so the screen never claims a recall is open: it
+/// groups campaigns (do not drive / worth checking / likely fixed by an
+/// over-the-air update / marked fixed), lets the owner mark each one fixed
+/// (`Car.resolvedRecalls`), and points to NHTSA's own VIN check for the
+/// definitive answer. Reachable only from the attention card's recall row.
 struct GarageRecallsScreen: View {
     let carID: UUID
 
     @EnvironmentObject private var recallStore: RecallStore
+    @EnvironmentObject private var carStore: CarStore
+    @Environment(\.openURL) private var openURL
+
+    private static let vinCheckURL = URL(string: "https://www.nhtsa.gov/recalls")!
 
     var body: some View {
         GarageCarScreen(carID: carID, title: "Recalls") { car in
             let recalls = recallStore.recalls(for: car)
+            let triage = RecallTriage(recalls: recalls, resolved: car.resolvedRecalls)
             Group {
                 if recalls.isEmpty {
                     MarqueEmptyState(
                         icon: "checkmark.shield",
-                        title: "No open recalls",
-                        subtitle: "NHTSA has no open recall campaigns for this make, model and year."
+                        title: "No recalls found",
+                        subtitle: "NHTSA lists no recall campaigns for this make, model and year."
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List(recalls) { recall in
-                        RecallDetailSection(recall: recall)
+                    List {
+                        Section {
+                            Text("These campaigns were issued for the \(car.year) \(car.make) \(car.model). Many never applied to a specific car or were repaired long ago, so check yours with its VIN.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            Button {
+                                if !car.vinNumber.isEmpty { UIPasteboard.general.string = car.vinNumber }
+                                openURL(Self.vinCheckURL)
+                            } label: {
+                                Label(car.vinNumber.isEmpty ? "Check your VIN on NHTSA" : "Copy VIN & check on NHTSA",
+                                      systemImage: "checkmark.shield")
+                            }
+                        }
+                        group("Do not drive", triage.doNotDrive, car: car)
+                        group("Worth checking", triage.toCheck, car: car)
+                        group("Likely already fixed by a software update", triage.likelyFixed, car: car)
+                        group("Marked fixed", triage.resolved, car: car, resolved: true)
                     }
                 }
             }
             .task { recallStore.ensureLoaded(for: car) }
+        }
+    }
+
+    @ViewBuilder
+    private func group(_ title: String, _ recalls: [Recall], car: Car, resolved: Bool = false) -> some View {
+        if !recalls.isEmpty {
+            Section {
+                ForEach(recalls) { recall in
+                    NavigationLink {
+                        List { RecallDetailSection(recall: recall) }
+                            .navigationTitle(recall.displayComponent)
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(recall.displayComponent).font(.subheadline.weight(.semibold))
+                            Text("Campaign \(recall.campaignNumber)").font(.caption).foregroundColor(.secondary)
+                        }
+                    }
+                    .swipeActions {
+                        Button(resolved ? "Not fixed" : "Mark fixed") {
+                            carStore.setRecall(recall.campaignNumber, resolved: !resolved, for: car)
+                        }
+                        .tint(resolved ? .orange : .green)
+                    }
+                }
+            } header: {
+                Text(title)
+            } footer: {
+                if !resolved { Text("Swipe a recall left to mark it fixed or not applicable.") }
+            }
         }
     }
 }

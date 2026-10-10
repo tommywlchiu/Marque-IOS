@@ -32,10 +32,10 @@ final class CarCustomizationTests: XCTestCase {
 
     func testSeatColorAndSpoilerFinishRoundTrip() throws {
         var c = CarCustomization()
-        c.seatColor = .black
+        c.seatColor = .white
         c.spoilerFinish = .carbon
         let decoded = try JSONDecoder().decode(CarCustomization.self, from: JSONEncoder().encode(c))
-        XCTAssertEqual(decoded.seatColor, .black)
+        XCTAssertEqual(decoded.seatColor, .white)
         XCTAssertEqual(decoded.spoilerFinish, .carbon)
     }
 
@@ -87,5 +87,11 @@ final class CarCustomizationTests: XCTestCase {
     func testNoExtrasAreNotWritten() throws {
         let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(CarCustomization())) as? [String: Any]
         XCTAssertNil(object?["extras"])
+    }
+
+    /// Builds before the black-is-standard change stored `black` for the seat
+    /// overlay; it must decode to `.standard`, the same look.
+    func testLegacyBlackSeatColorDecodesAsStandard() throws {
+        XCTAssertEqual(try decode(#"{"seatColor":"black"}"#).seatColor, .standard)
     }
 }

@@ -277,6 +277,15 @@ class CarStore: ObservableObject {
         updateCar(updated)
     }
 
+    /// Marks one NHTSA recall campaign fixed (or not applicable) for this
+    /// car, or puts it back. NHTSA can't say whether this car is affected
+    /// or repaired, so the owner's mark is the only record.
+    func setRecall(_ campaignNumber: String, resolved: Bool, for car: Car) {
+        var updated = car
+        if resolved { updated.resolvedRecalls.insert(campaignNumber) } else { updated.resolvedRecalls.remove(campaignNumber) }
+        updateCar(updated)
+    }
+
     /// Makes `fileName` the car's cover (first) photo. Reorders the local file
     /// names and their Storage URLs together, since they're parallel arrays,
     /// and resets the crop, which was set for the previous cover.
