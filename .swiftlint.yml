@@ -1,0 +1,33 @@
+# Lean config: the hook only needs to catch real mistakes, not enforce style.
+included:
+  - Marque
+  - MarqueWidget
+  - MarqueTests
+excluded:
+  - build
+disabled_rules:
+  - line_length
+  - file_length
+  - type_body_length
+  - function_body_length
+  - cyclomatic_complexity
+  - identifier_name
+  - type_name
+  - large_tuple
+  - nesting
+  - todo
+  - trailing_whitespace
+  - opening_brace
+  - vertical_whitespace
+  - comma
+  - colon
+  - force_cast
+  - force_try
+  - trailing_comma
+  - implicit_optional_initialization
+  - statement_position
+  - multiple_closures_with_trailing_closure
+  - function_parameter_count
+  - legacy_swiftui_aspect_ratio
+  - vertical_parameter_alignment
+  - unused_closure_parameter
