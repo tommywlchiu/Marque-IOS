@@ -65,6 +65,7 @@ struct Marque_PrototypeApp: App {
     @StateObject private var favoriteStore = FavoriteStore()
     @StateObject private var commentStore = CommentStore()
     @StateObject private var pushStore = PushStore()
+    @StateObject private var recallStore = RecallStore()
 
     init() {
         _ = launchStartedAt  // force the global's lazy init as early as possible
@@ -139,6 +140,7 @@ struct Marque_PrototypeApp: App {
                 .environmentObject(favoriteStore)
                 .environmentObject(commentStore)
                 .environmentObject(pushStore)
+                .environmentObject(recallStore)
                 .environmentObject(appDelegate)
                 .onChange(of: authService.authState) { _, newState in
                     if case .authenticated(let user) = newState {
