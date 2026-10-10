@@ -42,10 +42,13 @@ struct Car: Identifiable, Codable, Equatable {
     var insurancePolicyNumber: String
     var insuranceExpiryDate: Date?
     var registrationExpiryDate: Date?
-    // Warranty, like specs, has no expiry tracking (owner decision) — just
-    // who covers it and what kind. Private only; never reaches PublicCar.
+    // Warranty: who covers it, what kind, and (since 2026-10-10) an optional
+    // expiry that drives the same attention-card badge, status line and
+    // 30d/7d/on-day notifications as insurance/registration. Private only;
+    // never reaches PublicCar.
     var warrantyProvider: String
     var warrantyType: String
+    var warrantyExpiryDate: Date?
     var notes: String
     var isPublic: Bool
 
@@ -126,6 +129,7 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate: Date? = nil,
         warrantyProvider: String = "",
         warrantyType: String = "",
+        warrantyExpiryDate: Date? = nil,
         notes: String = "",
         isPublic: Bool = false,
         publicSharing: PublicSharingSettings = .privacyFirst,
@@ -169,6 +173,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.registrationExpiryDate = registrationExpiryDate
         self.warrantyProvider = warrantyProvider
         self.warrantyType = warrantyType
+        self.warrantyExpiryDate = warrantyExpiryDate
         self.notes = notes
         self.isPublic = isPublic
         self.publicSharing = publicSharing
@@ -198,7 +203,7 @@ struct Car: Identifiable, Codable, Equatable {
         case fuelType, fullRange, fullRangeIsEstimate, tankGallons, transmission
         case insuranceProvider, insurancePolicyNumber
         case insuranceExpiryDate, registrationExpiryDate
-        case warrantyProvider, warrantyType
+        case warrantyProvider, warrantyType, warrantyExpiryDate
         case notes, isPublic
         case publicSharing
         case estimatedValue, valueSource, valueUpdatedAt, showValuePublicly
@@ -246,6 +251,7 @@ struct Car: Identifiable, Codable, Equatable {
         registrationExpiryDate = try c.decodeIfPresent(Date.self, forKey: .registrationExpiryDate)
         warrantyProvider = try c.decodeIfPresent(String.self, forKey: .warrantyProvider) ?? ""
         warrantyType = try c.decodeIfPresent(String.self, forKey: .warrantyType) ?? ""
+        warrantyExpiryDate = try c.decodeIfPresent(Date.self, forKey: .warrantyExpiryDate)
         notes = try c.decode(String.self, forKey: .notes)
         isPublic = try c.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
         // Missing key (every car saved before this feature existed): an
@@ -305,6 +311,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encodeIfPresent(registrationExpiryDate, forKey: .registrationExpiryDate)
         try c.encode(warrantyProvider, forKey: .warrantyProvider)
         try c.encode(warrantyType, forKey: .warrantyType)
+        try c.encodeIfPresent(warrantyExpiryDate, forKey: .warrantyExpiryDate)
         try c.encode(notes, forKey: .notes)
         try c.encode(isPublic, forKey: .isPublic)
         try c.encode(publicSharing, forKey: .publicSharing)
@@ -434,6 +441,17 @@ struct Car: Identifiable, Codable, Equatable {
 
     var isRegistrationExpired: Bool {
         guard let date = registrationExpiryDate else { return false }
+        return date < Date()
+    }
+
+    var isWarrantyExpiringSoon: Bool {
+        guard let date = warrantyExpiryDate else { return false }
+        let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        return daysUntil >= 0 && daysUntil <= 30
+    }
+
+    var isWarrantyExpired: Bool {
+        guard let date = warrantyExpiryDate else { return false }
         return date < Date()
     }
 
