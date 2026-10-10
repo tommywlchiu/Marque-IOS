@@ -259,7 +259,7 @@ struct ExploreView: View {
     /// `defaultCategoryDecided`, which a manual chip tap also sets (see
     /// `categoryPicker`) so this can never override the user's own choice.
     /// Both stores' listeners are started well before Explore is reachable
-    /// (at auth-state change, in `Marque_PrototypeApp`), so `visibleCars`
+    /// (at auth-state change, in `MarqueApp`), so `visibleCars`
     /// and `followStore.followingUIDs` are expected to already be populated
     /// by the time this fires.
     private func applyDefaultCategoryOnce() {

@@ -36,7 +36,7 @@ class BlockStore: ObservableObject {
     @Published private(set) var blockedUIDs: Set<String> = []
     @Published private(set) var lastError: String?
     // Set to the just-blocked uid on a successful block(), so
-    // Marque_PrototypeApp can tell FollowStore to drop any local follow
+    // MarqueApp can tell FollowStore to drop any local follow
     // state for that uid immediately, without BlockStore knowing about
     // FollowStore directly (stores stay decoupled — see CLAUDE.md). The
     // server-side cascade (onUserBlocked trigger) removes the actual

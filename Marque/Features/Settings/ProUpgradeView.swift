@@ -285,7 +285,7 @@ struct ProUpgradeView: View {
     // notification toggle, expense aggregation, and profile visibility all
     // ship to every user), so they were removed rather than reworded.
     // FR-08.9: cross-check this list against isPro's actual call sites
-    // (`grep -rn "isPro" Marque-Prototype/ functions/src/index.ts`) before
+    // (`grep -rn "isPro" Marque/ functions/src/index.ts`) before
     // adding or changing an entry.
     private var featureList: some View {
         VStack(alignment: .leading, spacing: 14) {

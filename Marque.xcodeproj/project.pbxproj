@@ -295,7 +295,7 @@
 		A20040 /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
 		A20043 /* NotificationsInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsInboxView.swift; sourceTree = "<group>"; };
 		A20044 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		A20045 /* Marque-Prototype.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Marque-Prototype.entitlements"; sourceTree = "<group>"; };
+		A20045 /* Marque.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Marque.entitlements"; sourceTree = "<group>"; };
 		A20055 /* CarPhotoImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPhotoImage.swift; sourceTree = "<group>"; };
 		A20056 /* ProfileSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupView.swift; sourceTree = "<group>"; };
 		A20057 /* PublicCar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicCar.swift; sourceTree = "<group>"; };
@@ -490,7 +490,7 @@
 				A20008 /* Assets.xcassets */,
 				A20044 /* GoogleService-Info.plist */,
 				F5B1000200000000B1000002 /* PrivacyInfo.xcprivacy */,
-				A20045 /* Marque-Prototype.entitlements */,
+				A20045 /* Marque.entitlements */,
 			);
 			path = Marque;
 			sourceTree = "<group>";
@@ -839,7 +839,7 @@
 				F309E4F1842A43140CB86B50 /* FirebaseMessaging */,
 				C453D62471A58941090CEEB8 /* FirebaseCrashlytics */,
 			);
-			productName = "Marque-Prototype";
+			productName = "Marque";
 			productReference = A30001 /* Marque.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -1357,7 +1357,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Marque/Marque-Prototype.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Marque/Marque.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
@@ -1386,7 +1386,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Marque/Marque-Prototype.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Marque/Marque.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;

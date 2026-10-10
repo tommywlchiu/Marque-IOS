@@ -24,7 +24,7 @@ class SubscriptionStore: ObservableObject {
     @Published private(set) var restoreError: String?
     @Published private(set) var isRestoring: Bool = false
     // Set once load() has actually queried StoreKit for this session's
-    // entitlements. Marque_PrototypeApp gates authService.setProStatus() on it,
+    // entitlements. MarqueApp gates authService.setProStatus() on it,
     // so the previous account's in-memory Pro flag can't carry across a
     // sign-in flip before StoreKit has been asked. This store does not write
     // Firestore — server-side `isPro` is owned by the appStoreNotifications
@@ -58,7 +58,7 @@ class SubscriptionStore: ObservableObject {
 
     // The Firebase uid these two caches above were populated under. Checked at
     // point-of-use (appAccountToken(), syncEntitlement()) rather than relying on
-    // Marque_PrototypeApp's onChange(of: authService.authState) to fire a clean
+    // MarqueApp's onChange(of: authService.authState) to fire a clean
     // authenticated → nil → authenticated transition first. If Auth's listener
     // ever hands us an authenticated → authenticated flip directly (reauth
     // landing on a different account, credential linking), a stale cache here

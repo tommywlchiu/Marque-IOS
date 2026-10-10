@@ -1,6 +1,6 @@
 //
 //  ScanAllowanceStore.swift
-//  Marque-Prototype
+//  Marque
 //
 //  FR-14.4: read-only view of today's document-scan usage, so the remaining
 //  allowance is visible *before* a scan is attempted. The server is the only

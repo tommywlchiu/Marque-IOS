@@ -48,7 +48,7 @@ final class MarqueAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
 }
 
 @main
-struct Marque_PrototypeApp: App {
+struct MarqueApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     @StateObject private var carStore = CarStore()
