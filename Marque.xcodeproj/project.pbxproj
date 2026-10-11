@@ -17,6 +17,7 @@
 		32C371DFB4E4D8C66823FA9D /* PushStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A4AF4B9E5F7A1D6F764D04 /* PushStore.swift */; };
 		354479B93708046E0B3BECBD /* RecallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0CC1FE0F564FEFE13C7015 /* RecallService.swift */; };
 		3B7ACC811DB39F1ABC8C9720 /* RecallServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 079BEA97965CF75996DD1E88 /* RecallServiceTests.swift */; };
+		8D2E3F4A5B6C7D8E9F0A1B2C /* RecallTriageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1D2E3F4A5B6C7D8E9F0A1B /* RecallTriageTests.swift */; };
 		4BB450C15600D4859E185F9B /* RecallStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A753BEDA312550F02B36218 /* RecallStore.swift */; };
 		52F2FC92CEC1C5102E76F49A /* LikeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96132E4DCD59E5B6FE0C4014 /* LikeStore.swift */; };
 		635CE8E912A7EC3026262670 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = F309E4F1842A43140CB86B50 /* FirebaseMessaging */; };
@@ -214,6 +215,7 @@
 /* Begin PBXFileReference section */
 		000E5D2983DDC596117DD79C /* ScanAllowanceViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScanAllowanceViews.swift; sourceTree = "<group>"; };
 		079BEA97965CF75996DD1E88 /* RecallServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecallServiceTests.swift; sourceTree = "<group>"; };
+		7C1D2E3F4A5B6C7D8E9F0A1B /* RecallTriageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecallTriageTests.swift; sourceTree = "<group>"; };
 		20930F1F8DE29C3A37D48703 /* CrashReportingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CrashReportingService.swift; sourceTree = "<group>"; };
 		2110FABDDBA24F37801B2918 /* TeslaRangeCatalogTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TeslaRangeCatalogTests.swift; sourceTree = "<group>"; };
 		24B1F78CBC4749F38E5FE2DC /* AuthTheme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthTheme.swift; sourceTree = "<group>"; };
@@ -741,6 +743,7 @@
 				9842CDB9CC1BD8E761C42D9D /* GarageMissingInfoTests.swift */,
 				2110FABDDBA24F37801B2918 /* TeslaRangeCatalogTests.swift */,
 				079BEA97965CF75996DD1E88 /* RecallServiceTests.swift */,
+				7C1D2E3F4A5B6C7D8E9F0A1B /* RecallTriageTests.swift */,
 			);
 			name = MarqueTests;
 			path = MarqueTests;
@@ -952,6 +955,7 @@
 				0331F551731172BB78346AA6 /* GarageMissingInfoTests.swift in Sources */,
 				8C9AA103665CEEA22D8C59D4 /* TeslaRangeCatalogTests.swift in Sources */,
 				3B7ACC811DB39F1ABC8C9720 /* RecallServiceTests.swift in Sources */,
+				8D2E3F4A5B6C7D8E9F0A1B2C /* RecallTriageTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

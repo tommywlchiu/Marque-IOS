@@ -276,6 +276,11 @@ enum CarRenderLibrary {
         return await layers(of: match, folder: "extras/\(extra)")
     }
 
+    /// The black seat layer's id in the catalog. Not `black`: that first layer
+    /// was published blank (glass hid the seats) and published renders are
+    /// immutable, so the fixed layer lives under a new id.
+    static let blackSeatsLayer = "black-v2"
+
     /// One seat-color option's layer, over the car the same way its own
     /// frame is (not positioned by a rect like an extra — it sits exactly
     /// where the body does), or nil if this car has no seats add-on or

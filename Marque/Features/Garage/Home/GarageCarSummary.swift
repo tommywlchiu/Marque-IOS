@@ -240,22 +240,39 @@ enum GarageSummary {
     /// reminders, and the one-time sharing review. Empty when nothing needs
     /// the owner (the card is then not rendered at all). `recalls` comes
     /// from `RecallStore` — not a `Car` field, since a recall belongs to the
-    /// make/model/year, not to one owner's car — and is deliberately never
-    /// dismissible (no `dismissKey`), unlike the "fill this in" suggestions
-    /// below: a missed recall is a safety issue, not a nice-to-have.
+    /// make/model/year, not to one owner's car — and has no `dismissKey`:
+    /// owners mark a recall fixed on the Recalls screen instead, which keeps
+    /// the record per campaign. A "do not drive" campaign can't be waved
+    /// away from the card.
     static func attentionItems(for car: Car, recalls: [Recall] = [], today: Date = Date()) -> [AttentionItem] {
         var items: [AttentionItem] = []
 
         // Highest priority of everything on the card — ahead of expired
         // documents and overdue service, which are inconvenient but never
-        // a safety hazard the way an open recall can be.
-        for recall in recalls {
+        // a safety hazard the way an open recall can be. NHTSA's lookup is
+        // by make/model/year, so most campaigns never touched this exact
+        // car or were repaired long ago: only a "do not drive" campaign
+        // gets its own row; everything else folds into one "check yours"
+        // row, and over-the-air fixes stay off the card entirely.
+        let triage = RecallTriage(recalls: recalls, resolved: car.resolvedRecalls)
+        for recall in triage.doNotDrive {
             items.append(AttentionItem(
                 id: "recall-\(recall.campaignNumber)",
-                icon: recall.parkIt ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill",
+                icon: "exclamationmark.octagon.fill",
                 title: "Recall: \(recall.displayComponent)",
-                subtitle: recall.parkIt ? "Do not drive — contact your dealer" : "Free manufacturer repair available",
+                subtitle: "NHTSA says do not drive — check with your dealer",
                 isUrgent: true,
+                target: .recalls
+            ))
+        }
+        if !triage.toCheck.isEmpty {
+            let n = triage.toCheck.count
+            items.append(AttentionItem(
+                id: "recalls-to-check",
+                icon: "exclamationmark.triangle.fill",
+                title: "\(n) recall\(n == 1 ? "" : "s") issued for your \(car.year) \(car.make) \(car.model)",
+                subtitle: "Check whether \(n == 1 ? "it applies" : "they apply") to your car",
+                isUrgent: triage.toCheck.contains(where: \.parkOutside),
                 target: .recalls
             ))
         }
