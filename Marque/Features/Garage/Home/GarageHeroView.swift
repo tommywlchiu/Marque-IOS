@@ -411,7 +411,7 @@ struct GarageHeroView: View {
     private func loadSeats() async {
         let seatsKey = seatsKey
         guard car.customization.seatColor == .standard, let match = renderMatch, renderSeats?.key != seatsKey,
-              let layers = await CarRenderLibrary.seatLayers(of: match, option: "black"),
+              let layers = await CarRenderLibrary.seatLayers(of: match, option: CarRenderLibrary.blackSeatsLayer),
               !Task.isCancelled else { return }
         renderSeats = (seatsKey, layers)
     }

@@ -487,7 +487,7 @@ struct GarageCustomizeScreen: View {
     /// hides the section entirely (nothing to choose).
     private func availableSeatColors(for car: Car) -> [CarCustomization.SeatColor] {
         guard let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()) else { return [.standard] }
-        return match.seats.contains("black") ? [.standard, .white] : [.standard]
+        return match.seats.contains(CarRenderLibrary.blackSeatsLayer) ? [.standard, .white] : [.standard]
     }
 
     private func wheelRow(_ car: Car, id: String?, title: String) -> some View {
