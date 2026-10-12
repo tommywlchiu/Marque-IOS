@@ -312,7 +312,7 @@ struct GarageCustomizeScreen: View {
         GarageCarScreen(carID: carID, title: "Customize") { car in
             List {
                 Section {
-                    GarageHeroView(car: car, height: 220, onToggleLighting: { toggleLighting(for: car) })
+                    GarageHeroView(car: car, height: 220)
                         .listRowInsets(EdgeInsets())
                 }
                 .garageRowBackground()
@@ -469,12 +469,6 @@ struct GarageCustomizeScreen: View {
     /// Whether this car's spoiler has a carbon-fiber finish rendered.
     private func hasCarbonSpoiler(for car: Car) -> Bool {
         CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog())?.extras["spoiler-carbon"] != nil
-    }
-
-    private func toggleLighting(for car: Car) {
-        var updated = car
-        updated.customization.lightingMode = updated.customization.lightingMode == .night ? .day : .night
-        carStore.updateCar(updated)
     }
 
     /// Whether this car has a Black Optic trim layer rendered.
