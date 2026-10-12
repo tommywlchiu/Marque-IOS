@@ -204,11 +204,6 @@ enum CarCutoutRenderer {
 struct GarageHeroView: View {
     let car: Car
     let height: CGFloat
-    /// Flips the car's day/night lighting; nil hides the quick toggle. Shown
-    /// only once a studio render with a night pass has actually loaded, so
-    /// there's never a toggle with nothing for it to change.
-    var onToggleLighting: (() -> Void)? = nil
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var tilt = HeroMotionTilt()
     @State private var loaded: (key: String, image: GarageHeroImage)?
@@ -241,33 +236,7 @@ struct GarageHeroView: View {
 
     /// Changes whenever what the hero should show changes.
     private var key: String {
-        [car.primaryPhotoFileName ?? "-", car.make, car.model, car.year, car.bodyStyle, car.color,
-         car.customization.lightingMode.rawValue].joined(separator: "|")
-    }
-
-    /// Only meaningful for the `.rendered` studio hero — a cutout is the
-    /// owner's own photo and has no night version.
-    private var night: Bool { car.customization.lightingMode == .night }
-
-    /// A one-tap sun/moon toggle over the hero itself — the only control for
-    /// day/night lighting (no second picker elsewhere, see the "one entry
-    /// point per feature" convention). Only appears once the loaded hero is
-    /// a studio render whose match actually has a night pass.
-    @ViewBuilder
-    private var lightingToggleButton: some View {
-        if let onToggleLighting, let loaded, loaded.key == key,
-           case .rendered(_, let match) = loaded.image, match.hasNight {
-            Button(action: onToggleLighting) {
-                Image(systemName: night ? "moon.stars.fill" : "sun.max.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(night ? .indigo : .yellow)
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(Color.black.opacity(0.35)))
-            }
-            .buttonStyle(GaragePressStyle())
-            .padding(12)
-            .accessibilityLabel(night ? "Switch to day lighting" : "Switch to night lighting")
-        }
+        [car.primaryPhotoFileName ?? "-", car.make, car.model, car.year, car.bodyStyle, car.color].joined(separator: "|")
     }
 
     var body: some View {
@@ -293,7 +262,6 @@ struct GarageHeroView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
-        .overlay(alignment: .topTrailing) { lightingToggleButton }
         .animation(.easeOut(duration: 0.35), value: loaded?.key)
         .task(id: key) { await load() }
         .task(id: wheelsKey) { await loadWheels() }
@@ -321,15 +289,14 @@ struct GarageHeroView: View {
                 return
             }
         }
-        let night = night
         if let match = CarRenderLibrary.match(car, in: CarRenderLibrary.cachedCatalog()),
-           let still = CarRenderLibrary.cachedStill(for: match, night: night && match.hasNight) {
+           let still = CarRenderLibrary.cachedStill(for: match) {
             loaded = (key, .rendered(still, match))
             // The disk catalog is last launch's. Re-check against this
             // launch's: it can match the car differently (a new model in
             // place of its generic) or add plate positions.
             if let fresh = CarRenderLibrary.match(car, in: await CarRenderLibrary.catalog()), fresh != match,
-               let freshStill = await CarRenderLibrary.frame(0, of: fresh, night: night && fresh.hasNight), !Task.isCancelled {
+               let freshStill = await CarRenderLibrary.frame(0, of: fresh), !Task.isCancelled {
                 loaded = (key, .rendered(freshStill, fresh))
                 await loadFrames(fresh, key: key)
                 return
@@ -338,7 +305,7 @@ struct GarageHeroView: View {
             return
         }
         if let match = CarRenderLibrary.match(car, in: await CarRenderLibrary.catalog()),
-           let still = await CarRenderLibrary.frame(0, of: match, night: night && match.hasNight) {
+           let still = await CarRenderLibrary.frame(0, of: match) {
             guard !Task.isCancelled else { return }
             loaded = (key, .rendered(still, match))
             await loadFrames(match, key: key)
@@ -439,7 +406,7 @@ struct GarageHeroView: View {
             renderTintMasks = (key, masks)
         }
         guard renderFrames?.key != key else { return }
-        if let frames = await CarRenderLibrary.allFrames(of: match, night: night && match.hasNight), !Task.isCancelled {
+        if let frames = await CarRenderLibrary.allFrames(of: match), !Task.isCancelled {
             renderFrames = (key, frames)
         }
     }

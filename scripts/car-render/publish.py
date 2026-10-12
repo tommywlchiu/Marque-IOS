@@ -95,21 +95,6 @@ def publish_frames(key, pngs):
     # height for the stance add-on.
     json.dump({"meter": round(208.5 / (box[3] - box[1]), 4), "box": list(box)}, open(os.path.join(dst, key, "scale.json"), "w"))
     publish_extras(key, box)
-    # Night-lighting pass (night.py), same crop box as day so the two frame
-    # sets line up pixel-for-pixel and swapping between them never jumps.
-    # Published as "night2", not "night": the first pass had a lighting bug
-    # (render_car.py's night_dim dimmed the whole studio so far the body read
-    # as near-black regardless of paint color) and was already live behind
-    # Hosting's 1-year immutable cache — a fixed render at the same path
-    # would stay invisible to anyone who'd already cached the broken one.
-    night_pngs = sorted(glob.glob(os.path.join(sys.argv[1], "_png_night", key, "*", "*.png")))
-    has_night = len(night_pngs) == FRAMES * len(palette)
-    if has_night:
-        for p in night_pngs:
-            color, name = p.split(os.sep)[-2:]
-            out = os.path.join(dst, key, "night2", color, name.replace(".png", ".webp"))
-            os.makedirs(os.path.dirname(out), exist_ok=True)
-            Image.open(p).crop(box).save(out, "WEBP", quality=95, method=4)
     # Window masks (tints.py), cropped the same way: the app darkens through
     # them for the tint add-on. Lossless — a soft edge would halo.
     tint_src = sorted(glob.glob(os.path.join(sys.argv[1], "_tint", key, "tint", "*.png")))
@@ -182,7 +167,6 @@ for key, car in manifest.items():
     if convert:
         has_plates = publish_frames(key, pngs)
     has_tint = len(glob.glob(os.path.join(dst, key, "tint", "*.webp"))) == FRAMES
-    has_night = len(glob.glob(os.path.join(dst, key, "night2", "*", "*.webp"))) == FRAMES * len(palette)
     has_black_optic = len(glob.glob(os.path.join(dst, key, "blackOptic", "*.webp"))) == FRAMES
     wheels = sorted(os.path.basename(d) for d in glob.glob(os.path.join(dst, key, "wheels", "*"))
                     if len(glob.glob(os.path.join(d, "*.webp"))) == FRAMES)
@@ -195,12 +179,12 @@ for key, car in manifest.items():
               if len(glob.glob(os.path.join(dst, key, "extras", e, "*.webp"))) == FRAMES}
     if "bodyStyles" in car:  # an unbadged stand-in for every car of these body styles
         generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]),
-                         "plates": has_plates, "tint": has_tint, "night": has_night, "wheels": wheels, "meter": meter,
+                         "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter,
                          "extras": extras, "seats": seats, "blackOptic": has_black_optic})
     else:
         c = car["covers"]
         cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
-                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint, "night": has_night,
+                     "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint,
                      "wheels": wheels, "meter": meter, "extras": extras, "seats": seats, "blackOptic": has_black_optic})
     print(f"PUBLISHED {key}")
 

@@ -59,9 +59,6 @@ enum CarRenderLibrary {
         /// options in `CarCustomization.SeatColor`); optional (older catalogs,
         /// or a car whose model has no separable seat material).
         let seats: [String]?
-        /// Whether `<key>/night2/<color>/NN.webp` (the night-lighting pass,
-        /// same crop as day) exists for every palette color.
-        let night: Bool?
         /// Whether `<key>/blackOptic/NN.webp` (the blacked-out chrome trim
         /// add-on, `CarCustomization.blackOptic`) exists for every frame.
         let blackOptic: Bool?
@@ -89,8 +86,6 @@ enum CarRenderLibrary {
         let extras: [String: [Double]]?
         /// Seat-color options rendered for this car, same shape as `Generic.seats`.
         let seats: [String]?
-        /// Same meaning as `Generic.night`.
-        let night: Bool?
         /// Same meaning as `Generic.blackOptic`.
         let blackOptic: Bool?
         var id: String { key }
@@ -127,7 +122,6 @@ enum CarRenderLibrary {
         let frameCount: Int
         var hasPlates = false
         var hasTint = false
-        var hasNight = false
         var hasBlackOptic = false
         var wheelStyles: [String] = []
         var meter: Double?
@@ -137,21 +131,13 @@ enum CarRenderLibrary {
         var seats: [String] = []
         var canChangeStance: Bool { wheelStyles.contains("stock") && meter != nil }
 
-        // "night2", not "night": the first night pass shipped with a lighting
-        // bug (the whole body read as near-black, not just dimmed — see the
-        // render_car.py night_dim fix) and was already live on Hosting, which
-        // serves *.webp with a 1-year immutable cache. A fixed render at the
-        // same path would stay invisible to any client (or CDN edge) that had
-        // already cached the broken one; a new path is the only way to bust it.
-        fileprivate func remoteURL(_ frame: Int, night: Bool = false) -> URL {
-            let path = night ? "\(carKey)/night2/\(colorKey)/\(String(format: "%02d", frame)).webp"
-                              : "\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp"
+        fileprivate func remoteURL(_ frame: Int) -> URL {
+            let path = "\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp"
             return CarRenderLibrary.baseURL.appendingPathComponent(path)
         }
 
-        fileprivate func localURL(_ frame: Int, night: Bool = false) -> URL {
-            let path = night ? "\(carKey)/night2/\(colorKey)/\(String(format: "%02d", frame)).webp"
-                              : "\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp"
+        fileprivate func localURL(_ frame: Int) -> URL {
+            let path = "\(carKey)/\(colorKey)/\(String(format: "%02d", frame)).webp"
             return CarRenderLibrary.cacheDirectory.appendingPathComponent(path)
         }
     }
@@ -234,7 +220,6 @@ enum CarRenderLibrary {
         return Match(carKey: key, colorKey: color, frameCount: catalog.frames,
                      hasPlates: (entry?.plates ?? generic?.plates) == true,
                      hasTint: (entry?.tint ?? generic?.tint) == true,
-                     hasNight: (entry?.night ?? generic?.night) == true,
                      hasBlackOptic: (entry?.blackOptic ?? generic?.blackOptic) == true,
                      wheelStyles: entry?.wheels ?? generic?.wheels ?? [],
                      meter: entry?.meter ?? generic?.meter,
@@ -247,14 +232,14 @@ enum CarRenderLibrary {
     // MARK: - Frames
 
     /// Synchronous disk probe for frame 0 (the hero's resting 3/4 view).
-    static func cachedStill(for match: Match, night: Bool = false) -> UIImage? {
-        UIImage(contentsOfFile: match.localURL(0, night: night).path)
+    static func cachedStill(for match: Match) -> UIImage? {
+        UIImage(contentsOfFile: match.localURL(0).path)
     }
 
-    static func frame(_ index: Int, of match: Match, night: Bool = false) async -> UIImage? {
-        let local = match.localURL(index, night: night)
+    static func frame(_ index: Int, of match: Match) async -> UIImage? {
+        let local = match.localURL(index)
         if let image = UIImage(contentsOfFile: local.path) { return image }
-        guard let (data, response) = try? await URLSession.shared.data(from: match.remoteURL(index, night: night)),
+        guard let (data, response) = try? await URLSession.shared.data(from: match.remoteURL(index)),
               (response as? HTTPURLResponse)?.statusCode == 200,
               let image = UIImage(data: data) else { return nil }
         try? FileManager.default.createDirectory(at: local.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -346,12 +331,11 @@ enum CarRenderLibrary {
     }
 
     /// All frames in order, fetched in parallel; nil if any is missing, so a
-    /// spin never shows a gap. `night` swaps in the night-lighting pass
-    /// (ignored, same as day, if `match.hasNight` is false).
-    static func allFrames(of match: Match, night: Bool = false) async -> [UIImage]? {
+    /// spin never shows a gap.
+    static func allFrames(of match: Match) async -> [UIImage]? {
         await withTaskGroup(of: (Int, UIImage?).self) { group in
             for i in 0..<match.frameCount {
-                group.addTask { (i, await frame(i, of: match, night: night)) }
+                group.addTask { (i, await frame(i, of: match)) }
             }
             var frames = [UIImage?](repeating: nil, count: match.frameCount)
             for await (i, image) in group { frames[i] = image }
