@@ -22,6 +22,9 @@ struct ProUpgradeView: View {
     // behavior instead of celebrating.
     @State private var isPurchasing = false
     @State private var showCelebration = false
+    // Free-trial days on the annual plan, set only when StoreKit says this
+    // Apple ID is still eligible (intro offers are once per subscription group).
+    @State private var annualTrialDays: Int?
 
     private enum PlanOption { case monthly, annual }
 
@@ -100,7 +103,10 @@ struct ProUpgradeView: View {
                     }
                 }
             }
-            .task { await subscriptionStore.load() }
+            .task {
+                await subscriptionStore.load()
+                annualTrialDays = await Self.freeTrialDays(for: subscriptionStore.annualProduct)
+            }
             // Fires on appearance, not on the subscribe tap: the metric is the
             // conversion denominator (how many saw this gate). Skipped only when
             // fully already-Pro (nothing to convert) — a Family Sharing member
@@ -149,8 +155,8 @@ struct ProUpgradeView: View {
 
     private var heroSubtitle: String {
         trigger == .carLimit
-            ? "The free plan holds \(CarStore.freeCarLimit) cars. Pro adds as many as you own, plus 50x the Assistant messages and a Pro badge on your profile."
-            : "50x the daily messages, plus unlimited cars and a Pro badge on your profile."
+            ? "The free plan holds \(CarStore.freeCarLimit) cars. Pro adds as many as you own, plus 10x the Assistant messages and a Pro badge on your profile."
+            : "10x the daily messages, plus unlimited cars and a Pro badge on your profile."
     }
 
     private var heroSection: some View {
@@ -239,7 +245,7 @@ struct ProUpgradeView: View {
             VStack(spacing: 6) {
                 Text("Get More From Marque Assistant")
                     .font(.title2).fontWeight(.bold)
-                Text("You already have the Pro badge and unlimited cars through Family Sharing. Subscribing on your own Apple ID adds 500 Assistant messages and \(ScanAllowanceStore.proDailyCap) document scans a day.")
+                Text("You already have the Pro badge and unlimited cars through Family Sharing. Subscribing on your own Apple ID adds \(ChatStore.proDailyCap) Assistant messages and \(ScanAllowanceStore.proDailyCap) document scans a day.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -260,14 +266,15 @@ struct ProUpgradeView: View {
             switch selectedPlan {
             case .annual:
                 PlanCard(
-                    price: subscriptionStore.annualProduct?.displayPrice ?? "$24.99",
+                    price: subscriptionStore.annualProduct?.displayPrice ?? "$34.99",
                     period: "/ year",
-                    badge: "Save 30%",
-                    detail: "That's just $2.08 / month. Cancel anytime."
+                    badge: "Save 41%",
+                    detail: annualTrialDays.map { "Free for \($0) days, then just $2.92 / month. Cancel anytime." }
+                        ?? "That's just $2.92 / month. Cancel anytime."
                 )
             case .monthly:
                 PlanCard(
-                    price: subscriptionStore.monthlyProduct?.displayPrice ?? "$2.99",
+                    price: subscriptionStore.monthlyProduct?.displayPrice ?? "$4.99",
                     period: "/ month",
                     badge: nil,
                     detail: "Billed monthly. Cancel anytime."
@@ -293,7 +300,7 @@ struct ProUpgradeView: View {
                 .font(.headline)
 
             let features: [(icon: String, title: String, subtitle: String)] = [
-                ("bubble.left.and.bubble.right.fill", "Marque Assistant", "500 messages a day, up from 10 free"),
+                ("bubble.left.and.bubble.right.fill", "Marque Assistant", "\(ChatStore.proDailyCap) messages a day, up from \(ChatStore.freeDailyCap) free"),
                 ("doc.text.viewfinder",               "Document Scans",   "\(ScanAllowanceStore.proDailyCap) scans a day, up from \(ScanAllowanceStore.freeDailyCap) free"),
                 ("infinity",                          "Unlimited Cars",   "Free plan is limited to \(CarStore.freeCarLimit) vehicles"),
                 ("checkmark.seal.fill",               "Pro Badge",        "Shown next to your name in Garage, Settings and Explore"),
@@ -327,7 +334,7 @@ struct ProUpgradeView: View {
                 .font(.headline)
 
             let features: [(icon: String, title: String, subtitle: String)] = [
-                ("bubble.left.and.bubble.right.fill", "Marque Assistant", "500 messages a day, up from 10 free"),
+                ("bubble.left.and.bubble.right.fill", "Marque Assistant", "\(ChatStore.proDailyCap) messages a day, up from \(ChatStore.freeDailyCap) free"),
                 ("doc.text.viewfinder",               "Document Scans",   "\(ScanAllowanceStore.proDailyCap) scans a day, up from \(ScanAllowanceStore.freeDailyCap) free"),
             ]
 
@@ -363,9 +370,7 @@ struct ProUpgradeView: View {
                 : subscriptionStore.monthlyProduct
 
             MarquePrimaryButton(
-                product != nil
-                    ? "Subscribe — \(product!.displayPrice) \(selectedPlan == .annual ? "/ yr" : "/ mo")"
-                    : "Subscribe",
+                ctaTitle(for: product),
                 isLoading: isPurchasing
             ) {
                 guard let product else { return }
@@ -379,9 +384,34 @@ struct ProUpgradeView: View {
         }
     }
 
+    private func ctaTitle(for product: Product?) -> String {
+        guard let product else { return "Subscribe" }
+        if selectedPlan == .annual, let days = annualTrialDays {
+            return "Start \(days)-Day Free Trial"
+        }
+        return "Subscribe — \(product.displayPrice) \(selectedPlan == .annual ? "/ yr" : "/ mo")"
+    }
+
+    /// Whole free-trial days of `product`'s introductory offer, or nil when it
+    /// has none or this Apple ID already used one in the group.
+    private static func freeTrialDays(for product: Product?) async -> Int? {
+        guard let sub = product?.subscription,
+              let offer = sub.introductoryOffer,
+              offer.paymentMode == .freeTrial,
+              await sub.isEligibleForIntroOffer else { return nil }
+        let p = offer.period
+        switch p.unit {
+        case .day: return p.value
+        case .week: return p.value * 7
+        default: return nil
+        }
+    }
+
     private var legalFooter: some View {
         VStack(spacing: 6) {
-            Text("Subscription renews automatically. Cancel anytime in Settings > Subscriptions.")
+            Text(selectedPlan == .annual && annualTrialDays != nil
+                 ? "Free trial, then \(subscriptionStore.annualProduct?.displayPrice ?? "$34.99") per year. Renews automatically; cancel anytime in Settings > Subscriptions at least 24 hours before the trial ends."
+                 : "Subscription renews automatically. Cancel anytime in Settings > Subscriptions.")
                 .font(.caption2)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -541,8 +571,8 @@ private struct ProCelebrationView: View {
     // Badge, so their copy only names what subscribing personally added.
     private var subtitle: String {
         isFamilyShared
-            ? "You've unlocked 500 Assistant messages a day and \(ScanAllowanceStore.proDailyCap) document scans a day."
-            : "You now have 500 Assistant messages a day, \(ScanAllowanceStore.proDailyCap) document scans a day, unlimited cars, and a Pro badge on your profile."
+            ? "You've unlocked \(ChatStore.proDailyCap) Assistant messages a day and \(ScanAllowanceStore.proDailyCap) document scans a day."
+            : "You now have \(ChatStore.proDailyCap) Assistant messages a day, \(ScanAllowanceStore.proDailyCap) document scans a day, unlimited cars, and a Pro badge on your profile."
     }
 }
 

@@ -53,7 +53,7 @@ class ChatStore: ObservableObject {
     // functions/src/index.ts; change them together. `nonisolated` because
     // SendError.errorDescription (not main-actor) reads proDailyCap.
     nonisolated static let freeDailyCap = 10
-    nonisolated static let proDailyCap = 500
+    nonisolated static let proDailyCap = 100
 
     /// Today's cap for the server-side plan, or `nil` while the plan is unknown.
     var dailyCap: Int? {
@@ -608,7 +608,7 @@ class ChatStore: ObservableObject {
     /// the plan flipped to Pro after they upgraded from the bar, or the day rolled
     /// over and the count reset. Without this the bar — and the hidden composer —
     /// outlives the condition that raised it, and a Pro user who just paid is told
-    /// they've used all 500 messages. Does nothing while the plan is unknown.
+    /// they've used all \(proDailyCap) messages. Does nothing while the plan is unknown.
     private func clearStaleCapError() {
         guard sendError?.isCap == true, let cap = dailyCap, todayMessageCount < cap else { return }
         sendError = nil

@@ -29,11 +29,15 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "24.99",
+          "displayPrice" : "34.99",
           "familyShareable" : true,
           "groupNumber" : 1,
           "internalID" : "6740000101",
-          "introductoryOffer" : null,
+          "introductoryOffer" : {
+            "internalID" : "6740000111",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
           "localizations" : [
             {
               "description" : "Marque Pro, billed yearly",
@@ -54,7 +58,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "2.99",
+          "displayPrice" : "4.99",
           "familyShareable" : true,
           "groupNumber" : 2,
           "internalID" : "6740000102",

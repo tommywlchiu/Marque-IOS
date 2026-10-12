@@ -2287,7 +2287,7 @@ export const estimateCarValue = onCall(
 // ============================================================================
 //
 // Streaming callable function that answers a user's car question. On each call:
-//   1. Enforces the daily cap (10/day free, 500/day Pro) via a per-user
+//   1. Enforces the daily cap (10/day free, 100/day Pro) via a per-user
 //      per-calendar-day Firestore counter — server-side per FR-10.5.
 //   2. Loads the user's garage into a cached prompt block. Excludes VIN, plate,
 //      insurance provider/policy, notes fields, driver license, per-record
@@ -2305,7 +2305,7 @@ const MARQUE_MODEL = "claude-sonnet-4-6";
 const MARQUE_MAX_TOKENS = 1024;
 const MARQUE_TEMPERATURE = 0.7;
 const FREE_DAILY_CAP = 10;
-const PRO_DAILY_CAP = 500;
+const PRO_DAILY_CAP = 100;
 const MAX_CONTEXT_TURNS = 30;
 const MAX_USER_MESSAGE_CHARS = 4000;
 // History entries are client-supplied and replayed straight back to us.
@@ -3132,7 +3132,7 @@ const CLEANUP_TIMEOUT_SECONDS = 540; // gen-1 background maximum
 const CLEANUP_MEMORY = "512MB" as const;
 
 // Log loudly once we're within ~90s of the timeout. Ceiling to worry about:
-// Pro users are capped at 500 assistant messages/day, so a long-lived account
+// Pro users are capped at 100 assistant messages/day, so a long-lived account
 // can accumulate six figures of message documents under conversations/**.
 const CLEANUP_WARN_ELAPSED_MS = (CLEANUP_TIMEOUT_SECONDS - 90) * 1000;
 
