@@ -85,13 +85,13 @@ struct ExpenseChartsView: View {
                     x: .value("Month", point.month),
                     y: .value("Spend", point.amount)
                 )
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(.monotone)
 
                 AreaMark(
                     x: .value("Month", point.month),
                     y: .value("Spend", point.amount)
                 )
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(.monotone)
                 .foregroundStyle(.linearGradient(
                     colors: [.accentColor.opacity(0.4), .accentColor.opacity(0.05)],
                     startPoint: .top,
@@ -190,9 +190,20 @@ struct ExpenseChartsView: View {
             }
         }
 
-        return bucket
-            .map { (month: $0.key, amount: $0.value) }
-            .sorted { $0.month < $1.month }
+        // Zero-fill the gaps: a month with no spending is $0, not "missing".
+        // Skipping it drew a straight line from July to September that read
+        // as a gradual decline instead of a $0 August.
+        guard let first = bucket.keys.min() else { return [] }
+        let thisMonth = cal.date(from: cal.dateComponents([.year, .month], from: Date())) ?? first
+        let last = max(bucket.keys.max() ?? first, thisMonth)
+        var months: [(month: Date, amount: Double)] = []
+        var cursor = first
+        while cursor <= last, months.count < 600 {
+            months.append((month: cursor, amount: bucket[cursor] ?? 0))
+            guard let next = cal.date(byAdding: .month, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+        return months
     }
 
     private func proportion(of value: Double) -> CGFloat {

@@ -63,8 +63,8 @@ struct DataExportView: View {
     // MARK: - Sections
 
     private var scopeSection: some View {
-        Section(header: Text("Scope")) {
-            Picker("Scope", selection: $scope) {
+        Section(header: Text("What to export")) {
+            Picker("Cars", selection: $scope) {
                 Text("All Cars (Garage)").tag(Scope.allCars)
                 ForEach(carStore.cars) { car in
                     Text(car.displayName).tag(Scope.single(car.id))
@@ -75,7 +75,7 @@ struct DataExportView: View {
     }
 
     private var periodSection: some View {
-        Section(header: Text("Period")) {
+        Section(header: Text("Time range")) {
             Picker("Period", selection: $period) {
                 ForEach(ExpenseReportPeriod.allOptions(cars: carStore.cars)) { option in
                     Text(option.displayName).tag(option)
