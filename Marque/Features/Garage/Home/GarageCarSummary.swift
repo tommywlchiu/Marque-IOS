@@ -111,6 +111,8 @@ enum GarageSummary {
     struct StatusLine {
         let text: String
         let needsAttention: Bool
+        /// Overdue or expired: the dot turns red instead of the brand accent.
+        var isUrgent = false
     }
 
     /// The single most urgent upcoming item: an overdue reminder, an expired
@@ -121,11 +123,11 @@ enum GarageSummary {
         let reminders = ReminderUrgency.openReminders(of: car, today: today)
 
         if let overdue = reminders.first(where: { $0.status(currentMileage: mileage, today: today) == .overdue }) {
-            return StatusLine(text: ReminderUrgency.headline(overdue, currentMileage: mileage, today: today), needsAttention: true)
+            return StatusLine(text: ReminderUrgency.headline(overdue, currentMileage: mileage, today: today), needsAttention: true, isUrgent: true)
         }
-        if car.isRegistrationExpired { return StatusLine(text: "Registration expired", needsAttention: true) }
-        if car.isInsuranceExpired { return StatusLine(text: "Insurance expired", needsAttention: true) }
-        if car.isWarrantyExpired { return StatusLine(text: "Warranty expired", needsAttention: true) }
+        if car.isRegistrationExpired { return StatusLine(text: "Registration expired", needsAttention: true, isUrgent: true) }
+        if car.isInsuranceExpired { return StatusLine(text: "Insurance expired", needsAttention: true, isUrgent: true) }
+        if car.isWarrantyExpired { return StatusLine(text: "Warranty expired", needsAttention: true, isUrgent: true) }
 
         // Candidates within the look-ahead window, ranked by days-away.
         var candidates: [(soonness: Double, line: StatusLine)] = []

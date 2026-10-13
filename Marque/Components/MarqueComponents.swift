@@ -186,21 +186,28 @@ struct StatChip: View {
     var action: (() -> Void)? = nil
 
     var body: some View {
-        Button {
-            action?()
-        } label: {
-            VStack(spacing: 2) {
-                Text(value)
-                    .font(.headline).fontWeight(.bold)
-                    .foregroundColor(.primary)
-                Text(label)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .frame(minWidth: 64)
+        // A chip with no action is plain content, not a disabled Button:
+        // `.disabled` greys the label out, making a static stat (e.g. Cars)
+        // look broken next to its tappable neighbours.
+        if let action {
+            Button(action: action) { content }
+                .buttonStyle(.plain)
+        } else {
+            content
+                .accessibilityElement(children: .combine)
         }
-        .buttonStyle(.plain)
-        .disabled(action == nil)
+    }
+
+    private var content: some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.headline).fontWeight(.bold)
+                .foregroundColor(.primary)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .frame(minWidth: 64)
     }
 }
 

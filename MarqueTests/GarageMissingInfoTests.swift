@@ -51,3 +51,31 @@ final class GarageMissingInfoTests: XCTestCase {
         XCTAssertNil(registrationItem.dismissKey)
     }
 }
+
+final class GarageStatusLineTests: XCTestCase {
+    private let today = Date()
+
+    func testExpiredRegistrationIsUrgent() {
+        let car = Car(make: "BMW", model: "M4", year: "2016",
+                      registrationExpiryDate: Calendar.current.date(byAdding: .day, value: -5, to: today))
+        let line = GarageSummary.statusLine(for: car, today: today)
+        XCTAssertEqual(line.text, "Registration expired")
+        XCTAssertTrue(line.needsAttention)
+        XCTAssertTrue(line.isUrgent)
+    }
+
+    func testExpiringSoonNeedsAttentionButIsNotUrgent() {
+        let car = Car(make: "BMW", model: "M4", year: "2016",
+                      insuranceExpiryDate: Calendar.current.date(byAdding: .day, value: 10, to: today))
+        let line = GarageSummary.statusLine(for: car, today: today)
+        XCTAssertTrue(line.needsAttention)
+        XCTAssertFalse(line.isUrgent)
+    }
+
+    func testAllCaughtUpIsNeither() {
+        let line = GarageSummary.statusLine(for: Car(make: "BMW", model: "M4", year: "2016"), today: today)
+        XCTAssertEqual(line.text, "All caught up")
+        XCTAssertFalse(line.needsAttention)
+        XCTAssertFalse(line.isUrgent)
+    }
+}

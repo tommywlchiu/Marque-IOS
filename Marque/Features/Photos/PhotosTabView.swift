@@ -90,7 +90,7 @@ struct PhotosTabView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(car.displayName)
                         .font(.headline)
-                    Text("\(car.photoFileNames.count) photo\(car.photoFileNames.count == 1 ? "" : "s")")
+                    Text(car.photoFileNames.isEmpty ? "No photos yet" : "\(car.photoFileNames.count) photo\(car.photoFileNames.count == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -105,13 +105,17 @@ struct PhotosTabView: View {
                     .frame(width: 44, height: 44)
                     .accessibilityLabel("Reorder \(car.displayName)'s photos")
                 }
-                AddPhotosButton(car: car) { images in
-                    await addPhotos(images, to: car)
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
+                // A car with no photos shows the big "Add Photos" tile below
+                // instead; a second "+" for the same action is just noise.
+                if !car.photoFileNames.isEmpty {
+                    AddPhotosButton(car: car) { images in
+                        await addPhotos(images, to: car)
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                    }
+                    .frame(width: 44, height: 44)
                 }
-                .frame(width: 44, height: 44)
             }
             .padding(.horizontal, 16)
 

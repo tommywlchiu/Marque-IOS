@@ -161,7 +161,7 @@ struct GarageHomeView: View {
             Button { showingSwitcher = true } label: {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(car.displayName)
-                        .font(.largeTitle.weight(.bold))
+                        .font(.title.weight(.bold))
                         .foregroundColor(GarageTheme.primaryText)
                         .lineLimit(2)
                         .minimumScaleFactor(0.7)
@@ -243,7 +243,7 @@ struct GarageHomeView: View {
             HStack(spacing: 6) {
                 if status.needsAttention {
                     Circle()
-                        .fill(GarageTheme.accentDot)
+                        .fill(status.isUrgent ? Color.red : GarageTheme.accentDot)
                         .frame(width: 6, height: 6)
                         .accessibilityHidden(true)
                 }
