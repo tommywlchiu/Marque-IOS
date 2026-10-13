@@ -76,26 +76,6 @@ struct GarageHomeView: View {
             editDraft: $editDraft
         ))
         .onAppear(perform: tryDeepLinkNavigation)
-        .task {  // TEMP-DEBUG (uncommitted)
-            guard let r = UserDefaults.standard.string(forKey: "debugRoute") else { return }
-            try? await Task.sleep(for: .seconds(3))
-            guard let car = carStore.cars.first(where: { $0.make == "BMW" }) ?? carStore.cars.first else { return }
-            selectedCarIDString = car.id.uuidString
-            switch r {
-            case "serviceHistory": path = [.serviceHistory(car.id)]
-            case "mods": path = [.mods(car.id)]
-            case "expenses": path = [.expenses(car.id)]
-            case "value": path = [.value(car.id)]
-            case "engineSound": path = [.engineSound(car.id)]
-            case "publicSharing": path = [.publicSharing(car.id)]
-            case "details": path = [.details(car.id)]
-            case "customize": path = [.customize(car.id)]
-            case "recalls": path = [.recalls(car.id)]
-            case "switcher": showingSwitcher = true
-            case "share": showingShareCard = true
-            default: break
-            }
-        }
         .onChange(of: appDelegate.pendingCarID) { _, _ in tryDeepLinkNavigation() }
         .onChange(of: carStore.cars) { _, _ in tryDeepLinkNavigation() }
         .modifier(FollowPushRouter())
