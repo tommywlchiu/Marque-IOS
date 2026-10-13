@@ -50,13 +50,13 @@ enum ReminderUrgency {
 
         var parts: [String] = []
         if let days = reminder.daysUntilDue() {
-            if days < 0 { parts.append("\(-days) days overdue") }
+            if days < 0 { parts.append("\(-days) \(-days == 1 ? "day" : "days") overdue") }
             else if days == 0 { parts.append("Due today") }
-            else { parts.append("Due in \(days) days") }
+            else { parts.append("Due in \(days) \(days == 1 ? "day" : "days")") }
         }
         if let miles = reminder.milesUntilDue(currentMileage: currentMileage) {
-            if miles < 0 { parts.append("\(-miles) mi past due") }
-            else { parts.append("\(miles) mi to go") }
+            if miles < 0 { parts.append("\((-miles).formatted()) mi past due") }
+            else { parts.append("\(miles.formatted()) mi to go") }
         }
         // "or", not "•", when both triggers are set — matches the
         // whichever-first semantics of ServiceReminder.status().
@@ -111,6 +111,8 @@ enum GarageSummary {
     struct StatusLine {
         let text: String
         let needsAttention: Bool
+        /// Overdue or expired: the dot turns red instead of the brand accent.
+        var isUrgent = false
     }
 
     /// The single most urgent upcoming item: an overdue reminder, an expired
@@ -121,11 +123,11 @@ enum GarageSummary {
         let reminders = ReminderUrgency.openReminders(of: car, today: today)
 
         if let overdue = reminders.first(where: { $0.status(currentMileage: mileage, today: today) == .overdue }) {
-            return StatusLine(text: ReminderUrgency.headline(overdue, currentMileage: mileage, today: today), needsAttention: true)
+            return StatusLine(text: ReminderUrgency.headline(overdue, currentMileage: mileage, today: today), needsAttention: true, isUrgent: true)
         }
-        if car.isRegistrationExpired { return StatusLine(text: "Registration expired", needsAttention: true) }
-        if car.isInsuranceExpired { return StatusLine(text: "Insurance expired", needsAttention: true) }
-        if car.isWarrantyExpired { return StatusLine(text: "Warranty expired", needsAttention: true) }
+        if car.isRegistrationExpired { return StatusLine(text: "Registration expired", needsAttention: true, isUrgent: true) }
+        if car.isInsuranceExpired { return StatusLine(text: "Insurance expired", needsAttention: true, isUrgent: true) }
+        if car.isWarrantyExpired { return StatusLine(text: "Warranty expired", needsAttention: true, isUrgent: true) }
 
         // Candidates within the look-ahead window, ranked by days-away.
         var candidates: [(soonness: Double, line: StatusLine)] = []

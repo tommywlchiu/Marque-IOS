@@ -580,14 +580,14 @@ private struct SuggestionRow: View {
         var parts: [String] = []
         if let date = suggestion.dueDate {
             let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
-            if days < 0 { parts.append("\(-days) days overdue") }
+            if days < 0 { parts.append("\(-days) \(-days == 1 ? "day" : "days") overdue") }
             else if days == 0 { parts.append("Due today") }
-            else { parts.append("Due in \(days) days") }
+            else { parts.append("Due in \(days) \(days == 1 ? "day" : "days")") }
         }
         if let miles = suggestion.dueMileage {
             let delta = miles - currentMileage
-            if delta < 0 { parts.append("\(-delta) mi past due") }
-            else { parts.append("in \(delta) mi") }
+            if delta < 0 { parts.append("\((-delta).formatted()) mi past due") }
+            else { parts.append("in \(delta.formatted()) mi") }
         }
         // "or" — whichever comes first triggers the reminder.
         return parts.isEmpty ? "No specific due date" : parts.joined(separator: " or ")

@@ -46,7 +46,7 @@ struct CarOfTheWeekHero: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Car of the Week: \(car.displayName) by @\(car.ownerUsername), \(likesText)")
+        .accessibilityLabel("Car of the Week: \(car.displayName) by @\(car.ownerUsername)\(likeCount > 0 ? ", \(likesText)" : "")")
         .accessibilityAddTraits(.isButton)
         .accessibilityHint("Opens car details")
     }
@@ -58,7 +58,7 @@ struct CarOfTheWeekHero: View {
     private var photo: some View {
         Color.clear
             .aspectRatio(1, contentMode: .fit)
-            .overlay { CachedRemoteImage(url: car.primaryPhotoURL) }
+            .overlay { CachedRemoteImage(url: car.galleryURLs.first) }
     }
 
     private var scrim: some View {
@@ -81,9 +81,11 @@ struct CarOfTheWeekHero: View {
                 Text("@\(car.ownerUsername)")
                     .font(.subheadline.weight(.semibold))
                 if ownerIsPro { ProBadge() }
-                Text("\u{00B7}")
-                Text(likesText)
-                    .font(.subheadline)
+                if likeCount > 0 {
+                    Text("\u{00B7}")
+                    Text(likesText)
+                        .font(.subheadline)
+                }
             }
             .foregroundColor(.white.opacity(0.9))
             .lineLimit(1)

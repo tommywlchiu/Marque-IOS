@@ -151,7 +151,10 @@ struct AddCarView: View {
     }
 
     private var vinInputSection: some View {
-        Section(header: Text("Search by VIN")) {
+        Section(
+            header: Text("Search by VIN"),
+            footer: Text("Your VIN is on the driver-side dashboard (visible through the windshield), the driver's door jamb sticker, and your insurance card. No VIN handy? Use Manual.")
+        ) {
             HStack(spacing: 12) {
                 TextField("17-character VIN", text: $vinInput)
                     .autocorrectionDisabled()

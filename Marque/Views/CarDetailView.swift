@@ -206,7 +206,7 @@ struct CarDetailView: View {
         Section(header: HStack {
             Text("Service History")
             Spacer()
-            Text("\(pc.serviceHistory.count) records")
+            Text("\(pc.serviceHistory.count) \(pc.serviceHistory.count == 1 ? "record" : "records")")
                 .font(.caption).foregroundColor(.secondary)
         }) {
             ForEach(pc.serviceHistory.sorted { $0.date > $1.date }.prefix(5)) { record in

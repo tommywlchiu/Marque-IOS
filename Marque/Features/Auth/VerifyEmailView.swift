@@ -17,6 +17,20 @@ struct VerifyEmailView: View {
 
     var body: some View {
         NavigationStack {
+            ZStack {
+                ShowroomBackground()
+                content
+            }
+            .navigationTitle("Verify Email")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .environment(\.colorScheme, .dark)
+        // Fixed-chrome form: past this size the field icons collide with their
+        // text. Everything up to AX2 still scales.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
+    }
+
+    private var content: some View {
             VStack(spacing: 32) {
                 Spacer().frame(height: 12)
 
@@ -32,15 +46,12 @@ struct VerifyEmailView: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
-            .navigationTitle("Verify Email")
-            .navigationBarTitleDisplayMode(.inline)
             .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
                 if resendCooldown > 0 { resendCooldown -= 1 }
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await silentRecheck() } }
             }
-        }
     }
 
     // MARK: - Subviews
@@ -59,22 +70,24 @@ struct VerifyEmailView: View {
             VStack(spacing: 8) {
                 Text("Verify your email")
                     .font(.title2).fontWeight(.bold)
-                Text(subtitleAttributed)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+                // The address gets its own line: inline in a sentence, a long
+                // plus-address wrapped mid-word ("...@gm / ail.com").
+                VStack(spacing: 4) {
+                    Text("We sent a link to")
+                        .foregroundColor(.secondary)
+                    Text(email.isEmpty ? "your inbox" : email)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("Tap it, then come back to finish setting up your account.")
+                        .foregroundColor(.secondary)
+                }
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
             }
         }
-    }
-
-    private var subtitleAttributed: AttributedString {
-        var prefix = AttributedString("We sent a link to ")
-        var bold = AttributedString(email.isEmpty ? "your inbox" : email)
-        bold.font = .subheadline.weight(.semibold)
-        bold.foregroundColor = .primary
-        let suffix = AttributedString(". Tap it, then come back to finish setting up your account.")
-        return prefix + bold + suffix
     }
 
     @ViewBuilder

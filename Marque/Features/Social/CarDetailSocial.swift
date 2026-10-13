@@ -189,7 +189,7 @@ struct PublicValueRangeRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Est. value \(range)")
                     .font(.subheadline.weight(.semibold))
-                Text("Owner's estimate, not an appraisal")
+                Text("AI estimate, not an appraisal")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
