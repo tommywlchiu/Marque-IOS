@@ -5,6 +5,7 @@ struct ExploreView: View {
     @EnvironmentObject var followStore: FollowStore
     @EnvironmentObject var blockStore: BlockStore
     @EnvironmentObject var notificationStore: NotificationStore
+    @Environment(\.selectMainTab) private var selectMainTab
 
     @State private var selectedCategory: ExploreCategory = .all
     @State private var profileTarget: ProfileTarget?
@@ -140,10 +141,15 @@ struct ExploreView: View {
                         action: { exploreStore.retryFeed() }
                     )
                 } else if exploreStore.cars.isEmpty {
+                    // Owners make a car public from the Garage (car > Public
+                    // Sharing); CarDetailView is public-only, so it can't be
+                    // done from there. The button takes them to that tab.
                     MarqueEmptyState(
                         icon: "globe",
-                        title: "Nothing Here Yet",
-                        subtitle: "Make a car public from its detail screen to share it with the community."
+                        title: "Explore Is Just Getting Started",
+                        subtitle: "Be one of the first. Open your car in Garage, tap Public Sharing, and it will show up here for every Marque owner.",
+                        actionTitle: "Go to Garage",
+                        action: { selectMainTab(.garage) }
                     )
                 } else {
                     ScrollView {
