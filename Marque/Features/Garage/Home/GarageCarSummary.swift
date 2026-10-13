@@ -50,13 +50,13 @@ enum ReminderUrgency {
 
         var parts: [String] = []
         if let days = reminder.daysUntilDue() {
-            if days < 0 { parts.append("\(-days) days overdue") }
+            if days < 0 { parts.append("\(-days) \(-days == 1 ? "day" : "days") overdue") }
             else if days == 0 { parts.append("Due today") }
-            else { parts.append("Due in \(days) days") }
+            else { parts.append("Due in \(days) \(days == 1 ? "day" : "days")") }
         }
         if let miles = reminder.milesUntilDue(currentMileage: currentMileage) {
-            if miles < 0 { parts.append("\(-miles) mi past due") }
-            else { parts.append("\(miles) mi to go") }
+            if miles < 0 { parts.append("\((-miles).formatted()) mi past due") }
+            else { parts.append("\(miles.formatted()) mi to go") }
         }
         // "or", not "•", when both triggers are set — matches the
         // whichever-first semantics of ServiceReminder.status().
