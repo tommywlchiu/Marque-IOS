@@ -261,6 +261,36 @@ struct ProUpgradeView: View {
         .pickerStyle(.segmented)
     }
 
+    // Both figures below come from the StoreKit products, so they follow the
+    // customer's storefront currency and any future price change. The static
+    // strings are only the fallback shown while products haven't loaded.
+
+    /// "$2.92" -- the annual price spread over 12 months, in the product's own currency.
+    private var annualMonthlyEquivalent: String {
+        guard let annual = subscriptionStore.annualProduct else { return "$2.92" }
+        return (annual.price / 12).formatted(annual.priceFormatStyle)
+    }
+
+    /// "Save 42%" -- annual vs twelve monthly payments. Nil when it can't be
+    /// computed honestly (a product missing, or annual not actually cheaper).
+    private var annualSavingsBadge: String? {
+        guard let annual = subscriptionStore.annualProduct, let monthly = subscriptionStore.monthlyProduct else {
+            return "Save 42%"
+        }
+        let full = NSDecimalNumber(decimal: monthly.price * 12).doubleValue
+        guard full > 0 else { return nil }
+        let percent = Int(((1 - NSDecimalNumber(decimal: annual.price).doubleValue / full) * 100).rounded())
+        return percent > 0 ? "Save \(percent)%" : nil
+    }
+
+    private var annualDetail: String {
+        let monthly = annualMonthlyEquivalent
+        if let days = annualTrialDays {
+            return "\(days) days free, then billed yearly. That's just \(monthly) / month."
+        }
+        return "Billed yearly. That's just \(monthly) / month. Cancel anytime."
+    }
+
     private var selectedPlanCard: some View {
         Group {
             switch selectedPlan {
@@ -268,9 +298,8 @@ struct ProUpgradeView: View {
                 PlanCard(
                     price: subscriptionStore.annualProduct?.displayPrice ?? "$34.99",
                     period: "/ year",
-                    badge: "Save 41%",
-                    detail: annualTrialDays.map { "Free for \($0) days, then just $2.92 / month. Cancel anytime." }
-                        ?? "That's just $2.92 / month. Cancel anytime."
+                    badge: annualSavingsBadge,
+                    detail: annualDetail
                 )
             case .monthly:
                 PlanCard(
