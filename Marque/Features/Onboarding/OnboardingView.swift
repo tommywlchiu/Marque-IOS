@@ -28,6 +28,17 @@ struct OnboardingView: View {
     private var isLastPage: Bool { currentPage == pages.count - 1 }
 
     var body: some View {
+        // Same dark showroom look as Login/Sign Up (forced locally, never
+        // `.preferredColorScheme`), so the first screens aren't a light page
+        // that suddenly turns dark one tap later.
+        ZStack {
+            ShowroomBackground()
+            content
+        }
+        .environment(\.colorScheme, .dark)
+    }
+
+    private var content: some View {
         VStack(spacing: 0) {
             TabView(selection: $currentPage) {
                 ForEach(pages.indices, id: \.self) { index in
