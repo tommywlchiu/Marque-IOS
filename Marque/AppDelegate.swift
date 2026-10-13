@@ -71,6 +71,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         if let raw = userInfo["carId"] as? String {
             pendingCarID = UUID(uuidString: raw)
         }
+        // A remote push names its `type`; a local expiry/service reminder only
+        // carries a carId. Anything else (unknown payload) is not counted.
+        if let rawType = userInfo["type"] as? String, let kind = PushRoute.Kind(rawValue: rawType) {
+            AnalyticsService.notificationOpened(kind: AnalyticsService.NotificationKind(rawValue: kind.rawValue) ?? .localReminder)
+        } else if userInfo["carId"] is String {
+            AnalyticsService.notificationOpened(kind: .localReminder)
+        }
         if let rawType = userInfo["type"] as? String, let kind = PushRoute.Kind(rawValue: rawType) {
             pendingPush = PushRoute(
                 kind: kind,

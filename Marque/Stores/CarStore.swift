@@ -225,13 +225,27 @@ class CarStore: ObservableObject {
         AnalyticsService.carAdded(entryMethod: entryMethod, secondsSinceSignup: Self.secondsSinceSignup())
     }
 
+    /// `expiry_date_set`: fires for each document expiry that went from blank to
+    /// set on this save. A changed date, or one that was already set, is not
+    /// an activation signal and fires nothing.
+    private static func reportExpiryDatesSet(from old: Car, to new: Car) {
+        let checks: [(AnalyticsService.ExpiryKind, Date?, Date?)] = [
+            (.insurance, old.insuranceExpiryDate, new.insuranceExpiryDate),
+            (.registration, old.registrationExpiryDate, new.registrationExpiryDate),
+            (.warranty, old.warrantyExpiryDate, new.warrantyExpiryDate),
+        ]
+        for (kind, before, after) in checks where before == nil && after != nil {
+            AnalyticsService.expiryDateSet(kind: kind, secondsSinceSignup: secondsSinceSignup())
+        }
+    }
+
     // Serves the "time to first car added < 3 min" target in Section 9.
     // Firebase Auth's own account creation date is the signup timestamp for all
     // three auth methods (it is also what backs `AppUser.joinedDate`), so this
     // needs no cooperation from AuthService and keeps the stores decoupled.
     // Returns nil rather than a sentinel when the date is unavailable —
     // AnalyticsService omits the property in that case.
-    private static func secondsSinceSignup() -> Int? {
+    nonisolated static func secondsSinceSignup() -> Int? {
         guard let created = Auth.auth().currentUser?.metadata.creationDate else { return nil }
         let elapsed = Date().timeIntervalSince(created)
         guard elapsed >= 0 else { return nil }
@@ -253,6 +267,7 @@ class CarStore: ObservableObject {
         }
         let previous = cars.first(where: { $0.id == car.id })
         try? carRef(userId: userId, carId: car.id.uuidString).setData(from: car)
+        if let previous { Self.reportExpiryDatesSet(from: previous, to: car) }
         // Keep the public copy in step with any edit that changes what Explore
         // shows: cover/crop, the photo gallery (reorder, removal), specs,
         // notes, service history, the public value range, the engine sound.
@@ -614,7 +629,8 @@ class CarStore: ObservableObject {
         // re-fire). Callers that still append+updateCar directly (pre-
         // migration call sites) fire this themselves; once they switch to
         // logService, remove their own call to avoid double-counting.
-        AnalyticsService.maintenanceRecordAdded()
+        AnalyticsService.maintenanceRecordAdded(secondsSinceSignup: Self.secondsSinceSignup())
+        if scheduledNext != nil { AnalyticsService.reminderCreated(source: .automatic) }
 
         if let receiptImage {
             uploadReceipt(receiptImage, fileName: receiptFileName(for: record.id), recordId: record.id, carId: car.id.uuidString)
@@ -672,6 +688,7 @@ class CarStore: ObservableObject {
         }
 
         updateCar(updated)
+        if next != nil { AnalyticsService.reminderCreated(source: .automatic) }
         return next
     }
 

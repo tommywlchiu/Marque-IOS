@@ -5,6 +5,7 @@ import FirebaseFirestore
 import FirebaseAuth
 import FirebaseStorage
 import FirebaseFunctions
+import WidgetKit
 
 /// Process launch time, for `app_launch_completed` (FR-11.4). A Swift global is
 /// initialized lazily on first access; this is first touched in the App's init,
@@ -103,6 +104,7 @@ struct MarqueApp: App {
                     guard url.scheme == "marque", url.host == "car",
                           let id = UUID(uuidString: url.lastPathComponent) else { return }
                     appDelegate.pendingCarID = id
+                    AnalyticsService.deepLinkOpened(source: .widget)
                 }
                 .task {
                     // FR-11.4 launch events. `.task` on the root view fires once
@@ -123,6 +125,11 @@ struct MarqueApp: App {
                     // fire this session — same reason MainTabView's own
                     // onChange(of: carStore.cars) is paired with an onAppear.
                     WidgetSnapshotService.sync(cars: carStore.cars)
+                    WidgetCenter.shared.getCurrentConfigurations { result in
+                        if case .success(let configs) = result {
+                            AnalyticsService.widgetStatusChecked(hasWidget: !configs.isEmpty)
+                        }
+                    }
                     BodyStyleBackfill.run(carStore: carStore)
                     RangeBackfill.run(carStore: carStore)
                 }

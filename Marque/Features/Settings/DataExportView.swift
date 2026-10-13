@@ -243,9 +243,14 @@ private struct ShareItem: Identifiable {
 /// Shared with `AccountDataExportView`.
 struct ActivityShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
+    /// Called when the share sheet closes; `true` only if the user actually
+    /// completed a share or save (not when they cancelled).
+    var onComplete: ((Bool) -> Void)? = nil
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, completed, _, _ in onComplete?(completed) }
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}

@@ -199,6 +199,7 @@ struct AddReminderView: View {
             var updated = car
             updated.serviceReminders.append(reminder)
             carStore.updateCar(updated)
+            AnalyticsService.reminderCreated(source: .manual)
         }
         dismiss()
     }

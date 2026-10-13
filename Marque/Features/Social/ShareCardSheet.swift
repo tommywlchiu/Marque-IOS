@@ -61,7 +61,13 @@ struct ShareCardSheet: View {
         }
         .task { await loadCoverImageIfNeeded() }
         .sheet(item: $pendingShare) { share in
-            ActivityShareSheet(activityItems: [share.url, share.text])
+            ActivityShareSheet(activityItems: [share.url, share.text]) { completed in
+                guard completed else { return }
+                AnalyticsService.shareCardShared(
+                    format: format == .post ? .post : .story,
+                    hasPublicPage: hasPublicPage
+                )
+            }
         }
     }
 

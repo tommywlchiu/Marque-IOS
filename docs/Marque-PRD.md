@@ -424,13 +424,21 @@ Section 9 defines roughly twenty success metrics. Prior to v1.2 nothing measured
 | `signup_completed` | `method` (apple/google/email) | Signup rate, auth distribution |
 | `car_added` | `entry_method` (vin/manual), `seconds_since_signup` | Activation, time-to-first-car |
 | `car_photo_added` | — | Photo upload rate |
-| `maintenance_record_added` | — | Records per active car |
+| `maintenance_record_added` | `seconds_since_signup` | Records per active car, activation |
+| `expiry_date_set` | `kind` (insurance/registration/warranty), `seconds_since_signup` | Activation (a document expiry went blank → set) |
+| `reminder_created` | `source` (manual/suggested/automatic) | Reminder adoption |
 | `car_visibility_changed` | `is_public` | Public car rate |
 | `user_followed` | — | Follow rate |
+| `car_liked` | — | Social engagement (fires on a like, not an unlike) |
+| `comment_posted` | — | Social engagement (never the text) |
+| `share_card_shared` | `format` (post/story), `has_public_page` | Share loop: completed shares, car link vs site link |
+| `deep_link_opened` | `source` (widget) | Link/widget re-engagement |
+| `widget_status_checked` | `has_widget` | Widget adoption (once per launch) |
 | `notification_permission_result` | `granted` | Opt-in rate |
+| `notification_opened` | `kind` (follow/like/comment/local_reminder) | Notification usefulness |
 | `assistant_message_sent` | `was_scoped_to_car` | Assistant engagement |
 | `assistant_cap_reached` | — | Pro demand signal |
-| `document_scan_completed` | `doc_type` | Scanning engagement |
+| `document_scan_completed` | `doc_type`, `seconds_since_signup` | Scanning engagement, activation |
 | `document_scan_cap_reached` | — | Pro demand signal |
 | `paywall_viewed` | `trigger` (car_limit/assistant_cap/scan_cap/settings) | Which gate actually converts |
 | `purchase_completed` | `plan` (monthly/annual) | Conversion, plan split |
