@@ -178,6 +178,7 @@ final class CommentStore: ObservableObject {
             print("[CommentStore] post failed: \(error.localizedDescription)")
             throw CommentError.rejected
         }
+        AnalyticsService.commentPosted()
     }
 
     /// Deletes `comment` from `carId`. Allowed for its author and the car's

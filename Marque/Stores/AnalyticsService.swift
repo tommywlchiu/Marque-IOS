@@ -186,6 +186,41 @@ struct AnalyticsService {
         case addFirstCar = "add_first_car"
     }
 
+    /// `share_card_shared.format` — mirrors `ShareCardFormat`.
+    enum ShareFormat: String {
+        case post
+        case story
+    }
+
+    /// `notification_opened.kind` — a remote push type, or a local
+    /// expiry/service reminder (which carries no `type`).
+    enum NotificationKind: String {
+        case follow
+        case like
+        case comment
+        case localReminder = "local_reminder"
+    }
+
+    /// `deep_link_opened.source`
+    enum DeepLinkSource: String {
+        case widget
+    }
+
+    /// `reminder_created.source`
+    enum ReminderSource: String {
+        case manual
+        case suggested
+        /// Scheduled for the user after they logged or completed a service.
+        case automatic
+    }
+
+    /// `expiry_date_set.kind` — which document's expiry date went from blank to set.
+    enum ExpiryKind: String {
+        case insurance
+        case registration
+        case warranty
+    }
+
     // MARK: - App lifecycle events
 
     /// Serves D1/D7/D30 retention.
@@ -201,16 +236,11 @@ struct AnalyticsService {
     // MARK: - Onboarding events
 
     /// FR-13.5 — identifies where users abandon onboarding (mitigates R-01).
-    ///
-    /// No call site yet: the FR-13 onboarding flow is not built. Wire this from
-    /// each step of that flow when it lands.
     static func onboardingStepViewed(step: OnboardingStep) {
         capture("onboarding_step_viewed", ["step": step.rawValue])
     }
 
     /// Serves R-01 (activation).
-    ///
-    /// No call site yet: the FR-13 onboarding flow is not built.
     static func onboardingCompleted(addedCar: Bool, skipped: Bool) {
         capture("onboarding_completed", ["added_car": addedCar, "skipped": skipped])
     }
@@ -240,9 +270,26 @@ struct AnalyticsService {
         capture("car_photo_added")
     }
 
-    /// Serves records per active car.
-    static func maintenanceRecordAdded() {
-        capture("maintenance_record_added")
+    /// Serves records per active car, and activation (a record within 24h of
+    /// signup). `secondsSinceSignup` is omitted when unknown, never a sentinel.
+    static func maintenanceRecordAdded(secondsSinceSignup: Int? = nil) {
+        var properties: [String: Any] = [:]
+        if let secondsSinceSignup { properties["seconds_since_signup"] = secondsSinceSignup }
+        capture("maintenance_record_added", properties)
+    }
+
+    /// Activation signal: a document's expiry date went from blank to set (the
+    /// thing the expiry reminders run on). Fired once per field, on first set.
+    static func expiryDateSet(kind: ExpiryKind, secondsSinceSignup: Int? = nil) {
+        var properties: [String: Any] = ["kind": kind.rawValue]
+        if let secondsSinceSignup { properties["seconds_since_signup"] = secondsSinceSignup }
+        capture("expiry_date_set", properties)
+    }
+
+    /// Serves reminder adoption; `source` separates what the user made from what
+    /// the app suggested or scheduled.
+    static func reminderCreated(source: ReminderSource) {
+        capture("reminder_created", ["source": source.rawValue])
     }
 
     /// Serves public car rate.
@@ -257,11 +304,48 @@ struct AnalyticsService {
         capture("user_followed")
     }
 
+    /// Serves engagement with the social layer. Fired only when a like lands
+    /// (not on unlike, not on a rolled-back attempt).
+    static func carLiked() {
+        capture("car_liked")
+    }
+
+    /// Serves engagement with the social layer. Never carries the comment text.
+    static func commentPosted() {
+        capture("comment_posted")
+    }
+
+    // MARK: - Sharing and growth events
+
+    /// The share loop's numerator: the iOS share sheet reported a completed
+    /// share (not merely opened). `hasPublicPage` separates links that point at
+    /// the car's own page from the generic site link.
+    static func shareCardShared(format: ShareFormat, hasPublicPage: Bool) {
+        capture("share_card_shared", ["format": format.rawValue, "has_public_page": hasPublicPage])
+    }
+
+    /// The app was opened from a link rather than the home screen icon.
+    static func deepLinkOpened(source: DeepLinkSource) {
+        capture("deep_link_opened", ["source": source.rawValue])
+    }
+
+    /// Once per launch: whether the user has a Marque widget on a Home Screen.
+    /// Serves the widget-adoption bet in the retention plan.
+    static func widgetStatusChecked(hasWidget: Bool) {
+        capture("widget_status_checked", ["has_widget": hasWidget])
+    }
+
     // MARK: - Notification events
 
     /// Serves notification opt-in rate.
     static func notificationPermissionResult(granted: Bool) {
         capture("notification_permission_result", ["granted": granted])
+    }
+
+    /// Serves notification usefulness (opens per kind). PostHog's own
+    /// push-open capture is disabled in `configure()`, so this is the only one.
+    static func notificationOpened(kind: NotificationKind) {
+        capture("notification_opened", ["kind": kind.rawValue])
     }
 
     // MARK: - Assistant events
@@ -280,8 +364,11 @@ struct AnalyticsService {
     // MARK: - Document scanning events
 
     /// Serves scanning engagement. FR-14.5: emit only on a successful extraction.
-    static func documentScanCompleted(docType: DocumentType) {
-        capture("document_scan_completed", ["doc_type": docType.rawValue])
+    /// `secondsSinceSignup` is omitted when unknown, never a sentinel.
+    static func documentScanCompleted(docType: DocumentType, secondsSinceSignup: Int? = nil) {
+        var properties: [String: Any] = ["doc_type": docType.rawValue]
+        if let secondsSinceSignup { properties["seconds_since_signup"] = secondsSinceSignup }
+        capture("document_scan_completed", properties)
     }
 
     /// Pro demand signal; the other half of the R-13 cap calibration.

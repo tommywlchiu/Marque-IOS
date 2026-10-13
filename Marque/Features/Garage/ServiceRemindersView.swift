@@ -504,6 +504,7 @@ private struct SuggestedRemindersSheet: View {
         var updated = car
         for suggestion in suggestions where selected.contains(suggestion.id) {
             updated.serviceReminders.append(suggestion.asReminder())
+            AnalyticsService.reminderCreated(source: .suggested)
         }
         carStore.updateCar(updated)
         dismiss()

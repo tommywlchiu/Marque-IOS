@@ -117,6 +117,7 @@ final class LikeStore: ObservableObject {
                 try await ref.delete()
             }
             pending[carId] = nil
+            if nowLiked { AnalyticsService.carLiked() }
             return true
         } catch {
             pending[carId] = nil

@@ -222,7 +222,7 @@ struct DocumentScanService {
         // FR-14.5 / FR-11.4: only on a successful extraction. Everything that
         // counts as a failure (encode error, transport error, malformed payload,
         // model read nothing) has already thrown by this point.
-        AnalyticsService.documentScanCompleted(docType: DocumentKind.driverLicense.analyticsType)
+        AnalyticsService.documentScanCompleted(docType: DocumentKind.driverLicense.analyticsType, secondsSinceSignup: CarStore.secondsSinceSignup())
 
         return DriverLicenseResult(
             number: number,
@@ -247,7 +247,7 @@ struct DocumentScanService {
             throw ScanError.modelCouldntRead(modelError, .insuranceCard)
         }
 
-        AnalyticsService.documentScanCompleted(docType: DocumentKind.insuranceCard.analyticsType)
+        AnalyticsService.documentScanCompleted(docType: DocumentKind.insuranceCard.analyticsType, secondsSinceSignup: CarStore.secondsSinceSignup())
 
         return InsuranceCardResult(
             provider: provider,
@@ -275,7 +275,7 @@ struct DocumentScanService {
             throw ScanError.modelCouldntRead(modelError, .maintenanceReceipt)
         }
 
-        AnalyticsService.documentScanCompleted(docType: DocumentKind.maintenanceReceipt.analyticsType)
+        AnalyticsService.documentScanCompleted(docType: DocumentKind.maintenanceReceipt.analyticsType, secondsSinceSignup: CarStore.secondsSinceSignup())
 
         return MaintenanceReceiptResult(
             serviceType: serviceType,
