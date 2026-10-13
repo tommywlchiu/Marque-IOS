@@ -21,6 +21,9 @@
       "**/node_modules/**"
     ],
     "cleanUrls": true,
+    "rewrites": [
+      { "source": "/car/**", "function": "carPage" }
+    ],
     "trailingSlash": false,
     "headers": [
       {

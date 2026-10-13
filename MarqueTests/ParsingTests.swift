@@ -38,3 +38,11 @@ final class NumberParsingTests: XCTestCase {
         XCTAssertNil(NumberParsing.cost(from: ""))
     }
 }
+
+final class AppLinksTests: XCTestCase {
+    func testCarPageURLIsSiteRootCarSlashID() {
+        let id = "ABCDEF12-3456-7890-ABCD-EF1234567890"
+        XCTAssertEqual(AppLinks.carPage(id: id).absoluteString, "https://marque-173c3.web.app/car/\(id)")
+    }
+}
+

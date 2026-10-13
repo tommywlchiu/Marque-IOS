@@ -529,7 +529,7 @@ private struct GarageHomePresenters: ViewModifier {
                 if let car, let projection = OwnCarPublicProjection.shareCard(
                     for: car, exploreStore: exploreStore, authService: authService
                 ) {
-                    ShareCardSheet(car: projection, localCoverPhotoFileName: car.primaryPhotoFileName, isOwnCar: true)
+                    ShareCardSheet(car: projection, localCoverPhotoFileName: car.primaryPhotoFileName, isOwnCar: true, hasPublicPage: car.isPublic)
                 }
             }
             // `item:`, not `isPresented:` + a separate draft: with two

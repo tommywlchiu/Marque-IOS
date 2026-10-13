@@ -20,6 +20,10 @@ struct ShareCardSheet: View {
     /// Share text reads "Check out my ..." for the owner, "Check out this
     /// ..." for a viewer.
     let isOwnCar: Bool
+    /// True when this car has a public web page (`AppLinks.carPage`): it is
+    /// public, so the page exists. A private car being shared as a card gets
+    /// the generic site link instead of a link that would 404.
+    let hasPublicPage: Bool
 
     @Environment(\.dismiss) private var dismiss
 
@@ -155,9 +159,10 @@ struct ShareCardSheet: View {
             return
         }
 
+        let link = (hasPublicPage ? AppLinks.carPage(id: car.carId) : AppLinks.website).absoluteString
         let text = isOwnCar
-            ? "Check out my \(car.displayName) on Marque \(AppLinks.website.absoluteString)"
-            : "Check out this \(car.displayName) on Marque \(AppLinks.website.absoluteString)"
+            ? "Check out my \(car.displayName) on Marque \(link)"
+            : "Check out this \(car.displayName) on Marque \(link)"
         pendingShare = PendingShare(url: fileURL, text: text)
     }
 

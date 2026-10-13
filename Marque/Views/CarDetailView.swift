@@ -129,7 +129,7 @@ struct CarDetailView: View {
             }
         }
         .sheet(isPresented: $showingShareCard) {
-            ShareCardSheet(car: pc, localCoverPhotoFileName: nil, isOwnCar: isOwnCar)
+            ShareCardSheet(car: pc, localCoverPhotoFileName: nil, isOwnCar: isOwnCar, hasPublicPage: true)
         }
         .sheet(isPresented: $showingOwnerProfile) {
             NavigationStack {

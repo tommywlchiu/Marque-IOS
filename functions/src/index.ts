@@ -11,6 +11,7 @@ import { defineSecret } from "firebase-functions/params";
 // while the modular exports are always present. Never use the namespace forms.
 import { FieldValue, Timestamp, GeoPoint, DocumentReference } from "firebase-admin/firestore";
 import { containsBlockedTerm } from "./commentFilter";
+import { parseCarId, carPageData, renderCarPage, renderNotFound } from "./carPage";
 import { publicValueLabel, snapshotOf, valuationStillApplies, CarSnapshot } from "./valueRange";
 import {
   Environment,
@@ -4558,5 +4559,43 @@ export const recomputeWeeklyLikes = onSchedule(
       attempted,
       failed,
     });
+  }
+);
+
+// =============================================================================
+// carPage — public web page for one shared car (GET /car/<carId>), the target
+// of the app's share link. Hosting rewrites /car/** here (firebase.json).
+//
+// Reads publicCars/{carId} with the Admin SDK, so it only ever sees cars the
+// owner made public, and renders a deliberately minimal subset (see carPage.ts).
+// invoker "public": browsers and link-preview crawlers call it with no
+// credentials (same requirement as appStoreNotifications). The 404 page is the
+// same for "no such car" and "car is private", so it can't be used to probe IDs.
+// s-maxage lets the Hosting CDN absorb repeat hits; maxInstances bounds cost.
+// =============================================================================
+export const carPage = functions.https.onRequest(
+  { invoker: "public", maxInstances: 5 },
+  async (req, res) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      res.status(405).set("Allow", "GET, HEAD").send("Method Not Allowed");
+      return;
+    }
+    const carId = parseCarId(req.path);
+    if (!carId) {
+      res.status(404).set("Cache-Control", "public, max-age=60, s-maxage=60").type("html").send(renderNotFound());
+      return;
+    }
+    try {
+      const snap = await db.collection("publicCars").doc(carId).get();
+      if (!snap.exists) {
+        res.status(404).set("Cache-Control", "public, max-age=60, s-maxage=60").type("html").send(renderNotFound());
+        return;
+      }
+      const html = renderCarPage(carPageData(carId, snap.data() ?? {}));
+      res.status(200).set("Cache-Control", "public, max-age=60, s-maxage=300").type("html").send(html);
+    } catch (err) {
+      functions.logger.error("carPage failed", { carId, err: String(err) });
+      res.status(500).set("Cache-Control", "no-store").type("text/plain").send("Something went wrong. Please try again.");
+    }
   }
 );
