@@ -163,7 +163,7 @@ struct GarageHomeView: View {
                     Text(car.displayName)
                         .font(.title.weight(.bold))
                         .foregroundColor(GarageTheme.primaryText)
-                        .lineLimit(2)
+                        .lineLimit(3)
                         .minimumScaleFactor(0.7)
                         .multilineTextAlignment(.leading)
                     Image(systemName: "chevron.down")
@@ -209,6 +209,9 @@ struct GarageHomeView: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.title2.weight(.regular))
+                // The icon sits in a fixed 48pt target; at AX sizes it grew
+                // past it and the two header icons overlapped.
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .foregroundColor(GarageTheme.primaryText)
                 .frame(width: 48, height: 48)
                 .contentShape(Rectangle())

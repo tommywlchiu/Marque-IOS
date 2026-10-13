@@ -51,6 +51,9 @@ struct LoginView: View {
         // Scoped to this subtree (not `.preferredColorScheme`, which would
         // change the whole window) so the rest of the app is unaffected.
         .environment(\.colorScheme, .dark)
+        // Fixed-chrome form: past this size the field icons collide with their
+        // text. Everything up to AX2 still scales.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .sheet(isPresented: $showingSignUp) {
             // The collision card's "Sign in with password" hands back the
             // email already typed, so it doesn't have to be entered again.

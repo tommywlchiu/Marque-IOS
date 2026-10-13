@@ -25,6 +25,9 @@ struct VerifyEmailView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .environment(\.colorScheme, .dark)
+        // Fixed-chrome form: past this size the field icons collide with their
+        // text. Everything up to AX2 still scales.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 
     private var content: some View {

@@ -36,6 +36,7 @@ struct OnboardingView: View {
             content
         }
         .environment(\.colorScheme, .dark)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility3)
     }
 
     private var content: some View {
@@ -51,7 +52,6 @@ struct OnboardingView: View {
 
             bottomControls
         }
-        .ignoresSafeArea(edges: .top)
         .onAppear {
             AnalyticsService.onboardingStepViewed(step: .valueFraming)
         }
@@ -115,33 +115,42 @@ private struct OnboardingPageView: View {
     let page: OnboardingPage
 
     var body: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        // Scrolls (and fills the page when it fits) so large text wraps in
+        // full instead of truncating to "Your Cars,...".
+        ScrollView {
+            VStack(spacing: 32) {
+                Spacer(minLength: 0)
 
-            ZStack {
-                Circle()
-                    .fill(page.accentColor.opacity(0.12))
-                    .frame(width: 180, height: 180)
-                Image(systemName: page.icon)
-                    .font(.system(size: 80))
-                    .foregroundStyle(page.accentColor)
+                ZStack {
+                    Circle()
+                        .fill(page.accentColor.opacity(0.12))
+                        .frame(width: 180, height: 180)
+                    Image(systemName: page.icon)
+                        .font(.system(size: 80))
+                        .foregroundStyle(page.accentColor)
+                }
+
+                VStack(spacing: 14) {
+                    Text(page.title)
+                        .font(.largeTitle).fontWeight(.bold)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(page.subtitle)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .padding(.horizontal, 16)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+                Spacer(minLength: 0)
             }
-
-            VStack(spacing: 14) {
-                Text(page.title)
-                    .font(.largeTitle).fontWeight(.bold)
-                    .multilineTextAlignment(.center)
-                Text(page.subtitle)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 16)
-            }
-
-            Spacer()
-            Spacer()
+            .padding(.horizontal, 32)
+            .padding(.vertical, 24)
+            .containerRelativeFrame(.vertical, alignment: .center)
         }
-        .padding(.horizontal, 32)
+        .scrollBounceBehavior(.basedOnSize)
     }
 }

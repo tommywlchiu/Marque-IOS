@@ -51,6 +51,9 @@ struct ForgotPasswordView: View {
         }
         // Same scoped dark look as Login / Sign Up, which present this sheet.
         .environment(\.colorScheme, .dark)
+        // Fixed-chrome form: past this size the field icons collide with their
+        // text. Everything up to AX2 still scales.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .onChange(of: authService.errorMessage) { _, newValue in
             if newValue != nil { AuthHaptics.error() }
         }
