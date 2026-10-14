@@ -13,6 +13,9 @@ struct ProfileSetupView: View {
     @State private var usernameCheckTask: Task<Void, Never>?
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+    @FocusState private var focusedField: Field?
+
+    private enum Field { case name, username, bio }
 
     private var canContinue: Bool {
         availability == .available && !isSubmitting
@@ -32,6 +35,7 @@ struct ProfileSetupView: View {
             .padding(.top, 48)
             .padding(.bottom, 40)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(Color(.systemGroupedBackground).ignoresSafeArea())
         .onAppear {
             let name = authService.currentUser?.displayName ?? ""
@@ -104,6 +108,7 @@ struct ProfileSetupView: View {
                 }
             }
         }
+        .accessibilityLabel(avatarImage == nil ? "Choose profile photo" : "Change profile photo")
     }
 
     // MARK: - Name
@@ -121,7 +126,12 @@ struct ProfileSetupView: View {
                     .clipShape(Capsule())
             }
             TextField("Your name", text: $displayName)
+                .textContentType(.name)
+                .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
+                .focused($focusedField, equals: .name)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .username }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .background(Color(.secondarySystemGroupedBackground))
@@ -145,6 +155,10 @@ struct ProfileSetupView: View {
                 TextField("yourname", text: $username)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .textContentType(.username)
+                    .focused($focusedField, equals: .username)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .bio }
                     .font(.body)
 
                 availabilityIndicator
@@ -186,7 +200,7 @@ struct ProfileSetupView: View {
     private var borderColor: Color {
         switch availability {
         case .available: return .green.opacity(0.6)
-        case .taken, .tooShort, .tooLong, .invalidChars: return .red.opacity(0.5)
+        case .taken, .tooShort, .tooLong, .invalidChars, .notAllowed: return .red.opacity(0.5)
         default: return Color(.separator)
         }
     }
@@ -197,6 +211,7 @@ struct ProfileSetupView: View {
         case .tooShort: return "Must be at least 3 characters."
         case .tooLong: return "Must be 30 characters or fewer."
         case .invalidChars: return "Only letters, numbers and underscores (_) allowed."
+        case .notAllowed: return "That username isn't allowed. Try another."
         case .checking: return nil
         case .available: return "@\(username.lowercased()) is available."
         case .taken: return "@\(username.lowercased()) is already taken."
@@ -206,7 +221,7 @@ struct ProfileSetupView: View {
     private var hintColor: Color {
         switch availability {
         case .available: return .green
-        case .taken, .tooShort, .tooLong, .invalidChars: return .red
+        case .taken, .tooShort, .tooLong, .invalidChars, .notAllowed: return .red
         default: return .secondary
         }
     }
@@ -235,6 +250,7 @@ struct ProfileSetupView: View {
                         .padding(.leading, 4)
                 }
                 TextEditor(text: $bio)
+                    .focused($focusedField, equals: .bio)
                     .font(.body)
                     .frame(minHeight: 80)
                     .onChange(of: bio) { _, new in
@@ -293,16 +309,23 @@ struct ProfileSetupView: View {
         if trimmed.isEmpty { availability = .empty; return }
         if trimmed.count < 3 { availability = .tooShort; return }
         if trimmed.count > 30 { availability = .tooLong; return }
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
-        if !trimmed.unicodeScalars.allSatisfy({ allowed.contains($0) }) {
+        // ASCII only: `CharacterSet.alphanumerics` also accepts accented and
+        // non-Latin letters, which the hint below says aren't allowed.
+        if !trimmed.unicodeScalars.allSatisfy({ $0.isASCII && ($0.properties.isAlphabetic || ("0"..."9").contains(Character($0)) || $0 == "_") }) {
             availability = .invalidChars; return
         }
+        // Same filter completeProfileSetup applies at submit; catching it here
+        // beats a green "available" tick followed by an error.
+        if !CommentFilter.isAllowed(trimmed) { availability = .notAllowed; return }
 
         availability = .checking
         usernameCheckTask = Task {
             try? await Task.sleep(nanoseconds: 500_000_000)
             guard !Task.isCancelled else { return }
             let isAvailable = await authService.checkUsernameAvailability(trimmed)
+            // The field may have changed (or been cleared) while this was in
+            // flight; a stale answer must not overwrite the newer state.
+            guard !Task.isCancelled else { return }
             availability = isAvailable ? .available : .taken
         }
     }
@@ -326,5 +349,5 @@ struct ProfileSetupView: View {
 }
 
 enum UsernameAvailability: Equatable {
-    case empty, tooShort, tooLong, invalidChars, checking, available, taken
+    case empty, tooShort, tooLong, invalidChars, notAllowed, checking, available, taken
 }

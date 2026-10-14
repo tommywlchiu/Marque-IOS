@@ -399,7 +399,11 @@ struct ExploreView: View {
                             ? "No public \(modelFilter!.model) in this category right now."
                             : (following
                                 ? "Follow people to see their public cars here."
-                                : "No public cars in this category yet.")
+                                : "No public cars in this category yet."),
+                        // A dead end otherwise: the only way forward is to find
+                        // people, and that happens in the full feed.
+                        actionTitle: following && modelFilter == nil ? "Browse All Cars" : nil,
+                        action: following && modelFilter == nil ? { withAnimation { selectedCategory = .all } } : nil
                     )
                     .padding(.vertical, 20)
                 }

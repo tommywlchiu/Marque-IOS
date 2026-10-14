@@ -92,6 +92,7 @@ struct ServiceRemindersView: View {
 
     // Same 5-second confirmation with Undo as the car page's Maintenance Log.
     private func presentConfirmation(_ confirmation: LogConfirmation) {
+        Haptics.success()
         withAnimation { logConfirmation = confirmation }
         Task {
             try? await Task.sleep(for: .seconds(5))
