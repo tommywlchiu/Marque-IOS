@@ -51,6 +51,7 @@ final class MarqueAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
 @main
 struct MarqueApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var carStore = CarStore()
     @StateObject private var authService = AuthService()
@@ -190,6 +191,12 @@ struct MarqueApp: App {
                         // previous account's cars.
                         WidgetSnapshotService.sync(cars: [])
                     }
+                }
+                // The widget's status lines ("Expires in 9 days") are computed when
+                // written; recompute each time the app comes forward, so a day
+                // that rolled over while it was closed doesn't leave them stale.
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active, !carStore.cars.isEmpty { WidgetSnapshotService.sync(cars: carStore.cars) }
                 }
                 .onChange(of: carStore.cars) { _, cars in
                     WidgetSnapshotService.sync(cars: cars)

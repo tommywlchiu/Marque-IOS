@@ -121,3 +121,16 @@ final class CalendarDaysTests: XCTestCase {
         XCTAssertEqual(r.daysUntilDue(today: date(14, hour: 8)), -1)
     }
 }
+
+final class WidgetSelectionTests: XCTestCase {
+    func testSelectedCarRoundTripsAndClears() throws {
+        try XCTSkipIf(WidgetSharedStore.containerURL == nil, "no App Group container in this environment")
+        let before = WidgetSharedStore.readSelectedCarID()
+        defer { WidgetSharedStore.writeSelectedCarID(before) }
+        let id = UUID().uuidString
+        WidgetSharedStore.writeSelectedCarID(id)
+        XCTAssertEqual(WidgetSharedStore.readSelectedCarID(), id)
+        WidgetSharedStore.writeSelectedCarID(nil)
+        XCTAssertNil(WidgetSharedStore.readSelectedCarID())
+    }
+}

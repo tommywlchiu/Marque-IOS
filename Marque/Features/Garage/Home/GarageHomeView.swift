@@ -77,7 +77,13 @@ struct GarageHomeView: View {
             showingShareCard: $showingShareCard,
             editDraft: $editDraft
         ))
-        .onAppear(perform: tryDeepLinkNavigation)
+        .onAppear {
+            tryDeepLinkNavigation()
+            WidgetSnapshotService.setSelectedCar(selectedCar?.id)
+        }
+        // The widget follows the car shown here. Keyed on the resolved car, not
+        // the stored string, so the first-car fallback (stored id gone) counts too.
+        .onChange(of: selectedCar?.id) { _, id in WidgetSnapshotService.setSelectedCar(id) }
         .onChange(of: appDelegate.pendingCarID) { _, _ in tryDeepLinkNavigation() }
         .onChange(of: carStore.cars) { _, _ in tryDeepLinkNavigation() }
         .modifier(FollowPushRouter())

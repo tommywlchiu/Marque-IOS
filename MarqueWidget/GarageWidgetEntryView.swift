@@ -28,6 +28,10 @@ struct GarageWidgetEntryView: View {
             switch family {
             case .systemSmall:
                 SmallGarageWidgetView(car: car)
+            case .accessoryRectangular:
+                AccessoryRectangularView(car: car)
+            case .accessoryInline:
+                AccessoryInlineView(car: car)
             default:
                 MediumGarageWidgetView(car: car)
             }
@@ -37,11 +41,38 @@ struct GarageWidgetEntryView: View {
     }
 }
 
+/// The car's hero image, or a symbol until one has been produced for it.
+private struct WidgetHeroImage: View {
+    let car: WidgetCarSnapshot
+    var symbolPadding: CGFloat = 22
+
+    var body: some View {
+        if let fileName = car.heroImageFileName,
+           let url = WidgetSharedStore.heroImageURL(fileName: fileName),
+           let data = try? Data(contentsOf: url),
+           let uiImage = UIImage(data: data) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image(systemName: "car.side.fill")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(GarageTheme.tertiaryText)
+                .padding(symbolPadding)
+        }
+    }
+}
+
 private struct SmallGarageWidgetView: View {
     let car: WidgetCarSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
+            WidgetHeroImage(car: car, symbolPadding: 14)
+                .frame(maxWidth: .infinity)
+                .frame(height: 64)
+                .accessibilityHidden(true)
             Spacer(minLength: 0)
             HStack(spacing: 5) {
                 if car.needsAttention {
@@ -50,7 +81,8 @@ private struct SmallGarageWidgetView: View {
                 Text(car.displayName)
                     .font(.subheadline.weight(.bold))
                     .foregroundColor(GarageTheme.primaryText)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             Text(car.statusText)
                 .font(.caption2.weight(.medium))
@@ -58,7 +90,43 @@ private struct SmallGarageWidgetView: View {
                 .lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
+        .padding(.horizontal, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 14)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(car.displayName). \(car.statusText)")
+    }
+}
+
+/// Lock Screen widget: name and status in the system's monochrome style.
+private struct AccessoryRectangularView: View {
+    let car: WidgetCarSnapshot
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(car.displayName)
+                .font(.headline)
+                .lineLimit(1)
+            Text(car.statusText)
+                .font(.caption)
+                .lineLimit(2)
+            if let mileage = car.mileageText {
+                Text(mileage)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(car.displayName). \(car.statusText)")
+    }
+}
+
+private struct AccessoryInlineView: View {
+    let car: WidgetCarSnapshot
+
+    var body: some View {
+        Label(car.needsAttention ? car.statusText : car.displayName, systemImage: "car.side.fill")
     }
 }
 
@@ -96,28 +164,13 @@ private struct MediumGarageWidgetView: View {
             }
             .padding(16)
             Spacer(minLength: 0)
-            heroImage
+            WidgetHeroImage(car: car)
                 .frame(width: 112)
                 .padding(.trailing, 6)
+                .accessibilityHidden(true)
         }
-    }
-
-    @ViewBuilder
-    private var heroImage: some View {
-        if let fileName = car.heroImageFileName,
-           let url = WidgetSharedStore.heroImageURL(fileName: fileName),
-           let data = try? Data(contentsOf: url),
-           let uiImage = UIImage(data: data) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFit()
-        } else {
-            Image(systemName: "car.side.fill")
-                .resizable()
-                .scaledToFit()
-                .foregroundStyle(GarageTheme.tertiaryText)
-                .padding(22)
-        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(car.displayName). \(car.statusText).\(car.mileageText.map { " \($0)." } ?? "")")
     }
 }
 
