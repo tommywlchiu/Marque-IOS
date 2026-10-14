@@ -290,6 +290,15 @@ struct ProBadge: View {
     }
 }
 
+// MARK: - Haptics
+
+/// One place for the app's haptics, so a success or a toggle feels the same
+/// everywhere. Fire-and-forget; never on a path that can fail the action.
+enum Haptics {
+    static func tap() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+    static func success() { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+}
+
 // MARK: - Follow Button
 
 struct FollowButton: View {
@@ -299,11 +308,11 @@ struct FollowButton: View {
 
     var body: some View {
         if isFollowing {
-            Button(action: action) { label }
+            Button(action: { Haptics.tap(); action() }) { label }
                 .buttonStyle(.bordered)
                 .tint(.secondary)
         } else {
-            Button(action: action) { label }
+            Button(action: { Haptics.tap(); action() }) { label }
                 .buttonStyle(.borderedProminent)
                 .tint(.accentColor)
         }

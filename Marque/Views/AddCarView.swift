@@ -46,10 +46,23 @@ struct AddCarView: View {
     @State private var fuelType = ""
     @State private var transmission = ""
 
+    /// A real model year: 4 digits, 1900 up to next year's models. Anything else
+    /// ("abc", "1", "20245") used to save as-is and break render matching,
+    /// the car's name and its expiry/price lookups.
+    private var yearIsValid: Bool {
+        let trimmed = year.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count == 4, let value = Int(trimmed) else { return false }
+        return (1900...(Calendar.current.component(.year, from: Date()) + 2)).contains(value)
+    }
+
+    private var yearLooksWrong: Bool {
+        !year.trimmingCharacters(in: .whitespaces).isEmpty && !yearIsValid
+    }
+
     var isFormValid: Bool {
         !make.trimmingCharacters(in: .whitespaces).isEmpty &&
         !model.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !year.trimmingCharacters(in: .whitespaces).isEmpty &&
+        yearIsValid &&
         !bodyStyle.isEmpty
     }
 
@@ -212,6 +225,13 @@ struct AddCarView: View {
                 TextField("Year", text: $year)
                     .multilineTextAlignment(.trailing)
                     .keyboardType(.numberPad)
+                    .foregroundStyle(yearLooksWrong ? Color.red : Color.primary)
+                    .accessibilityHint(yearLooksWrong ? "Enter a four-digit year" : "")
+            }
+            if yearLooksWrong {
+                Text("Enter a 4-digit model year, like 2019.")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
             }
 
             LabeledContent("Trim") {
@@ -283,6 +303,14 @@ struct AddCarView: View {
                     TextField("2024", text: $year)
                         .multilineTextAlignment(.trailing)
                         .keyboardType(.numberPad)
+                        .foregroundStyle(yearLooksWrong ? Color.red : Color.primary)
+                        .accessibilityHint(yearLooksWrong ? "Enter a four-digit year" : "")
+                }
+
+                if yearLooksWrong {
+                    Text("Enter a 4-digit model year, like 2019.")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
                 }
 
                 Picker("Body Style", selection: $bodyStyle) {
