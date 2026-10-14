@@ -231,13 +231,6 @@ struct ExploreView: View {
             .sheet(isPresented: $showingFiltersSheet) {
                 ExploreFiltersSheet(cars: categoryFilteredCars, filters: $filters)
             }
-            // Not offered on Explore: the Garage tab's button folds away here
-            // as the user switches tabs (see AskMarqueDock).
-            .overlay(alignment: .bottomTrailing) {
-                AskMarqueDock(mode: .tuckAway)
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 16)
-            }
             .pushPrePrompt(isPresented: $showingPushPrePrompt)
             .onAppear {
                 takeLikeSnapshot()

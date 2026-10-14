@@ -355,7 +355,7 @@ private struct ProfileResolvingView: View {
 
 /// The main tabs. Exposed so a screen can jump to another tab through
 /// `\.selectMainTab` (the Garage's document alerts open Wallet).
-enum MainTab: Hashable { case garage, explore, photos, wallet }
+enum MainTab: Hashable { case garage, explore, assistant, photos, wallet }
 
 private struct SelectMainTabKey: EnvironmentKey {
     static let defaultValue: (MainTab) -> Void = { _ in }
@@ -372,6 +372,7 @@ private struct MainTabView: View {
     @EnvironmentObject var carStore: CarStore
     @EnvironmentObject var appDelegate: AppDelegate
     @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var featureFlagsStore: FeatureFlagsStore
 
     @State private var selectedTab: MainTab = .garage
     @State private var showingPaywall = false
@@ -391,6 +392,12 @@ private struct MainTabView: View {
                 ExploreView()
                     .tabItem { Label("Explore", systemImage: "globe") }
                     .tag(MainTab.explore)
+
+                if featureFlagsStore.assistantEnabled {
+                    MarqueChatView(isTab: true)
+                        .tabItem { Label("Assistant", systemImage: "sparkles") }
+                        .tag(MainTab.assistant)
+                }
 
                 PhotosTabView()
                     .modifier(FollowPushRouter())

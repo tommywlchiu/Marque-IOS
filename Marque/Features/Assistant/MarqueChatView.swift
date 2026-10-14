@@ -11,6 +11,8 @@ struct MarqueChatView: View {
     // If set, injected on appear via chatStore.newConversation(scopedCarId:).
     // Used when opened from Car Detail (FR-10.3).
     let scopedCarId: String?
+    /// True when shown as a root tab: no close button, since there is nothing to dismiss.
+    let isTab: Bool
 
     @State private var draft: String = ""
     @State private var showingHistory = false
@@ -21,8 +23,9 @@ struct MarqueChatView: View {
 
     private static let disclaimerKey = "marque_assistant_disclaimer_seen"
 
-    init(scopedCarId: String? = nil) {
+    init(scopedCarId: String? = nil, isTab: Bool = false) {
         self.scopedCarId = scopedCarId
+        self.isTab = isTab
     }
 
     var body: some View {
@@ -35,11 +38,13 @@ struct MarqueChatView: View {
             .navigationTitle("Marque")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
+                if !isTab {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
