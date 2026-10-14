@@ -875,5 +875,170 @@
     "sketchfab": "92ef1f865436403ab12ab4a6225127ce",
     "paintmat": "subSubaru_WRXSTITNR0_2018PaintTNR_Material1",
     "flip": true
+  },
+  "chevrolet-corvette-c8": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "Corvette Stingray",
+        "Corvette Z06",
+        "Stingray",
+        "Z06"
+      ]
+    },
+    "sketchfab": "f59b9f961c9b48c9b0f8cb59c6a345aa",
+    "paintmat": "Chevrolet_CorvetteStingrayTNR0_2020PaintTNR_Material|Chevrolet_CorvetteStingrayTNR0_2020PaintTNR_Material.001",
+    "flip": true
+  },
+  "mazda-mx5-nd": {
+    "covers": {
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "years": [
+        2016,
+        2026
+      ],
+      "aliases": [
+        "MX-5",
+        "Miata",
+        "MX5",
+        "MX-5 Miata RF"
+      ]
+    },
+    "sketchfab": "35bd007e1bc549d580ccc208a6038ec1",
+    "paintmat": "carpaint",
+    "flip": true
+  },
+  "mazda-3-bp": {
+    "covers": {
+      "make": "Mazda",
+      "model": "Mazda3",
+      "years": [
+        2019,
+        2026
+      ],
+      "aliases": [
+        "3",
+        "Mazda 3",
+        "Mazda3 Sedan"
+      ]
+    },
+    "sketchfab": "7e2ef9be2dd74cf4b980d068d272dfff",
+    "paintmat": "M_2020_Mazda_3_Sedan_Machine_Gray_Metallic",
+    "flip": true
+  },
+  "vw-golf-mk7": {
+    "covers": {
+      "make": "Volkswagen",
+      "model": "Golf",
+      "years": [
+        2015,
+        2021
+      ],
+      "aliases": [
+        "Golf GTI",
+        "GTI",
+        "Golf R"
+      ]
+    },
+    "sketchfab": "39c3aa1a2a1f43b3b225445a42c5f74c",
+    "paintmat": "CSR2_CarPaint",
+    "flip": true
+  },
+  "vw-golf-mk8": {
+    "covers": {
+      "make": "Volkswagen",
+      "model": "Golf",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": [
+        "Golf GTI",
+        "GTI",
+        "Golf R"
+      ]
+    },
+    "sketchfab": "de98fb98417547f4904fa24d6be3b269",
+    "paintmat": "EXT_BODY",
+    "flip": true
+  },
+  "mercedes-c-w203": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "C-Class",
+      "years": [
+        2001,
+        2007
+      ],
+      "aliases": [
+        "C230",
+        "C240",
+        "C320",
+        "C 230"
+      ]
+    },
+    "sketchfab": "6cf3d6203793450ba9e6a572fc164c77",
+    "paintmat": "carpaint",
+    "flip": true
+  },
+  "mercedes-g-w463": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "G-Class",
+      "years": [
+        2019,
+        2026
+      ],
+      "aliases": [
+        "G63",
+        "G550",
+        "G 63 AMG",
+        "G-Wagon"
+      ]
+    },
+    "sketchfab": "7d79d44005ac42598aa3fe1feef9fa0f",
+    "paintmat": "MMercedesAMG_G63SUVRewardRecycled_2020Paint_Material1",
+    "flip": true,
+    "invert": true,
+    "tintmat": "MMercedesAMG_G63SUVRewardRecycled_2020Window_Material1"
+  },
+  "toyota-highlander-xu70": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Highlander",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "Highlander Hybrid"
+      ]
+    },
+    "sketchfab": "ff144d062f244a3ebfae71bc2a41564b",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_2"
+  },
+  "toyota-prius-xw50": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Prius",
+      "years": [
+        2016,
+        2022
+      ],
+      "aliases": [
+        "Prius Prime"
+      ]
+    },
+    "sketchfab": "42470a7ce258421a89c2361225bb89eb",
+    "paintmat": "body",
+    "flip": true
   }
 }

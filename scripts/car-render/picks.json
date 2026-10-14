@@ -647,5 +647,423 @@
       "WRX Premium"
     ],
     "verify": "new coverage batch 1 - check render"
+  },
+  "chevrolet-corvette-c8": {
+    "uid": "f59b9f961c9b48c9b0f8cb59c6a345aa",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "Corvette Stingray",
+      "Corvette Z06",
+      "Stingray",
+      "Z06"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "mazda-mx5-nd": {
+    "uid": "35bd007e1bc549d580ccc208a6038ec1",
+    "make": "Mazda",
+    "model": "MX-5 Miata",
+    "years": [
+      2016,
+      2026
+    ],
+    "aliases": [
+      "MX-5",
+      "Miata",
+      "MX5",
+      "MX-5 Miata RF"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "mazda-3-bp": {
+    "uid": "7e2ef9be2dd74cf4b980d068d272dfff",
+    "make": "Mazda",
+    "model": "Mazda3",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [
+      "3",
+      "Mazda 3",
+      "Mazda3 Sedan"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "mazda-cx5-kf": {
+    "uid": "86b8133dce494efb945f8e138b797a4b",
+    "make": "Mazda",
+    "model": "CX-5",
+    "years": [
+      2017,
+      2026
+    ],
+    "aliases": [
+      "CX5"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "mazda-cx5-kf-b": {
+    "uid": "ed4f058d05924649b2f92700b17cf7a0",
+    "make": "Mazda",
+    "model": "CX-5",
+    "years": [
+      2017,
+      2026
+    ],
+    "aliases": [
+      "CX5"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "vw-golf-mk7": {
+    "uid": "39c3aa1a2a1f43b3b225445a42c5f74c",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2015,
+      2021
+    ],
+    "aliases": [
+      "Golf GTI",
+      "GTI",
+      "Golf R"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "vw-golf-mk8": {
+    "uid": "de98fb98417547f4904fa24d6be3b269",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [
+      "Golf GTI",
+      "GTI",
+      "Golf R"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "bmw-3-g20": {
+    "uid": "87c972d41e9e4717b2d2db206bf315ae",
+    "make": "BMW",
+    "model": "3 Series",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [
+      "330i",
+      "M340i",
+      "330e",
+      "3-Series"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "bmw-x5-g05": {
+    "uid": "349d0204c0044528aff481ec19d33be2",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [
+      "X5 xDrive40i",
+      "X5 M",
+      "X5 xDrive45e"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "mercedes-c-w203": {
+    "uid": "6cf3d6203793450ba9e6a572fc164c77",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2001,
+      2007
+    ],
+    "aliases": [
+      "C230",
+      "C240",
+      "C320",
+      "C 230"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "mercedes-g-w463": {
+    "uid": "7d79d44005ac42598aa3fe1feef9fa0f",
+    "make": "Mercedes-Benz",
+    "model": "G-Class",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [
+      "G63",
+      "G550",
+      "G 63 AMG",
+      "G-Wagon"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "audi-a4-b9": {
+    "uid": "0840f2fb7fbf4d5682a58608d6aeefd0",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [
+      "A4 Sedan",
+      "A4 Quattro",
+      "S4"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "toyota-4runner-6g": {
+    "uid": "edb0feb6fa694be58358d5dad21c17b3",
+    "make": "Toyota",
+    "model": "4Runner",
+    "years": [
+      2025,
+      2026
+    ],
+    "aliases": [
+      "4 Runner"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "toyota-highlander-xu70": {
+    "uid": "ff144d062f244a3ebfae71bc2a41564b",
+    "make": "Toyota",
+    "model": "Highlander",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "Highlander Hybrid"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "toyota-prius-xw50": {
+    "uid": "42470a7ce258421a89c2361225bb89eb",
+    "make": "Toyota",
+    "model": "Prius",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [
+      "Prius Prime"
+    ],
+    "verify": "batch 2 - check render"
+  },
+  "honda-pilot-4g": {
+    "uid": "5c3cceebabf84b89b5d526d4cc4c33dc",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "batch 2 - check render"
+  },
+  "honda-pilot-5g": {
+    "uid": "3449487c9e6842be959fdaacef473df1",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2023,
+      2026
+    ],
+    "aliases": [],
+    "verify": "batch 2 - check render"
+  },
+  "nissan-altima-l34": {
+    "uid": "47b0627190a44d04b39b75eb2b8175cd",
+    "make": "Nissan",
+    "model": "Altima",
+    "years": [
+      2019,
+      2025
+    ],
+    "aliases": [
+      "Altima SR",
+      "Altima SV"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "hyundai-elantra-cn7": {
+    "uid": "19ea8faf080140429e83fc6968fcfae1",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2021,
+      2025
+    ],
+    "aliases": [
+      "Elantra N Line",
+      "Elantra SEL"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "hyundai-sonata-dn8": {
+    "uid": "3fa9a81188344d53b7e2bb893082a3d7",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "Sonata SEL",
+      "Sonata N Line"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "tesla-model-s-refresh": {
+    "uid": "aec912ed367b4aebacc8676922f42beb",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "Model S Plaid"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "tesla-model-s": {
+    "uid": "10e0313028d444c5afb3f1f013c99573",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2012,
+      2020
+    ],
+    "aliases": [
+      "Model S P100D"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "jeep-gladiator-jt": {
+    "uid": "30747f42d90246719afe75d8832a8ab3",
+    "make": "Jeep",
+    "model": "Gladiator",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "Gladiator Rubicon",
+      "Gladiator Mojave"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "ford-bronco-6g": {
+    "uid": "09ebc68dcb634807a9dace7404ce5e66",
+    "make": "Ford",
+    "model": "Bronco",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "Bronco Badlands",
+      "Bronco Wildtrak"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "ford-bronco-sport": {
+    "uid": "8c8ecf70cd894ec0834689456c49cb70",
+    "make": "Ford",
+    "model": "Bronco Sport",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "Bronco Sport Badlands"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "toyota-tundra-3g": {
+    "uid": "162177af8ede410bb3829953d88dc4d2",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [
+      "Tundra SR5",
+      "Tundra TRD Pro"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "ford-escape-4g": {
+    "uid": "1addfac92b764e2eba9477b1ea7e0eb3",
+    "make": "Ford",
+    "model": "Escape",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "Escape Hybrid"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "chevrolet-malibu-9g": {
+    "uid": "fc07e847ec6c4dbaa02d53e1110a6dd7",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [
+      "Malibu LT",
+      "Malibu Premier"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "kia-k5-dl3": {
+    "uid": "ab125f4a0b40493abdf1155aea09b626",
+    "make": "Kia",
+    "model": "K5",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "K5 GT-Line"
+    ],
+    "verify": "batch 3 - check render"
+  },
+  "kia-optima-jf": {
+    "uid": "6fc788c08348419d92588f2f541c5b50",
+    "make": "Kia",
+    "model": "Optima",
+    "years": [
+      2016,
+      2020
+    ],
+    "aliases": [
+      "Optima SX"
+    ],
+    "verify": "batch 3 - check render"
   }
 }
