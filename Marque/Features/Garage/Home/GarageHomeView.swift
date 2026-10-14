@@ -17,7 +17,6 @@ struct GarageHomeView: View {
     @EnvironmentObject private var authService: AuthService
     @EnvironmentObject private var exploreStore: ExploreStore
     @EnvironmentObject private var subscriptionStore: SubscriptionStore
-    @EnvironmentObject private var featureFlagsStore: FeatureFlagsStore
     @EnvironmentObject private var appDelegate: AppDelegate
     @EnvironmentObject private var recallStore: RecallStore
     @Environment(\.selectMainTab) private var selectMainTab
@@ -29,7 +28,6 @@ struct GarageHomeView: View {
     @State private var showingSwitcher = false
     /// Set by the switcher's "Add a Car"; acted on once the switcher has closed.
     @State private var addCarAfterSwitcher = false
-    @State private var showingChat = false
     @State private var showingAddCar = false
     @State private var showingPaywall = false
     @State private var showingShareCard = false
@@ -71,7 +69,6 @@ struct GarageHomeView: View {
         // general app flows and follow the system appearance.
         .modifier(GarageHomePresenters(
             car: selectedCar,
-            showingChat: $showingChat,
             showingAddCar: $showingAddCar,
             showingPaywall: $showingPaywall,
             showingShareCard: $showingShareCard,
@@ -188,7 +185,6 @@ struct GarageHomeView: View {
             Spacer(minLength: 8)
 
             HStack(spacing: 0) {
-                headerIcons
                 headerIcon("square.and.arrow.up", label: "Share car") { showingShareCard = true }
             }
         }
@@ -204,16 +200,6 @@ struct GarageHomeView: View {
                 selectedCarIDString = id.uuidString
                 path = []
             }, onAddCar: { addCarAfterSwitcher = true })
-        }
-    }
-
-    /// Settings lives on the Wallet tab; shared with the (car-less) empty
-    /// Garage state, so this is only the Assistant. `header(for:)` adds
-    /// Share alongside it when there's an actual car.
-    @ViewBuilder
-    private var headerIcons: some View {
-        if featureFlagsStore.assistantEnabled {
-            headerIcon("text.bubble", label: "Ask Marque about this car") { showingChat = true }
         }
     }
 
@@ -412,8 +398,6 @@ struct GarageHomeView: View {
                     .font(.largeTitle.weight(.bold))
                     .foregroundColor(GarageTheme.primaryText)
                     .accessibilityAddTraits(.isHeader)
-                Spacer()
-                headerIcons
             }
             .padding(.leading, 24)
             .padding(.trailing, 12)
@@ -518,7 +502,6 @@ private struct PinnedHero: View {
 /// The Garage home's sheets, grouped for the type checker.
 private struct GarageHomePresenters: ViewModifier {
     let car: Car?
-    @Binding var showingChat: Bool
     @Binding var showingAddCar: Bool
     @Binding var showingPaywall: Bool
     @Binding var showingShareCard: Bool
@@ -530,10 +513,6 @@ private struct GarageHomePresenters: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: $showingChat) {
-                MarqueChatView(scopedCarId: car?.id.uuidString)
-                    .presentationDetents([.large])
-            }
             .sheet(isPresented: $showingAddCar) {
                 AddCarView()
             }
