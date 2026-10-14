@@ -666,7 +666,7 @@
     "paintmat": "carpaint.010",
     "flip": true
   },
-  "porsche-911-991": {
+  "porsche-911-991-v2": {
     "covers": {
       "make": "Porsche",
       "model": "911",
@@ -682,7 +682,7 @@
       ]
     },
     "sketchfab": "4cef7c1e22ab40fd937507eae9a62cd8",
-    "paintmat": "Body_t",
+    "paintmat": "waike_t|Left_door_t|Right_door_t",
     "hide": "Icosphere",
     "flip": true
   },
@@ -710,5 +710,170 @@
     "platemat": "material",
     "tintmat": "2021_Audi_A5_Sportback_S-Line_Windows",
     "blackOpticMats": "2021_Audi_A5_Sportback_S-Line_ChromeTrims|2021_Audi_A5_Sportback_S-Line_Grille1|2021_Audi_A5_Sportback_S-Line_Mirrors|2021_Audi_A5_Sportback_S-Line_WindowsTrims"
+  },
+  "mitsubishi-lancer-evo-9": {
+    "covers": {
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution",
+      "years": [
+        2003,
+        2007
+      ],
+      "aliases": [
+        "Lancer Evo",
+        "Evo",
+        "Evolution",
+        "Evo IX",
+        "Evo VIII",
+        "Lancer Evolution IX",
+        "Lancer Evolution VIII"
+      ]
+    },
+    "sketchfab": "e0646088011743639370003738d7013c",
+    "paintmat": "mM_CarPaint_Max_002",
+    "flip": true,
+    "invert": true
+  },
+  "ford-mustang-s550": {
+    "covers": {
+      "make": "Ford",
+      "model": "Mustang",
+      "years": [
+        2015,
+        2017
+      ],
+      "aliases": [
+        "Mustang GT",
+        "Mustang EcoBoost"
+      ]
+    },
+    "sketchfab": "0382a22e782c4a9e8c0dc0f0dc587103",
+    "paintmat": "Meshesuntitledlodabrakecaliperrearleftmmmisc31Mtl|Meshesuntitledlodahoodmmmisc31Mtl",
+    "flip": true,
+    "tintmat": "Meshesuntitledlodaglassrearmmwindows31Mtl"
+  },
+  "ford-mustang-s550-fl": {
+    "covers": {
+      "make": "Ford",
+      "model": "Mustang",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "Mustang GT",
+        "Mustang EcoBoost"
+      ]
+    },
+    "sketchfab": "971a079b329f4607bb68873977a2ea37",
+    "paintmat": "Ford_MustangGTFastbackTNR0_2018PaintTNR_Material"
+  },
+  "chevrolet-camaro-6g": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Camaro",
+      "years": [
+        2016,
+        2024
+      ],
+      "aliases": [
+        "Camaro SS",
+        "Camaro ZL1",
+        "Camaro 1LT"
+      ]
+    },
+    "sketchfab": "52a8e833445142eebd6e0cae8b72cfc6",
+    "paintmat": "Body",
+    "flip": true
+  },
+  "chevrolet-camaro-5g": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Camaro",
+      "years": [
+        2010,
+        2015
+      ],
+      "aliases": [
+        "Camaro SS",
+        "Camaro LT"
+      ]
+    },
+    "sketchfab": "b2845536739542e1a4493a192990f91b",
+    "paintmat": "body"
+  },
+  "dodge-charger-lx2": {
+    "covers": {
+      "make": "Dodge",
+      "model": "Charger",
+      "years": [
+        2015,
+        2023
+      ],
+      "aliases": [
+        "Charger SXT",
+        "Charger R/T",
+        "Charger Scat Pack",
+        "Charger Hellcat"
+      ]
+    },
+    "sketchfab": "2ca6c1073255490ebb95060fb690bc69",
+    "paintmat": "RMCarDemo_Paint"
+  },
+  "dodge-challenger-lc": {
+    "covers": {
+      "make": "Dodge",
+      "model": "Challenger",
+      "years": [
+        2015,
+        2023
+      ],
+      "aliases": [
+        "Challenger SXT",
+        "Challenger R/T",
+        "Challenger Scat Pack",
+        "Challenger Hellcat"
+      ]
+    },
+    "sketchfab": "e9349f847d5f4b95a01a6ce578e19899",
+    "paintmat": "dDodge_ChallengerSRTHellcat_2015Paint_Material1",
+    "flip": true
+  },
+  "toyota-supra-a90": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Supra",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "GR Supra",
+        "Supra GR",
+        "GR Supra 3.0"
+      ]
+    },
+    "sketchfab": "9231f2d5e71a43dd87603dc0b339d99d",
+    "paintmat": "Toyota_Supra_2020_with_Interior_noTTo3Ds_carpaint.001",
+    "flip": true,
+    "tintmat": "Toyota_Supra_2020_with_Interior_noTTo3Ds_glass_dark.001"
+  },
+  "subaru-wrx-va": {
+    "covers": {
+      "make": "Subaru",
+      "model": "WRX",
+      "years": [
+        2015,
+        2021
+      ],
+      "aliases": [
+        "WRX STI",
+        "STI",
+        "WRX Premium"
+      ]
+    },
+    "sketchfab": "92ef1f865436403ab12ab4a6225127ce",
+    "paintmat": "subSubaru_WRXSTITNR0_2018PaintTNR_Material1",
+    "flip": true
   }
 }

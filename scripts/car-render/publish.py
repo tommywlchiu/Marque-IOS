@@ -10,7 +10,7 @@ car (make/model/year; else the generic for its body style — manifest entries
 with `bodyStyles` instead of `covers`) and to show credits. Credits (author, license, link) are
 read from Sketchfab's public API, not typed by hand.
 """
-import glob, json, os, sys, urllib.request
+import glob, json, os, sys, time, urllib.error, urllib.request
 from PIL import Image
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -21,12 +21,30 @@ manifest = json.load(open(os.path.join(here, "manifest.json")))
 palette = [k for k in json.load(open(os.path.join(here, "palette.json"))) if not k.startswith("_")]
 FRAMES, PAD = 36, 12
 
+# Credits are cached on disk (outside the repo, next to the renders): publishing one car
+# re-reads every car's credit, and ~50 uncached calls in a row hit Sketchfab's rate limit
+# (HTTP 429), failing the publish. A model's author/license/title don't change; delete the
+# cache file to refresh them.
+CREDIT_CACHE = os.path.expanduser("~/MarqueAssets/car-render/credits_cache.json")
+_credits = json.load(open(CREDIT_CACHE)) if os.path.exists(CREDIT_CACHE) else {}
+
 def credit(uid):
-    m = json.load(urllib.request.urlopen(f"https://api.sketchfab.com/v3/models/{uid}"))
+    if uid in _credits: return _credits[uid]
+    for wait in (0, 5, 20, 60, 120):
+        time.sleep(wait)
+        try:
+            m = json.load(urllib.request.urlopen(f"https://api.sketchfab.com/v3/models/{uid}"))
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 429: raise
+    else:
+        raise SystemExit(f"Sketchfab kept rate-limiting the credit lookup for {uid}")
     lic = m.get("license") or {}
-    return {"title": m["name"], "author": m["user"]["displayName"] or m["user"]["username"],
+    _credits[uid] = {"title": m["name"], "author": m["user"]["displayName"] or m["user"]["username"],
             "authorURL": m["user"]["profileUrl"], "license": lic.get("label", ""),
             "licenseURL": lic.get("url", ""), "url": m["viewerUrl"]}
+    json.dump(_credits, open(CREDIT_CACHE, "w"), indent=1)
+    return _credits[uid]
 
 def alpha_box(pngs, pad):
     """The union of the images' opaque pixels, padded (clamped to the image)."""
@@ -183,7 +201,7 @@ for key, car in manifest.items():
                          "extras": extras, "seats": seats, "blackOptic": has_black_optic})
     else:
         c = car["covers"]
-        cars.append({"key": key, "make": c["make"], "models": c.get("aliases", [c["model"]]),
+        cars.append({"key": key, "make": c["make"], "models": [c["model"]] + [a for a in c.get("aliases", []) if a != c["model"]],
                      "years": c["years"], "credit": credit(car["sketchfab"]), "plates": has_plates, "tint": has_tint,
                      "wheels": wheels, "meter": meter, "extras": extras, "seats": seats, "blackOptic": has_black_optic})
     print(f"PUBLISHED {key}")

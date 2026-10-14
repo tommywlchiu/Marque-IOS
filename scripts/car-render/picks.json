@@ -509,5 +509,143 @@
       "911 Carrera",
       "911 Carrera S"
     ]
+  },
+  "mitsubishi-lancer-evo-9": {
+    "uid": "e0646088011743639370003738d7013c",
+    "make": "Mitsubishi",
+    "model": "Lancer Evolution",
+    "years": [
+      2003,
+      2007
+    ],
+    "aliases": [
+      "Lancer Evo",
+      "Evo",
+      "Evolution",
+      "Evo IX",
+      "Evo VIII",
+      "Lancer Evolution IX",
+      "Lancer Evolution VIII"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "ford-mustang-s550": {
+    "uid": "0382a22e782c4a9e8c0dc0f0dc587103",
+    "make": "Ford",
+    "model": "Mustang",
+    "years": [
+      2015,
+      2017
+    ],
+    "aliases": [
+      "Mustang GT",
+      "Mustang EcoBoost"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "ford-mustang-s550-fl": {
+    "uid": "971a079b329f4607bb68873977a2ea37",
+    "make": "Ford",
+    "model": "Mustang",
+    "years": [
+      2018,
+      2026
+    ],
+    "aliases": [
+      "Mustang GT",
+      "Mustang EcoBoost"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "chevrolet-camaro-6g": {
+    "uid": "52a8e833445142eebd6e0cae8b72cfc6",
+    "make": "Chevrolet",
+    "model": "Camaro",
+    "years": [
+      2016,
+      2024
+    ],
+    "aliases": [
+      "Camaro SS",
+      "Camaro ZL1",
+      "Camaro 1LT"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "chevrolet-camaro-5g": {
+    "uid": "b2845536739542e1a4493a192990f91b",
+    "make": "Chevrolet",
+    "model": "Camaro",
+    "years": [
+      2010,
+      2015
+    ],
+    "aliases": [
+      "Camaro SS",
+      "Camaro LT"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "dodge-charger-lx2": {
+    "uid": "2ca6c1073255490ebb95060fb690bc69",
+    "make": "Dodge",
+    "model": "Charger",
+    "years": [
+      2015,
+      2023
+    ],
+    "aliases": [
+      "Charger SXT",
+      "Charger R/T",
+      "Charger Scat Pack",
+      "Charger Hellcat"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "dodge-challenger-lc": {
+    "uid": "e9349f847d5f4b95a01a6ce578e19899",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2015,
+      2023
+    ],
+    "aliases": [
+      "Challenger SXT",
+      "Challenger R/T",
+      "Challenger Scat Pack",
+      "Challenger Hellcat"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "toyota-supra-a90": {
+    "uid": "9231f2d5e71a43dd87603dc0b339d99d",
+    "make": "Toyota",
+    "model": "Supra",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "GR Supra",
+      "Supra GR",
+      "GR Supra 3.0"
+    ],
+    "verify": "new coverage batch 1 - check render"
+  },
+  "subaru-wrx-va": {
+    "uid": "92ef1f865436403ab12ab4a6225127ce",
+    "make": "Subaru",
+    "model": "WRX",
+    "years": [
+      2015,
+      2021
+    ],
+    "aliases": [
+      "WRX STI",
+      "STI",
+      "WRX Premium"
+    ],
+    "verify": "new coverage batch 1 - check render"
   }
 }
