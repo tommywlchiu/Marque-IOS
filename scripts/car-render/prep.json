@@ -52,12 +52,12 @@
   "chevrolet-equinox-3g": {
     "paintmat": "material",
     "flip": true,
-    "rejected": "single texture/material — cannot repaint"
+    "rejected": "single texture/material \u2014 cannot repaint"
   },
   "chevrolet-equinox-3g-facelift": {
     "paintmat": "transparent-clipping_undercarriage",
     "flip": true,
-    "rejected": "single texture/material — cannot repaint"
+    "rejected": "single texture/material \u2014 cannot repaint"
   },
   "toyota-corolla-12g": {
     "paintmat": "Paint_Color",
@@ -93,12 +93,12 @@
   "subaru-crosstrek-3g": {
     "paintmat": "Material",
     "flip": true,
-    "rejected": "single texture/material — cannot repaint"
+    "rejected": "single texture/material \u2014 cannot repaint"
   },
   "subaru-crosstrek-2g": {
     "paintmat": "Material",
     "flip": true,
-    "rejected": "single texture/material — cannot repaint"
+    "rejected": "single texture/material \u2014 cannot repaint"
   },
   "kia-sportage-5g": {
     "paintmat": "M_2022_Kia_Sportage__WO_Wheels__Wolf_Gray.001",
@@ -123,7 +123,7 @@
   "ford-maverick-1g": {
     "paintmat": "Material",
     "flip": true,
-    "rejected": "single texture/material — cannot repaint"
+    "rejected": "single texture/material \u2014 cannot repaint"
   },
   "nissan-sentra-b18": {
     "paintmat": "Paint",
@@ -253,5 +253,121 @@
   "subaru-wrx-va": {
     "paintmat": "subSubaru_WRXSTITNR0_2018PaintTNR_Material1",
     "flip": true
+  },
+  "chevrolet-corvette-c8": {
+    "paintmat": "Chevrolet_CorvetteStingrayTNR0_2020PaintTNR_Material",
+    "flip": true
+  },
+  "mazda-mx5-nd": {
+    "paintmat": "carpaint",
+    "flip": true
+  },
+  "mazda-3-bp": {
+    "paintmat": "M_2020_Mazda_3_Sedan_Machine_Gray_Metallic",
+    "flip": true
+  },
+  "mazda-cx5-kf": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "mazda-cx5-kf-b": {
+    "paintmat": "wire_135006006",
+    "flip": false
+  },
+  "vw-golf-mk7": {
+    "paintmat": "CSR2_CarPaint",
+    "flip": true
+  },
+  "vw-golf-mk8": {
+    "paintmat": "EXT_BODY",
+    "flip": true
+  },
+  "bmw-3-g20": {
+    "paintmat": "paint",
+    "flip": false
+  },
+  "bmw-x5-g05": {
+    "paintmat": "carpaint.076",
+    "flip": true
+  },
+  "mercedes-c-w203": {
+    "paintmat": "carpaint",
+    "flip": true
+  },
+  "mercedes-g-w463": {
+    "paintmat": "MMercedesAMG_G63SUVRewardRecycled_2020Paint_Material1",
+    "flip": true
+  },
+  "audi-a4-b9": {
+    "paintmat": "A4_tex",
+    "flip": false
+  },
+  "toyota-4runner-6g": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "toyota-highlander-xu70": {
+    "paintmat": "Paint_Color",
+    "flip": true
+  },
+  "toyota-prius-xw50": {
+    "paintmat": "body",
+    "flip": true
+  },
+  "honda-pilot-4g": {
+    "paintmat": "plt2017",
+    "flip": false
+  },
+  "honda-pilot-5g": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "nissan-altima-l34": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "hyundai-elantra-cn7": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "hyundai-sonata-dn8": {
+    "paintmat": "wire_115115115",
+    "flip": false
+  },
+  "tesla-model-s-refresh": {
+    "paintmat": "767c8b7b_1260_4325_b83f_f635800d9059_Standard00E280",
+    "flip": false
+  },
+  "tesla-model-s": {
+    "paintmat": "tripo_material_41010d81-1564-44ea-adf0-6bf09549578d",
+    "flip": false
+  },
+  "jeep-gladiator-jt": {
+    "paintmat": "Jeep_GladiatorRewardRecycled_2019Coloured_Material",
+    "flip": false
+  },
+  "ford-bronco-6g": {
+    "paintmat": "021_Ford_Bronco_Wildtrak_seats_paint",
+    "flip": false
+  },
+  "ford-bronco-sport": {
+    "paintmat": "Carro_Plastico",
+    "flip": false
+  },
+  "toyota-tundra-3g": {
+    "paintmat": "wire_113135006",
+    "flip": false
+  },
+  "ford-escape-4g": {
+    "paintmat": "PDM_Ford_Escape_2021_Material_02",
+    "flip": false
+  },
+  "chevrolet-malibu-9g": {
+    "paintmat": "phong8",
+    "flip": false
+  },
+  "kia-k5-dl3": {
+    "paintmat": "body",
+    "flip": false
   }
 }
