@@ -579,7 +579,7 @@ private struct SuggestionRow: View {
     private var dueSummary: String {
         var parts: [String] = []
         if let date = suggestion.dueDate {
-            let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+            let days = Calendar.current.calendarDays(from: Date(), to: date)
             if days < 0 { parts.append("\(-days) \(-days == 1 ? "day" : "days") overdue") }
             else if days == 0 { parts.append("Due today") }
             else { parts.append("Due in \(days) \(days == 1 ? "day" : "days")") }

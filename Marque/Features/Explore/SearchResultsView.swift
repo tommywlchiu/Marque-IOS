@@ -85,6 +85,10 @@ struct SearchResultsView: View {
         .navigationTitle("Search")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Cars, makes, or people…")
+        // Searching makes and @usernames: no capitalized first letter, and no
+        // autocorrect turning "kdn" into a word.
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
         .searchScopes($selectedScope) {
             ForEach(SearchScope.allCases, id: \.self) { scope in
                 Text(scope.rawValue).tag(scope)

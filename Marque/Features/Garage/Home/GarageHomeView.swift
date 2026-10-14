@@ -27,6 +27,8 @@ struct GarageHomeView: View {
     @State private var path: [GarageRoute] = []
 
     @State private var showingSwitcher = false
+    /// Set by the switcher's "Add a Car"; acted on once the switcher has closed.
+    @State private var addCarAfterSwitcher = false
     @State private var showingChat = false
     @State private var showingAddCar = false
     @State private var showingPaywall = false
@@ -187,11 +189,15 @@ struct GarageHomeView: View {
         .padding(.leading, 24)
         .padding(.trailing, 12)
         .padding(.top, 12)
-        .sheet(isPresented: $showingSwitcher) {
-            GarageCarSwitcherSheet(selectedCarID: selectedCar?.id) { id in
+        .sheet(isPresented: $showingSwitcher, onDismiss: {
+            guard addCarAfterSwitcher else { return }
+            addCarAfterSwitcher = false
+            if atCarLimit { showingPaywall = true } else { showingAddCar = true }
+        }) {
+            GarageCarSwitcherSheet(selectedCarID: selectedCar?.id, onSelect: { id in
                 selectedCarIDString = id.uuidString
                 path = []
-            }
+            }, onAddCar: { addCarAfterSwitcher = true })
         }
     }
 

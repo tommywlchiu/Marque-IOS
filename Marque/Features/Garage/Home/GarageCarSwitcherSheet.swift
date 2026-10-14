@@ -1,23 +1,18 @@
 import SwiftUI
 
 /// The vehicle switcher behind the Garage header's name + chevron: every car,
-/// plus "Add a Car" with the same free-car-limit gate as MainTabView's "+" tab
+/// plus "Add a Car". Add a Car doesn't present anything itself: it closes the
+/// switcher and tells the Garage, which applies the free-car-limit gate
 /// (`CarStore.freeCarLimit` unless `SubscriptionStore.isPro` → paywall,
-/// otherwise `AddCarView`).
+/// otherwise `AddCarView`) once this sheet is gone. A sheet opened from inside
+/// this one closed again right after appearing, taking the paywall with it.
 struct GarageCarSwitcherSheet: View {
     let selectedCarID: UUID?
     let onSelect: (UUID) -> Void
+    let onAddCar: () -> Void
 
     @EnvironmentObject private var carStore: CarStore
-    @EnvironmentObject private var subscriptionStore: SubscriptionStore
     @Environment(\.dismiss) private var dismiss
-
-    @State private var showingAddCar = false
-    @State private var showingPaywall = false
-
-    private var atCarLimit: Bool {
-        carStore.cars.count >= CarStore.freeCarLimit && !subscriptionStore.isPro
-    }
 
     var body: some View {
         NavigationStack {
@@ -35,7 +30,8 @@ struct GarageCarSwitcherSheet: View {
                     }
 
                     Button {
-                        if atCarLimit { showingPaywall = true } else { showingAddCar = true }
+                        onAddCar()
+                        dismiss()
                     } label: {
                         HStack(spacing: 16) {
                             Image(systemName: "plus")
@@ -65,12 +61,6 @@ struct GarageCarSwitcherSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
-            }
-            .sheet(isPresented: $showingAddCar) {
-                AddCarView()
-            }
-            .sheet(isPresented: $showingPaywall) {
-                ProUpgradeView(trigger: .carLimit)
             }
         }
         .environment(\.colorScheme, .dark)

@@ -77,7 +77,7 @@ struct MarqueChatView: View {
                 // (send() restores it synchronously right after the failed await).
                 Button("Try Again") {
                     chatStore.sendError = nil
-                    retry()
+                    submit()
                 }
                 Button("OK", role: .cancel) { chatStore.sendError = nil }
             }
@@ -233,9 +233,9 @@ struct MarqueChatView: View {
                     .focused($inputFocused)
                     .disabled(chatStore.isSending || chatStore.isOffline)
                     .submitLabel(.send)
-                    .onSubmit(send)
+                    .onSubmit(submit)
 
-                Button(action: send) {
+                Button(action: submit) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 30))
                         .foregroundColor(canSend ? .accentColor : .gray)
@@ -321,11 +321,14 @@ struct MarqueChatView: View {
         }
     }
 
-    /// Try Again from the failure alert. When the failed message was already
-    /// saved (the usual case: sendMessage writes it before calling the server),
-    /// re-ask for that message instead of sending it again, which would show a
-    /// duplicate bubble. If it never got saved, fall back to a normal send.
-    private func retry() {
+    /// The send button, the keyboard's Send key and the failure alert's Try
+    /// Again. When the draft is the text of a message that was already saved but
+    /// never answered (the usual failure shape: sendMessage writes it before
+    /// calling the server, and the draft is restored), re-ask for that message
+    /// instead of sending it again, which would show a duplicate bubble —
+    /// including when the user dismissed the alert with OK and pressed send.
+    /// Otherwise it's a normal send.
+    private func submit() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let last = chatStore.currentMessages.last, last.role == "user",
               last.content.trimmingCharacters(in: .whitespacesAndNewlines) == text

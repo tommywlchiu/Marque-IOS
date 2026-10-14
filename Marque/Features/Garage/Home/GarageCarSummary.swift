@@ -154,7 +154,7 @@ enum GarageSummary {
     }
 
     private static func daysUntil(_ date: Date, today: Date) -> Int? {
-        Calendar.current.dateComponents([.day], from: today, to: date).day
+        Calendar.current.calendarDays(from: today, to: date)
     }
 
     private static func expiryPhrase(_ label: String, days: Int, date: Date, today: Date) -> String {

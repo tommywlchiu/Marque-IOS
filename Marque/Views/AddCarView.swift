@@ -193,17 +193,32 @@ struct AddCarView: View {
                     .foregroundStyle(.secondary)
             }
 
-            TextField("Make", text: $make)
-                .autocorrectionDisabled()
+            // Labeled rows like the pickers below: a filled text field shows
+            // only its value, so "Honda / Accord / 2003 / EX-V6" gave no clue
+            // which was the model and which the trim.
+            LabeledContent("Make") {
+                TextField("Make", text: $make)
+                    .multilineTextAlignment(.trailing)
+                    .autocorrectionDisabled()
+            }
 
-            TextField("Model", text: $model)
-                .autocorrectionDisabled()
+            LabeledContent("Model") {
+                TextField("Model", text: $model)
+                    .multilineTextAlignment(.trailing)
+                    .autocorrectionDisabled()
+            }
 
-            TextField("Year", text: $year)
-                .keyboardType(.numberPad)
+            LabeledContent("Year") {
+                TextField("Year", text: $year)
+                    .multilineTextAlignment(.trailing)
+                    .keyboardType(.numberPad)
+            }
 
-            TextField("Trim (e.g. EX-L, Sport, XLE)", text: $trim)
-                .autocorrectionDisabled()
+            LabeledContent("Trim") {
+                TextField("EX-L, Sport, XLE", text: $trim)
+                    .multilineTextAlignment(.trailing)
+                    .autocorrectionDisabled()
+            }
 
             Picker("Body Style", selection: $bodyStyle) {
                 Text("Select").tag("")
@@ -218,8 +233,11 @@ struct AddCarView: View {
                 Text("4WD").tag("4WD")
             }
 
-            TextField("Engine (e.g. 2.5L 4-Cylinder)", text: $engine)
-                .autocorrectionDisabled()
+            LabeledContent("Engine") {
+                TextField("2.5L 4-Cylinder", text: $engine)
+                    .multilineTextAlignment(.trailing)
+                    .autocorrectionDisabled()
+            }
 
             Picker("Fuel Type", selection: $fuelType) {
                 Text("Select").tag("")
@@ -255,11 +273,17 @@ struct AddCarView: View {
                     }
                 }
 
-                TextField("Model (e.g. Camry, 3 Series)", text: $model)
-                    .autocorrectionDisabled()
+                LabeledContent("Model") {
+                    TextField("Camry, 3 Series", text: $model)
+                        .multilineTextAlignment(.trailing)
+                        .autocorrectionDisabled()
+                }
 
-                TextField("Year (e.g. 2024)", text: $year)
-                    .keyboardType(.numberPad)
+                LabeledContent("Year") {
+                    TextField("2024", text: $year)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.numberPad)
+                }
 
                 Picker("Body Style", selection: $bodyStyle) {
                     Text("Select").tag("")

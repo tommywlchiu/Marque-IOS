@@ -435,35 +435,35 @@ struct Car: Identifiable, Codable, Equatable {
 
     var isInsuranceExpiringSoon: Bool {
         guard let date = insuranceExpiryDate else { return false }
-        let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        let daysUntil = Calendar.current.calendarDays(from: Date(), to: date)
         return daysUntil >= 0 && daysUntil <= 30
     }
 
     var isInsuranceExpired: Bool {
         guard let date = insuranceExpiryDate else { return false }
-        return date < Date()
+        return Calendar.current.calendarDays(from: Date(), to: date) < 0
     }
 
     var isRegistrationExpiringSoon: Bool {
         guard let date = registrationExpiryDate else { return false }
-        let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        let daysUntil = Calendar.current.calendarDays(from: Date(), to: date)
         return daysUntil >= 0 && daysUntil <= 30
     }
 
     var isRegistrationExpired: Bool {
         guard let date = registrationExpiryDate else { return false }
-        return date < Date()
+        return Calendar.current.calendarDays(from: Date(), to: date) < 0
     }
 
     var isWarrantyExpiringSoon: Bool {
         guard let date = warrantyExpiryDate else { return false }
-        let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        let daysUntil = Calendar.current.calendarDays(from: Date(), to: date)
         return daysUntil >= 0 && daysUntil <= 30
     }
 
     var isWarrantyExpired: Bool {
         guard let date = warrantyExpiryDate else { return false }
-        return date < Date()
+        return Calendar.current.calendarDays(from: Date(), to: date) < 0
     }
 
     var totalExpenses: Double {

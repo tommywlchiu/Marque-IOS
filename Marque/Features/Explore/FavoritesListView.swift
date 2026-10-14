@@ -30,7 +30,7 @@ struct FavoritesListView: View {
                 MarqueEmptyState(
                     icon: "bookmark",
                     title: "No favorites yet",
-                    subtitle: "Tap the bookmark on a car in Explore to save it here."
+                    subtitle: "Open a car in Explore and tap the bookmark to save it here."
                 )
                 .padding(.top, 60)
             } else {
