@@ -1,5 +1,17 @@
 import Foundation
 
+extension Calendar {
+    /// Whole calendar days from `today`'s date to `date`'s date: 0 for the same
+    /// day, positive for a later day, negative once the day has passed — at any
+    /// time of day. `dateComponents([.day], from: now, to: date)` counts whole
+    /// 24-hour periods from the current time instead, so a date 10 days away
+    /// read "9 days" most of the day and the count dropped at an arbitrary hour,
+    /// not at midnight (and disagreed with the Wallet's expiry badges).
+    func calendarDays(from today: Date, to date: Date) -> Int {
+        dateComponents([.day], from: startOfDay(for: today), to: startOfDay(for: date)).day ?? 0
+    }
+}
+
 // A single upcoming service. Triggers can be date-based, mileage-based, or both.
 // If both are set, whichever comes first determines status.
 struct ServiceReminder: Identifiable, Codable, Equatable {
@@ -39,7 +51,7 @@ struct ServiceReminder: Identifiable, Codable, Equatable {
 
     func daysUntilDue(today: Date = Date()) -> Int? {
         guard let dueDate else { return nil }
-        return Calendar.current.dateComponents([.day], from: today, to: dueDate).day
+        return Calendar.current.calendarDays(from: today, to: dueDate)
     }
 
     func milesUntilDue(currentMileage: Int) -> Int? {

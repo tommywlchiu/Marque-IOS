@@ -79,3 +79,45 @@ final class GarageStatusLineTests: XCTestCase {
         XCTAssertFalse(line.isUrgent)
     }
 }
+
+final class CalendarDaysTests: XCTestCase {
+    private let cal = Calendar.current
+
+    private func date(_ day: Int, hour: Int, minute: Int = 0) -> Date {
+        cal.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
+    }
+
+    func testCountIsStableAcrossTheWholeDay() {
+        // 10 calendar days away at 5pm: the old 24-hour-period math said 10
+        // before 5pm and 9 after it.
+        let due = date(23, hour: 17)
+        XCTAssertEqual(cal.calendarDays(from: date(13, hour: 0, minute: 30), to: due), 10)
+        XCTAssertEqual(cal.calendarDays(from: date(13, hour: 16, minute: 59), to: due), 10)
+        XCTAssertEqual(cal.calendarDays(from: date(13, hour: 17, minute: 1), to: due), 10)
+        XCTAssertEqual(cal.calendarDays(from: date(13, hour: 23, minute: 59), to: due), 10)
+        XCTAssertEqual(cal.calendarDays(from: date(14, hour: 0, minute: 1), to: due), 9)
+    }
+
+    func testSameDayIsZeroAndPastDaysAreNegative() {
+        XCTAssertEqual(cal.calendarDays(from: date(13, hour: 22), to: date(13, hour: 1)), 0)
+        XCTAssertEqual(cal.calendarDays(from: date(13, hour: 1), to: date(12, hour: 23)), -1)
+    }
+
+    func testDocumentIsNotExpiredUntilItsDateHasPassed() {
+        let today = Date()
+        let startOfToday = cal.startOfDay(for: today)
+        let expiresToday = Car(make: "BMW", model: "M4", year: "2016", insuranceExpiryDate: startOfToday)
+        XCTAssertFalse(expiresToday.isInsuranceExpired)
+        XCTAssertTrue(expiresToday.isInsuranceExpiringSoon)
+        let expiredYesterday = Car(make: "BMW", model: "M4", year: "2016",
+                                   insuranceExpiryDate: cal.date(byAdding: .day, value: -1, to: startOfToday))
+        XCTAssertTrue(expiredYesterday.isInsuranceExpired)
+        XCTAssertFalse(expiredYesterday.isInsuranceExpiringSoon)
+    }
+
+    func testReminderDueTodayIsDueTodayNotOverdue() {
+        let r = ServiceReminder(serviceType: "Oil Change", dueDate: cal.startOfDay(for: date(13, hour: 12)))
+        XCTAssertEqual(r.daysUntilDue(today: date(13, hour: 18)), 0)
+        XCTAssertEqual(r.daysUntilDue(today: date(14, hour: 8)), -1)
+    }
+}
