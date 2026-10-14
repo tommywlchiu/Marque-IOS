@@ -52,12 +52,12 @@
   "chevrolet-equinox-3g": {
     "paintmat": "material",
     "flip": true,
-    "rejected": "single texture/material \u2014 cannot repaint"
+    "rejected": "single texture/material — cannot repaint"
   },
   "chevrolet-equinox-3g-facelift": {
     "paintmat": "transparent-clipping_undercarriage",
     "flip": true,
-    "rejected": "single texture/material \u2014 cannot repaint"
+    "rejected": "single texture/material — cannot repaint"
   },
   "toyota-corolla-12g": {
     "paintmat": "Paint_Color",
@@ -93,12 +93,12 @@
   "subaru-crosstrek-3g": {
     "paintmat": "Material",
     "flip": true,
-    "rejected": "single texture/material \u2014 cannot repaint"
+    "rejected": "single texture/material — cannot repaint"
   },
   "subaru-crosstrek-2g": {
     "paintmat": "Material",
     "flip": true,
-    "rejected": "single texture/material \u2014 cannot repaint"
+    "rejected": "single texture/material — cannot repaint"
   },
   "kia-sportage-5g": {
     "paintmat": "M_2022_Kia_Sportage__WO_Wheels__Wolf_Gray.001",
@@ -123,7 +123,7 @@
   "ford-maverick-1g": {
     "paintmat": "Material",
     "flip": true,
-    "rejected": "single texture/material \u2014 cannot repaint"
+    "rejected": "single texture/material — cannot repaint"
   },
   "nissan-sentra-b18": {
     "paintmat": "Paint",
@@ -213,9 +213,45 @@
     "paintmat": "carpaint.010",
     "flip": true
   },
-  "porsche-911-991": {
-    "paintmat": "Body_t",
+  "porsche-911-991-v2": {
+    "paintmat": "waike_t|Left_door_t|Right_door_t",
     "flip": true,
     "hide": "Icosphere"
+  },
+  "mitsubishi-lancer-evo-9": {
+    "paintmat": "mM_CarPaint_Max_002",
+    "flip": true
+  },
+  "ford-mustang-s550": {
+    "paintmat": "Meshesuntitledlodabrakecaliperrearleftmmmisc31Mtl|Meshesuntitledlodahoodmmmisc31Mtl",
+    "flip": true
+  },
+  "ford-mustang-s550-fl": {
+    "paintmat": "Ford_MustangGTFastbackTNR0_2018PaintTNR_Material",
+    "flip": false
+  },
+  "chevrolet-camaro-6g": {
+    "paintmat": "Body",
+    "flip": true
+  },
+  "chevrolet-camaro-5g": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "dodge-charger-lx2": {
+    "paintmat": "RMCarDemo_Paint",
+    "flip": false
+  },
+  "dodge-challenger-lc": {
+    "paintmat": "dDodge_ChallengerSRTHellcat_2015Paint_Material1",
+    "flip": true
+  },
+  "toyota-supra-a90": {
+    "paintmat": "Toyota_Supra_2020_with_Interior_noTTo3Ds_carpaint.001",
+    "flip": true
+  },
+  "subaru-wrx-va": {
+    "paintmat": "subSubaru_WRXSTITNR0_2018PaintTNR_Material1",
+    "flip": true
   }
 }
