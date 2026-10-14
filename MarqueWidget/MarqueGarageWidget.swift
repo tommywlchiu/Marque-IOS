@@ -9,8 +9,8 @@ struct MarqueGarageWidget: Widget {
             GarageWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Garage")
-        .description("Your car's mileage and status, Tesla-widget style.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .description("Your car's mileage and status. Follows the car selected in Garage, or pin one.")
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryInline])
         .contentMarginsDisabled()
     }
 }

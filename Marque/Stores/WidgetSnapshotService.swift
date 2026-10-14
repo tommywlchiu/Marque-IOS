@@ -52,6 +52,15 @@ enum WidgetSnapshotService {
         }
     }
 
+    /// The Garage's selected car changed: tell the widget, so every widget set
+    /// to "Current Car" switches with it (its image, name and status).
+    static func setSelectedCar(_ id: UUID?) {
+        let value = id?.uuidString
+        guard WidgetSharedStore.readSelectedCarID() != value else { return }
+        WidgetSharedStore.writeSelectedCarID(value)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
     // MARK: - Hero image
 
     /// Whichever of the two the Garage hero would already show is cached —
@@ -88,10 +97,27 @@ enum WidgetSnapshotService {
         return nil
     }
 
+    private static func downscaled(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let pixelWidth = image.size.width * image.scale, pixelHeight = image.size.height * image.scale
+        let longest = max(pixelWidth, pixelHeight)
+        guard longest > maxDimension else { return image }
+        let ratio = maxDimension / longest
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+        let size = CGSize(width: (pixelWidth * ratio).rounded(), height: (pixelHeight * ratio).rounded())
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
     private static func copyToSharedContainer(_ image: UIImage, carID: UUID) -> String? {
         guard let directory = WidgetSharedStore.heroImagesDirectory else { return nil }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        guard let data = image.pngData() else { return nil }
+        // A widget process has a small memory budget (~30 MB) and decodes the
+        // whole PNG; a full-size cut-out or render could get it killed, leaving
+        // a blank widget. Nothing it draws is bigger than ~560 px.
+        guard let data = downscaled(image, maxDimension: 560).pngData() else { return nil }
         let fileName = "\(carID.uuidString).png"
         do {
             try data.write(to: directory.appendingPathComponent(fileName), options: .atomic)

@@ -20,17 +20,25 @@ struct GarageWidgetProvider: AppIntentTimelineProvider {
     func timeline(for configuration: SelectCarIntent, in context: Context) async -> Timeline<GarageWidgetEntry> {
         // A status line can go stale (midnight rolls a reminder into "due
         // soon", a new day changes "Expires in N days") even with no car
-        // data change; refresh a few times a day as a backstop. The app
-        // itself also pokes WidgetCenter.reloadAllTimelines() whenever a
-        // car's data actually changes, which is the primary refresh path.
+        // data change. The app rewrites them whenever it comes forward and
+        // whenever a car changes (and pokes WidgetCenter.reloadAllTimelines());
+        // this asks the system to reload just after midnight, with a 4-hour
+        // cap as a backstop.
         let entry = entry(for: configuration)
-        let next = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date().addingTimeInterval(4 * 3600)
-        return Timeline(entries: [entry], policy: .after(next))
+        let calendar = Calendar.current
+        let midnight = calendar.nextDate(after: Date(), matching: DateComponents(hour: 0, minute: 5), matchingPolicy: .nextTime)
+        let cap = Date().addingTimeInterval(4 * 3600)
+        return Timeline(entries: [entry], policy: .after(min(midnight ?? cap, cap)))
     }
 
     private func entry(for configuration: SelectCarIntent) -> GarageWidgetEntry {
         let cars = WidgetSharedStore.readCars()
-        let selected = configuration.car.flatMap { chosen in cars.first { $0.id == chosen.id } } ?? cars.first
+        // "Current Car" (the default, or no choice at all) follows the Garage.
+        // A pinned car that no longer exists falls back to following it too.
+        let pinned = (configuration.vehicle.isCurrentCar ? nil : configuration.vehicle.id).flatMap { id in cars.first { $0.id == id } }
+        let selected = pinned
+            ?? WidgetSharedStore.readSelectedCarID().flatMap { id in cars.first { $0.id == id } }
+            ?? cars.first
         return GarageWidgetEntry(date: Date(), car: selected)
     }
 }

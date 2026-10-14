@@ -29,6 +29,10 @@ enum WidgetSharedStore {
     static let appGroupID = "group.com.tommychiu.marque"
     private static let carsFileName = "widget_cars.json"
     private static let heroImagesDirectoryName = "WidgetHeroImages"
+    private static let selectedCarFileName = "widget_selected_car.txt"
+    /// `CarEntity.id` of the "Current Car" choice: a widget set to it shows
+    /// whichever car is selected in the Garage, and follows it when it changes.
+    static let followSelectedCarID = "__selected__"
 
     static var containerURL: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
@@ -45,6 +49,22 @@ enum WidgetSharedStore {
     static func writeCars(_ cars: [WidgetCarSnapshot]) {
         guard let container = containerURL, let data = try? JSONEncoder().encode(cars) else { return }
         try? data.write(to: container.appendingPathComponent(carsFileName), options: .atomic)
+    }
+
+    /// The car selected in the Garage (the app's `garage.selectedCarID`), so a
+    /// widget set to "Current Car" can follow it.
+    static func writeSelectedCarID(_ id: String?) {
+        guard let container = containerURL else { return }
+        let url = container.appendingPathComponent(selectedCarFileName)
+        guard let id, !id.isEmpty else { try? FileManager.default.removeItem(at: url); return }
+        try? Data(id.utf8).write(to: url, options: .atomic)
+    }
+
+    static func readSelectedCarID() -> String? {
+        guard let container = containerURL,
+              let data = try? Data(contentsOf: container.appendingPathComponent(selectedCarFileName)),
+              let id = String(data: data, encoding: .utf8), !id.isEmpty else { return nil }
+        return id
     }
 
     static func readCars() -> [WidgetCarSnapshot] {
