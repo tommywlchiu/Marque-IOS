@@ -435,6 +435,7 @@ private struct ChatBubble: View {
 private struct ConversationHistoryView: View {
     @EnvironmentObject var chatStore: ChatStore
     @Environment(\.dismiss) private var dismiss
+    @State private var conversationToDelete: Conversation?
 
     var body: some View {
         NavigationStack {
@@ -471,6 +472,18 @@ private struct ConversationHistoryView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .confirmationDialog(
+                "Delete this chat?",
+                isPresented: Binding(get: { conversationToDelete != nil }, set: { if !$0 { conversationToDelete = nil } }),
+                titleVisibility: .visible,
+                presenting: conversationToDelete
+            ) { convo in
+                Button("Delete Chat", role: .destructive) {
+                    Task { await chatStore.deleteConversation(convo) }
+                }
+            } message: { _ in
+                Text("The whole conversation is removed and can't be recovered.")
+            }
             .alert(
                 chatStore.conversationActionError ?? "",
                 isPresented: Binding(
@@ -504,9 +517,9 @@ private struct ConversationHistoryView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .swipeActions(edge: .trailing) {
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
-                Task { await chatStore.deleteConversation(convo) }
+                conversationToDelete = convo
             } label: {
                 Label("Delete", systemImage: "trash")
             }
