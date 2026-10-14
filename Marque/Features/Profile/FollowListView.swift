@@ -61,6 +61,8 @@ struct FollowListView: View {
                         }
                     }
                     .searchable(text: $searchText, prompt: "Search \(title.lowercased())")
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                     .listStyle(.plain)
                 }
             }
