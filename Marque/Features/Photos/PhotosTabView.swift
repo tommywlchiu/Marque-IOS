@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import Photos
 
 /// Photos tab: every car's photos, grouped by car. Mirrors the photo-add/
 /// -remove/-cover mutations Views/EditCarDetailView.swift already performs
@@ -273,10 +272,12 @@ private struct PendingPhotoDelete: Identifiable {
 
 // MARK: - Add Photos control
 //
-// Mirrors EditCarDetailView's PhotoPickerPresenters permission flow exactly
-// (PHPhotoLibrary.authorizationStatus → request → PhotosPicker), generic over
-// its label so the same permission/picker logic backs both the small
-// trailing "+" button and the big empty-state tile.
+// The system PhotosPicker runs out-of-process and needs no library permission,
+// so there is deliberately no PHPhotoLibrary authorization step: asking for
+// full read-write access just to choose a photo scared people off, and a
+// "Don't Allow" answer blocked a picker that would have worked anyway. Generic
+// over its label so the same picker logic backs both the small trailing "+"
+// button and the big empty-state tile.
 private struct AddPhotosButton<Label: View>: View {
     let car: Car
     let onPicked: ([UIImage]) async -> Void
@@ -284,12 +285,11 @@ private struct AddPhotosButton<Label: View>: View {
 
     @State private var selectedItems: [PhotosPickerItem] = []
     @State private var showingPicker = false
-    @State private var showingPermissionDenied = false
     @State private var isLoading = false
 
     var body: some View {
         Button {
-            requestPhotoPermission()
+            showingPicker = true
         } label: {
             if isLoading {
                 ProgressView()
@@ -299,22 +299,11 @@ private struct AddPhotosButton<Label: View>: View {
         }
         .disabled(isLoading)
         .accessibilityLabel("Add photos to \(car.displayName)")
-        .alert("Photo Access Required", isPresented: $showingPermissionDenied) {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("To add car photos, allow Marque to access your photo library in Settings > Privacy > Photos.")
-        }
         .photosPicker(
             isPresented: $showingPicker,
             selection: $selectedItems,
             maxSelectionCount: 10,
-            matching: .images,
-            photoLibrary: .shared()
+            matching: .images
         )
         .onChange(of: selectedItems) { _, items in
             guard !items.isEmpty else { return }
@@ -331,24 +320,6 @@ private struct AddPhotosButton<Label: View>: View {
                 await onPicked(images)
                 isLoading = false
             }
-        }
-    }
-
-    private func requestPhotoPermission() {
-        switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
-        case .authorized, .limited:
-            showingPicker = true
-        case .notDetermined:
-            PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
-                DispatchQueue.main.async {
-                    switch status {
-                    case .authorized, .limited: showingPicker = true
-                    default: showingPermissionDenied = true
-                    }
-                }
-            }
-        default:
-            showingPermissionDenied = true
         }
     }
 }
