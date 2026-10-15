@@ -35,6 +35,6 @@ for key, car in picks.items():
     json.dump(prep, open(out_path, "w"), indent=2)
     subprocess.run(["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--", f"in={glb}",
                     f"out={os.path.join(testdir, key + '.png')}", "paint=0.6,0.02,0.02", f"paintmat={entry['paintmat']}",
-                    "engine=BLENDER_EEVEE", "samples=24", "res=800x450"] + (["flip=1"] if entry["flip"] else []) + (["invert=1"] if entry.get("invert") else []),
+                    "engine=BLENDER_EEVEE", "samples=24", "res=800x450"] + (["flip=1"] if entry["flip"] else []) + (["invert=1"] if entry.get("invert") else []) + ([f"hide={entry['hide']}"] if entry.get("hide") else []),
                    stdout=subprocess.DEVNULL, check=True)
     print("PREPPED", key, "paint=" + entry["paintmat"], flush=True)

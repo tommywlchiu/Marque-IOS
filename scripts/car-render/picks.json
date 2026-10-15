@@ -1101,5 +1101,4416 @@
       "911 GT3"
     ],
     "verify": "batch 4 - check render"
+  },
+  "buick-enclave-gen2": {
+    "uid": "f808133fbb304072bfa176406d65a68c",
+    "make": "Buick",
+    "model": "Enclave",
+    "years": [
+      2018,
+      2026
+    ],
+    "aliases": [
+      "Enclave Avenir",
+      "Enclave Essence"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "buick-enclave-gen1": {
+    "uid": "d459d6a3a97e4ca3931bc4fb7d77194e",
+    "make": "Buick",
+    "model": "Enclave",
+    "years": [
+      2008,
+      2017
+    ],
+    "aliases": [
+      "Enclave CXL"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "buick-encore-gx": {
+    "uid": "655bce5f7410456bb6324dbca34d585d",
+    "make": "Buick",
+    "model": "Encore GX",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "Encore GX Preferred",
+      "Encore GX Select"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "cadillac-escalade-5g": {
+    "uid": "d215f87bfd55479fa68683e545a0785b",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "Escalade ESV",
+      "Escalade V"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "chrysler-300-2g": {
+    "uid": "82b9b3f14c1e48febfd567be2c2c26c7",
+    "make": "Chrysler",
+    "model": "300",
+    "years": [
+      2011,
+      2023
+    ],
+    "aliases": [
+      "300C",
+      "300S",
+      "300 Touring"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "genesis-g80-rg3": {
+    "uid": "660307d9b2b14f7cbd432db5886ed6b8",
+    "make": "Genesis",
+    "model": "G80",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "G80 Sport"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "infiniti-q50": {
+    "uid": "d19bb40a70154c80ae2d231b7de3e43e",
+    "make": "Infiniti",
+    "model": "Q50",
+    "years": [
+      2014,
+      2024
+    ],
+    "aliases": [
+      "Q50 Red Sport",
+      "Q50S"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "land-rover-defender-l663": {
+    "uid": "26f042fcf1594890a529bfb41f0fae0d",
+    "make": "Land Rover",
+    "model": "Defender",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "Defender 110",
+      "Defender 90"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "lincoln-navigator-4g": {
+    "uid": "1da79a33e49d4d2eabc5b5cbac578adf",
+    "make": "Lincoln",
+    "model": "Navigator",
+    "years": [
+      2018,
+      2026
+    ],
+    "aliases": [
+      "Navigator L"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "volvo-xc90-2g": {
+    "uid": "035ed4cc989b492e9881b8ceeca4960b",
+    "make": "Volvo",
+    "model": "XC90",
+    "years": [
+      2016,
+      2026
+    ],
+    "aliases": [
+      "XC90 Recharge",
+      "XC90 T6"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "mini-cooper-r56": {
+    "uid": "1b628ba826f04ba79823ef62dccaa0df",
+    "make": "Mini",
+    "model": "Cooper",
+    "years": [
+      2007,
+      2013
+    ],
+    "aliases": [
+      "Cooper S",
+      "John Cooper Works",
+      "Cooper Hardtop"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "jaguar-f-type": {
+    "uid": "b338091497c64d31bef9bd7de49ade81",
+    "make": "Jaguar",
+    "model": "F-Type",
+    "years": [
+      2014,
+      2024
+    ],
+    "aliases": [
+      "F-Type R",
+      "F-Type S"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "alfa-romeo-giulia": {
+    "uid": "6ab89536590d478598d64396ad4ac4ca",
+    "make": "Alfa Romeo",
+    "model": "Giulia",
+    "years": [
+      2017,
+      2026
+    ],
+    "aliases": [
+      "Giulia Quadrifoglio",
+      "Giulia Ti"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "fiat-500": {
+    "uid": "4606659ff31142e3b8080f995514452f",
+    "make": "Fiat",
+    "model": "500",
+    "years": [
+      2012,
+      2019
+    ],
+    "aliases": [
+      "500 Abarth",
+      "500 Pop",
+      "500 Lounge"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "maserati-ghibli": {
+    "uid": "ef6c3f832995433a83f3938ba19a6d34",
+    "make": "Maserati",
+    "model": "Ghibli",
+    "years": [
+      2014,
+      2024
+    ],
+    "aliases": [
+      "Ghibli S",
+      "Ghibli Hybrid"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "lucid-air": {
+    "uid": "f454c421a39c483788fa1b7bec5e6a1e",
+    "make": "Lucid",
+    "model": "Air",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [
+      "Air Dream Edition",
+      "Air Grand Touring",
+      "Air Pure"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "polestar-2": {
+    "uid": "a3fe1afd93bd41cd9b221278deebd585",
+    "make": "Polestar",
+    "model": "2",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "Polestar 2"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "ferrari-488": {
+    "uid": "1d1344847d8540e9a6a7f21184ab7769",
+    "make": "Ferrari",
+    "model": "488",
+    "years": [
+      2016,
+      2020
+    ],
+    "aliases": [
+      "488 GTB",
+      "488 Pista",
+      "488 Spider"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "mclaren-720s": {
+    "uid": "f6359ee3468845809870a987e6ccce29",
+    "make": "McLaren",
+    "model": "720S",
+    "years": [
+      2018,
+      2023
+    ],
+    "aliases": [
+      "720S Spider"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "aston-martin-vantage": {
+    "uid": "dbdd5aadc1d64df289f65fc0f6da3c07",
+    "make": "Aston Martin",
+    "model": "Vantage",
+    "years": [
+      2018,
+      2026
+    ],
+    "aliases": [
+      "V8 Vantage"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "bentley-continental-gt-2g": {
+    "uid": "c4094bd0fea64777a7572f5384d9eedd",
+    "make": "Bentley",
+    "model": "Continental GT",
+    "years": [
+      2011,
+      2017
+    ],
+    "aliases": [
+      "Continental GT V8",
+      "Continental GT Speed"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "bentley-continental-gt-3g": {
+    "uid": "8e5fa2daca234948bea87b1a55067bbc",
+    "make": "Bentley",
+    "model": "Continental GT",
+    "years": [
+      2018,
+      2026
+    ],
+    "aliases": [
+      "Continental GT Speed",
+      "Continental GT V8"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "rolls-royce-ghost-2g": {
+    "uid": "6bd8e47d086c467ea1ff1638c972a83a",
+    "make": "Rolls-Royce",
+    "model": "Ghost",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "Ghost Black Badge"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "lotus-emira": {
+    "uid": "353d4768b2d74a7f888567e18952bcb1",
+    "make": "Lotus",
+    "model": "Emira",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [
+      "Emira V6",
+      "Emira i4"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "pagani-huayra": {
+    "uid": "c2d61a9f53a54a229547bb76e4b71e25",
+    "make": "Pagani",
+    "model": "Huayra",
+    "years": [
+      2012,
+      2020
+    ],
+    "aliases": [
+      "Huayra BC",
+      "Huayra Roadster"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "citroen-c3": {
+    "uid": "45058edec718498b8cf2b041e254ea3b",
+    "make": "Citro\u00ebn",
+    "model": "C3",
+    "years": [
+      2016,
+      2024
+    ],
+    "aliases": [
+      "C3 Aircross"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "saab-9-3": {
+    "uid": "a1894b5f284044be80c5b1d340e2cf32",
+    "make": "Saab",
+    "model": "9-3",
+    "years": [
+      2003,
+      2012
+    ],
+    "aliases": [
+      "9-3 Aero",
+      "9-3 Turbo X"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "suzuki-swift": {
+    "uid": "218c3c0c6afd4d0eb343bd50d8868fd0",
+    "make": "Suzuki",
+    "model": "Swift",
+    "years": [
+      2017,
+      2023
+    ],
+    "aliases": [
+      "Swift Sport"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "fisker-ocean": {
+    "uid": "f506bfe876864c04b68bdfc59070739a",
+    "make": "Fisker",
+    "model": "Ocean",
+    "years": [
+      2023,
+      2024
+    ],
+    "aliases": [
+      "Ocean Extreme",
+      "Ocean Sport"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "buick-envision": {
+    "uid": "057cd2a2385b4c8381f11ddfa6c251b5",
+    "make": "Buick",
+    "model": "Envision",
+    "years": [
+      2016,
+      2020
+    ],
+    "aliases": [
+      "Envision Preferred"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "buick-regal": {
+    "uid": "3fe0733dcc3942828d348a10ec05645e",
+    "make": "Buick",
+    "model": "Regal",
+    "years": [
+      2011,
+      2017
+    ],
+    "aliases": [
+      "Regal GS",
+      "Regal Turbo"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "genesis-g70": {
+    "uid": "2b1b116ab63d4990978f7bbf09815e4f",
+    "make": "Genesis",
+    "model": "G70",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [
+      "G70 3.3T"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "genesis-gv70": {
+    "uid": "82edac5f1d744fe98d78adeb7a7d329e",
+    "make": "Genesis",
+    "model": "GV70",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [
+      "GV70 3.5T"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "mclaren-570s": {
+    "uid": "2396ca2aa3ec4f99bf29baba3d7a43cf",
+    "make": "McLaren",
+    "model": "570S",
+    "years": [
+      2016,
+      2021
+    ],
+    "aliases": [
+      "570S Spider",
+      "570GT"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "rolls-royce-cullinan": {
+    "uid": "15e91e5ea6e94cab99b7150fe0a80944",
+    "make": "Rolls-Royce",
+    "model": "Cullinan",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [
+      "Cullinan Black Badge"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "fiat-500x": {
+    "uid": "1de37bf6d45348c3a9a62194c1454c2d",
+    "make": "Fiat",
+    "model": "500X",
+    "years": [
+      2016,
+      2023
+    ],
+    "aliases": [
+      "500X Sport",
+      "500X Trekking"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "lamborghini-aventador": {
+    "uid": "784e4656aca649cca55d6b18740a19b2",
+    "make": "Lamborghini",
+    "model": "Aventador",
+    "years": [
+      2017,
+      2022
+    ],
+    "aliases": [
+      "Aventador SVJ",
+      "Aventador S"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "peugeot-3008": {
+    "uid": "3e5e14fdb1f94f25a5b572caf518f55d",
+    "make": "Peugeot",
+    "model": "3008",
+    "years": [
+      2016,
+      2023
+    ],
+    "aliases": [
+      "3008 GT"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "renault-megane": {
+    "uid": "0c0d6c54a2424feb95447400a5c5e50e",
+    "make": "Renault",
+    "model": "Megane",
+    "years": [
+      2003,
+      2009
+    ],
+    "aliases": [
+      "M\u00e9gane"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "chrysler-pacifica": {
+    "uid": "890cbc5470e344aaaff29dc2d6d8fdeb",
+    "make": "Chrysler",
+    "model": "Pacifica",
+    "years": [
+      2017,
+      2026
+    ],
+    "aliases": [
+      "Pacifica Hybrid",
+      "Pacifica Limited"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "volvo-xc60": {
+    "uid": "eb8ce77c64c04339983cdf30593abca3",
+    "make": "Volvo",
+    "model": "XC60",
+    "years": [
+      2018,
+      2026
+    ],
+    "aliases": [
+      "XC60 T6",
+      "XC60 Recharge"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "rolls-royce-dawn": {
+    "uid": "a7b815d36be44bb7b5f334dfa56594aa",
+    "make": "Rolls-Royce",
+    "model": "Dawn",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [
+      "Dawn Black Badge"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "rolls-royce-ghost-1g": {
+    "uid": "1f614e803fc24946b83bdc2dd9926d62",
+    "make": "Rolls-Royce",
+    "model": "Ghost",
+    "years": [
+      2010,
+      2020
+    ],
+    "aliases": [
+      "Ghost Series II"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "buick-lacrosse": {
+    "uid": "9852ece4440b49d5a8ee539cc0379877",
+    "make": "Buick",
+    "model": "LaCrosse",
+    "years": [
+      2010,
+      2016
+    ],
+    "aliases": [
+      "LaCrosse Premium"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "citroen-c4-cactus": {
+    "uid": "9ebaa2199c4e45bd94d41a7b7e81827f",
+    "make": "Citro\u00ebn",
+    "model": "C4 Cactus",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [
+      "C4 Cactus Feel"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "infiniti-qx60": {
+    "uid": "07be8df93d044abba12d6daa37976d5a",
+    "make": "Infiniti",
+    "model": "QX60",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [
+      "QX60 Luxe",
+      "QX60 Autograph"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "infiniti-qx50": {
+    "uid": "e7d888afb93d4e3ebc242d0e6d7d539b",
+    "make": "Infiniti",
+    "model": "QX50",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [
+      "QX50 Luxe",
+      "QX50 Essential"
+    ],
+    "verify": "batch 4"
+  },
+  "infiniti-g35-coupe": {
+    "uid": "f2e715be06494226865510aac31f716b",
+    "make": "Infiniti",
+    "model": "G35",
+    "years": [
+      2003,
+      2007
+    ],
+    "aliases": [
+      "G35 Coupe",
+      "G35x"
+    ],
+    "verify": "batch 4"
+  },
+  "citroen-c1": {
+    "uid": "334053c217c749c2ab12f664050c9435",
+    "make": "Citro\u00ebn",
+    "model": "C1",
+    "years": [
+      2005,
+      2014
+    ],
+    "aliases": [
+      "C1 Airscape"
+    ],
+    "verify": "batch 4"
+  },
+  "acura-mdx-2007": {
+    "uid": "4519ec970756490792548ac1790a816b",
+    "make": "Acura",
+    "model": "MDX",
+    "years": [
+      2007,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Acura Mdx (253031 faces, 2 likes)"
+  },
+  "acura-mdx-2014": {
+    "uid": "838937c4b12345c9a242ea620d93e89e",
+    "make": "Acura",
+    "model": "MDX",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Acura MDX (1222767 faces, 8 likes)"
+  },
+  "acura-mdx-2022": {
+    "uid": "9b080f8dc79e4345b3c9cd24e476fcbc",
+    "make": "Acura",
+    "model": "MDX",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Acura MDX (1230304 faces, 8 likes)"
+  },
+  "audi-a4-2009": {
+    "uid": "101fe36c91244631b2ce6c012520e85e",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2009,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: 2010 Audi A4 Allroad (B8) (720782 faces, 32 likes)"
+  },
+  "audi-a4-2017": {
+    "uid": "0840f2fb7fbf4d5682a58608d6aeefd0",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi a4 2017 (290626 faces, 11 likes)"
+  },
+  "audi-q5-2009": {
+    "uid": "04cb2727434c4e129bed1d8f7b7ea2b7",
+    "make": "Audi",
+    "model": "Q5",
+    "years": [
+      2009,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi Q5 (459394 faces, 5 likes)"
+  },
+  "audi-q5-2018": {
+    "uid": "9cf08cf1dac24654a34dbdad76cce52c",
+    "make": "Audi",
+    "model": "Q5",
+    "years": [
+      2018,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Audi Q5 Sportback (460350 faces, 13 likes)"
+  },
+  "bmw-3-series-2006": {
+    "uid": "e14e0b434bfc4fa5ae28c10fe9379fb4",
+    "make": "BMW",
+    "model": "3 Series",
+    "years": [
+      2006,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 3 Series (E90) 2004-2012 (293099 faces, 14 likes)"
+  },
+  "bmw-5-series-2011": {
+    "uid": "c2910a4e0d154f2ebdc41e6265eaaac3",
+    "make": "BMW",
+    "model": "5 Series",
+    "years": [
+      2011,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 5-Series Sedan (G30) LCI (74535 faces, 43 likes)"
+  },
+  "bmw-x3-2011": {
+    "uid": "f58d0d4861e24dba90720f2862b17b58",
+    "make": "BMW",
+    "model": "X3",
+    "years": [
+      2011,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: Bmw X3 2011 (74454 faces, 5 likes)"
+  },
+  "bmw-x3-2018": {
+    "uid": "5142078aebec406688e19401985050ec",
+    "make": "BMW",
+    "model": "X3",
+    "years": [
+      2018,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: 2020 BMW X3 (86427 faces, 19 likes)"
+  },
+  "bmw-x5-2014": {
+    "uid": "6db10483b2f742b0904280a0f2851426",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X5 M Sport 2019 (1367885 faces, 15 likes)"
+  },
+  "bmw-x5-2019": {
+    "uid": "9b211d525797457e988c903f67d0b753",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2020 BMW X5 M Competition (319318 faces, 85 likes)"
+  },
+  "cadillac-escalade-2015": {
+    "uid": "8330bdf5cbaf4e25a9031990ca8621de",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021 Cadillac Escalade (678830 faces, 60 likes)"
+  },
+  "chevrolet-corvette-2005": {
+    "uid": "7ff74ce1324c4dbb9f3d830b71525096",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2005,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: 2005 Chevrolet Corvette C6 (83824 faces, 133 likes)"
+  },
+  "chevrolet-corvette-2014": {
+    "uid": "01d63aa7013347acbfa62bc00e0b2df6",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2020 Chevrolet Corvette C8 Stingray Convertible (252648 faces, 156 likes)"
+  },
+  "chevrolet-equinox-2010": {
+    "uid": "9065adb2dcd44424b08e59cfba90c62d",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2010,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: 2014 Chevrolet Equinox (1231398 faces, 43 likes)"
+  },
+  "chevrolet-equinox-2025": {
+    "uid": "a99b4402d38f4af7af28ed04f1c0dbe6",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2025,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024 Chevrolet Equinox EV (1437164 faces, 2 likes)"
+  },
+  "chevrolet-malibu-2008": {
+    "uid": "fc07e847ec6c4dbaa02d53e1110a6dd7",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2008,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: 2016 Chevrolet Malibu 2.0 T Premier (38222 faces, 74 likes)"
+  },
+  "chevrolet-malibu-2016": {
+    "uid": "a155e069dbf84db0b3454ba313d0e79f",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2016,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Malibu 2022 (103797 faces, 29 likes)"
+  },
+  "chevrolet-silverado-2014": {
+    "uid": "652324cc8a974d3a9869ce2b0f3beaaa",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019 Chevrolet Silverado Trail Boss Z71 (479112 faces, 204 likes)"
+  },
+  "chevrolet-tahoe-2007": {
+    "uid": "a11d407e141b4a88b2a424060075e357",
+    "make": "Chevrolet",
+    "model": "Tahoe",
+    "years": [
+      2007,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Tahoe 2007 (140989 faces, 61 likes)"
+  },
+  "chevrolet-tahoe-2015": {
+    "uid": "298b079768eb47948421a40a3311868b",
+    "make": "Chevrolet",
+    "model": "Tahoe",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021 Unmarked Chevrolet Tahoe Z71 Premier Unit (746426 faces, 46 likes)"
+  },
+  "chevrolet-tahoe-2021": {
+    "uid": "39b86984238941b0b6a46da6a8c31907",
+    "make": "Chevrolet",
+    "model": "Tahoe",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Tahoe Suv (112500 faces, 17 likes)"
+  },
+  "dodge-challenger-2008": {
+    "uid": "e9349f847d5f4b95a01a6ce578e19899",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 Dodge Challenger SRT Hellcat (134377 faces, 103 likes)"
+  },
+  "dodge-charger-2006": {
+    "uid": "7e2ce99641454cfb98afe971f3edf826",
+    "make": "Dodge",
+    "model": "Charger",
+    "years": [
+      2006,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: My 2015 Dodge Charger (137444 faces, 34 likes)"
+  },
+  "ford-escape-2013": {
+    "uid": "151f53c4542b4fcaad1e1de2492ab4b6",
+    "make": "Ford",
+    "model": "Escape",
+    "years": [
+      2013,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford Escape ST Line 2018 (568960 faces, 12 likes)"
+  },
+  "ford-escape-2020": {
+    "uid": "1addfac92b764e2eba9477b1ea7e0eb3",
+    "make": "Ford",
+    "model": "Escape",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford Escape 2021 (409367 faces, 11 likes)"
+  },
+  "ford-explorer-2011": {
+    "uid": "9e189aaba95f4885a529eff601f5f602",
+    "make": "Ford",
+    "model": "Explorer",
+    "years": [
+      2011,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2014 Ford Explorer(FPIU) (143160 faces, 27 likes)"
+  },
+  "ford-f-150-2009": {
+    "uid": "b7e63d376e59453490907cebbd44ab72",
+    "make": "Ford",
+    "model": "F-150",
+    "years": [
+      2009,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: 2010 Ford F-150 SVT Raptor R (78840 faces, 60 likes)"
+  },
+  "ford-f-150-2021": {
+    "uid": "eff90788c3b44d398bcf5e63ccabbb52",
+    "make": "Ford",
+    "model": "F-150",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford F-150 Raptor (F-150II) (86312 faces, 63 likes)"
+  },
+  "ford-maverick-2022": {
+    "uid": "ceedc3541a004014b7f02fccb78c3146",
+    "make": "Ford",
+    "model": "Maverick",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Ford Maverick (1497586 faces, 0 likes)"
+  },
+  "ford-mustang-2005": {
+    "uid": "b60b3a520c024fd69416d56a71900626",
+    "make": "Ford",
+    "model": "Mustang",
+    "years": [
+      2005,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford Mustang Shelby 2012 (183156 faces, 228 likes)"
+  },
+  "gmc-sierra-2007": {
+    "uid": "c31554882b074e168ddc65bd6d1e5464",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2007,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: GMC SIERRA HD2500 (104471 faces, 72 likes)"
+  },
+  "gmc-sierra-2014": {
+    "uid": "08efe03a95634fc5ae9a8a7e716fc49e",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2007,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: GMC Sierra Crew Cab (575960 faces, 33 likes)"
+  },
+  "gmc-sierra-2019": {
+    "uid": "872779e222fb43e889a5219f9fc83b4c",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2019,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: GMC Sierra Reg SLE 1500 2020 (435183 faces, 32 likes)"
+  },
+  "honda-accord-2008": {
+    "uid": "1e3be91c28104f6489b42248884327fe",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2008,
+      2012
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Accord 2008 (123928 faces, 62 likes)"
+  },
+  "honda-accord-2013": {
+    "uid": "68892cd369e84a218e5e5dcf82365ee3",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2013,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: honda accord 2017 (778410 faces, 144 likes)"
+  },
+  "honda-accord-2018": {
+    "uid": "54c227442c4b42dfbaa25e474ad9d736",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2018,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: 2018 Honda Accord (341726 faces, 41 likes)"
+  },
+  "honda-accord-2023": {
+    "uid": "89820f6164ec491da844f286b612d8d4",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2023,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024 Honda Accord (994037 faces, 31 likes)"
+  },
+  "honda-cr-v-2007": {
+    "uid": "ac710a69fb8d4ddf93c08766e77e7246",
+    "make": "Honda",
+    "model": "CR-V",
+    "years": [
+      2007,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda CR-V MK2 Pre-Facelift 2001-2006 (163046 faces, 5 likes)"
+  },
+  "honda-civic-2006": {
+    "uid": "d172550512a542719e45cbb3ad10c254",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2006,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Civic  Type-R 2008 (216120 faces, 4 likes)"
+  },
+  "honda-civic-2012": {
+    "uid": "b9604dd71c6546ec842702682019492a",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2012,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Civic Type R -98 (Free Asset) (238189 faces, 368 likes)"
+  },
+  "honda-pilot-2009": {
+    "uid": "08ab3f6e3d364e3092f487fbb3bfc1a5",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2009,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Pilot 2010 (1267574 faces, 15 likes)"
+  },
+  "honda-pilot-2016": {
+    "uid": "e8dfc242e5af4775b244c917f77bcb47",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Pilot 2017 Elite 7-Seats (306615 faces, 0 likes)"
+  },
+  "honda-pilot-2023": {
+    "uid": "3449487c9e6842be959fdaacef473df1",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2023,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Pilot 2025 (1499890 faces, 0 likes)"
+  },
+  "hyundai-elantra-2011": {
+    "uid": "ec1dc61f11d241869c75b63e3bb2704d",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2011,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Elantra MK5 2010-2018 (274369 faces, 10 likes)"
+  },
+  "hyundai-elantra-2017": {
+    "uid": "673a4a83715d411ba713c0c270cdf93f",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021-2023 Hyundai Elantra N (251445 faces, 14 likes)"
+  },
+  "hyundai-elantra-2021": {
+    "uid": "cd5741852515425aa3c058b7e081dd2c",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Hyundai Elantra N (500248 faces, 21 likes)"
+  },
+  "hyundai-santa-fe-2013": {
+    "uid": "e3ca827d14bb49449cdcd0d34e2c8120",
+    "make": "Hyundai",
+    "model": "Santa Fe",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: HYUNDAI SANTA FE 2012 (1497120 faces, 0 likes)"
+  },
+  "hyundai-santa-fe-2019": {
+    "uid": "44162eff25084d74964688b1e139ede8",
+    "make": "Hyundai",
+    "model": "Santa Fe",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024 Hyundai Santa Fe (340690 faces, 12 likes)"
+  },
+  "hyundai-santa-fe-2024": {
+    "uid": "78845c725f41494482263c1610c8d087",
+    "make": "Hyundai",
+    "model": "Santa Fe",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Santa-Fe 2024 MX5 USA (306832 faces, 0 likes)"
+  },
+  "hyundai-sonata-2011": {
+    "uid": "b483a4442fd94a31bfd771df38acf9c7",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2015,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 Hyundai Sonata (438525 faces, 12 likes)"
+  },
+  "hyundai-sonata-2015": {
+    "uid": "c435ef02b27140e2a5f800c622bb4c04",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2015,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2017 Hyundai Sonata  Hybrid (73004 faces, 18 likes)"
+  },
+  "hyundai-sonata-2020": {
+    "uid": "60be2868b10147d48b421f261a5b3fed",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: '20 Hyundai Sonata | Rover (25448 faces, 34 likes)"
+  },
+  "jeep-gladiator-2020": {
+    "uid": "3036e734a0944821aca8d4434abf4936",
+    "make": "Jeep",
+    "model": "Gladiator",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep Gladiator 2019 (108086 faces, 40 likes)"
+  },
+  "jeep-grand-cherokee-2022": {
+    "uid": "2ed9df537ea64bc595ff63ded378bc2b",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Jeep Grand Cherokee 5? (49358 faces, 3 likes)"
+  },
+  "jeep-wrangler-2007": {
+    "uid": "e8ad5a9f0489416599c50781e08bf70c",
+    "make": "Jeep",
+    "model": "Wrangler",
+    "years": [
+      2007,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: 2007 Jeep Wrangler Rubicon (85314 faces, 25 likes)"
+  },
+  "kia-sorento-2016": {
+    "uid": "ba5261a73f2949839dabdd9099c9dff4",
+    "make": "Kia",
+    "model": "Sorento",
+    "years": [
+      2016,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Kia Sorento 2021 (267307 faces, 1 likes)"
+  },
+  "kia-sorento-2021": {
+    "uid": "340ded1d34c149a095b3281a1232494a",
+    "make": "Kia",
+    "model": "Sorento",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Kia Sorento PHEV Executive Line (651433 faces, 19 likes)"
+  },
+  "kia-telluride-2020": {
+    "uid": "dc6f6550633a4f95b55f79c5aaa76671",
+    "make": "Kia",
+    "model": "Telluride",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Kia Telluride 2025 (534940 faces, 5 likes)"
+  },
+  "lexus-es-2013": {
+    "uid": "b4edfa2fd5cc48ada679352215e0105e",
+    "make": "Lexus",
+    "model": "ES",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Lexus ES Hybrid (201114 faces, 34 likes)"
+  },
+  "lexus-es-2019": {
+    "uid": "ff0ad8f26fc3468b9199cb8c2d1858dd",
+    "make": "Lexus",
+    "model": "ES",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Lexus Es 2026 (1499818 faces, 0 likes)"
+  },
+  "lexus-is-2006": {
+    "uid": "be1c96a927f345e59d41577f4fa16978",
+    "make": "Lexus",
+    "model": "IS",
+    "years": [
+      2006,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Lexus IS (XE20) (20341 faces, 41 likes)"
+  },
+  "lexus-is-2014": {
+    "uid": "67f1da02fdd94409b02568dfdca99a9a",
+    "make": "Lexus",
+    "model": "IS",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Lexus IS - Driving School 2017 (35409 faces, 1 likes)"
+  },
+  "lexus-rx-2010": {
+    "uid": "5adac240037e4daabfe4145fc034d727",
+    "make": "Lexus",
+    "model": "RX",
+    "years": [
+      2010,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: 2010 Lexus RX (873802 faces, 12 likes)"
+  },
+  "lexus-rx-2016": {
+    "uid": "8a3267c9972e4b638a3d5cc7e049211b",
+    "make": "Lexus",
+    "model": "RX",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: 2023 Lexus RX500h F Sport (598789 faces, 25 likes)"
+  },
+  "lexus-rx-2023": {
+    "uid": "13ddc257995b4e3fa6be35af690251c8",
+    "make": "Lexus",
+    "model": "RX",
+    "years": [
+      2023,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2023 Lexus RX450h (590620 faces, 19 likes)"
+  },
+  "mazda-cx-5-2013": {
+    "uid": "0ca0354c7b2a41bbb84c835ff046e8e5",
+    "make": "Mazda",
+    "model": "CX-5",
+    "years": [
+      2013,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: Mazda CX-5 (119100 faces, 32 likes)"
+  },
+  "mazda-cx-5-2017": {
+    "uid": "ea176c6ebe814be3b06641bf038f8642",
+    "make": "Mazda",
+    "model": "CX-5",
+    "years": [
+      2017,
+      2025
+    ],
+    "aliases": [],
+    "verify": "autopick: Mazda CX-5 2020 (178366 faces, 33 likes)"
+  },
+  "mazda-mx-5-miata-1990": {
+    "uid": "bb6bf9e85e4c4f2cae10a32b0ac1bafd",
+    "make": "Mazda",
+    "model": "MX-5 Miata",
+    "years": [
+      1990,
+      1997
+    ],
+    "aliases": [],
+    "verify": "autopick: 1994 Mazda MX-5 Miata (NA8C) (16338 faces, 32 likes)"
+  },
+  "mazda-mx-5-miata-1999": {
+    "uid": "30de612d333f4ed69b532350ba7b1f2c",
+    "make": "Mazda",
+    "model": "MX-5 Miata",
+    "years": [
+      1999,
+      2005
+    ],
+    "aliases": [],
+    "verify": "autopick: Mazda MX-5 Miata (604603 faces, 16 likes)"
+  },
+  "mazda-mx-5-miata-2006": {
+    "uid": "922ff6fec90340ed8cf5aabe38dd1ad2",
+    "make": "Mazda",
+    "model": "MX-5 Miata",
+    "years": [
+      2006,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: 2016 Mazda MX-5 Miata (57064 faces, 23 likes)"
+  },
+  "mazda-mazda3-2010": {
+    "uid": "d0f5d304688046a09c46d76bef3ddebf",
+    "make": "Mazda",
+    "model": "Mazda3",
+    "years": [
+      2010,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Mazda 3 (258449 faces, 4 likes)"
+  },
+  "mazda-mazda3-2014": {
+    "uid": "15016e5938ac45d68cc0e3b9048806db",
+    "make": "Mazda",
+    "model": "Mazda3",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Mazda3 (312709 faces, 4 likes)"
+  },
+  "mercedes-benz-c-class-2008": {
+    "uid": "2d215a12b3734b888f488b6cda8e73fb",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz C-Class (S204) 2007-2014 (547257 faces, 8 likes)"
+  },
+  "mercedes-benz-c-class-2015": {
+    "uid": "19d59344b7554e6ab614a6cc02e7ad0a",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2015,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz C-Class 2020 (199722 faces, 25 likes)"
+  },
+  "mercedes-benz-c-class-2022": {
+    "uid": "5e1a44c940234b37aa0ffddf53e5f296",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Mercedes-Benz C-Class (427234 faces, 18 likes)"
+  },
+  "mercedes-benz-e-class-2010": {
+    "uid": "51955b38019846aaa41b52044879efff",
+    "make": "Mercedes-Benz",
+    "model": "E-Class",
+    "years": [
+      2010,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz E-class Sedan 2010 (709895 faces, 19 likes)"
+  },
+  "mercedes-benz-e-class-2017": {
+    "uid": "136ecd58732b4f88b0bcd3cb74a71e54",
+    "make": "Mercedes-Benz",
+    "model": "E-Class",
+    "years": [
+      2017,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Mercedes-Benz E-Class AMG Line (474610 faces, 42 likes)"
+  },
+  "mercedes-benz-e-class-2024": {
+    "uid": "3f8024c636c8406f9f6f0c8a82fdb868",
+    "make": "Mercedes-Benz",
+    "model": "E-Class",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz E-Class MK5 Combi (S213) 2016-2023 (276829 faces, 6 likes)"
+  },
+  "mercedes-benz-glc-2016": {
+    "uid": "a2f1906aad304b2e99e657d2c82146dc",
+    "make": "Mercedes-Benz",
+    "model": "GLC",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: mercedes-benz glc coupe (31751 faces, 17 likes)"
+  },
+  "mercedes-benz-glc-2023": {
+    "uid": "6a0ef719f8d74378969b6f6095bd8981",
+    "make": "Mercedes-Benz",
+    "model": "GLC",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes- Benz GLC-class (X205) F Cell (1109422 faces, 13 likes)"
+  },
+  "nissan-altima-2013": {
+    "uid": "19d86d24eb0e407bb0920ad6f348b636",
+    "make": "Nissan",
+    "model": "Altima",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2013 Nissan Altima (130220 faces, 9 likes)"
+  },
+  "nissan-rogue-2014": {
+    "uid": "318472f2afb24f82abbce567371c942e",
+    "make": "Nissan",
+    "model": "Rogue",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: 2016 Nissan Rogue Sport (289998 faces, 6 likes)"
+  },
+  "porsche-911-1999": {
+    "uid": "0e1f5e1c0ddc4c3f88b8484461146a79",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      1999,
+      2004
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche 911 RAUH-Welt [FREE] (221044 faces, 899 likes)"
+  },
+  "porsche-911-2005": {
+    "uid": "2f39754f878b4c82ba0c0b938eeafc15",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      2005,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche 911 GT2 RS (996) (157369 faces, 73 likes)"
+  },
+  "porsche-cayenne-2011": {
+    "uid": "a82d57c486e147b4a2f6d7ece24ca60c",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne MK1 2002-2010 (220944 faces, 9 likes)"
+  },
+  "porsche-cayenne-2019": {
+    "uid": "3f3fa4493ecc4826823f0cb27f638908",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Porsche Cayenne Turbo GT (250917 faces, 11 likes)"
+  },
+  "porsche-macan-2015": {
+    "uid": "f0270f8ae1db4d7b909417e07492043a",
+    "make": "Porsche",
+    "model": "Macan",
+    "years": [
+      2015,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Porsche Macan (247072 faces, 20 likes)"
+  },
+  "ram-1500-2009": {
+    "uid": "c6814c07d8e241cbaebcd9ac8a6bbcf7",
+    "make": "Ram",
+    "model": "1500",
+    "years": [
+      2009,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2013+ Dodge+ Ram+1500+4X4+ Crew+ Cab (302810 faces, 6 likes)"
+  },
+  "subaru-crosstrek-2018": {
+    "uid": "a5263a4756cd4e4f9bad818502c76d91",
+    "make": "Subaru",
+    "model": "Crosstrek",
+    "years": [
+      2018,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: SUBARU CROSSTREK 2018 (1499154 faces, 0 likes)"
+  },
+  "subaru-crosstrek-2024": {
+    "uid": "3db2af63b4e24d8d8b3de368f19507d1",
+    "make": "Subaru",
+    "model": "Crosstrek",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: SUBARU CROSSTREK 2025 (1497380 faces, 0 likes)"
+  },
+  "subaru-forester-2014": {
+    "uid": "31c7af107f8f49b1b1308bd29276965e",
+    "make": "Subaru",
+    "model": "Forester",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Forester 2019 (1483489 faces, 10 likes)"
+  },
+  "subaru-outback-2015": {
+    "uid": "6d1badf2a3124ebabcfe08077474739e",
+    "make": "Subaru",
+    "model": "Outback",
+    "years": [
+      2015,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Outback MK5 2014-2019 (665985 faces, 7 likes)"
+  },
+  "subaru-wrx-2022": {
+    "uid": "589f5dc710844ee191e1a96809c67a62",
+    "make": "Subaru",
+    "model": "WRX",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru_wrx_wagon_gg (180778 faces, 71 likes)"
+  },
+  "tesla-cybertruck-2024": {
+    "uid": "0fe4980c8cbc441382bfb7d4cf9f092e",
+    "make": "Tesla",
+    "model": "Cybertruck",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Cybertruck 2025 (72672 faces, 11 likes)"
+  },
+  "tesla-model-3-2024": {
+    "uid": "6bd2ab6e23a545858d5c98c995528067",
+    "make": "Tesla",
+    "model": "Model 3",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2023 Tesla Model 3 Performance (684315 faces, 38 likes)"
+  },
+  "tesla-model-s-2012": {
+    "uid": "4092546f8f60417bb401fe5a8a39032b",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: tesla model S plaid 2021 with interior (454933 faces, 10 likes)"
+  },
+  "tesla-model-s-2021": {
+    "uid": "bce72a1fcc3f49dc8deb60e5f2e8b8b7",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model S Plaid 2023 (314186 faces, 6 likes)"
+  },
+  "tesla-model-x-2016": {
+    "uid": "c61839793eab4f31a26e261a2de750b5",
+    "make": "Tesla",
+    "model": "Model X",
+    "years": [
+      2016,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model X 2020 (176645 faces, 9 likes)"
+  },
+  "tesla-model-y-2025": {
+    "uid": "a66f7673a09d4fcb84d37111433f05a9",
+    "make": "Tesla",
+    "model": "Model Y",
+    "years": [
+      2025,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model Y 2025 (1426441 faces, 1 likes)"
+  },
+  "toyota-4runner-2010": {
+    "uid": "ba1216e61c974d0195143edaaab274fd",
+    "make": "Toyota",
+    "model": "4Runner",
+    "years": [
+      2010,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 Toyota 4Runner (300980 faces, 19 likes)"
+  },
+  "toyota-camry-2012": {
+    "uid": "560c174d073f4a10bb153ded41ada8c9",
+    "make": "Toyota",
+    "model": "Camry",
+    "years": [
+      2012,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Camry 40 (18410 faces, 66 likes)"
+  },
+  "toyota-corolla-2009": {
+    "uid": "36f95efb0585464cae43a25a3b3392e8",
+    "make": "Toyota",
+    "model": "Corolla",
+    "years": [
+      2009,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: 2014 Toyota Corolla E180 EU (with interior) (84408 faces, 186 likes)"
+  },
+  "toyota-highlander-2008": {
+    "uid": "11413272fe244553986c1c1b1efab564",
+    "make": "Toyota",
+    "model": "Highlander",
+    "years": [
+      2008,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Highlander 2011 (646633 faces, 8 likes)"
+  },
+  "toyota-highlander-2014": {
+    "uid": "ff144d062f244a3ebfae71bc2a41564b",
+    "make": "Toyota",
+    "model": "Highlander",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Highlander 2020 (200513 faces, 23 likes)"
+  },
+  "toyota-rav4-2006": {
+    "uid": "edcad91d2f1b40fcba3fb0b6b1a32b4a",
+    "make": "Toyota",
+    "model": "RAV4",
+    "years": [
+      2006,
+      2012
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota RAV4 MK2 2000-2005 (251065 faces, 13 likes)"
+  },
+  "toyota-rav4-2013": {
+    "uid": "082c0ed5b88b44f2b0f556f04f8f904c",
+    "make": "Toyota",
+    "model": "RAV4",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota RAV4 MK5 2019 (416719 faces, 6 likes)"
+  },
+  "toyota-tacoma-2005": {
+    "uid": "f13b2c73a13147a69a6d2a83f72b2505",
+    "make": "Toyota",
+    "model": "Tacoma",
+    "years": [
+      2005,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tacoma TRD (25872 faces, 16 likes)"
+  },
+  "toyota-tacoma-2024": {
+    "uid": "ad63171215b4442e949370c1b185c79d",
+    "make": "Toyota",
+    "model": "Tacoma",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tacoma 3D Mapped with link to FPV (138596 faces, 3 likes)"
+  },
+  "toyota-tundra-2007": {
+    "uid": "96030020a5b244afb9150b5c969feeec",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2007,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra Crew Max 2011 (609548 faces, 15 likes)"
+  },
+  "toyota-tundra-2014": {
+    "uid": "1f879c34f81b467ab9afd5ecb9b1253d",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra 2017 (834564 faces, 56 likes)"
+  },
+  "toyota-tundra-2022": {
+    "uid": "162177af8ede410bb3829953d88dc4d2",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra SR5 TRD 2022 (619460 faces, 26 likes)"
+  },
+  "volkswagen-golf-2010": {
+    "uid": "8dc40e7b021149ea8f8186acb0d40102",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2010,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: 2013 Volkswagen Golf MKVI R Kicker Racing (31078 faces, 22 likes)"
+  },
+  "volkswagen-jetta-2011": {
+    "uid": "8411d7c4304e48c0863ec7672aee73b5",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019 Volkswagen Jetta (386541 faces, 4 likes)"
+  },
+  "volkswagen-jetta-2019": {
+    "uid": "0765af10aa6a4992b961ac72f33588e1",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta 2022 (418070 faces, 5 likes)"
+  },
+  "audi-a4-2009-b": {
+    "uid": "b5861ddefcb8478b858b3150aa44cd7f",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2009,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi A4 (B5) (219888 faces, 65 likes)"
+  },
+  "audi-a4-2017-b": {
+    "uid": "240267258f81480eb4263c83bf674ad9",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi A4 DTM R14 Redbull (177596 faces, 34 likes)"
+  },
+  "audi-q5-2009-b": {
+    "uid": "5dcb7e3570d846779e5da435f82b4745",
+    "make": "Audi",
+    "model": "Q5",
+    "years": [
+      2009,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi q5 (1000024 faces, 3 likes)"
+  },
+  "bmw-x3-2011-b": {
+    "uid": "bc419a5e2c5e4a1ab0ed0dd5d2ab9f90",
+    "make": "BMW",
+    "model": "X3",
+    "years": [
+      2011,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X3 (796486 faces, 11 likes)"
+  },
+  "bmw-x5-2014-b": {
+    "uid": "1dfdb422f05d44b287e332bec4311c50",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X5 E53 RESTYLING | High Quality (209604 faces, 30 likes)"
+  },
+  "cadillac-escalade-2015-b": {
+    "uid": "22e8707798f54d00904805482f771a65",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Cadillac Escalade 2021 (563900 faces, 21 likes)"
+  },
+  "chevrolet-corvette-2014-b": {
+    "uid": "790c40ccff6843eab0b7b4bd18421ff8",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019 Chevrolet Corvette C8 Stingray (263691 faces, 450 likes)"
+  },
+  "chevrolet-equinox-2010-b": {
+    "uid": "7735711f53d34cbc8f7c34ebb8dedd91",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2010,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: 2018_chevrolet_equinox_premier (296126 faces, 2 likes)"
+  },
+  "chevrolet-equinox-2025-b": {
+    "uid": "bc2a759063a14454adde15e2e440bbb6",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2025,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Equinox+SALON (1360986 faces, 2 likes)"
+  },
+  "chevrolet-malibu-2008-b": {
+    "uid": "30705ef951a64da9bedd426d0d3aab70",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2008,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Malibu 82 (339139 faces, 78 likes)"
+  },
+  "chevrolet-silverado-2014-b": {
+    "uid": "e6569ae6adbf4aea81ed992d57e963f0",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019-chevrolet-silverado-trail-boss-z71 (479112 faces, 6 likes)"
+  },
+  "chevrolet-tahoe-2021-b": {
+    "uid": "ba06d54e197e447c9770fdd039ce9dc3",
+    "make": "Chevrolet",
+    "model": "Tahoe",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: chevrolet_tahoe-bam0 (141508 faces, 8 likes)"
+  },
+  "dodge-challenger-2008-b": {
+    "uid": "328ad57624a246bd92359dd694187457",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 Dodge Challenger SRT Hellcat (29780 faces, 49 likes)"
+  },
+  "dodge-charger-2006-b": {
+    "uid": "51ff44881e6e4d7bad90decadd7ea4e3",
+    "make": "Dodge",
+    "model": "Charger",
+    "years": [
+      2006,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: 2011 Dodge Charger (114770 faces, 14 likes)"
+  },
+  "ford-escape-2013-b": {
+    "uid": "57958c14eeab409699f7907dc4760b9e",
+    "make": "Ford",
+    "model": "Escape",
+    "years": [
+      2013,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford Escape Dashboard (271655 faces, 12 likes)"
+  },
+  "ford-explorer-2011-b": {
+    "uid": "f4764a87c41e4c58acd560c66b7d3dde",
+    "make": "Ford",
+    "model": "Explorer",
+    "years": [
+      2011,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2011-ford-explorerv2 (143820 faces, 2 likes)"
+  },
+  "ford-f-150-2021-b": {
+    "uid": "606bccade8db412daf90d4a9dd2aabd3",
+    "make": "Ford",
+    "model": "F-150",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: ford f-150 (32090 faces, 44 likes)"
+  },
+  "gmc-sierra-2014-b": {
+    "uid": "849bc88e6f2741b19193f6b6a49a44ee",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: GMC Sierra (225947 faces, 12 likes)"
+  },
+  "gmc-sierra-2019-b": {
+    "uid": "f778523043244740b880cf120680eff2",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2019,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: GMC Sierra Grande (184272 faces, 8 likes)"
+  },
+  "honda-accord-2008-b": {
+    "uid": "de8f6daeb2c6408189b1f784469c6c36",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2008,
+      2012
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda-Accord - offf road - 4x4 (256162 faces, 31 likes)"
+  },
+  "honda-accord-2018-b": {
+    "uid": "faab251f15c44d73ba81d2ba1ec9faa9",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2018,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Accord Euro R (153048 faces, 21 likes)"
+  },
+  "honda-pilot-2016-b": {
+    "uid": "fdc2cc3c01a74f3daef36d2f9853d027",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Pilot 2018 (1500000 faces, 0 likes)"
+  },
+  "hyundai-elantra-2011-b": {
+    "uid": "da9653173c984ad3b8b60b01f1abf13b",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2011,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: 2014 Hyundai Elantra SE (653250 faces, 6 likes)"
+  },
+  "hyundai-elantra-2017-b": {
+    "uid": "1fb362b9877a4a0ea046598f69d6e3d2",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2017,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Abandoned destroyed car Hyundai Elantra (898464 faces, 51 likes)"
+  },
+  "hyundai-santa-fe-2013-b": {
+    "uid": "b13213ca0f464b9a98c006e70e4f9700",
+    "make": "Hyundai",
+    "model": "Santa Fe",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Santa-Fe Grand (410684 faces, 0 likes)"
+  },
+  "hyundai-sonata-2011-b": {
+    "uid": "7a0e4fa5122e4cc1b57d8b9149916558",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2011,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Sonata 2014 (1250663 faces, 22 likes)"
+  },
+  "hyundai-sonata-2020-b": {
+    "uid": "31a06332da3c49c0bd9b06e9d6f7967d",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Sonata (1283415 faces, 7 likes)"
+  },
+  "jeep-gladiator-2020-b": {
+    "uid": "069e0f97ca094261abcd5d7b145ac9e8",
+    "make": "Jeep",
+    "model": "Gladiator",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2020-jeep-gladiator (301477 faces, 8 likes)"
+  },
+  "jeep-grand-cherokee-2022-b": {
+    "uid": "1e77cb173f244f48aab92075f4f95505",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep Grand Cherokee Trackhawk (363057 faces, 22 likes)"
+  },
+  "kia-sorento-2016-b": {
+    "uid": "47a0016ba8b842c780d79ded8fa0a891",
+    "make": "Kia",
+    "model": "Sorento",
+    "years": [
+      2016,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Kia Sorento (288300 faces, 7 likes)"
+  },
+  "mazda-mazda3-2010-b": {
+    "uid": "9e5ffebb50424db994b98635a19e7b0b",
+    "make": "Mazda",
+    "model": "Mazda3",
+    "years": [
+      2010,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Mazda 3 (299973 faces, 1 likes)"
+  },
+  "mercedes-benz-c-class-2008-b": {
+    "uid": "dedd8f64a05d4d769d352ddcac034d25",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz C-Class MK3 W204 2007-2014 (570946 faces, 3 likes)"
+  },
+  "mercedes-benz-e-class-2024-b": {
+    "uid": "bd7d6e584e6049e39ccc6f217a47a8a8",
+    "make": "Mercedes-Benz",
+    "model": "E-Class",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 347: Mercedes-Benz E-Class Wagon (348225 faces, 20 likes)"
+  },
+  "nissan-altima-2013-b": {
+    "uid": "b0e2cab3e44b4784bb89489d4782954f",
+    "make": "Nissan",
+    "model": "Altima",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Nissan Altima (34638 faces, 19 likes)"
+  },
+  "porsche-911-1999-b": {
+    "uid": "d01b254483794de3819786d93e0e1ebf",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      1999,
+      2004
+    ],
+    "aliases": [],
+    "verify": "autopick: (FREE) Porsche 911 Carrera 4S (652780 faces, 3559 likes)"
+  },
+  "porsche-cayenne-2011-b": {
+    "uid": "aeb0c687b1f842339519d0382c86a8e1",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne 2007-2010 (351959 faces, 5 likes)"
+  },
+  "porsche-cayenne-2019-b": {
+    "uid": "04da6cda1fc94ba89df200ddcef34a1e",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne 2023-2025 (357023 faces, 8 likes)"
+  },
+  "subaru-crosstrek-2018-b": {
+    "uid": "2c087ea074534b739c3a3c5d30cfa9d5",
+    "make": "Subaru",
+    "model": "Crosstrek",
+    "years": [
+      2018,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Crosstrek trunk interior (1032322 faces, 1 likes)"
+  },
+  "subaru-forester-2014-b": {
+    "uid": "e65de675f5ed42d3895cc7cd495a3d25",
+    "make": "Subaru",
+    "model": "Forester",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Forester II (1273306 faces, 14 likes)"
+  },
+  "subaru-outback-2015-b": {
+    "uid": "2fd59bac6d3648af953f3a33904d0624",
+    "make": "Subaru",
+    "model": "Outback",
+    "years": [
+      2015,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Outback (1038934 faces, 6 likes)"
+  },
+  "tesla-cybertruck-2024-b": {
+    "uid": "587a0833e60f465090145b139f6c1bfc",
+    "make": "Tesla",
+    "model": "Cybertruck",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Cybertruck (380876 faces, 138 likes)"
+  },
+  "tesla-model-3-2024-b": {
+    "uid": "5af35a4772f240039a6e58c58998555b",
+    "make": "Tesla",
+    "model": "Model 3",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla model 3 (684315 faces, 82 likes)"
+  },
+  "tesla-model-s-2012-b": {
+    "uid": "9de8855fae324e6cbbb83c9b5288c961",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2012,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model S Plaid (227040 faces, 18 likes)"
+  },
+  "toyota-4runner-2010-b": {
+    "uid": "d8f3f63967514a81a1dbb02c09cd6fb4",
+    "make": "Toyota",
+    "model": "4Runner",
+    "years": [
+      2010,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota 4Runner 2011 (610309 faces, 18 likes)"
+  },
+  "toyota-corolla-2009-b": {
+    "uid": "2b30faa611e64177a94a69098d27d1fb",
+    "make": "Toyota",
+    "model": "Corolla",
+    "years": [
+      2009,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Corolla (KE80) (131208 faces, 80 likes)"
+  },
+  "toyota-highlander-2014-b": {
+    "uid": "8f5f1e64dc004868a49cf05b0d3441cc",
+    "make": "Toyota",
+    "model": "Highlander",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 Toyota Highlander (999999 faces, 4 likes)"
+  },
+  "toyota-rav4-2006-b": {
+    "uid": "001674408710482b9873decb30274ac9",
+    "make": "Toyota",
+    "model": "RAV4",
+    "years": [
+      2006,
+      2012
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota RAV4 Adventure (496097 faces, 5 likes)"
+  },
+  "toyota-tacoma-2005-b": {
+    "uid": "9e22903bdb274165b936b2d94475bac0",
+    "make": "Toyota",
+    "model": "Tacoma",
+    "years": [
+      2005,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tacoma (1082217 faces, 7 likes)"
+  },
+  "toyota-tundra-2014-b": {
+    "uid": "fd042a7c50cc4efb8a83f44a09f08ca6",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota_tundra (335630 faces, 21 likes)"
+  },
+  "toyota-tundra-2022-b": {
+    "uid": "905ff920149b4856b554341c52ef74ea",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra Border Patrol (240757 faces, 9 likes)"
+  },
+  "volkswagen-golf-2010-b": {
+    "uid": "39965aea9bae4758a135780b26f63404",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2010,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Golf MK4 Variant 1997-2010 (167733 faces, 13 likes)"
+  },
+  "volkswagen-jetta-2011-b": {
+    "uid": "e18823e169c54c1a8974045a042ca5ba",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta MK3 (Tuned) (187443 faces, 53 likes)"
+  },
+  "volkswagen-jetta-2019-b": {
+    "uid": "3476b12dca814c43afeed6d75908668e",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta II (960434 faces, 19 likes)"
+  },
+  "acura-mdx-2007-r2": {
+    "uid": "5a1ef30c43a84ebc8634bec993550abb",
+    "make": "Acura",
+    "model": "MDX",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: acura mdx (1364355 faces, 1 likes)"
+  },
+  "audi-a4-2009-r2": {
+    "uid": "82c88a7ae3574df4afe235e4371d3dfa",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2009,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi A4 B7 2006-2008 (369519 faces, 7 likes)"
+  },
+  "audi-a4-2017-r2": {
+    "uid": "2f6aea1435bd4ad093146c019c8e0fb6",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi A4 B5.5 Avant (27643 faces, 72 likes)"
+  },
+  "audi-q5-2009-r2": {
+    "uid": "73734fc8804544719f557b5e89e712d3",
+    "make": "Audi",
+    "model": "Q5",
+    "years": [
+      2009,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi Q5 (991531 faces, 7 likes)"
+  },
+  "bmw-x3-2011-r2": {
+    "uid": "2e747188cea44456a029e3c7742379c9",
+    "make": "BMW",
+    "model": "X3",
+    "years": [
+      2011,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X3 (98173 faces, 11 likes)"
+  },
+  "bmw-x5-2014-r2": {
+    "uid": "4abeaa4dfee24ae5a49e12b624882e1b",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X5 M (G05) (319318 faces, 55 likes)"
+  },
+  "cadillac-escalade-2015-r2": {
+    "uid": "3a63c01d768840aaacbd22cfc5885583",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021 Cadillac escalade premium luxury (419692 faces, 37 likes)"
+  },
+  "chevrolet-corvette-2014-r2": {
+    "uid": "c0039978bbfc47f89cbff8dd4aca570d",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2013 | Chevrolet Corvette C7 Gr.3 (261078 faces, 96 likes)"
+  },
+  "chevrolet-equinox-2010-r2": {
+    "uid": "f71a75f282fb4f77a2f8c0b615326c40",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2010,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: 2018 Chevrolet Equinox Premier (296126 faces, 2 likes)"
+  },
+  "chevrolet-equinox-2025-r2": {
+    "uid": "f9b935582076423790864ee5a66d0178",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2010,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Equinox (733204 faces, 9 likes)"
+  },
+  "chevrolet-malibu-2008-r2": {
+    "uid": "a7ec5eb43b6b4c1f9458e749ac92d354",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2008,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Malibu LT 2009 (499997 faces, 0 likes)"
+  },
+  "chevrolet-silverado-2014-r2": {
+    "uid": "10c645c6477e4052b4ea91563ea539ce",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2018 chevrolet silverado centennial edition (47582 faces, 27 likes)"
+  },
+  "chevrolet-tahoe-2021-r2": {
+    "uid": "85bf071f6d27412e8e48c9d4b480f215",
+    "make": "Chevrolet",
+    "model": "Tahoe",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet Tahoe 4x4 (43971 faces, 13 likes)"
+  },
+  "dodge-challenger-2008-r2": {
+    "uid": "97d275cd3f0b482f961f059e8008bdce",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 dodge challenger tuning (232329 faces, 47 likes)"
+  },
+  "dodge-charger-2006-r2": {
+    "uid": "289a663646e44b92b10e1e19f47617ef",
+    "make": "Dodge",
+    "model": "Charger",
+    "years": [
+      2006,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Dodge Charger 2011 (174088 faces, 27 likes)"
+  },
+  "ford-escape-2013-r2": {
+    "uid": "e4e909bda4ea4656b1980786c2e935d6",
+    "make": "Ford",
+    "model": "Escape",
+    "years": [
+      2013,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford Escape Hybrid (40852 faces, 41 likes)"
+  },
+  "ford-explorer-2011-r2": {
+    "uid": "9771acfbc2dd45f6b8740f7d81b709de",
+    "make": "Ford",
+    "model": "Explorer",
+    "years": [
+      2011,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2011+ Ford+ Explorer+V2 (143820 faces, 13 likes)"
+  },
+  "ford-f-150-2021-r2": {
+    "uid": "c205cde66b1d4f14b1820b89de7b8d23",
+    "make": "Ford",
+    "model": "F-150",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford F-150 (373156 faces, 55 likes)"
+  },
+  "gmc-sierra-2014-r2": {
+    "uid": "0fb040c349a24defadaa9ab9f0cb5f22",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: gmc sierra 2500 hd double cab standard box (43608 faces, 23 likes)"
+  },
+  "gmc-sierra-2019-r2": {
+    "uid": "c276c8a322a643ddaf5a860edc85bdb7",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2019,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: GMC Sierra Reg SLE 1500 2020 (435133 faces, 9 likes)"
+  },
+  "honda-accord-2008-r2": {
+    "uid": "fb53b8bc2a74417a8a38967930da12d3",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2008,
+      2012
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Accord 2007 (463596 faces, 29 likes)"
+  },
+  "honda-accord-2018-r2": {
+    "uid": "aad70ad7eae3467e99c71ef0c7150138",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2018,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019 Honda Accord (415676 faces, 25 likes)"
+  },
+  "honda-cr-v-2007-r2": {
+    "uid": "1fc6677a4e0b41aa8e5fd1a783536357",
+    "make": "Honda",
+    "model": "CR-V",
+    "years": [
+      2007,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda CR-V MK2 2001-2006 (144955 faces, 4 likes)"
+  },
+  "honda-civic-2006-r2": {
+    "uid": "770a5c9b025449f59769d8cd27d915bb",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2006,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Civic Type-R (594992 faces, 122 likes)"
+  },
+  "honda-pilot-2016-r2": {
+    "uid": "61f267e6f4e844bcb36c6f3ac580849f",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: 2018 Honda Pilot EX (387125 faces, 1 likes)"
+  },
+  "honda-pilot-2023-r2": {
+    "uid": "2863668d84784fca987f2b493f5e6c1b",
+    "make": "Honda",
+    "model": "Pilot",
+    "years": [
+      2023,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Pilot Upper Airbox (999968 faces, 2 likes)"
+  },
+  "hyundai-elantra-2011-r2": {
+    "uid": "ccd406d552c0413da10973b55b377b53",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2011,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: HYUNDAI+ELANTRA+MD+-+2015 (494316 faces, 2 likes)"
+  },
+  "hyundai-elantra-2017-r2": {
+    "uid": "bb68d162754a495ebdca88b82a42bef3",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2017,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Elantra N Line 2021 (1259557 faces, 6 likes)"
+  },
+  "hyundai-santa-fe-2013-r2": {
+    "uid": "1445740eb62d4b31b512ab9fe228e505",
+    "make": "Hyundai",
+    "model": "Santa Fe",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Santa Fe Shengda (168220 faces, 9 likes)"
+  },
+  "hyundai-sonata-2011-r2": {
+    "uid": "1c4226384e834176b3f4669e213e59a7",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2011,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Sonata 2011 (329041 faces, 0 likes)"
+  },
+  "hyundai-sonata-2020-r2": {
+    "uid": "5b8c63f9c5f84111bc8902c91c6079d0",
+    "make": "Hyundai",
+    "model": "Sonata",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: hyundai-sonata_ModLandNet (38734 faces, 1 likes)"
+  },
+  "jeep-gladiator-2020-r2": {
+    "uid": "118d6a87dd79437393ebebeb65155351",
+    "make": "Jeep",
+    "model": "Gladiator",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep Gladiator 2019 (80915 faces, 13 likes)"
+  },
+  "jeep-grand-cherokee-2022-r2": {
+    "uid": "57b5432b2e8146f49cc21d2c20643db5",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep Grand Cherokee Trackhawk (363057 faces, 31 likes)"
+  },
+  "kia-sorento-2016-r2": {
+    "uid": "d6d22a7c1ce74bf684393da8c13e074f",
+    "make": "Kia",
+    "model": "Sorento",
+    "years": [
+      2016,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Kia Sorento 2015 (1500000 faces, 1 likes)"
+  },
+  "lexus-rx-2010-r2": {
+    "uid": "6b9a1994b2dd445c8248270c81eead6b",
+    "make": "Lexus",
+    "model": "RX",
+    "years": [
+      2010,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Lexus RX 350 + rigged (+ rigged driver (human) ) (439545 faces, 20 likes)"
+  },
+  "lexus-rx-2016-r2": {
+    "uid": "098b5ef4fa324173be107396cd4d2266",
+    "make": "Lexus",
+    "model": "RX",
+    "years": [
+      2016,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: 2023 Lexus RX500h F Sport (598789 faces, 9 likes)"
+  },
+  "mazda-mx-5-miata-2006-r2": {
+    "uid": "44f83bd458df4025b8daa7f6eeb36b1f",
+    "make": "Mazda",
+    "model": "MX-5 Miata",
+    "years": [
+      2006,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: 2009 Mazda MX-5 Miata (NC) (1089965 faces, 11 likes)"
+  },
+  "mazda-mazda3-2010-r2": {
+    "uid": "5cfe1acf71794f8d88ad9f6341cd9edc",
+    "make": "Mazda",
+    "model": "Mazda3",
+    "years": [
+      2010,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: MAZDA3_IMPROVED (27683 faces, 7 likes)"
+  },
+  "mercedes-benz-c-class-2008-r2": {
+    "uid": "c91f15e9518f4dd2b7574002778cfc28",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz C-Class MK3 (W204) 2007-2014 (750906 faces, 10 likes)"
+  },
+  "mercedes-benz-e-class-2024-r2": {
+    "uid": "9b70707fd2304f578175158564719c5d",
+    "make": "Mercedes-Benz",
+    "model": "E-Class",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz E-Class (W212) (204662 faces, 42 likes)"
+  },
+  "nissan-altima-2013-r2": {
+    "uid": "db60e37c748e4b3caee78848806026eb",
+    "make": "Nissan",
+    "model": "Altima",
+    "years": [
+      2013,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: nissan altima 17 (1333413 faces, 67 likes)"
+  },
+  "nissan-rogue-2014-r2": {
+    "uid": "bd4773760fb144d8aa0176dc7388df05",
+    "make": "Nissan",
+    "model": "Rogue",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Nissan_ Rogue (130880 faces, 0 likes)"
+  },
+  "porsche-911-1999-r2": {
+    "uid": "877b1bc1739f4a2bb65d62fd7ffd9f75",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      1999,
+      2004
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche 911 with interior (424043 faces, 672 likes)"
+  },
+  "porsche-cayenne-2011-r2": {
+    "uid": "21274069c8274fdfb28992f697134632",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne MK1 2002-2010 (176710 faces, 6 likes)"
+  },
+  "porsche-cayenne-2019-r2": {
+    "uid": "85d9292939424769b0283a05064e5860",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022-porsche-cayenne-turbo-gt (250917 faces, 8 likes)"
+  },
+  "subaru-crosstrek-2018-r2": {
+    "uid": "c8ce56a9cb0343b9b578d43b985d8a9f",
+    "make": "Subaru",
+    "model": "Crosstrek",
+    "years": [
+      2018,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Baja Crosstrek (177852 faces, 2 likes)"
+  },
+  "subaru-forester-2014-r2": {
+    "uid": "02969c3253b441c09e5925ccef0b546e",
+    "make": "Subaru",
+    "model": "Forester",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Forester S Turbo (904142 faces, 18 likes)"
+  },
+  "subaru-outback-2015-r2": {
+    "uid": "0afec05fc27044c783f2acd63de29d5e",
+    "make": "Subaru",
+    "model": "Outback",
+    "years": [
+      2015,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Subaru Outback (153069 faces, 22 likes)"
+  },
+  "tesla-cybertruck-2024-r2": {
+    "uid": "58045e65735c4dc3871aa2f165c1bf19",
+    "make": "Tesla",
+    "model": "Cybertruck",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla CyberTruck 6*6 Sahara-Sport SDC (221275 faces, 208 likes)"
+  },
+  "tesla-model-3-2024-r2": {
+    "uid": "36c52f3f89f6439c90310f14e8ff33f2",
+    "make": "Tesla",
+    "model": "Model 3",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla model  3 2024 (179692 faces, 12 likes)"
+  },
+  "tesla-model-s-2012-r2": {
+    "uid": "40de2b7bb85849eb998b7529d7cb29d9",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2012,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: tesla model s (28311 faces, 31 likes)"
+  },
+  "toyota-4runner-2010-r2": {
+    "uid": "ecec6779663e4158931195f0e55e54d9",
+    "make": "Toyota",
+    "model": "4Runner",
+    "years": [
+      2010,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015-toyota-4runner (300980 faces, 12 likes)"
+  },
+  "toyota-camry-2012-r2": {
+    "uid": "98c70e5aa53446728fea4d8f448bbf33",
+    "make": "Toyota",
+    "model": "Camry",
+    "years": [
+      2012,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: toyota camry v80 (704936 faces, 56 likes)"
+  },
+  "toyota-corolla-2009-r2": {
+    "uid": "66dcbaf822ae47468655a604a83af703",
+    "make": "Toyota",
+    "model": "Corolla",
+    "years": [
+      2009,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Corolla Levin AE92 GT APEX Kouki (253622 faces, 505 likes)"
+  },
+  "toyota-highlander-2014-r2": {
+    "uid": "9679bd809df2401a9139e56075871c35",
+    "make": "Toyota",
+    "model": "Highlander",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2020-toyota-highlander-hybrid (50595 faces, 3 likes)"
+  },
+  "toyota-rav4-2006-r2": {
+    "uid": "3db45bf3669a42b1b761af9cdb447300",
+    "make": "Toyota",
+    "model": "RAV4",
+    "years": [
+      2006,
+      2012
+    ],
+    "aliases": [],
+    "verify": "autopick: 2023_toyota_rav4_hybrid (399174 faces, 9 likes)"
+  },
+  "toyota-tacoma-2005-r2": {
+    "uid": "b8c81d167d1143e9a7231a5998c1f309",
+    "make": "Toyota",
+    "model": "Tacoma",
+    "years": [
+      2005,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tacoma Baja Truck (1067656 faces, 8 likes)"
+  },
+  "toyota-tundra-2014-r2": {
+    "uid": "6a1e7fe7db92404e906dad8ac9739406",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra (203758 faces, 30 likes)"
+  },
+  "toyota-tundra-2022-r2": {
+    "uid": "98b7d1013cc14980aafc8f4eae878cb3",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Off-Road Front Bumpers Toyota Tundra (20222 faces, 24 likes)"
+  },
+  "volkswagen-golf-2010-r2": {
+    "uid": "2dd0f5839b7f4b6287761c962ade7dc0",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2010,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen golf (PLUS) 2011 (17670 faces, 22 likes)"
+  },
+  "volkswagen-jetta-2011-r2": {
+    "uid": "35addf24077e46b9a254c2b5b72add87",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta MK5 2005-2011 (655956 faces, 10 likes)"
+  },
+  "volkswagen-jetta-2019-r2": {
+    "uid": "cb281004d30e470996f098e64dad8c09",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta (409341 faces, 11 likes)"
+  },
+  "audi-a4-2017-r3": {
+    "uid": "9f0af93c03094258bffd99f1bf5ef0cd",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: 2016 Audi A4 - Driving School 2017 (15705 faces, 3 likes)"
+  },
+  "audi-a4-2017-b-r3": {
+    "uid": "802af8181d6a4e00bae1714515679414",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: audi_a4_R9_dtm_a (106820 faces, 24 likes)"
+  },
+  "audi-a4-2017-c-r3": {
+    "uid": "2643e170ef3749e0ad25d6b72287f4fa",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: audi a4 L40 tfsi (218960 faces, 16 likes)"
+  },
+  "audi-a4-2017-d-r3": {
+    "uid": "70f0688e077b4933a740150e9d946642",
+    "make": "Audi",
+    "model": "A4",
+    "years": [
+      2017,
+      2024
+    ],
+    "aliases": [],
+    "verify": "autopick: Audi A4 B8 (258977 faces, 13 likes)"
+  },
+  "bmw-3-series-2012-r3": {
+    "uid": "71746440f98d48ca9ea41ceeaa3504c7",
+    "make": "BMW",
+    "model": "3 Series",
+    "years": [
+      2012,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2014 BMW 3 Series (F31) (939652 faces, 53 likes)"
+  },
+  "bmw-3-series-2012-b-r3": {
+    "uid": "f6eadb71f30541e6a0b1cb6e136f08e1",
+    "make": "BMW",
+    "model": "3 Series",
+    "years": [
+      2012,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 3 Series MK5 (E90) 2004-2012 (217001 faces, 11 likes)"
+  },
+  "bmw-3-series-2012-c-r3": {
+    "uid": "b048a2c6a67d416eb31d4c620e5b4426",
+    "make": "BMW",
+    "model": "3 Series",
+    "years": [
+      2012,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 3-Series E91 2004-2012 (137932 faces, 6 likes)"
+  },
+  "bmw-3-series-2012-d-r3": {
+    "uid": "736296aa230048e994491e48157c0711",
+    "make": "BMW",
+    "model": "3 Series",
+    "years": [
+      2012,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 3 Series MK5 (E90) 2004-2012 (679921 faces, 7 likes)"
+  },
+  "bmw-5-series-2017-r3": {
+    "uid": "9eac54389f0541aba2dfd9c30d1cd5b7",
+    "make": "BMW",
+    "model": "5 Series",
+    "years": [
+      2017,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: Bmw 5-Series F10 2010-2017 (130102 faces, 11 likes)"
+  },
+  "bmw-5-series-2017-b-r3": {
+    "uid": "0d67f00d9ab448e9ab1f5d6c4d9d2971",
+    "make": "BMW",
+    "model": "5 Series",
+    "years": [
+      2017,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 5 Series MK6 (F11) 2010-2017 (40205 faces, 7 likes)"
+  },
+  "bmw-5-series-2017-c-r3": {
+    "uid": "65003eee79fb41abb907901c39dc1a33",
+    "make": "BMW",
+    "model": "5 Series",
+    "years": [
+      2017,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW F10 5-Series 2010-2017 (700172 faces, 8 likes)"
+  },
+  "bmw-5-series-2017-d-r3": {
+    "uid": "e81bcaf6dc0b42638b3386bc2f870286",
+    "make": "BMW",
+    "model": "5 Series",
+    "years": [
+      2017,
+      2023
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 5-series G30 2021 (1324474 faces, 14 likes)"
+  },
+  "bmw-5-series-2024-r3": {
+    "uid": "280225d4a2074738b54e6b8cdca9c923",
+    "make": "BMW",
+    "model": "5 Series",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW 5 Series G30 MK7 2017-2024 (1081075 faces, 5 likes)"
+  },
+  "bmw-x3-2011-r3": {
+    "uid": "1a2e02653f874e04b14d8826f6802ac7",
+    "make": "BMW",
+    "model": "X3",
+    "years": [
+      2011,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X3 E83 (1554075 faces, 8 likes)"
+  },
+  "bmw-x5-2014-r3": {
+    "uid": "6c991bd9e93c4ac9a89a4805266b5367",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Gills - BMW X5 (2014 Version) (775808 faces, 10 likes)"
+  },
+  "bmw-x5-2014-b-r3": {
+    "uid": "54020f5b85f94db1b0f2cc2a0b7de425",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X5 MK3 (F15) 2013-2018 (1115179 faces, 4 likes)"
+  },
+  "bmw-x5-2014-c-r3": {
+    "uid": "f1adb5c9133f4938a9ee03076c2a1e5a",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X5 (22550 faces, 32 likes)"
+  },
+  "bmw-x5-2014-d-r3": {
+    "uid": "996ef8c41d324846b5b8cfd3ff8c7031",
+    "make": "BMW",
+    "model": "X5",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: BMW X5 (E53) (134118 faces, 19 likes)"
+  },
+  "cadillac-escalade-2015-r3": {
+    "uid": "23b4a1bd914347ed8e857ed1c927cbce",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Cadillac Escalade 2018 (488105 faces, 8 likes)"
+  },
+  "cadillac-escalade-2015-b-r3": {
+    "uid": "818ba34d6b5a428491435d76726c8f0a",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Cadillac Escalade EXT (318129 faces, 30 likes)"
+  },
+  "cadillac-escalade-2015-c-r3": {
+    "uid": "6bef59b014294ad5810b78164177a4b5",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021_ Cadillac_ Escalade_ Premium (427401 faces, 27 likes)"
+  },
+  "cadillac-escalade-2015-d-r3": {
+    "uid": "2429115c901147f2b81ff5e03c12d611",
+    "make": "Cadillac",
+    "model": "Escalade",
+    "years": [
+      2015,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Cadillac Escalade (235417 faces, 12 likes)"
+  },
+  "chevrolet-corvette-2014-r3": {
+    "uid": "92b1b185b0d44847b0d099a787f8ed12",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019 Chevrolet Corvette ZR1 (159930 faces, 217 likes)"
+  },
+  "chevrolet-corvette-2014-b-r3": {
+    "uid": "afd6fe7ef9eb47d7b34bcbaf80474aee",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2017 Chevrolet Corvette Grand Sport Convertible (142450 faces, 84 likes)"
+  },
+  "chevrolet-corvette-2014-c-r3": {
+    "uid": "0d935cc21d5e4e33bead3148ecd03585",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019 Chevrolet Corvette ZR1 (109621 faces, 119 likes)"
+  },
+  "chevrolet-corvette-2014-d-r3": {
+    "uid": "1f070661dc2f43d29a3646757bcfd5e7",
+    "make": "Chevrolet",
+    "model": "Corvette",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 Chevrolet Corvette Z06 Convertible (101060 faces, 92 likes)"
+  },
+  "chevrolet-equinox-2025-r3": {
+    "uid": "06dbb4d1549a435c9361cefe203b6fec",
+    "make": "Chevrolet",
+    "model": "Equinox",
+    "years": [
+      2025,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet_ Equinox (Full Interior) (1591236 faces, 8 likes)"
+  },
+  "chevrolet-malibu-2008-r3": {
+    "uid": "81d7b6b0bf294c31be9b1f4e60159bfb",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2008,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet-malibu-82 (339139 faces, 7 likes)"
+  },
+  "chevrolet-malibu-2008-b-r3": {
+    "uid": "7152aeb2cb034e3590d607f76d692648",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2008,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Chevrolet  Malibu_LS (336001 faces, 2 likes)"
+  },
+  "chevrolet-malibu-2008-c-r3": {
+    "uid": "e75031d5f6e4430a85fa1068cbe13da3",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2008,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: 2019_chevrolet_malibu_ls_sedan (353179 faces, 1 likes)"
+  },
+  "chevrolet-silverado-2014-r3": {
+    "uid": "9db7fc0f8c974008a2d1532af80755c9",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: chevrolet silverado 2500hd pickup (43694 faces, 33 likes)"
+  },
+  "chevrolet-silverado-2014-b-r3": {
+    "uid": "175e6eb415894bcca1d4ce10058ac653",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: chevrolet silverado 2500hd monster truck (47206 faces, 22 likes)"
+  },
+  "chevrolet-silverado-2014-c-r3": {
+    "uid": "9e766b439ed94880b524fd9919327a64",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024_chevrolet_silverado_ev_rst (301525 faces, 8 likes)"
+  },
+  "chevrolet-silverado-2014-d-r3": {
+    "uid": "148de42d1db64a3db068fdf1c911d00a",
+    "make": "Chevrolet",
+    "model": "Silverado",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: free_2010_chevrolet_silverado_z71_4x4 (166423 faces, 2 likes)"
+  },
+  "dodge-challenger-2008-r3": {
+    "uid": "2a8a4a337f0f483887ee687b0b752d27",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: 2008 Dodge Challenger SCPD (39324 faces, 35 likes)"
+  },
+  "dodge-challenger-2008-b-r3": {
+    "uid": "e738e4df22024d76b0b616b18d58ca72",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Dodge Challenger SRT8 2009 (180093 faces, 13 likes)"
+  },
+  "dodge-challenger-2008-c-r3": {
+    "uid": "12ae42f3a9d74e7b841e3cd414381f78",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Dodge Challenger MK3 2008-2013 (243591 faces, 11 likes)"
+  },
+  "dodge-challenger-2008-d-r3": {
+    "uid": "487c61bf09d7460cb7b2ec8070ab3a74",
+    "make": "Dodge",
+    "model": "Challenger",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Dodge Challenger 2008 (19940 faces, 12 likes)"
+  },
+  "ford-explorer-2011-r3": {
+    "uid": "10a40825049944f3ae3be76b0dea3b07",
+    "make": "Ford",
+    "model": "Explorer",
+    "years": [
+      2011,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: 2011 Ford Explorer (28945 faces, 3 likes)"
+  },
+  "ford-explorer-2011-b-r3": {
+    "uid": "3a65f6d3683048efa9e2f04bce565941",
+    "make": "Ford",
+    "model": "Explorer",
+    "years": [
+      2011,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Ford Explorer 2011 (1426598 faces, 16 likes)"
+  },
+  "ford-f-150-2021-r3": {
+    "uid": "9666e0eb1b384c44b93cc8b5a34b633a",
+    "make": "Ford",
+    "model": "F-150",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024-ford-f-150-raptor-r (379844 faces, 4 likes)"
+  },
+  "ford-f-150-2021-b-r3": {
+    "uid": "973a0057707345d78a818f4c8fde82d4",
+    "make": "Ford",
+    "model": "F-150",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: '95 Ford F-150 prerunner baja truck (1077266 faces, 144 likes)"
+  },
+  "ford-f-150-2021-c-r3": {
+    "uid": "11b2d3c304ee474195f06fa8315d247b",
+    "make": "Ford",
+    "model": "F-150",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024_ford_f-150_raptor_r (379844 faces, 16 likes)"
+  },
+  "gmc-sierra-2014-r3": {
+    "uid": "5a679722b0da4ee989a3e80a90026462",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2014,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024_gmc_sierra_1500_at4x (432510 faces, 8 likes)"
+  },
+  "gmc-sierra-2019-r3": {
+    "uid": "44adbd57fa4f4972a2c950d123b02d07",
+    "make": "GMC",
+    "model": "Sierra",
+    "years": [
+      2019,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021 Gmc Sierra (149804 faces, 2 likes)"
+  },
+  "honda-accord-2018-r3": {
+    "uid": "f973338c77ce4618b941612241d53f6a",
+    "make": "Honda",
+    "model": "Accord",
+    "years": [
+      2018,
+      2022
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021 Honda Accord Model (933379 faces, 12 likes)"
+  },
+  "honda-civic-2006-r3": {
+    "uid": "0669282e31c049478aea166e47a3ebd6",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2006,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: 2009 Honda Civic Type R (FD2) Custom (20798 faces, 54 likes)"
+  },
+  "honda-civic-2006-b-r3": {
+    "uid": "075fc091336646a4a5ac59c5ffd91883",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2006,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: 2009 Honda Civic Type-R + Interior (403783 faces, 24 likes)"
+  },
+  "honda-civic-2006-c-r3": {
+    "uid": "0a2c327d1da3417aa1d91906cfbd9ba7",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2006,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Civic 2006 European (223739 faces, 10 likes)"
+  },
+  "honda-civic-2006-d-r3": {
+    "uid": "600b5900ab034fc19db376e6b6443366",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2006,
+      2011
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Civic Sedan MK8 2006-2011 (310240 faces, 5 likes)"
+  },
+  "honda-civic-2012-r3": {
+    "uid": "9a6a15a98eca43188defaf940f98ae78",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2012,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: 2012 Honda Civic (FK2) (15556 faces, 24 likes)"
+  },
+  "honda-civic-2012-b-r3": {
+    "uid": "43016c3c47bd4dfbbc7b1fad2ceb7827",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2012,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: 2015 Honda Civic Type R (56710 faces, 3 likes)"
+  },
+  "honda-civic-2012-c-r3": {
+    "uid": "482b8bf881a14097b4ce7b7e462b57ed",
+    "make": "Honda",
+    "model": "Civic",
+    "years": [
+      2012,
+      2015
+    ],
+    "aliases": [],
+    "verify": "autopick: Honda Civic (Mk9) tourer 2014 (1270449 faces, 21 likes)"
+  },
+  "hyundai-elantra-2011-r3": {
+    "uid": "68c24076bfd24841920448b63f2376fa",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2011,
+      2016
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Elantra (636017 faces, 9 likes)"
+  },
+  "hyundai-elantra-2017-r3": {
+    "uid": "c0a4792a5e784b10ae7c095d13980ed2",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2017,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Hyundai Elantra N 2021 (390440 faces, 2 likes)"
+  },
+  "jeep-grand-cherokee-2022-r3": {
+    "uid": "828acfccf2b14f09a3669e6f7ed0b520",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep grand Cherokee (363057 faces, 19 likes)"
+  },
+  "jeep-grand-cherokee-2022-b-r3": {
+    "uid": "211b3f928bce44e2a3f56e65a5b9b7b6",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep-grand-cherokee-trackhawk (363057 faces, 14 likes)"
+  },
+  "jeep-grand-cherokee-2022-c-r3": {
+    "uid": "949a34f3ab174c899b2596bd53403b6f",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep Grand Cherokee Trackhawk (371373 faces, 11 likes)"
+  },
+  "jeep-grand-cherokee-2022-d-r3": {
+    "uid": "8e634f2eaf6e491c9220ad0623dd3664",
+    "make": "Jeep",
+    "model": "Grand Cherokee",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Jeep-grand-cherokee-trackhawk (363057 faces, 7 likes)"
+  },
+  "lexus-is-2014-r3": {
+    "uid": "613db0ae1d4c437a866d0688c5667d14",
+    "make": "Lexus",
+    "model": "IS",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: 2014 Lexus IS F-Sport (XE30) (35877 faces, 34 likes)"
+  },
+  "lexus-is-2014-b-r3": {
+    "uid": "8e31ccae701843649ae260b0a637b968",
+    "make": "Lexus",
+    "model": "IS",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Lexus IS 300 F Sport 2018 (229015 faces, 1 likes)"
+  },
+  "lexus-is-2014-c-r3": {
+    "uid": "69d159fd65fa4e25b060778f97b67b48",
+    "make": "Lexus",
+    "model": "IS",
+    "years": [
+      2014,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Lexus IS 300 F Sport 2018 (229015 faces, 1 likes)"
+  },
+  "mercedes-benz-c-class-2008-r3": {
+    "uid": "84d44702c1994928be42b5f38846e13d",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes Benz C Class W203 2007 (193740 faces, 10 likes)"
+  },
+  "mercedes-benz-c-class-2008-b-r3": {
+    "uid": "1b0338863ef04d018ebf28ff176893f8",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes Benz C-Class 2000-2008 (427511 faces, 5 likes)"
+  },
+  "mercedes-benz-c-class-2008-c-r3": {
+    "uid": "0ecabce4f2604fb781f537e9e2393a46",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes- Benz C- Class W205 estate 2015 (1034960 faces, 7 likes)"
+  },
+  "mercedes-benz-c-class-2008-d-r3": {
+    "uid": "b108b6f2e9654481af1c02801a98228e",
+    "make": "Mercedes-Benz",
+    "model": "C-Class",
+    "years": [
+      2008,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes-Benz C-Class Estate  Free (1132852 faces, 89 likes)"
+  },
+  "mercedes-benz-e-class-2024-r3": {
+    "uid": "dff3640ff0ff464984e2d7f320794e25",
+    "make": "Mercedes-Benz",
+    "model": "E-Class",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Mercedes- Benz E-class (C124) coupe (1185361 faces, 17 likes)"
+  },
+  "porsche-911-1999-r3": {
+    "uid": "0aca89de30b94126bc7020109b2f3ef0",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      1999,
+      2004
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche 911turbo 996- 2000 (84318 faces, 9 likes)"
+  },
+  "porsche-911-1999-b-r3": {
+    "uid": "dad69a25c32b4f788f2a352b5247371c",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      1999,
+      2004
+    ],
+    "aliases": [],
+    "verify": "autopick: 2002 Porsche 911 Turbo (996) (41014 faces, 5 likes)"
+  },
+  "porsche-911-1999-c-r3": {
+    "uid": "546f66bb0993485b929cb139069d4cd1",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      1999,
+      2004
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche-911-turbo-996-2000-by-alexka (84330 faces, 3 likes)"
+  },
+  "porsche-911-1999-d-r3": {
+    "uid": "e63c7f5120dc451e9aebb627d14bda0c",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      1999,
+      2004
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche 911 GT1 Straenversion \uff5cwww.vecarz.com (245303 faces, 116 likes)"
+  },
+  "porsche-cayenne-2011-r3": {
+    "uid": "b88a3f72f26b4b7dab502145fe3ebe74",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne MK1 2002-2010 (81771 faces, 4 likes)"
+  },
+  "porsche-cayenne-2011-b-r3": {
+    "uid": "99a0484413834ea782a3d40a5b244334",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: KorbenDallas Porsche Cayenne 958 2010 (395961 faces, 0 likes)"
+  },
+  "porsche-cayenne-2011-c-r3": {
+    "uid": "bdc888633910404db4fa58e694c5ee39",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne (Mk3)(958)S Hybrid 2010 (1022544 faces, 17 likes)"
+  },
+  "porsche-cayenne-2011-d-r3": {
+    "uid": "d82cc30c455b451c8f414df3c45d8358",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne S (158924 faces, 8 likes)"
+  },
+  "porsche-cayenne-2019-r3": {
+    "uid": "28bcbd1b505c4edfbe217a10f4d6ea22",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne E-Hybrid Coupe 2024 (480085 faces, 10 likes)"
+  },
+  "porsche-cayenne-2019-b-r3": {
+    "uid": "5bae7080e6e14151a8f74b14573fd8cb",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2020 Porsche Cayenne GTS Coupe (454597 faces, 6 likes)"
+  },
+  "porsche-cayenne-2019-c-r3": {
+    "uid": "6f7495f0ff074ba8af6815a4ab34f409",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024 Porsche Cayenne GTS Conversion test (49999 faces, 5 likes)"
+  },
+  "porsche-cayenne-2019-d-r3": {
+    "uid": "d1fd357faf314607afc39a67d5b4f4f1",
+    "make": "Porsche",
+    "model": "Cayenne",
+    "years": [
+      2019,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Porsche Cayenne (985468 faces, 21 likes)"
+  },
+  "subaru-wrx-2022-r3": {
+    "uid": "065804733fa245c6b1b10ca2de44099d",
+    "make": "Subaru",
+    "model": "WRX",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Subaru Impreza WRX (377976 faces, 39 likes)"
+  },
+  "subaru-wrx-2022-b-r3": {
+    "uid": "e346b4918d4246e9b6a69f2e26e08dec",
+    "make": "Subaru",
+    "model": "WRX",
+    "years": [
+      2022,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2022 Subaru WRX T S EyeSight (377972 faces, 26 likes)"
+  },
+  "tesla-cybertruck-2024-r3": {
+    "uid": "8950fc178e254c9198b2a8555ef1590a",
+    "make": "Tesla",
+    "model": "Cybertruck",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Cybertruck (380936 faces, 250 likes)"
+  },
+  "tesla-cybertruck-2024-b-r3": {
+    "uid": "3e72defa993c4d81b9deb2eee1ee6054",
+    "make": "Tesla",
+    "model": "Cybertruck",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Cybertruck (34927 faces, 93 likes)"
+  },
+  "tesla-cybertruck-2024-c-r3": {
+    "uid": "1ab0c3f248fa47019c4311abce9731a0",
+    "make": "Tesla",
+    "model": "Cybertruck",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Cybertruck (28182 faces, 210 likes)"
+  },
+  "tesla-cybertruck-2024-d-r3": {
+    "uid": "e0f9fc62c25b40b7aa975e57549dc702",
+    "make": "Tesla",
+    "model": "Cybertruck",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Cybertruck (107436 faces, 6 likes)"
+  },
+  "tesla-model-3-2024-r3": {
+    "uid": "61ddcbdbd3854c239e0c95bf60b00022",
+    "make": "Tesla",
+    "model": "Model 3",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: 2024 Tesla Model 3 + Interior (167747 faces, 8 likes)"
+  },
+  "tesla-model-3-2024-b-r3": {
+    "uid": "4cf4fa457fbe4f32808348d7b8a13939",
+    "make": "Tesla",
+    "model": "Model 3",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model 3 (Realistic Graphics) (684315 faces, 49 likes)"
+  },
+  "tesla-model-3-2024-c-r3": {
+    "uid": "123c10f376ec4f18b93c73afc382808b",
+    "make": "Tesla",
+    "model": "Model 3",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model 3 (27012 faces, 22 likes)"
+  },
+  "tesla-model-3-2024-d-r3": {
+    "uid": "3050e647274d4693925daf55cfc828d5",
+    "make": "Tesla",
+    "model": "Model 3",
+    "years": [
+      2024,
+      2026
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla model 3 jb (684315 faces, 18 likes)"
+  },
+  "tesla-model-s-2012-r3": {
+    "uid": "3c1bf6caa11d4451bfaef036ef59d5e7",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2012,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model S (26978 faces, 15 likes)"
+  },
+  "tesla-model-s-2012-b-r3": {
+    "uid": "565ff2a0b1b64637bfafb7f6ef1a4085",
+    "make": "Tesla",
+    "model": "Model S",
+    "years": [
+      2012,
+      2020
+    ],
+    "aliases": [],
+    "verify": "autopick: Tesla Model S(civ) (18226 faces, 13 likes)"
+  },
+  "toyota-camry-2012-r3": {
+    "uid": "8ebeebdc2db0461198ec32f35dcf898a",
+    "make": "Toyota",
+    "model": "Camry",
+    "years": [
+      2012,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: nascar-2016-toyota-camry (62190 faces, 7 likes)"
+  },
+  "toyota-camry-2012-b-r3": {
+    "uid": "6d426f7505044e1c8ab52d1fe9657d97",
+    "make": "Toyota",
+    "model": "Camry",
+    "years": [
+      2012,
+      2017
+    ],
+    "aliases": [],
+    "verify": "autopick: Nascar-2016-toyota-camry (62190 faces, 3 likes)"
+  },
+  "toyota-corolla-2009-r3": {
+    "uid": "e14fc132d13a4d09a01181341c70e690",
+    "make": "Toyota",
+    "model": "Corolla",
+    "years": [
+      2009,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota GR Corolla MORIZO Edition (1062940 faces, 75 likes)"
+  },
+  "toyota-corolla-2009-b-r3": {
+    "uid": "cfcaebfa5e5a4170b6f2db8db7ca3436",
+    "make": "Toyota",
+    "model": "Corolla",
+    "years": [
+      2009,
+      2013
+    ],
+    "aliases": [],
+    "verify": "autopick: 2021_toyota_corolla_cross (597221 faces, 3 likes)"
+  },
+  "toyota-highlander-2014-r3": {
+    "uid": "c44c57e7ca654eeca26c189fe2c0e766",
+    "make": "Toyota",
+    "model": "Highlander",
+    "years": [
+      2014,
+      2019
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Highlander Driver Door Speaker (284178 faces, 0 likes)"
+  },
+  "toyota-tundra-2014-r3": {
+    "uid": "b1d3d3a8edda4d52ae9019d2150e7bb8",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra,Sheriff\u00b4s Truck (114755 faces, 11 likes)"
+  },
+  "toyota-tundra-2014-b-r3": {
+    "uid": "ef05308879424ddeb6b9abac48b9a600",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra (329905 faces, 9 likes)"
+  },
+  "toyota-tundra-2014-c-r3": {
+    "uid": "7217014625c84adb94d83aa9aea91f8a",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: TOYOTA TUNDRA (592888 faces, 10 likes)"
+  },
+  "toyota-tundra-2014-d-r3": {
+    "uid": "cabe694840654b24b51244acfd147c89",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ],
+    "aliases": [],
+    "verify": "autopick: Toyota Tundra Single And Dual Cab (1194149 faces, 13 likes)"
+  },
+  "volkswagen-golf-2010-r3": {
+    "uid": "7d44411e65b849179cbd9a7d8d02d5ae",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2010,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Golf MK4 GTi 1997-2010 (111548 faces, 7 likes)"
+  },
+  "volkswagen-golf-2010-b-r3": {
+    "uid": "94fda1946f0d4d8ab59a9df451d9f547",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2010,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Golf MK5 2003-2009 (620187 faces, 8 likes)"
+  },
+  "volkswagen-golf-2010-c-r3": {
+    "uid": "bfb760393b0f4b6ea6ca2babea3b8a10",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2010,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Golf GTI 2014 (916647 faces, 10 likes)"
+  },
+  "volkswagen-golf-2010-d-r3": {
+    "uid": "426d0bf596774b42bca5f2a9916324a7",
+    "make": "Volkswagen",
+    "model": "Golf",
+    "years": [
+      2010,
+      2014
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Golf GTI 2014 (917878 faces, 7 likes)"
+  },
+  "volkswagen-jetta-2011-r3": {
+    "uid": "dd1131d240f04c4d97d646a89924b6ee",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta III (820986 faces, 12 likes)"
+  },
+  "volkswagen-jetta-2011-b-r3": {
+    "uid": "5ac380abd4e249ac97a26a89b2695c34",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta I (1065956 faces, 18 likes)"
+  },
+  "volkswagen-jetta-2011-c-r3": {
+    "uid": "936ca4b16881486194216124fb24f0c0",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta IV (988522 faces, 14 likes)"
+  },
+  "volkswagen-jetta-2011-d-r3": {
+    "uid": "f8fc47149cae45ae89afbba77ed1f539",
+    "make": "Volkswagen",
+    "model": "Jetta",
+    "years": [
+      2011,
+      2018
+    ],
+    "aliases": [],
+    "verify": "autopick: Volkswagen Jetta V (1127731 faces, 13 likes)"
   }
 }

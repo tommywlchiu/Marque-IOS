@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""autopick.py [--priority N] [--limit K] [--out file.json] — Sketchfab candidates for the gaps coverage.py lists.
+"""autopick.py [--priority N] [--limit K] [--top N] [--out file.json] — Sketchfab candidates for the gaps coverage.py lists.
 
 For each missing model-generation it searches Sketchfab (CC BY-type only, like
 find.py) and ranks results: the model name must be in the title; a year in the
@@ -14,6 +14,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 args = sys.argv[1:]
 pri = args[args.index("--priority") + 1] if "--priority" in args else "1"
 limit = int(args[args.index("--limit") + 1]) if "--limit" in args else 999
+top = int(args[args.index("--top") + 1]) if "--top" in args else 1
 out = args[args.index("--out") + 1] if "--out" in args else os.path.join(here, "autopicks.json")
 gaps = []
 for line in subprocess.run([sys.executable, os.path.join(here, "coverage.py"), "--priority", pri], capture_output=True, text=True).stdout.splitlines():
@@ -48,10 +49,12 @@ def search(q):
 
 picks = {}
 used = set()
+tried = {v["uid"] for v in json.load(open(os.path.join(here, "picks.json"))).values() if isinstance(v, dict)}
+used |= tried
 for make, model, y0, y1 in parsed[:limit]:
     mid = (y0 + y1) // 2
     seen, scored = set(), []
-    for q in (f"{make} {model}", f"{mid} {make} {model}"):
+    for q in dict.fromkeys([f"{make} {model}", f"{mid} {make} {model}"] + [f"{y} {make} {model}" for y in range(y0, y1 + 1, max(1, (y1 - y0) // 3 or 1))]):
         for r in search(q):
             lic = (r.get("license") or {}).get("label", "")
             if r["uid"] in seen or not lic or "NonCommercial" in lic or "NoDerivs" in lic or lic.startswith("Free Standard") or "Standard" in lic:
@@ -76,10 +79,11 @@ for make, model, y0, y1 in parsed[:limit]:
     scored.sort(reverse=True)
     key = re.sub(r"[^a-z0-9]+", "-", f"{make} {model} {y0}".lower()).strip("-")
     if scored:
-        s, uid, name, faces, likes = scored[0]
-        used.add(uid)
-        picks[key] = {"uid": uid, "make": make, "model": model, "years": [y0, y1], "aliases": [], "verify": f"autopick: {name} ({faces} faces, {likes} likes)"}
-        print(f"{make} {model} {y0}-{y1}: {name} [{faces}f {likes}L]")
+        for n, (s, uid, name, faces, likes) in enumerate(scored[:top]):
+            used.add(uid)
+            k = key if n == 0 else key + "-" + "bcdef"[n - 1]
+            picks[k] = {"uid": uid, "make": make, "model": model, "years": [y0, y1], "aliases": [], "verify": f"autopick: {name} ({faces} faces, {likes} likes)"}
+            print(f"{make} {model} {y0}-{y1}: {name} [{faces}f {likes}L]")
     else:
         print(f"{make} {model} {y0}-{y1}: -- none")
     time.sleep(0.4)
