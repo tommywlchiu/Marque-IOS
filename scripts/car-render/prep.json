@@ -324,7 +324,7 @@
   },
   "nissan-altima-l34": {
     "paintmat": "body",
-    "flip": false
+    "flip": true
   },
   "hyundai-elantra-cn7": {
     "paintmat": "carpaint",
@@ -344,15 +344,16 @@
   },
   "jeep-gladiator-jt": {
     "paintmat": "Jeep_GladiatorRewardRecycled_2019Coloured_Material",
-    "flip": false
+    "flip": false,
+    "invert": true
   },
   "ford-bronco-6g": {
-    "paintmat": "021_Ford_Bronco_Wildtrak_seats_paint",
-    "flip": false
+    "paintmat": "Carbonized_Grey",
+    "flip": true
   },
   "ford-bronco-sport": {
-    "paintmat": "Carro_Plastico",
-    "flip": false
+    "paintmat": "Carro_Pintura",
+    "flip": true
   },
   "toyota-tundra-3g": {
     "paintmat": "wire_113135006",
@@ -368,6 +369,6 @@
   },
   "kia-k5-dl3": {
     "paintmat": "body",
-    "flip": false
+    "flip": true
   }
 }
