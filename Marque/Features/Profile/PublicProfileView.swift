@@ -40,21 +40,16 @@ struct PublicProfileView: View {
                         carsGrid
                     }
                 }
+                .refreshable { await loadProfile() }
             }
         }
         .navigationTitle("@\(ownerUsername)")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            exploreStore.loadProStatus(for: [ownerUID])
-            profile = await exploreStore.fetchUserProfile(uid: ownerUID)
-            let edges = await exploreStore.fetchFollowUIDs(uid: ownerUID)
-            followerUIDs = edges.followers
-            followingUIDs = edges.following
-        }
+        .task { await loadProfile() }
         // Keep the visible follower count in sync when the current user follows
         // or unfollows the profile owner. Foreign follow-graph changes (someone
-        // else follows this profile while we're viewing it) still require a
-        // re-open to refresh, which is acceptable for MVP.
+        // else follows this profile while we're viewing it) show up on
+        // pull-to-refresh or a re-open.
         .onChange(of: isFollowing) { _, nowFollowing in
             guard !currentUID.isEmpty, currentUID != ownerUID else { return }
             if nowFollowing { followerUIDs.insert(currentUID) }
@@ -109,6 +104,15 @@ struct PublicProfileView: View {
         .sheet(isPresented: $showingFollowing) {
             FollowListView(mode: .following, uids: followingUIDs, currentUserUID: currentUID)
         }
+    }
+
+    private func loadProfile() async {
+        exploreStore.loadProStatus(for: [ownerUID])
+        // A failed refresh must not blank an already-loaded profile.
+        if let fresh = await exploreStore.fetchUserProfile(uid: ownerUID) { profile = fresh }
+        let edges = await exploreStore.fetchFollowUIDs(uid: ownerUID)
+        followerUIDs = edges.followers
+        followingUIDs = edges.following
     }
 
     // MARK: - Header
