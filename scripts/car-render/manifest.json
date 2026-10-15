@@ -1447,7 +1447,8 @@
       ]
     },
     "sketchfab": "353d4768b2d74a7f888567e18952bcb1",
-    "paintmat": "Paint0021Mtl|Paint0011Mtl|Coloured0041Mtl"
+    "paintmat": "Paint0021Mtl|Paint0011Mtl|Coloured0041Mtl",
+    "noWheels": true
   },
   "lamborghini-aventador": {
     "covers": {
@@ -1483,22 +1484,6 @@
     "paintmat": "022_Chrysler_Pacifica_Granite_Crystal_Metallic_Clearcoat",
     "flip": true
   },
-  "fisker-ocean": {
-    "covers": {
-      "make": "Fisker",
-      "model": "Ocean",
-      "years": [
-        2023,
-        2024
-      ],
-      "aliases": [
-        "Ocean Extreme",
-        "Ocean Sport"
-      ]
-    },
-    "sketchfab": "f506bfe876864c04b68bdfc59070739a",
-    "paintmat": "Material.001"
-  },
   "peugeot-3008": {
     "covers": {
       "make": "Peugeot",
@@ -1512,22 +1497,8 @@
       ]
     },
     "sketchfab": "3e5e14fdb1f94f25a5b572caf518f55d",
-    "paintmat": "CarPaint_Flip1"
-  },
-  "renault-megane": {
-    "covers": {
-      "make": "Renault",
-      "model": "Megane",
-      "years": [
-        2003,
-        2009
-      ],
-      "aliases": [
-        "M\u00e9gane"
-      ]
-    },
-    "sketchfab": "0c0d6c54a2424feb95447400a5c5e50e",
-    "paintmat": "Body"
+    "paintmat": "CarPaint_Flip1",
+    "noWheels": true
   },
   "volvo-xc60": {
     "covers": {
@@ -1544,22 +1515,6 @@
     },
     "sketchfab": "eb8ce77c64c04339983cdf30593abca3",
     "paintmat": "auto31",
-    "flip": true
-  },
-  "buick-lacrosse": {
-    "covers": {
-      "make": "Buick",
-      "model": "LaCrosse",
-      "years": [
-        2010,
-        2016
-      ],
-      "aliases": [
-        "LaCrosse Premium"
-      ]
-    },
-    "sketchfab": "9852ece4440b49d5a8ee539cc0379877",
-    "paintmat": "lacrossemk2_body.001",
     "flip": true
   },
   "rolls-royce-ghost-1g": {
@@ -1627,21 +1582,6 @@
     },
     "sketchfab": "f454c421a39c483788fa1b7bec5e6a1e",
     "paintmat": "Procedural_Car_Paint"
-  },
-  "polestar-2": {
-    "covers": {
-      "make": "Polestar",
-      "model": "2",
-      "years": [
-        2021,
-        2026
-      ],
-      "aliases": [
-        "Polestar 2"
-      ]
-    },
-    "sketchfab": "a3fe1afd93bd41cd9b221278deebd585",
-    "paintmat": "Carpaint_Simple_Ruby"
   },
   "saab-9-3": {
     "covers": {

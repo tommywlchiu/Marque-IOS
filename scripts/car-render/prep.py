@@ -3,7 +3,7 @@
 token in ~/.config/marque/sketchfab_token), guess its body-paint material, and render a RED test
 shot at the hero angle so a wrong paint guess or a backwards car is obvious on the contact sheet.
 Writes the guesses to prep.json; a human checks the sheet, then fixes paintmat/flip there."""
-import json, os, subprocess, sys, urllib.request
+import time, json, os, subprocess, sys, urllib.request
 here = os.path.dirname(os.path.abspath(__file__))
 glbdir, testdir = sys.argv[1], sys.argv[2]
 only = sys.argv[3:]
@@ -19,10 +19,20 @@ for key, car in picks.items():
     glb = os.path.join(glbdir, f"{key}.glb")
     if not os.path.exists(glb):
         req = urllib.request.Request(f"https://api.sketchfab.com/v3/models/{car['uid']}/download", headers={"Authorization": f"Token {token}"})
-        d = json.load(urllib.request.urlopen(req))
+        # Sketchfab answers 429 when downloads come too fast: wait and retry, then skip the car
+        # (a later run picks it up) rather than losing the whole batch.
+        d = None
+        for wait in (30, 90, 240, 600, 0):
+            try:
+                d = json.load(urllib.request.urlopen(req)); break
+            except urllib.error.HTTPError as e:
+                if e.code != 429 or not wait: print("DOWNLOAD FAILED", key, e.code, flush=True); break
+                time.sleep(wait)
+        if not d: continue
         url = (d.get("glb") or {}).get("url")
         if not url: print("NO GLB", key, list(d)); continue
         urllib.request.urlretrieve(url, glb)
+        time.sleep(4)
     js = os.path.join(testdir, f"{key}.mats.json")
     subprocess.run(["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "inspect_car.py"), "--", glb, js], stdout=subprocess.DEVNULL, check=True)
     mats = json.load(open(js))
