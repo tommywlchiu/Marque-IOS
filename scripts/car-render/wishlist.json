@@ -1,0 +1,5034 @@
+{
+ "Toyota": [
+  {
+   "model": "Camry",
+   "gens": [
+    [
+     2007,
+     2011
+    ],
+    [
+     2012,
+     2017
+    ],
+    [
+     2018,
+     2024
+    ],
+    [
+     2025,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Corolla",
+   "gens": [
+    [
+     2009,
+     2013
+    ],
+    [
+     2014,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "RAV4",
+   "gens": [
+    [
+     2006,
+     2012
+    ],
+    [
+     2013,
+     2018
+    ],
+    [
+     2019,
+     2025
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Highlander",
+   "gens": [
+    [
+     2008,
+     2013
+    ],
+    [
+     2014,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Tacoma",
+   "gens": [
+    [
+     2005,
+     2015
+    ],
+    [
+     2016,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Tundra",
+   "gens": [
+    [
+     2007,
+     2013
+    ],
+    [
+     2014,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "4Runner",
+   "gens": [
+    [
+     2010,
+     2024
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Sienna",
+   "gens": [
+    [
+     2011,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Prius",
+   "gens": [
+    [
+     2010,
+     2015
+    ],
+    [
+     2016,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Avalon",
+   "gens": [
+    [
+     2013,
+     2018
+    ],
+    [
+     2019,
+     2022
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Sequoia",
+   "gens": [
+    [
+     2008,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Land Cruiser",
+   "gens": [
+    [
+     2008,
+     2021
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "C-HR",
+   "gens": [
+    [
+     2018,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "GR86",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "86",
+   "gens": [
+    [
+     2013,
+     2020
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Supra",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Corolla Cross",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Yaris",
+   "gens": [
+    [
+     2012,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Venza",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Crown",
+   "gens": [
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "bZ4X",
+   "gens": [
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "MR2",
+   "gens": [
+    [
+     1991,
+     1995
+    ],
+    [
+     2000,
+     2005
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Honda": [
+  {
+   "model": "Civic",
+   "gens": [
+    [
+     2006,
+     2011
+    ],
+    [
+     2012,
+     2015
+    ],
+    [
+     2016,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Accord",
+   "gens": [
+    [
+     2003,
+     2007
+    ],
+    [
+     2008,
+     2012
+    ],
+    [
+     2013,
+     2017
+    ],
+    [
+     2018,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "CR-V",
+   "gens": [
+    [
+     2007,
+     2011
+    ],
+    [
+     2012,
+     2016
+    ],
+    [
+     2017,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Pilot",
+   "gens": [
+    [
+     2009,
+     2015
+    ],
+    [
+     2016,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Odyssey",
+   "gens": [
+    [
+     2011,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "HR-V",
+   "gens": [
+    [
+     2016,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Fit",
+   "gens": [
+    [
+     2009,
+     2014
+    ],
+    [
+     2015,
+     2020
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Ridgeline",
+   "gens": [
+    [
+     2006,
+     2014
+    ],
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Passport",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Insight",
+   "gens": [
+    [
+     2010,
+     2014
+    ],
+    [
+     2019,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Element",
+   "gens": [
+    [
+     2003,
+     2011
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "S2000",
+   "gens": [
+    [
+     2000,
+     2009
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Civic Type R",
+   "gens": [
+    [
+     2017,
+     2021
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "NSX",
+   "gens": [
+    [
+     2017,
+     2022
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Ford": [
+  {
+   "model": "F-150",
+   "gens": [
+    [
+     2009,
+     2014
+    ],
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Mustang",
+   "gens": [
+    [
+     2005,
+     2014
+    ],
+    [
+     2015,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Explorer",
+   "gens": [
+    [
+     2011,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Escape",
+   "gens": [
+    [
+     2013,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Edge",
+   "gens": [
+    [
+     2015,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Fusion",
+   "gens": [
+    [
+     2013,
+     2020
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Focus",
+   "gens": [
+    [
+     2012,
+     2018
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Fiesta",
+   "gens": [
+    [
+     2011,
+     2019
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Ranger",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Maverick",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Expedition",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "F-250",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Transit",
+   "gens": [
+    [
+     2015,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Mustang Mach-E",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Bronco",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Bronco Sport",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "GT",
+   "gens": [
+    [
+     2017,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Flex",
+   "gens": [
+    [
+     2009,
+     2019
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Taurus",
+   "gens": [
+    [
+     2010,
+     2019
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "F-350",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Chevrolet": [
+  {
+   "model": "Silverado",
+   "gens": [
+    [
+     2007,
+     2013
+    ],
+    [
+     2014,
+     2018
+    ],
+    [
+     2019,
+     2025
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Equinox",
+   "gens": [
+    [
+     2010,
+     2017
+    ],
+    [
+     2018,
+     2024
+    ],
+    [
+     2025,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Malibu",
+   "gens": [
+    [
+     2008,
+     2015
+    ],
+    [
+     2016,
+     2024
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Cruze",
+   "gens": [
+    [
+     2011,
+     2019
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Camaro",
+   "gens": [
+    [
+     2010,
+     2015
+    ],
+    [
+     2016,
+     2024
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Corvette",
+   "gens": [
+    [
+     2005,
+     2013
+    ],
+    [
+     2014,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Tahoe",
+   "gens": [
+    [
+     2007,
+     2014
+    ],
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Suburban",
+   "gens": [
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Traverse",
+   "gens": [
+    [
+     2018,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Colorado",
+   "gens": [
+    [
+     2015,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Bolt",
+   "gens": [
+    [
+     2017,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Blazer",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Trailblazer",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Spark",
+   "gens": [
+    [
+     2013,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Impala",
+   "gens": [
+    [
+     2014,
+     2020
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Sonic",
+   "gens": [
+    [
+     2012,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Trax",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  }
+ ],
+ "GMC": [
+  {
+   "model": "Sierra",
+   "gens": [
+    [
+     2007,
+     2013
+    ],
+    [
+     2014,
+     2018
+    ],
+    [
+     2019,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Yukon",
+   "gens": [
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Acadia",
+   "gens": [
+    [
+     2017,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Terrain",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Canyon",
+   "gens": [
+    [
+     2015,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Hummer EV",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  }
+ ],
+ "Dodge": [
+  {
+   "model": "Charger",
+   "gens": [
+    [
+     2006,
+     2014
+    ],
+    [
+     2015,
+     2023
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Challenger",
+   "gens": [
+    [
+     2008,
+     2014
+    ],
+    [
+     2015,
+     2023
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Durango",
+   "gens": [
+    [
+     2011,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Journey",
+   "gens": [
+    [
+     2009,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Grand Caravan",
+   "gens": [
+    [
+     2008,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Viper",
+   "gens": [
+    [
+     2013,
+     2017
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Dart",
+   "gens": [
+    [
+     2013,
+     2016
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Hornet",
+   "gens": [
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Ram": [
+  {
+   "model": "1500",
+   "gens": [
+    [
+     2009,
+     2018
+    ],
+    [
+     2019,
+     2025
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "2500",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "3500",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "1500 TRX",
+   "gens": [
+    [
+     2021,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "ProMaster",
+   "gens": [
+    [
+     2014,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Jeep": [
+  {
+   "model": "Wrangler",
+   "gens": [
+    [
+     2007,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Grand Cherokee",
+   "gens": [
+    [
+     2011,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Cherokee",
+   "gens": [
+    [
+     2014,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Gladiator",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Compass",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Renegade",
+   "gens": [
+    [
+     2015,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Wagoneer",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Patriot",
+   "gens": [
+    [
+     2011,
+     2017
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Nissan": [
+  {
+   "model": "Altima",
+   "gens": [
+    [
+     2013,
+     2018
+    ],
+    [
+     2019,
+     2025
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Rogue",
+   "gens": [
+    [
+     2014,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Sentra",
+   "gens": [
+    [
+     2013,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Maxima",
+   "gens": [
+    [
+     2016,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Pathfinder",
+   "gens": [
+    [
+     2013,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Frontier",
+   "gens": [
+    [
+     2005,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Titan",
+   "gens": [
+    [
+     2016,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Versa",
+   "gens": [
+    [
+     2012,
+     2019
+    ],
+    [
+     2020,
+     2025
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Murano",
+   "gens": [
+    [
+     2015,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Kicks",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Leaf",
+   "gens": [
+    [
+     2011,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "370Z",
+   "gens": [
+    [
+     2009,
+     2020
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "GT-R",
+   "gens": [
+    [
+     2009,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Z",
+   "gens": [
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Armada",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "350Z",
+   "gens": [
+    [
+     2003,
+     2009
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Hyundai": [
+  {
+   "model": "Elantra",
+   "gens": [
+    [
+     2011,
+     2016
+    ],
+    [
+     2017,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Sonata",
+   "gens": [
+    [
+     2011,
+     2014
+    ],
+    [
+     2015,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Tucson",
+   "gens": [
+    [
+     2016,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Santa Fe",
+   "gens": [
+    [
+     2013,
+     2018
+    ],
+    [
+     2019,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Palisade",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Kona",
+   "gens": [
+    [
+     2018,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Ioniq 5",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Veloster",
+   "gens": [
+    [
+     2012,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Accent",
+   "gens": [
+    [
+     2012,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Venue",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Genesis Coupe",
+   "gens": [
+    [
+     2010,
+     2016
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Kia": [
+  {
+   "model": "Sportage",
+   "gens": [
+    [
+     2017,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Sorento",
+   "gens": [
+    [
+     2016,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Telluride",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Soul",
+   "gens": [
+    [
+     2014,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Forte",
+   "gens": [
+    [
+     2014,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "K5",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Optima",
+   "gens": [
+    [
+     2016,
+     2020
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Seltos",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Stinger",
+   "gens": [
+    [
+     2018,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Niro",
+   "gens": [
+    [
+     2017,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "EV6",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Rio",
+   "gens": [
+    [
+     2012,
+     2017
+    ],
+    [
+     2018,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Carnival",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Subaru": [
+  {
+   "model": "Outback",
+   "gens": [
+    [
+     2015,
+     2019
+    ],
+    [
+     2020,
+     2025
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Forester",
+   "gens": [
+    [
+     2014,
+     2018
+    ],
+    [
+     2019,
+     2024
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Crosstrek",
+   "gens": [
+    [
+     2013,
+     2017
+    ],
+    [
+     2018,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Impreza",
+   "gens": [
+    [
+     2012,
+     2016
+    ],
+    [
+     2017,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "WRX",
+   "gens": [
+    [
+     2015,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Legacy",
+   "gens": [
+    [
+     2015,
+     2019
+    ],
+    [
+     2020,
+     2025
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Ascent",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "BRZ",
+   "gens": [
+    [
+     2013,
+     2020
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "STI",
+   "gens": [
+    [
+     2004,
+     2007
+    ],
+    [
+     2015,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Solterra",
+   "gens": [
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Mazda": [
+  {
+   "model": "Mazda3",
+   "gens": [
+    [
+     2010,
+     2013
+    ],
+    [
+     2014,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "CX-5",
+   "gens": [
+    [
+     2013,
+     2016
+    ],
+    [
+     2017,
+     2025
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "CX-9",
+   "gens": [
+    [
+     2016,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Mazda6",
+   "gens": [
+    [
+     2014,
+     2021
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "CX-30",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "CX-50",
+   "gens": [
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "MX-5 Miata",
+   "gens": [
+    [
+     1990,
+     1997
+    ],
+    [
+     1999,
+     2005
+    ],
+    [
+     2006,
+     2015
+    ],
+    [
+     2016,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "RX-7",
+   "gens": [
+    [
+     1993,
+     2002
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "RX-8",
+   "gens": [
+    [
+     2004,
+     2011
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "CX-3",
+   "gens": [
+    [
+     2016,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Mazdaspeed3",
+   "gens": [
+    [
+     2007,
+     2013
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Volkswagen": [
+  {
+   "model": "Jetta",
+   "gens": [
+    [
+     2011,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Golf",
+   "gens": [
+    [
+     2010,
+     2014
+    ],
+    [
+     2015,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Tiguan",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Atlas",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Passat",
+   "gens": [
+    [
+     2012,
+     2019
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Beetle",
+   "gens": [
+    [
+     1998,
+     2010
+    ],
+    [
+     2012,
+     2019
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "GTI",
+   "gens": [
+    [
+     2015,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Arteon",
+   "gens": [
+    [
+     2019,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "ID.4",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Taos",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Bus",
+   "gens": [
+    [
+     1960,
+     1979
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "BMW": [
+  {
+   "model": "3 Series",
+   "gens": [
+    [
+     2006,
+     2011
+    ],
+    [
+     2012,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "5 Series",
+   "gens": [
+    [
+     2011,
+     2016
+    ],
+    [
+     2017,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "X3",
+   "gens": [
+    [
+     2011,
+     2017
+    ],
+    [
+     2018,
+     2024
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "X5",
+   "gens": [
+    [
+     2014,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "X1",
+   "gens": [
+    [
+     2016,
+     2022
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "7 Series",
+   "gens": [
+    [
+     2016,
+     2022
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "4 Series",
+   "gens": [
+    [
+     2014,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "M3",
+   "gens": [
+    [
+     2008,
+     2013
+    ],
+    [
+     2014,
+     2018
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "M4",
+   "gens": [
+    [
+     2014,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "M5",
+   "gens": [
+    [
+     2012,
+     2016
+    ],
+    [
+     2018,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "2 Series",
+   "gens": [
+    [
+     2014,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "X7",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "i4",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Z4",
+   "gens": [
+    [
+     2009,
+     2016
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "1 Series",
+   "gens": [
+    [
+     2008,
+     2013
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "i3",
+   "gens": [
+    [
+     2014,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "M2",
+   "gens": [
+    [
+     2016,
+     2021
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "X6",
+   "gens": [
+    [
+     2015,
+     2019
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "E30",
+   "gens": [
+    [
+     1982,
+     1994
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Mercedes-Benz": [
+  {
+   "model": "C-Class",
+   "gens": [
+    [
+     2008,
+     2014
+    ],
+    [
+     2015,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "E-Class",
+   "gens": [
+    [
+     2010,
+     2016
+    ],
+    [
+     2017,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "GLC",
+   "gens": [
+    [
+     2016,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "GLE",
+   "gens": [
+    [
+     2016,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "S-Class",
+   "gens": [
+    [
+     2014,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "A-Class",
+   "gens": [
+    [
+     2019,
+     2022
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "CLA",
+   "gens": [
+    [
+     2014,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "G-Class",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "GLA",
+   "gens": [
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "GLS",
+   "gens": [
+    [
+     2017,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "AMG GT",
+   "gens": [
+    [
+     2016,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "SL",
+   "gens": [
+    [
+     2013,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "SLK",
+   "gens": [
+    [
+     2012,
+     2016
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Sprinter",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "190E",
+   "gens": [
+    [
+     1984,
+     1993
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Audi": [
+  {
+   "model": "A4",
+   "gens": [
+    [
+     2009,
+     2016
+    ],
+    [
+     2017,
+     2024
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "A6",
+   "gens": [
+    [
+     2012,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Q5",
+   "gens": [
+    [
+     2009,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Q7",
+   "gens": [
+    [
+     2016,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "A3",
+   "gens": [
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Q3",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "A5",
+   "gens": [
+    [
+     2008,
+     2016
+    ],
+    [
+     2018,
+     2019
+    ],
+    [
+     2020,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "S4",
+   "gens": [
+    [
+     2018,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "RS 5",
+   "gens": [
+    [
+     2018,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "TT",
+   "gens": [
+    [
+     2016,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "R8",
+   "gens": [
+    [
+     2008,
+     2015
+    ],
+    [
+     2016,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "e-tron",
+   "gens": [
+    [
+     2019,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Q8",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "A7",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "RS 6",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Lexus": [
+  {
+   "model": "IS",
+   "gens": [
+    [
+     2006,
+     2013
+    ],
+    [
+     2014,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "RX",
+   "gens": [
+    [
+     2010,
+     2015
+    ],
+    [
+     2016,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "ES",
+   "gens": [
+    [
+     2013,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "NX",
+   "gens": [
+    [
+     2015,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "GX",
+   "gens": [
+    [
+     2010,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "LX",
+   "gens": [
+    [
+     2016,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "LS",
+   "gens": [
+    [
+     2013,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "GS",
+   "gens": [
+    [
+     2013,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "RC",
+   "gens": [
+    [
+     2015,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "LC",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "UX",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "RC F",
+   "gens": [
+    [
+     2015,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "IS F",
+   "gens": [
+    [
+     2008,
+     2014
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Acura": [
+  {
+   "model": "MDX",
+   "gens": [
+    [
+     2001,
+     2006
+    ],
+    [
+     2007,
+     2013
+    ],
+    [
+     2014,
+     2020
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "TLX",
+   "gens": [
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "RDX",
+   "gens": [
+    [
+     2013,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "ILX",
+   "gens": [
+    [
+     2013,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Integra",
+   "gens": [
+    [
+     2023,
+     2026
+    ],
+    [
+     1994,
+     2001
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "TSX",
+   "gens": [
+    [
+     2009,
+     2014
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "NSX",
+   "gens": [
+    [
+     2017,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "RSX",
+   "gens": [
+    [
+     2002,
+     2006
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Infiniti": [
+  {
+   "model": "Q50",
+   "gens": [
+    [
+     2014,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "QX60",
+   "gens": [
+    [
+     2014,
+     2020
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "QX80",
+   "gens": [
+    [
+     2014,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "G35",
+   "gens": [
+    [
+     2003,
+     2007
+    ],
+    [
+     2007,
+     2008
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "G37",
+   "gens": [
+    [
+     2008,
+     2013
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Q60",
+   "gens": [
+    [
+     2017,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "QX50",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "FX35",
+   "gens": [
+    [
+     2009,
+     2017
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Porsche": [
+  {
+   "model": "911",
+   "gens": [
+    [
+     1999,
+     2004
+    ],
+    [
+     2005,
+     2011
+    ],
+    [
+     2012,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Cayenne",
+   "gens": [
+    [
+     2011,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Macan",
+   "gens": [
+    [
+     2015,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Panamera",
+   "gens": [
+    [
+     2017,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Taycan",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Boxster",
+   "gens": [
+    [
+     2013,
+     2016
+    ],
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Cayman",
+   "gens": [
+    [
+     2014,
+     2016
+    ],
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "718",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "918 Spyder",
+   "gens": [
+    [
+     2014,
+     2015
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "944",
+   "gens": [
+    [
+     1982,
+     1991
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Tesla": [
+  {
+   "model": "Model 3",
+   "gens": [
+    [
+     2017,
+     2023
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Model Y",
+   "gens": [
+    [
+     2020,
+     2024
+    ],
+    [
+     2025,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Model S",
+   "gens": [
+    [
+     2012,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Model X",
+   "gens": [
+    [
+     2016,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Cybertruck",
+   "gens": [
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "Roadster",
+   "gens": [
+    [
+     2008,
+     2012
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Cadillac": [
+  {
+   "model": "Escalade",
+   "gens": [
+    [
+     2015,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 1
+  },
+  {
+   "model": "CT5",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "XT5",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "CTS",
+   "gens": [
+    [
+     2014,
+     2019
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "ATS",
+   "gens": [
+    [
+     2013,
+     2019
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "XT4",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "CT4",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Lyriq",
+   "gens": [
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "CTS-V",
+   "gens": [
+    [
+     2009,
+     2019
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Buick": [
+  {
+   "model": "Enclave",
+   "gens": [
+    [
+     2008,
+     2017
+    ],
+    [
+     2018,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Encore",
+   "gens": [
+    [
+     2013,
+     2022
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Envision",
+   "gens": [
+    [
+     2016,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Regal",
+   "gens": [
+    [
+     2011,
+     2017
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "LaCrosse",
+   "gens": [
+    [
+     2010,
+     2016
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Chrysler": [
+  {
+   "model": "300",
+   "gens": [
+    [
+     2005,
+     2010
+    ],
+    [
+     2011,
+     2023
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Pacifica",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Town & Country",
+   "gens": [
+    [
+     2008,
+     2016
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Lincoln": [
+  {
+   "model": "Navigator",
+   "gens": [
+    [
+     2007,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Aviator",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "MKZ",
+   "gens": [
+    [
+     2013,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Corsair",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Continental",
+   "gens": [
+    [
+     2017,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Nautilus",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "MKX",
+   "gens": [
+    [
+     2016,
+     2018
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Land Rover": [
+  {
+   "model": "Range Rover",
+   "gens": [
+    [
+     2013,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Range Rover Sport",
+   "gens": [
+    [
+     2014,
+     2022
+    ],
+    [
+     2023,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Defender",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Discovery",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Range Rover Evoque",
+   "gens": [
+    [
+     2012,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Range Rover Velar",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Discovery Sport",
+   "gens": [
+    [
+     2015,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Jaguar": [
+  {
+   "model": "F-Type",
+   "gens": [
+    [
+     2014,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "XF",
+   "gens": [
+    [
+     2016,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "F-Pace",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "XE",
+   "gens": [
+    [
+     2017,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "XJ",
+   "gens": [
+    [
+     2011,
+     2019
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "E-Pace",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "E-Type",
+   "gens": [
+    [
+     1961,
+     1975
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Volvo": [
+  {
+   "model": "XC90",
+   "gens": [
+    [
+     2016,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "XC60",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "S60",
+   "gens": [
+    [
+     2011,
+     2018
+    ],
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "V60",
+   "gens": [
+    [
+     2015,
+     2018
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "XC40",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "S90",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "V90",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "240",
+   "gens": [
+    [
+     1975,
+     1993
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Genesis": [
+  {
+   "model": "G70",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "G80",
+   "gens": [
+    [
+     2017,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "G90",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "GV70",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "GV80",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Mini": [
+  {
+   "model": "Cooper",
+   "gens": [
+    [
+     2002,
+     2006
+    ],
+    [
+     2007,
+     2013
+    ],
+    [
+     2014,
+     2024
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Countryman",
+   "gens": [
+    [
+     2011,
+     2016
+    ],
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Clubman",
+   "gens": [
+    [
+     2016,
+     2024
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Alfa Romeo": [
+  {
+   "model": "Giulia",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Stelvio",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "4C",
+   "gens": [
+    [
+     2015,
+     2020
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Fiat": [
+  {
+   "model": "500",
+   "gens": [
+    [
+     2012,
+     2019
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "500X",
+   "gens": [
+    [
+     2016,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "124 Spider",
+   "gens": [
+    [
+     2017,
+     2020
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Maserati": [
+  {
+   "model": "Ghibli",
+   "gens": [
+    [
+     2014,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Levante",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "GranTurismo",
+   "gens": [
+    [
+     2008,
+     2019
+    ],
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Quattroporte",
+   "gens": [
+    [
+     2013,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "MC20",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Ferrari": [
+  {
+   "model": "488",
+   "gens": [
+    [
+     2016,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "458",
+   "gens": [
+    [
+     2010,
+     2015
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "F8",
+   "gens": [
+    [
+     2020,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "812",
+   "gens": [
+    [
+     2018,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Roma",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "California",
+   "gens": [
+    [
+     2009,
+     2017
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Portofino",
+   "gens": [
+    [
+     2018,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "SF90",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "F430",
+   "gens": [
+    [
+     2005,
+     2009
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "LaFerrari",
+   "gens": [
+    [
+     2014,
+     2016
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Testarossa",
+   "gens": [
+    [
+     1984,
+     1996
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "360",
+   "gens": [
+    [
+     2000,
+     2005
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Lamborghini": [
+  {
+   "model": "Huracan",
+   "gens": [
+    [
+     2015,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Aventador",
+   "gens": [
+    [
+     2012,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Urus",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Gallardo",
+   "gens": [
+    [
+     2004,
+     2013
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Murcielago",
+   "gens": [
+    [
+     2002,
+     2010
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Countach",
+   "gens": [
+    [
+     1974,
+     1990
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Revuelto",
+   "gens": [
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "McLaren": [
+  {
+   "model": "570S",
+   "gens": [
+    [
+     2016,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "720S",
+   "gens": [
+    [
+     2018,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "P1",
+   "gens": [
+    [
+     2014,
+     2015
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "GT",
+   "gens": [
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Artura",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "650S",
+   "gens": [
+    [
+     2015,
+     2017
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "MP4-12C",
+   "gens": [
+    [
+     2012,
+     2014
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "765LT",
+   "gens": [
+    [
+     2020,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "F1",
+   "gens": [
+    [
+     1993,
+     1998
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Aston Martin": [
+  {
+   "model": "Vantage",
+   "gens": [
+    [
+     2006,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "DB11",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "DBX",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "DB9",
+   "gens": [
+    [
+     2005,
+     2016
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "DBS",
+   "gens": [
+    [
+     2019,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Rapide",
+   "gens": [
+    [
+     2010,
+     2020
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Bentley": [
+  {
+   "model": "Continental GT",
+   "gens": [
+    [
+     2004,
+     2010
+    ],
+    [
+     2011,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Bentayga",
+   "gens": [
+    [
+     2017,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Flying Spur",
+   "gens": [
+    [
+     2014,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Mulsanne",
+   "gens": [
+    [
+     2011,
+     2020
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Rolls-Royce": [
+  {
+   "model": "Ghost",
+   "gens": [
+    [
+     2010,
+     2020
+    ],
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Phantom",
+   "gens": [
+    [
+     2004,
+     2017
+    ],
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Wraith",
+   "gens": [
+    [
+     2014,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Cullinan",
+   "gens": [
+    [
+     2019,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Dawn",
+   "gens": [
+    [
+     2016,
+     2022
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Spectre",
+   "gens": [
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Lotus": [
+  {
+   "model": "Emira",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Evora",
+   "gens": [
+    [
+     2010,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Elise",
+   "gens": [
+    [
+     1996,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Exige",
+   "gens": [
+    [
+     2005,
+     2021
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Esprit",
+   "gens": [
+    [
+     1976,
+     2004
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Pagani": [
+  {
+   "model": "Huayra",
+   "gens": [
+    [
+     2012,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Zonda",
+   "gens": [
+    [
+     1999,
+     2017
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Mitsubishi": [
+  {
+   "model": "Lancer",
+   "gens": [
+    [
+     2008,
+     2017
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Lancer Evolution",
+   "gens": [
+    [
+     2003,
+     2007
+    ],
+    [
+     2008,
+     2015
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Outlander",
+   "gens": [
+    [
+     2014,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 2
+  },
+  {
+   "model": "Eclipse Cross",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Mirage",
+   "gens": [
+    [
+     2014,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "3000GT",
+   "gens": [
+    [
+     1991,
+     1999
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Eclipse",
+   "gens": [
+    [
+     1995,
+     1999
+    ],
+    [
+     2000,
+     2005
+    ],
+    [
+     2006,
+     2012
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Suzuki": [
+  {
+   "model": "Swift",
+   "gens": [
+    [
+     2017,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Jimny",
+   "gens": [
+    [
+     2018,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Grand Vitara",
+   "gens": [
+    [
+     2006,
+     2013
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Saab": [
+  {
+   "model": "9-3",
+   "gens": [
+    [
+     2003,
+     2012
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "9-5",
+   "gens": [
+    [
+     2010,
+     2011
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Peugeot": [
+  {
+   "model": "3008",
+   "gens": [
+    [
+     2016,
+     2023
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "208",
+   "gens": [
+    [
+     2012,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "308",
+   "gens": [
+    [
+     2014,
+     2021
+    ],
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "205",
+   "gens": [
+    [
+     1983,
+     1998
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Renault": [
+  {
+   "model": "Megane",
+   "gens": [
+    [
+     2003,
+     2009
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Clio",
+   "gens": [
+    [
+     2012,
+     2019
+    ],
+    [
+     2020,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Twingo",
+   "gens": [
+    [
+     2014,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Captur",
+   "gens": [
+    [
+     2013,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Citro\u00ebn": [
+  {
+   "model": "C1",
+   "gens": [
+    [
+     2005,
+     2014
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "C3",
+   "gens": [
+    [
+     2002,
+     2009
+    ],
+    [
+     2016,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "2CV",
+   "gens": [
+    [
+     1948,
+     1990
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "C4 Cactus",
+   "gens": [
+    [
+     2014,
+     2020
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "DS3",
+   "gens": [
+    [
+     2010,
+     2019
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Fisker": [
+  {
+   "model": "Ocean",
+   "gens": [
+    [
+     2023,
+     2024
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Karma",
+   "gens": [
+    [
+     2012,
+     2012
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Lucid": [
+  {
+   "model": "Air",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "Gravity",
+   "gens": [
+    [
+     2025,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Polestar": [
+  {
+   "model": "2",
+   "gens": [
+    [
+     2021,
+     2026
+    ]
+   ],
+   "priority": 3
+  },
+  {
+   "model": "3",
+   "gens": [
+    [
+     2024,
+     2026
+    ]
+   ],
+   "priority": 3
+  }
+ ],
+ "Rivian": [
+  {
+   "model": "R1T",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3,
+   "blocked": "blocked: licenses are Free Standard only"
+  },
+  {
+   "model": "R1S",
+   "gens": [
+    [
+     2022,
+     2026
+    ]
+   ],
+   "priority": 3,
+   "blocked": "blocked: licenses are Free Standard only"
+  }
+ ]
+}
