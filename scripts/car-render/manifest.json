@@ -1642,20 +1642,6 @@
     "paintmat": "Carro_Pintura",
     "flip": true
   },
-  "chevrolet-corvette-2005": {
-    "covers": {
-      "make": "Chevrolet",
-      "model": "Corvette",
-      "years": [
-        2005,
-        2013
-      ],
-      "aliases": []
-    },
-    "sketchfab": "7ff74ce1324c4dbb9f3d830b71525096",
-    "paintmat": "cMAT_Details_MAT_030",
-    "flip": true
-  },
   "chevrolet-malibu-2016": {
     "covers": {
       "make": "Chevrolet",
@@ -1763,7 +1749,8 @@
     },
     "sketchfab": "673a4a83715d411ba713c0c270cdf93f",
     "paintmat": "hHyundai_ElantraNRewardRecycled_2022Paint_Material1",
-    "flip": true
+    "flip": true,
+    "tintmat": "hHyundai_ElantraNRewardRecycled_2022Window_Material1"
   },
   "hyundai-santa-fe-2019": {
     "covers": {
@@ -1777,7 +1764,8 @@
     },
     "sketchfab": "44162eff25084d74964688b1e139ede8",
     "paintmat": "santafek_body",
-    "flip": true
+    "flip": true,
+    "tintmat": "auto_56"
   },
   "hyundai-sonata-2011": {
     "covers": {
@@ -1846,7 +1834,8 @@
     },
     "sketchfab": "ea176c6ebe814be3b06641bf038f8642",
     "paintmat": "Paint_Color",
-    "flip": true
+    "flip": true,
+    "tintmat": "Index_0_2"
   },
   "mercedes-benz-c-class-2015": {
     "covers": {
@@ -1860,7 +1849,8 @@
     },
     "sketchfab": "19d59344b7554e6ab614a6cc02e7ad0a",
     "paintmat": "Paint_Color",
-    "flip": true
+    "flip": true,
+    "tintmat": "Index_0_3"
   },
   "mercedes-benz-e-class-2010": {
     "covers": {
@@ -1929,20 +1919,6 @@
     "sketchfab": "f0270f8ae1db4d7b909417e07492043a",
     "paintmat": "Color1Mtl"
   },
-  "ram-1500-2009": {
-    "covers": {
-      "make": "Ram",
-      "model": "1500",
-      "years": [
-        2009,
-        2018
-      ],
-      "aliases": []
-    },
-    "sketchfab": "c6814c07d8e241cbaebcd9ac8a6bbcf7",
-    "paintmat": "Color_007",
-    "flip": true
-  },
   "tesla-model-x-2016": {
     "covers": {
       "make": "Tesla",
@@ -1955,7 +1931,8 @@
     },
     "sketchfab": "c61839793eab4f31a26e261a2de750b5",
     "paintmat": "Paint_Color",
-    "flip": true
+    "flip": true,
+    "tintmat": "Index_0_2"
   },
   "tesla-model-y-2025": {
     "covers": {
@@ -2051,7 +2028,8 @@
     },
     "sketchfab": "39b86984238941b0b6a46da6a8c31907",
     "paintmat": "default",
-    "flip": true
+    "flip": true,
+    "tintmat": "Material__7390"
   },
   "kia-sorento-2021": {
     "covers": {
@@ -2064,7 +2042,8 @@
       "aliases": []
     },
     "sketchfab": "340ded1d34c149a095b3281a1232494a",
-    "paintmat": "template_carpaint.014"
+    "paintmat": "template_carpaint.014",
+    "platemat": "none"
   },
   "lexus-rx-2023": {
     "covers": {
@@ -2217,5 +2196,127 @@
     },
     "sketchfab": "d8f3f63967514a81a1dbb02c09cd6fb4",
     "paintmat": "carpaint"
+  },
+  "audi-a4-2017-r3": {
+    "covers": {
+      "make": "Audi",
+      "model": "A4",
+      "years": [
+        2017,
+        2024
+      ],
+      "aliases": []
+    },
+    "sketchfab": "9f0af93c03094258bffd99f1bf5ef0cd",
+    "paintmat": "color_garage",
+    "flip": true
+  },
+  "bmw-3-series-2012-r3": {
+    "covers": {
+      "make": "BMW",
+      "model": "3 Series",
+      "years": [
+        2012,
+        2018
+      ],
+      "aliases": []
+    },
+    "sketchfab": "71746440f98d48ca9ea41ceeaa3504c7",
+    "paintmat": "f31_body"
+  },
+  "chevrolet-corvette-2014-r3": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "years": [
+        2014,
+        2019
+      ],
+      "aliases": []
+    },
+    "sketchfab": "92b1b185b0d44847b0d099a787f8ed12",
+    "paintmat": "cChevrolet_CorvetteZR1SH1_2018Paint_Material1",
+    "flip": true
+  },
+  "ford-explorer-2011-b-r3": {
+    "covers": {
+      "make": "Ford",
+      "model": "Explorer",
+      "years": [
+        2011,
+        2019
+      ],
+      "aliases": []
+    },
+    "sketchfab": "3a65f6d3683048efa9e2f04bce565941",
+    "paintmat": "carpaint"
+  },
+  "gmc-sierra-2019-r3": {
+    "covers": {
+      "make": "GMC",
+      "model": "Sierra",
+      "years": [
+        2019,
+        2021
+      ],
+      "aliases": []
+    },
+    "sketchfab": "44adbd57fa4f4972a2c950d123b02d07",
+    "paintmat": "material_8"
+  },
+  "honda-accord-2018-r3": {
+    "covers": {
+      "make": "Honda",
+      "model": "Accord",
+      "years": [
+        2018,
+        2022
+      ],
+      "aliases": []
+    },
+    "sketchfab": "f973338c77ce4618b941612241d53f6a",
+    "paintmat": "paint",
+    "flip": true
+  },
+  "lexus-is-2014-r3": {
+    "covers": {
+      "make": "Lexus",
+      "model": "IS",
+      "years": [
+        2014,
+        2020
+      ],
+      "aliases": []
+    },
+    "sketchfab": "613db0ae1d4c437a866d0688c5667d14",
+    "paintmat": "Paint1Mtl",
+    "flip": true
+  },
+  "porsche-cayenne-2011-c-r3": {
+    "covers": {
+      "make": "Porsche",
+      "model": "Cayenne",
+      "years": [
+        2011,
+        2018
+      ],
+      "aliases": []
+    },
+    "sketchfab": "bdc888633910404db4fa58e694c5ee39",
+    "paintmat": "carpaint"
+  },
+  "tesla-cybertruck-2024-c-r3": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Cybertruck",
+      "years": [
+        2024,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "1ab0c3f248fa47019c4311abce9731a0",
+    "paintmat": "Base",
+    "flip": true
   }
 }
