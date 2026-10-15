@@ -117,8 +117,9 @@ for e in entries:
     # Frames 15 and 33 are the side views (yaw 185° / 5°).
     rendered = e.get("wheels") or []
     stock_box = {}
-    if not rendered and key in ("generic-coupe",): pass  # wheels deliberately off (manifest noWheels)
-    for s in (["stock"] + styles) if rendered or key not in ("generic-coupe",) else []:
+    no_wheels = bool(json.load(open(os.path.join(here, "manifest.json"))).get(key, {}).get("noWheels"))
+    # wheels deliberately off (manifest noWheels): the generic coupe, or a car whose wheels detection can't place
+    for s in (["stock"] + styles) if rendered or not no_wheels else []:
         if s not in rendered: bad(f"wheels: {s} missing"); continue
         for f in (0, 6, 15, 18, 33):
             w = alpha(os.path.join(d, "wheels", s, f"{f:02d}.webp"), (W, H))
