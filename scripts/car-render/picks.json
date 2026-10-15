@@ -1065,5 +1065,41 @@
       "Optima SX"
     ],
     "verify": "batch 3 - check render"
+  },
+  "lexus-is-xe30-fl": {
+    "uid": "3f099f55bc364aac9998dd0774cfd718",
+    "make": "Lexus",
+    "model": "IS",
+    "years": [
+      2021,
+      2026
+    ],
+    "aliases": [
+      "IS 350",
+      "IS 300",
+      "IS 500",
+      "IS 350 F Sport",
+      "IS 300 F Sport",
+      "IS 500 F Sport Performance"
+    ],
+    "verify": "batch 4 - check render"
+  },
+  "porsche-911-992": {
+    "uid": "e2be40c215e34812af7dfb933bc7967a",
+    "make": "Porsche",
+    "model": "911",
+    "years": [
+      2020,
+      2026
+    ],
+    "aliases": [
+      "911 Carrera",
+      "911 Carrera S",
+      "911 Carrera 4S",
+      "911 Carrera 4",
+      "911 Turbo",
+      "911 GT3"
+    ],
+    "verify": "batch 4 - check render"
   }
 }

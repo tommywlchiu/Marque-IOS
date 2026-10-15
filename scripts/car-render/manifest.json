@@ -1106,5 +1106,48 @@
     "sketchfab": "8c8ecf70cd894ec0834689456c49cb70",
     "paintmat": "Carro_Pintura",
     "flip": true
+  },
+  "porsche-911-992": {
+    "covers": {
+      "make": "Porsche",
+      "model": "911",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "911 Carrera",
+        "911 Carrera S",
+        "911 Carrera 4S",
+        "911 Carrera 4",
+        "911 Turbo",
+        "911 GT3"
+      ]
+    },
+    "sketchfab": "e2be40c215e34812af7dfb933bc7967a",
+    "paintmat": "car_vpnt_911992Carrera4S",
+    "flip": true,
+    "tintmat": "car_vgla_911992Carrera4S"
+  },
+  "lexus-is-xe30-fl": {
+    "covers": {
+      "make": "Lexus",
+      "model": "IS",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "IS 350",
+        "IS 300",
+        "IS 500",
+        "IS 350 F Sport",
+        "IS 300 F Sport",
+        "IS 500 F Sport Performance"
+      ]
+    },
+    "sketchfab": "3f099f55bc364aac9998dd0774cfd718",
+    "paintmat": "body",
+    "flip": true
   }
 }
