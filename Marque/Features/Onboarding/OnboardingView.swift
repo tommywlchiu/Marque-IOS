@@ -21,7 +21,7 @@ struct OnboardingView: View {
             icon: "person.2.fill",
             accentColor: .purple,
             title: "Connect With Car Fans",
-            subtitle: "Share your builds, discover enthusiasts nearby, and follow the cars you love."
+            subtitle: "Share your builds, discover other owners' cars, and follow the ones you love."
         ),
     ]
 
@@ -97,6 +97,8 @@ struct OnboardingView: View {
                     .animation(.spring(duration: 0.3), value: currentPage)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Page \(currentPage + 1) of \(pages.count)")
     }
 }
 
