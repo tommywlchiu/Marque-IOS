@@ -311,6 +311,7 @@ struct MarqueChatView: View {
     private func send() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        Haptics.tap()
         draft = ""
         inputFocused = false
         Task {

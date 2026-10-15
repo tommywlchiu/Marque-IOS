@@ -139,6 +139,7 @@ struct AddCarView: View {
                                 // FR-11.4 `car_added.entry_method`. `addMode` is the only
                                 // place this is known; without it CarStore skips the event.
                                 carStore.addCar(car, entryMethod: addMode == .vin ? .vin : .manual)
+                                Haptics.success()
                                 if onboarding != nil {
                                     // FR-13's first-car milestone: show the celebration and
                                     // defer onAdded() until the user dismisses it (see

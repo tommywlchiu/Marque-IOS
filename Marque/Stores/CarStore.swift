@@ -431,13 +431,28 @@ class CarStore: ObservableObject {
 
     static let maxMaintenanceRecords = 500
 
-    func deleteMaintenanceRecord(_ record: MaintenanceRecord, from car: Car) {
+    /// `keepReceipt` leaves the receipt files in place so an Undo can restore
+    /// the record; the caller then owns calling `discardReceipt` if it isn't undone.
+    func deleteMaintenanceRecord(_ record: MaintenanceRecord, from car: Car, keepReceipt: Bool = false) {
         var updated = car
         updated.maintenanceRecords.removeAll { $0.id == record.id }
         updateCar(updated)
+        if !keepReceipt { discardReceipt(of: record, carID: car.id) }
+    }
+
+    func discardReceipt(of record: MaintenanceRecord, carID: UUID) {
         if let fileName = record.receiptFileName {
-            deleteReceiptFiles(fileName: fileName, carId: car.id.uuidString)
+            deleteReceiptFiles(fileName: fileName, carId: carID.uuidString)
         }
+    }
+
+    /// Puts back a record removed by `deleteMaintenanceRecord(keepReceipt: true)`.
+    func restoreMaintenanceRecord(_ record: MaintenanceRecord, toCarID carID: UUID) {
+        guard var car = cars.first(where: { $0.id == carID }),
+              !car.maintenanceRecords.contains(where: { $0.id == record.id }),
+              car.maintenanceRecords.count < Self.maxMaintenanceRecords else { return }
+        car.maintenanceRecords.append(record)
+        updateCar(car)
     }
 
     func updateMaintenanceRecord(

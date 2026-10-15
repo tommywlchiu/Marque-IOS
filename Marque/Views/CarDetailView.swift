@@ -237,6 +237,15 @@ struct LogConfirmation: Identifiable {
     let id = UUID()
     let message: String
     let outcome: CarStore.ServiceLogOutcome
+    /// A custom undo (a deletion put back) instead of reversing a log's side effects.
+    var undoAction: (() -> Void)? = nil
+
+    /// "Oil Change deleted" with an Undo that runs `undo`.
+    init(message: String, undo: @escaping () -> Void) {
+        self.message = message
+        self.outcome = CarStore.ServiceLogOutcome(completedReminderIDs: [], scheduledNext: nil, previousMileage: nil)
+        self.undoAction = undo
+    }
 
     // Shows only the parts that actually happened, per the product spec:
     // "Oil Change logged · Reminder completed · Next due Mar 2027 / 32,000 mi".
