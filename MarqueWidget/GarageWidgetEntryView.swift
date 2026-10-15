@@ -69,9 +69,12 @@ private struct SmallGarageWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
+            // Taller than before, and let into the card's side margins so the
+            // car reads as the widget's subject rather than a thumbnail.
             WidgetHeroImage(car: car, symbolPadding: 14)
                 .frame(maxWidth: .infinity)
-                .frame(height: 64)
+                .frame(height: 86)
+                .padding(.horizontal, -10)
                 .accessibilityHidden(true)
             Spacer(minLength: 0)
             HStack(spacing: 5) {
@@ -87,12 +90,13 @@ private struct SmallGarageWidgetView: View {
             Text(car.statusText)
                 .font(.caption2.weight(.medium))
                 .foregroundColor(GarageTheme.secondaryText)
-                .lineLimit(2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
-        .padding(.top, 10)
-        .padding(.bottom, 14)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(car.displayName). \(car.statusText)")
     }
@@ -162,11 +166,13 @@ private struct MediumGarageWidgetView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(.vertical, 16)
+            .padding(.leading, 16)
+            .padding(.trailing, 4)
             Spacer(minLength: 0)
             WidgetHeroImage(car: car)
-                .frame(width: 112)
-                .padding(.trailing, 6)
+                .frame(width: 176)
+                .padding(.trailing, -4)
                 .accessibilityHidden(true)
         }
         .accessibilityElement(children: .ignore)
