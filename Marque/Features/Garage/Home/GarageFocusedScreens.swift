@@ -60,7 +60,8 @@ struct GarageServiceHistoryScreen: View {
                 MaintenanceLogSection(
                     car: car,
                     onAdd: { addRequest = MaintenanceAddRequest() },
-                    onEdit: { editingRecord = $0 }
+                    onEdit: { editingRecord = $0 },
+                    logConfirmation: $logConfirmation
                 )
             }
         }

@@ -79,8 +79,11 @@ struct ServiceRemindersView: View {
         .overlay(alignment: .bottom) {
             if let logConfirmation {
                 LogConfirmationBanner(message: logConfirmation.message) {
-                    guard let freshCar = car else { return }
-                    carStore.undoLogSideEffects(logConfirmation.outcome, for: freshCar)
+                    if let undo = logConfirmation.undoAction {
+                        undo()
+                    } else if let freshCar = car {
+                        carStore.undoLogSideEffects(logConfirmation.outcome, for: freshCar)
+                    }
                     withAnimation { self.logConfirmation = nil }
                 }
                 .padding(.horizontal, 16)
@@ -241,15 +244,28 @@ struct ServiceRemindersView: View {
     private func deleteUpcoming(at offsets: IndexSet) {
         guard var car else { return }
         let toDelete = offsets.map { reminders[$0].id }
-        car.serviceReminders.removeAll { toDelete.contains($0.id) }
-        carStore.updateCar(car)
+        removeReminders(ids: toDelete, from: &car)
     }
 
     private func deleteCompleted(at offsets: IndexSet) {
         guard var car else { return }
         let toDelete = offsets.map { completed[$0].id }
-        car.serviceReminders.removeAll { toDelete.contains($0.id) }
+        removeReminders(ids: toDelete, from: &car)
+    }
+
+    /// Deletes reminders, offering a 5-second Undo that puts them back.
+    private func removeReminders(ids: [UUID], from car: inout Car) {
+        let removed = car.serviceReminders.filter { ids.contains($0.id) }
+        guard !removed.isEmpty else { return }
+        car.serviceReminders.removeAll { ids.contains($0.id) }
         carStore.updateCar(car)
+        let carID = car.id
+        let label = removed.count == 1 ? "\(removed[0].serviceType) reminder" : "\(removed.count) reminders"
+        presentConfirmation(LogConfirmation(message: "\(label) deleted") {
+            guard var fresh = carStore.cars.first(where: { $0.id == carID }) else { return }
+            fresh.serviceReminders.append(contentsOf: removed.filter { r in !fresh.serviceReminders.contains { $0.id == r.id } })
+            carStore.updateCar(fresh)
+        })
     }
 
     private func sortKey(_ r: ServiceReminder, currentMileage: Int) -> Double {

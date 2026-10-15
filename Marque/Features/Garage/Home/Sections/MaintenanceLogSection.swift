@@ -10,6 +10,7 @@ struct MaintenanceLogSection: View {
     let car: Car
     let onAdd: () -> Void
     let onEdit: (MaintenanceRecord) -> Void
+    @Binding var logConfirmation: LogConfirmation?
 
     @EnvironmentObject private var carStore: CarStore
 
@@ -35,14 +36,42 @@ struct MaintenanceLogSection: View {
                 .onDelete { offsets in
                     let sorted = car.sortedMaintenanceRecords
                     for index in offsets where index < sorted.count {
-                        carStore.deleteMaintenanceRecord(sorted[index], from: car)
+                        deleteWithUndo(sorted[index])
                     }
                 }
             }
         }
         .garageRowBackground()
     }
+
+    /// Swipe-delete with a 5-second Undo. The receipt files outlive the delete
+    /// until the window closes, so Undo can bring the record back with its photo.
+    private func deleteWithUndo(_ record: MaintenanceRecord) {
+        Haptics.tap()
+        let carID = car.id
+        carStore.deleteMaintenanceRecord(record, from: car, keepReceipt: true)
+        let undone = UndoFlag()
+        let confirmation = LogConfirmation(message: "\(record.serviceType) deleted") {
+            undone.value = true
+            carStore.restoreMaintenanceRecord(record, toCarID: carID)
+        }
+        withAnimation { logConfirmation = confirmation }
+        let binding = $logConfirmation
+        let store = carStore
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            if binding.wrappedValue?.id == confirmation.id {
+                withAnimation { binding.wrappedValue = nil }
+            }
+            // Only once the window is over, and only if not put back.
+            try? await Task.sleep(for: .seconds(1))
+            if !undone.value { store.discardReceipt(of: record, carID: carID) }
+        }
+    }
 }
+
+/// Shared mutable flag for an undo window's closures.
+private final class UndoFlag { var value = false }
 
 /// Opens the Add Service Record form. A fresh id per request so the same
 /// kind of request twice in a row still presents.
@@ -136,7 +165,9 @@ struct LogConfirmationOverlay: ViewModifier {
         content.overlay(alignment: .bottom) {
             if let confirmation {
                 LogConfirmationBanner(message: confirmation.message) {
-                    if let car = carStore.cars.first(where: { $0.id == carID }) {
+                    if let undo = confirmation.undoAction {
+                        undo()
+                    } else if let car = carStore.cars.first(where: { $0.id == carID }) {
                         carStore.undoLogSideEffects(confirmation.outcome, for: car)
                     }
                     withAnimation { self.confirmation = nil }
