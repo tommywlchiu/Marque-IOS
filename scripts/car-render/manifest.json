@@ -1040,5 +1040,71 @@
     "sketchfab": "42470a7ce258421a89c2361225bb89eb",
     "paintmat": "body",
     "flip": true
+  },
+  "nissan-altima-l34": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Altima",
+      "years": [
+        2019,
+        2025
+      ],
+      "aliases": [
+        "Altima SR",
+        "Altima SV"
+      ]
+    },
+    "sketchfab": "47b0627190a44d04b39b75eb2b8175cd",
+    "paintmat": "body",
+    "flip": true
+  },
+  "kia-k5-dl3": {
+    "covers": {
+      "make": "Kia",
+      "model": "K5",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "K5 GT-Line"
+      ]
+    },
+    "sketchfab": "ab125f4a0b40493abdf1155aea09b626",
+    "paintmat": "body",
+    "flip": true
+  },
+  "ford-bronco-6g": {
+    "covers": {
+      "make": "Ford",
+      "model": "Bronco",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "Bronco Badlands",
+        "Bronco Wildtrak"
+      ]
+    },
+    "sketchfab": "09ebc68dcb634807a9dace7404ce5e66",
+    "paintmat": "Carbonized_Grey",
+    "flip": true
+  },
+  "ford-bronco-sport": {
+    "covers": {
+      "make": "Ford",
+      "model": "Bronco Sport",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "Bronco Sport Badlands"
+      ]
+    },
+    "sketchfab": "8c8ecf70cd894ec0834689456c49cb70",
+    "paintmat": "Carro_Pintura",
+    "flip": true
   }
 }

@@ -147,7 +147,9 @@ for e in entries:
                 def over(t, x0, x1):
                     return (t[0] <= x0 + tol and t[1] >= x1 - tol and t[0] >= sb[0] - tol and t[1] <= sb[2] + tol
                             and (abs(t[0] - x0) <= tol or abs(t[1] - x1) <= tol))
-                missed = [] if f == 6 else [(x0, x1) for x0, x1, _ in near if not any(over(t, x0, x1) for t in tyres)]
+                # A stock sliver under 1.2% of the frame is a rear-mounted spare seen edge-on
+                # (Bronco), not a road wheel; no replacement wheel could show there.
+                missed = [] if f == 6 else [(x0, x1) for x0, x1, _ in near if x1 - x0 >= W * 0.012 and not any(over(t, x0, x1) for t in tyres)]
                 if (f != 6 and sb[1] - box[1] > ch * 0.1) or abs(box[3] - sb[3]) > ch * 0.06 or missed:
                     bad(f"wheels: {s} off the car's wheels at frame {f} (box {box} vs stock {sb}; no new tyre over {missed})")
             if f in (15, 33):  # side views: two wheels, apart
