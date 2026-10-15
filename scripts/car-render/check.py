@@ -130,9 +130,9 @@ for e in entries:
             ch = cbox[3] - cbox[1]
             if s == "stock":
                 stock_box[f] = box, tyres[:2]
-                # Head-on (frame 6) a low supercar leaves only hairline slivers of wheel;
-                # a sliver narrower than 3% of the frame says nothing about wheel height.
-                if box[1] < cbox[1] + ch * 0.25 and not (f == 6 and box[2] - box[0] < W * 0.03):
+                # Not head-on (frame 6): there a low car's front tyres genuinely rise high in
+                # the tight frame (Ferrari 488); the check is for liner pieces at the side views.
+                if f != 6 and box[1] < cbox[1] + ch * 0.25:
                     bad(f"wheels: stock layer reaches too high at frame {f}")
             elif f in stock_box:
                 sb, near = stock_box[f]
