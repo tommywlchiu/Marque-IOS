@@ -378,5 +378,1186 @@
   "porsche-911-992": {
     "paintmat": "car_vpnt_911992Carrera4S",
     "flip": true
+  },
+  "buick-enclave-gen2": {
+    "paintmat": "agent_enclave_white",
+    "flip": false
+  },
+  "buick-enclave-gen1": {
+    "paintmat": "agent_enclave_2013_scan",
+    "flip": false
+  },
+  "buick-encore-gx": {
+    "paintmat": "agent_encoregx_scan",
+    "flip": false
+  },
+  "cadillac-escalade-5g": {
+    "paintmat": "car_body",
+    "flip": true
+  },
+  "chrysler-300-2g": {
+    "paintmat": "Meshpart7Mtl",
+    "flip": true
+  },
+  "genesis-g80-rg3": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "infiniti-q50": {
+    "paintmat": "material_5|Metallic|Metallic_0",
+    "flip": false
+  },
+  "land-rover-defender-l663": {
+    "paintmat": "2021_Land_Rover_Defender_110_Land_Rover_Defender_110_2020body_1",
+    "flip": true
+  },
+  "lincoln-navigator-4g": {
+    "paintmat": "White_Platinum_Metallic_Tri-coat",
+    "flip": true
+  },
+  "mini-cooper-r56": {
+    "paintmat": "Doorrfok0011Mtl|Doorrfok0021Mtl|Doorrfok0031Mtl",
+    "flip": false
+  },
+  "jaguar-f-type": {
+    "paintmat": "carpaint_metalic_red",
+    "flip": true
+  },
+  "fiat-500": {
+    "paintmat": "Carrozzeria",
+    "flip": false
+  },
+  "maserati-ghibli": {
+    "paintmat": "body",
+    "flip": true
+  },
+  "lucid-air": {
+    "paintmat": "Procedural_Car_Paint",
+    "flip": false
+  },
+  "polestar-2": {
+    "paintmat": "Carpaint_Simple_Ruby",
+    "flip": false
+  },
+  "ferrari-488": {
+    "paintmat": "Ferrari_488Pista_2019_Modified__CSB_Paint1",
+    "flip": true
+  },
+  "mclaren-720s": {
+    "paintmat": "McLaren_720STNR3_2017PaintTNR_Material1",
+    "flip": false
+  },
+  "aston-martin-vantage": {
+    "paintmat": "OEMPaint",
+    "flip": true
+  },
+  "bentley-continental-gt-2g": {
+    "paintmat": "Paint",
+    "flip": true
+  },
+  "bentley-continental-gt-3g": {
+    "paintmat": "body",
+    "flip": true
+  },
+  "rolls-royce-ghost-2g": {
+    "paintmat": "rrghost_main",
+    "flip": false
+  },
+  "lotus-emira": {
+    "paintmat": "Paint0021Mtl|Paint0011Mtl|Coloured0041Mtl",
+    "flip": false
+  },
+  "pagani-huayra": {
+    "paintmat": "PAG_HUAYRA_PAINT",
+    "flip": true
+  },
+  "citroen-c3": {
+    "paintmat": "Metallic",
+    "flip": true
+  },
+  "saab-9-3": {
+    "paintmat": "body_color_1",
+    "flip": false
+  },
+  "suzuki-swift": {
+    "paintmat": "M_2022_Suzuki_Swift_Pearl_Ablaze_Red",
+    "flip": true
+  },
+  "fisker-ocean": {
+    "paintmat": "Material.001",
+    "flip": true
+  },
+  "volvo-xc90-2g": {
+    "paintmat": "vivace_mechanical",
+    "flip": false
+  },
+  "alfa-romeo-giulia": {
+    "paintmat": "Giulia_QV_Paint",
+    "flip": false
+  },
+  "buick-envision": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "buick-regal": {
+    "paintmat": "Body",
+    "flip": false
+  },
+  "genesis-g70": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "genesis-gv70": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "mclaren-570s": {
+    "paintmat": "fullM_CarPaint_Max1",
+    "flip": false
+  },
+  "rolls-royce-cullinan": {
+    "paintmat": "CarPaint",
+    "flip": false
+  },
+  "fiat-500x": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "lamborghini-aventador": {
+    "paintmat": "CARROSSERIE",
+    "flip": false
+  },
+  "peugeot-3008": {
+    "paintmat": "CarPaint_Flip1",
+    "flip": true
+  },
+  "renault-megane": {
+    "paintmat": "Body",
+    "flip": true
+  },
+  "chrysler-pacifica": {
+    "paintmat": "022_Chrysler_Pacifica_Granite_Crystal_Metallic_Clearcoat",
+    "flip": false
+  },
+  "volvo-xc60": {
+    "paintmat": "auto31",
+    "flip": false
+  },
+  "rolls-royce-dawn": {
+    "paintmat": "dawn_paint",
+    "flip": false
+  },
+  "rolls-royce-ghost-1g": {
+    "paintmat": "primary_paint_shad|secondary_paint_shad",
+    "flip": false
+  },
+  "buick-lacrosse": {
+    "paintmat": "lacrossemk2_body.001",
+    "flip": false
+  },
+  "citroen-c4-cactus": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "infiniti-qx60": {
+    "paintmat": "None",
+    "flip": false
+  },
+  "infiniti-qx50": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "infiniti-g35-coupe": {
+    "paintmat": "Tailrinnerbody1Mtl",
+    "flip": false
+  },
+  "citroen-c1": {
+    "paintmat": "BrightRedTricoat_840978",
+    "flip": false
+  },
+  "acura-mdx-2007": {
+    "paintmat": "xromat_SECONDARY",
+    "flip": false
+  },
+  "acura-mdx-2014": {
+    "paintmat": "carpaint.001",
+    "flip": false
+  },
+  "acura-mdx-2022": {
+    "paintmat": "interior",
+    "flip": false
+  },
+  "audi-a4-2009": {
+    "paintmat": "Doorrfok0011Mtl",
+    "flip": false
+  },
+  "audi-a4-2017": {
+    "paintmat": "A4_tex",
+    "flip": false
+  },
+  "audi-q5-2009": {
+    "paintmat": "q5chaudi_body",
+    "flip": false
+  },
+  "audi-q5-2018": {
+    "paintmat": "Carro_Pintura",
+    "flip": false
+  },
+  "bmw-3-series-2006": {
+    "paintmat": "body_color",
+    "flip": false,
+    "hide": "color_chart"
+  },
+  "bmw-5-series-2011": {
+    "paintmat": "Meshesuntitledmesh150011Mtl",
+    "flip": false
+  },
+  "bmw-x3-2011": {
+    "paintmat": "Material_3",
+    "flip": false
+  },
+  "bmw-x3-2018": {
+    "paintmat": "Carro_Pintura",
+    "flip": false
+  },
+  "bmw-x5-2014": {
+    "paintmat": "20__20__UniqueID_67",
+    "flip": false
+  },
+  "bmw-x5-2019": {
+    "paintmat": "Marina_Bay_Blue_Metallic",
+    "flip": false
+  },
+  "cadillac-escalade-2015": {
+    "paintmat": "Paint_Galvano_Silver.001",
+    "flip": false
+  },
+  "chevrolet-corvette-2005": {
+    "paintmat": "cMAT_Details_MAT_030",
+    "flip": false
+  },
+  "chevrolet-corvette-2014": {
+    "paintmat": "M_2020_Chevy_Corvette_C8_Convertible_Paint",
+    "flip": false
+  },
+  "chevrolet-equinox-2010": {
+    "paintmat": "Paint_MAT",
+    "flip": false
+  },
+  "chevrolet-equinox-2025": {
+    "paintmat": "object_14",
+    "flip": false
+  },
+  "chevrolet-malibu-2008": {
+    "paintmat": "phong8",
+    "flip": false
+  },
+  "chevrolet-malibu-2016": {
+    "paintmat": "malibupaint",
+    "flip": false
+  },
+  "chevrolet-silverado-2014": {
+    "paintmat": "Carpaint",
+    "flip": false
+  },
+  "chevrolet-tahoe-2007": {
+    "paintmat": "Paint",
+    "flip": false
+  },
+  "chevrolet-tahoe-2015": {
+    "paintmat": "Color_M08",
+    "flip": false
+  },
+  "chevrolet-tahoe-2021": {
+    "paintmat": "default",
+    "flip": false
+  },
+  "dodge-challenger-2008": {
+    "paintmat": "dDodge_ChallengerSRTHellcat_2015Paint_Material1",
+    "flip": false
+  },
+  "dodge-charger-2006": {
+    "paintmat": "material_0",
+    "flip": false
+  },
+  "ford-escape-2013": {
+    "paintmat": "wire_255255255",
+    "flip": false
+  },
+  "ford-escape-2020": {
+    "paintmat": "PDM_Ford_Escape_2021_Material_02",
+    "flip": false
+  },
+  "ford-explorer-2011": {
+    "paintmat": "Body1",
+    "flip": false
+  },
+  "ford-f-150-2009": {
+    "paintmat": "Paint1Mtl",
+    "flip": false
+  },
+  "ford-f-150-2021": {
+    "paintmat": "Paint2Mtl",
+    "flip": false
+  },
+  "ford-maverick-2022": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "ford-mustang-2005": {
+    "paintmat": "Body",
+    "flip": false
+  },
+  "gmc-sierra-2007": {
+    "paintmat": "material_2",
+    "flip": false
+  },
+  "gmc-sierra-2014": {
+    "paintmat": "body1",
+    "flip": false
+  },
+  "gmc-sierra-2019": {
+    "paintmat": "B4W_lightcold",
+    "flip": false
+  },
+  "honda-accord-2008": {
+    "paintmat": "Body_Color",
+    "flip": false
+  },
+  "honda-accord-2013": {
+    "paintmat": "AccordFIR.001",
+    "flip": false
+  },
+  "honda-accord-2018": {
+    "paintmat": "material_0",
+    "flip": false
+  },
+  "honda-accord-2023": {
+    "paintmat": "Default",
+    "flip": false
+  },
+  "honda-cr-v-2007": {
+    "paintmat": "czarna_guma",
+    "flip": false
+  },
+  "honda-civic-2006": {
+    "paintmat": "body.001",
+    "flip": false
+  },
+  "honda-civic-2012": {
+    "paintmat": "Body_MAT",
+    "flip": false
+  },
+  "honda-pilot-2009": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "honda-pilot-2016": {
+    "paintmat": "body1",
+    "flip": false
+  },
+  "honda-pilot-2023": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "hyundai-elantra-2011": {
+    "paintmat": "elantramd",
+    "flip": false
+  },
+  "hyundai-elantra-2017": {
+    "paintmat": "hHyundai_ElantraNRewardRecycled_2022Paint_Material1",
+    "flip": false
+  },
+  "hyundai-elantra-2021": {
+    "paintmat": "M_2022_Hyundai_Elantra_N_RedMainMiddle",
+    "flip": false
+  },
+  "hyundai-santa-fe-2013": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "hyundai-santa-fe-2019": {
+    "paintmat": "santafek_body",
+    "flip": false
+  },
+  "hyundai-santa-fe-2024": {
+    "paintmat": "body1",
+    "flip": false
+  },
+  "hyundai-sonata-2011": {
+    "paintmat": "sonata2015_paint",
+    "flip": false
+  },
+  "hyundai-sonata-2015": {
+    "paintmat": "Paint",
+    "flip": false
+  },
+  "hyundai-sonata-2020": {
+    "paintmat": "paint3",
+    "flip": false
+  },
+  "jeep-gladiator-2020": {
+    "paintmat": "carroceria",
+    "flip": false
+  },
+  "jeep-grand-cherokee-2022": {
+    "paintmat": "Material_0",
+    "flip": false
+  },
+  "jeep-wrangler-2007": {
+    "paintmat": "JMAT_Carpaint_Red1",
+    "flip": false
+  },
+  "kia-sorento-2016": {
+    "paintmat": "body1",
+    "flip": false
+  },
+  "kia-sorento-2021": {
+    "paintmat": "template_carpaint.014",
+    "flip": false
+  },
+  "kia-telluride-2020": {
+    "paintmat": "Scene_-_Root",
+    "flip": false
+  },
+  "lexus-es-2013": {
+    "paintmat": "Part1Mtl",
+    "flip": false
+  },
+  "lexus-es-2019": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "lexus-is-2006": {
+    "paintmat": "Paintmainmain1Mtl",
+    "flip": false
+  },
+  "lexus-is-2014": {
+    "paintmat": "is_diffuse",
+    "flip": false
+  },
+  "lexus-rx-2010": {
+    "paintmat": "interior.218",
+    "flip": false
+  },
+  "lexus-rx-2016": {
+    "paintmat": "M_2023_Lexus_RX500h_F_Sport_VC_EXTCOLOR2",
+    "flip": false
+  },
+  "lexus-rx-2023": {
+    "paintmat": "M_2023_Lexus_RX450h__Sonic_Silver",
+    "flip": false
+  },
+  "mazda-cx-5-2013": {
+    "paintmat": "Main",
+    "flip": false
+  },
+  "mazda-cx-5-2017": {
+    "paintmat": "Paint_Color",
+    "flip": false
+  },
+  "mazda-mx-5-miata-1990": {
+    "paintmat": "Initiald2017na6ceroadster0211Mtl|Initiald2017na6ceroadster0121Mtl",
+    "flip": false
+  },
+  "mazda-mx-5-miata-1999": {
+    "paintmat": "Paint",
+    "flip": false
+  },
+  "mazda-mx-5-miata-2006": {
+    "paintmat": "M_CarPaintNormal_Max",
+    "flip": false
+  },
+  "mazda-mazda3-2010": {
+    "paintmat": "Scene_-_Root",
+    "flip": false
+  },
+  "mazda-mazda3-2014": {
+    "paintmat": "mazda3",
+    "flip": false
+  },
+  "mercedes-benz-c-class-2008": {
+    "paintmat": "material",
+    "flip": false
+  },
+  "mercedes-benz-c-class-2015": {
+    "paintmat": "Paint_Color",
+    "flip": false
+  },
+  "mercedes-benz-c-class-2022": {
+    "paintmat": "Carro_Pintura",
+    "flip": false
+  },
+  "mercedes-benz-e-class-2010": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "mercedes-benz-e-class-2017": {
+    "paintmat": "M_2022_Mercedes_Benz_E_Class_AMG_Line_Diamond_White_Metallic",
+    "flip": false
+  },
+  "mercedes-benz-e-class-2024": {
+    "paintmat": "color",
+    "flip": false
+  },
+  "mercedes-benz-glc-2016": {
+    "paintmat": "Material.001",
+    "flip": false
+  },
+  "mercedes-benz-glc-2023": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "nissan-altima-2013": {
+    "paintmat": "PDM_Nissan_Altima_Material_01",
+    "flip": false
+  },
+  "nissan-rogue-2014": {
+    "paintmat": "qashqai16_mechanical",
+    "flip": false
+  },
+  "porsche-911-1999": {
+    "paintmat": "remap",
+    "flip": false
+  },
+  "porsche-911-2005": {
+    "paintmat": "Paint1Mtl",
+    "flip": false
+  },
+  "porsche-cayenne-2011": {
+    "paintmat": "etk800",
+    "flip": false
+  },
+  "porsche-cayenne-2019": {
+    "paintmat": "Porsche_CayenneTurboGTRewardRecycled_2022Coloured_Material",
+    "flip": false
+  },
+  "porsche-macan-2015": {
+    "paintmat": "Color1Mtl",
+    "flip": false
+  },
+  "ram-1500-2009": {
+    "paintmat": "Color_007",
+    "flip": false
+  },
+  "subaru-crosstrek-2018": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "subaru-crosstrek-2024": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "subaru-forester-2014": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "subaru-outback-2015": {
+    "paintmat": "subout_paint",
+    "flip": false
+  },
+  "subaru-wrx-2022": {
+    "paintmat": "car_paint",
+    "flip": false
+  },
+  "tesla-cybertruck-2024": {
+    "paintmat": "Tesla_cyber_body_stainless_steel",
+    "flip": false
+  },
+  "tesla-model-3-2024": {
+    "paintmat": "Seat_Leather_white.0",
+    "flip": false
+  },
+  "tesla-model-s-2012": {
+    "paintmat": "M_2022_Tesla_Model_S_Plaid_Pearl_White_Multi_Coat",
+    "flip": false
+  },
+  "tesla-model-s-2021": {
+    "paintmat": "Tesla_body_silver",
+    "flip": false
+  },
+  "tesla-model-x-2016": {
+    "paintmat": "Paint_Color",
+    "flip": false
+  },
+  "tesla-model-y-2025": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "toyota-4runner-2010": {
+    "paintmat": "2015_Toyota_4Runner_Magnetic_Gray_Metallic",
+    "flip": false
+  },
+  "toyota-camry-2012": {
+    "paintmat": "CAMRY_int",
+    "flip": false
+  },
+  "toyota-corolla-2009": {
+    "paintmat": "main_paint.001",
+    "flip": false
+  },
+  "toyota-highlander-2008": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "toyota-highlander-2014": {
+    "paintmat": "Paint_Color",
+    "flip": false
+  },
+  "toyota-rav4-2006": {
+    "paintmat": "rav420_color1",
+    "flip": false
+  },
+  "toyota-rav4-2013": {
+    "paintmat": "rav4xa50_body",
+    "flip": false
+  },
+  "toyota-tacoma-2005": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "toyota-tacoma-2024": {
+    "paintmat": "material_00",
+    "flip": false
+  },
+  "toyota-tundra-2007": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "toyota-tundra-2014": {
+    "paintmat": "Color_E06",
+    "flip": false
+  },
+  "toyota-tundra-2022": {
+    "paintmat": "wire_113135006",
+    "flip": false
+  },
+  "volkswagen-golf-2010": {
+    "paintmat": "CAR_BODY_PAINT",
+    "flip": false
+  },
+  "volkswagen-jetta-2011": {
+    "paintmat": "jetta_paint.001",
+    "flip": false
+  },
+  "volkswagen-jetta-2019": {
+    "paintmat": "Material_2125691107",
+    "flip": false
+  },
+  "audi-a4-2009-b": {
+    "paintmat": "Car_Paint_-_All_Colors",
+    "flip": true
+  },
+  "audi-a4-2017-b": {
+    "paintmat": "audi_a4_dtm_paint.007",
+    "flip": false
+  },
+  "audi-q5-2009-b": {
+    "paintmat": "default_tex0",
+    "flip": false
+  },
+  "bmw-x3-2011-b": {
+    "paintmat": "interior.068",
+    "flip": false
+  },
+  "bmw-x5-2014-b": {
+    "paintmat": "paint",
+    "flip": false
+  },
+  "cadillac-escalade-2015-b": {
+    "paintmat": "mx5_body_color1",
+    "flip": false
+  },
+  "chevrolet-corvette-2014-b": {
+    "paintmat": "Body_Color",
+    "flip": false
+  },
+  "chevrolet-equinox-2010-b": {
+    "paintmat": "CarPaint",
+    "flip": false
+  },
+  "chevrolet-equinox-2025-b": {
+    "paintmat": "ID198",
+    "flip": false
+  },
+  "chevrolet-malibu-2008-b": {
+    "paintmat": "Mat.7",
+    "flip": false
+  },
+  "chevrolet-silverado-2014-b": {
+    "paintmat": "Carpaint",
+    "flip": false
+  },
+  "chevrolet-tahoe-2021-b": {
+    "paintmat": "material_10",
+    "flip": false
+  },
+  "dodge-challenger-2008-b": {
+    "paintmat": "Mesheschassis1_diff",
+    "flip": false
+  },
+  "dodge-charger-2006-b": {
+    "paintmat": "body__prim_env_1|body__spec_1",
+    "flip": true
+  },
+  "ford-escape-2013-b": {
+    "paintmat": "material_0",
+    "flip": false
+  },
+  "ford-explorer-2011-b": {
+    "paintmat": "Body",
+    "flip": false
+  },
+  "ford-f-150-2021-b": {
+    "paintmat": "Material.001",
+    "flip": false
+  },
+  "gmc-sierra-2014-b": {
+    "paintmat": "material_9",
+    "flip": false
+  },
+  "gmc-sierra-2019-b": {
+    "paintmat": "Color_C21",
+    "flip": false
+  },
+  "honda-accord-2008-b": {
+    "paintmat": "Carros",
+    "flip": false
+  },
+  "honda-accord-2018-b": {
+    "paintmat": "Color_005",
+    "flip": false
+  },
+  "honda-pilot-2016-b": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "hyundai-elantra-2011-b": {
+    "paintmat": "Matte__FF1B1B1B",
+    "flip": false
+  },
+  "hyundai-elantra-2017-b": {
+    "paintmat": "tex_u1_v4",
+    "flip": false
+  },
+  "hyundai-santa-fe-2013-b": {
+    "paintmat": "Body.3",
+    "flip": false
+  },
+  "hyundai-sonata-2011-b": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "hyundai-sonata-2020-b": {
+    "paintmat": "sonata2015_paint-effect",
+    "flip": false
+  },
+  "jeep-gladiator-2020-b": {
+    "paintmat": "Jeep_GladiatorRewardRecycled_2019Coloured_Material",
+    "flip": false
+  },
+  "jeep-grand-cherokee-2022-b": {
+    "paintmat": "Body",
+    "flip": false
+  },
+  "kia-sorento-2016-b": {
+    "paintmat": "xromat_SECONDARY",
+    "flip": false
+  },
+  "mazda-mazda3-2010-b": {
+    "paintmat": "Material.001",
+    "flip": false
+  },
+  "mercedes-benz-c-class-2008-b": {
+    "paintmat": "MBC63",
+    "flip": false
+  },
+  "mercedes-benz-e-class-2024-b": {
+    "paintmat": "main",
+    "flip": false
+  },
+  "nissan-altima-2013-b": {
+    "paintmat": "altima-body_1",
+    "flip": false
+  },
+  "porsche-911-1999-b": {
+    "paintmat": "paint",
+    "flip": false
+  },
+  "porsche-cayenne-2011-b": {
+    "paintmat": "cayenneold_calipercolor",
+    "flip": false
+  },
+  "porsche-cayenne-2019-b": {
+    "paintmat": "caenka_body.001",
+    "flip": false
+  },
+  "subaru-crosstrek-2018-b": {
+    "paintmat": "Scene_-_Root",
+    "flip": false
+  },
+  "subaru-forester-2014-b": {
+    "paintmat": "black.169",
+    "flip": false
+  },
+  "subaru-outback-2015-b": {
+    "paintmat": "interior.145",
+    "flip": false
+  },
+  "tesla-cybertruck-2024-b": {
+    "paintmat": "Bodyl",
+    "flip": false
+  },
+  "tesla-model-3-2024-b": {
+    "paintmat": "material_8",
+    "flip": false
+  },
+  "tesla-model-s-2012-b": {
+    "paintmat": "Color1Mtl",
+    "flip": false
+  },
+  "toyota-4runner-2010-b": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "toyota-corolla-2009-b": {
+    "paintmat": "underbody",
+    "flip": false
+  },
+  "toyota-highlander-2014-b": {
+    "paintmat": "texture_material",
+    "flip": false
+  },
+  "toyota-rav4-2006-b": {
+    "paintmat": "Vehicle_Exterior_mm_ext",
+    "flip": false
+  },
+  "toyota-tacoma-2005-b": {
+    "paintmat": "body-effect",
+    "flip": false
+  },
+  "toyota-tundra-2014-b": {
+    "paintmat": "7___Default0",
+    "flip": false
+  },
+  "toyota-tundra-2022-b": {
+    "paintmat": "material_7",
+    "flip": false
+  },
+  "volkswagen-golf-2010-b": {
+    "paintmat": "body.001",
+    "flip": false
+  },
+  "volkswagen-jetta-2011-b": {
+    "paintmat": "Geometry104mesh1Mtl",
+    "flip": false
+  },
+  "volkswagen-jetta-2019-b": {
+    "paintmat": "interior.082",
+    "flip": false
+  },
+  "acura-mdx-2007-r2": {
+    "paintmat": "paint-glossy_tertiary-brakes",
+    "flip": true
+  },
+  "audi-a4-2009-r2": {
+    "paintmat": "rs11_screen77",
+    "flip": false
+  },
+  "audi-a4-2017-r2": {
+    "paintmat": "hull.001",
+    "flip": false
+  },
+  "audi-q5-2009-r2": {
+    "paintmat": "interior.079",
+    "flip": false
+  },
+  "bmw-x3-2011-r2": {
+    "paintmat": "Kuzov_Main_color",
+    "flip": false
+  },
+  "bmw-x5-2014-r2": {
+    "paintmat": "Color_M08",
+    "flip": false
+  },
+  "cadillac-escalade-2015-r2": {
+    "paintmat": "car_body",
+    "flip": false
+  },
+  "chevrolet-corvette-2014-r2": {
+    "paintmat": "ext_body",
+    "flip": false
+  },
+  "chevrolet-equinox-2010-r2": {
+    "paintmat": "CarPaint",
+    "flip": false
+  },
+  "chevrolet-equinox-2025-r2": {
+    "paintmat": "carpaint.071",
+    "flip": true
+  },
+  "chevrolet-malibu-2008-r2": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "chevrolet-silverado-2014-r2": {
+    "paintmat": "Material.001",
+    "flip": false
+  },
+  "chevrolet-tahoe-2021-r2": {
+    "paintmat": "101716OFFRD_bodycolor",
+    "flip": false
+  },
+  "dodge-challenger-2008-r2": {
+    "paintmat": "Color_005",
+    "flip": false
+  },
+  "dodge-charger-2006-r2": {
+    "paintmat": "Color_008_1_9c7981b6-b731-4e1b-84ce-cb590c4c7aad",
+    "flip": false
+  },
+  "ford-escape-2013-r2": {
+    "paintmat": "Body",
+    "flip": false
+  },
+  "ford-explorer-2011-r2": {
+    "paintmat": "Body",
+    "flip": false
+  },
+  "ford-f-150-2021-r2": {
+    "paintmat": "Color_008",
+    "flip": false
+  },
+  "gmc-sierra-2014-r2": {
+    "paintmat": "Material.001",
+    "flip": false
+  },
+  "gmc-sierra-2019-r2": {
+    "paintmat": "B4W_plasticdiffuse_exteriortex_003",
+    "flip": false
+  },
+  "honda-accord-2008-r2": {
+    "paintmat": "car_paint",
+    "flip": true
+  },
+  "honda-accord-2018-r2": {
+    "paintmat": "Color_M08",
+    "flip": false
+  },
+  "honda-cr-v-2007-r2": {
+    "paintmat": "Misc",
+    "flip": false
+  },
+  "honda-civic-2006-r2": {
+    "paintmat": "exhaust_color",
+    "flip": false
+  },
+  "honda-pilot-2016-r2": {
+    "paintmat": "PDM_2018_Honda_Pilot_Material_19_0",
+    "flip": false
+  },
+  "honda-pilot-2023-r2": {
+    "paintmat": "tex_u1_v1",
+    "flip": false
+  },
+  "hyundai-elantra-2011-r2": {
+    "paintmat": "00_-_BODY",
+    "flip": false
+  },
+  "hyundai-elantra-2017-r2": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "hyundai-santa-fe-2013-r2": {
+    "paintmat": "Default_OBJ.020",
+    "flip": false
+  },
+  "hyundai-sonata-2011-r2": {
+    "paintmat": "body1",
+    "flip": false
+  },
+  "hyundai-sonata-2020-r2": {
+    "paintmat": "super_raceparts",
+    "flip": false
+  },
+  "jeep-gladiator-2020-r2": {
+    "paintmat": "1022",
+    "flip": false
+  },
+  "jeep-grand-cherokee-2022-r2": {
+    "paintmat": "Body",
+    "flip": false
+  },
+  "kia-sorento-2016-r2": {
+    "paintmat": "Material",
+    "flip": false
+  },
+  "lexus-rx-2010-r2": {
+    "paintmat": "Paint.002",
+    "flip": false
+  },
+  "lexus-rx-2016-r2": {
+    "paintmat": "M_2023_Lexus_RX500h_F_Sport_VC_EXTCOLOR2",
+    "flip": false
+  },
+  "mazda-mx-5-miata-2006-r2": {
+    "paintmat": "carpaint",
+    "flip": true
+  },
+  "mazda-mazda3-2010-r2": {
+    "paintmat": "carpaint_02",
+    "flip": false
+  },
+  "mercedes-benz-c-class-2008-r2": {
+    "paintmat": "w204_paint",
+    "flip": false
+  },
+  "mercedes-benz-e-class-2024-r2": {
+    "paintmat": "Body_Color",
+    "flip": false
+  },
+  "nissan-altima-2013-r2": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "nissan-rogue-2014-r2": {
+    "paintmat": "murano-main_body1",
+    "flip": false
+  },
+  "porsche-911-1999-r2": {
+    "paintmat": "body_main",
+    "flip": false
+  },
+  "porsche-cayenne-2011-r2": {
+    "paintmat": "Matte__FF000000__spec__001_001",
+    "flip": false
+  },
+  "porsche-cayenne-2019-r2": {
+    "paintmat": "Porsche_CayenneTurboGTRewardRecycled_2022Coloured_Material",
+    "flip": false
+  },
+  "subaru-crosstrek-2018-r2": {
+    "paintmat": "Frame",
+    "flip": false
+  },
+  "subaru-forester-2014-r2": {
+    "paintmat": "interior.157",
+    "flip": false
+  },
+  "subaru-outback-2015-r2": {
+    "paintmat": "FrontColor",
+    "flip": false
+  },
+  "tesla-cybertruck-2024-r2": {
+    "paintmat": "Carbone",
+    "flip": false
+  },
+  "tesla-model-3-2024-r2": {
+    "paintmat": "Geohoodsub00021Mtl",
+    "flip": false
+  },
+  "tesla-model-s-2012-r2": {
+    "paintmat": "Material.001",
+    "flip": false
+  },
+  "toyota-4runner-2010-r2": {
+    "paintmat": "2015_Toyota_4Runner_Magnetic_Gray_Metallic",
+    "flip": false
+  },
+  "toyota-camry-2012-r2": {
+    "paintmat": "BODY.001",
+    "flip": false
+  },
+  "toyota-corolla-2009-r2": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "toyota-highlander-2014-r2": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "toyota-rav4-2006-r2": {
+    "paintmat": "Color_2",
+    "flip": false
+  },
+  "toyota-tacoma-2005-r2": {
+    "paintmat": "color_6383466",
+    "flip": false
+  },
+  "toyota-tundra-2014-r2": {
+    "paintmat": "Material.003",
+    "flip": false
+  },
+  "toyota-tundra-2022-r2": {
+    "paintmat": "224223219",
+    "flip": false
+  },
+  "volkswagen-golf-2010-r2": {
+    "paintmat": "object_0",
+    "flip": false
+  },
+  "volkswagen-jetta-2011-r2": {
+    "paintmat": "adcarrier.001",
+    "flip": false
+  },
+  "volkswagen-jetta-2019-r2": {
+    "paintmat": "car_carpaint",
+    "flip": false
+  },
+  "audi-a4-2017-r3": {
+    "paintmat": "color_garage",
+    "flip": false
+  },
+  "audi-a4-2017-b-r3": {
+    "paintmat": "EXT_CarPaint.015",
+    "flip": false
+  },
+  "audi-a4-2017-c-r3": {
+    "paintmat": "Car_Paint",
+    "flip": false
+  },
+  "audi-a4-2017-d-r3": {
+    "paintmat": "MaterialColors",
+    "flip": false
+  },
+  "bmw-3-series-2012-r3": {
+    "paintmat": "f31_body",
+    "flip": false
+  },
+  "bmw-3-series-2012-b-r3": {
+    "paintmat": "e90_nodamage.001",
+    "flip": false
+  },
+  "bmw-3-series-2012-c-r3": {
+    "paintmat": "e91_body",
+    "flip": false
+  },
+  "bmw-3-series-2012-d-r3": {
+    "paintmat": "se90_paint",
+    "flip": false
+  },
+  "bmw-5-series-2017-r3": {
+    "paintmat": "BMWM5F10",
+    "flip": false
+  },
+  "bmw-5-series-2017-b-r3": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "bmw-5-series-2017-c-r3": {
+    "paintmat": "INT_HUD.001_81",
+    "flip": false
+  },
+  "bmw-5-series-2017-d-r3": {
+    "paintmat": "body",
+    "flip": false
+  },
+  "bmw-5-series-2024-r3": {
+    "paintmat": "m550isp_body",
+    "flip": false
+  },
+  "bmw-x3-2011-r3": {
+    "paintmat": "interior.069",
+    "flip": false
   }
 }
