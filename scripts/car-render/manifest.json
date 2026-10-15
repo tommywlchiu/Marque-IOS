@@ -2143,19 +2143,6 @@
     "paintmat": "car_paint",
     "flip": true
   },
-  "jeep-gladiator-2020-r2": {
-    "covers": {
-      "make": "Jeep",
-      "model": "Gladiator",
-      "years": [
-        2020,
-        2026
-      ],
-      "aliases": []
-    },
-    "sketchfab": "118d6a87dd79437393ebebeb65155351",
-    "paintmat": "1022"
-  },
   "mazda-mx-5-miata-2006-r2": {
     "covers": {
       "make": "Mazda",
@@ -2251,19 +2238,6 @@
     "sketchfab": "3a65f6d3683048efa9e2f04bce565941",
     "paintmat": "carpaint"
   },
-  "gmc-sierra-2019-r3": {
-    "covers": {
-      "make": "GMC",
-      "model": "Sierra",
-      "years": [
-        2019,
-        2021
-      ],
-      "aliases": []
-    },
-    "sketchfab": "44adbd57fa4f4972a2c950d123b02d07",
-    "paintmat": "material_8"
-  },
   "honda-accord-2018-r3": {
     "covers": {
       "make": "Honda",
@@ -2317,6 +2291,7 @@
     },
     "sketchfab": "1ab0c3f248fa47019c4311abce9731a0",
     "paintmat": "Base",
-    "flip": true
+    "flip": true,
+    "tintmat": "Material.004"
   }
 }
