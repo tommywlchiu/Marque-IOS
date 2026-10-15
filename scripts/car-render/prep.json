@@ -370,5 +370,13 @@
   "kia-k5-dl3": {
     "paintmat": "body",
     "flip": true
+  },
+  "lexus-is-xe30-fl": {
+    "paintmat": "body",
+    "flip": true
+  },
+  "porsche-911-992": {
+    "paintmat": "car_vpnt_911992Carrera4S",
+    "flip": true
   }
 }
