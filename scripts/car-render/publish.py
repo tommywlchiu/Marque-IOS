@@ -172,7 +172,7 @@ for key, car in manifest.items():
         if box: publish_extras(key, box)
     if catalog_only or extras_only or (only and key not in only):
         # Only the color frames — tint/, wheels/ and extras/ hold more webp files.
-        if sum(len(glob.glob(os.path.join(dst, key, c, "*.webp"))) for c in palette) != FRAMES * len(palette):
+        if sum(len(glob.glob(os.path.join(dst, key, c, "[0-9][0-9].webp"))) for c in palette) != FRAMES * len(palette):
             continue
         has_plates = os.path.exists(os.path.join(dst, key, "plates.json"))
     else:
@@ -184,17 +184,17 @@ for key, car in manifest.items():
         continue
     if convert:
         has_plates = publish_frames(key, pngs)
-    has_tint = len(glob.glob(os.path.join(dst, key, "tint", "*.webp"))) == FRAMES
-    has_black_optic = len(glob.glob(os.path.join(dst, key, "blackOptic", "*.webp"))) == FRAMES
+    has_tint = len(glob.glob(os.path.join(dst, key, "tint", "[0-9][0-9].webp"))) == FRAMES
+    has_black_optic = len(glob.glob(os.path.join(dst, key, "blackOptic", "[0-9][0-9].webp"))) == FRAMES
     wheels = sorted(os.path.basename(d) for d in glob.glob(os.path.join(dst, key, "wheels", "*"))
-                    if len(glob.glob(os.path.join(d, "*.webp"))) == FRAMES)
+                    if len(glob.glob(os.path.join(d, "[0-9][0-9].webp"))) == FRAMES)
     seats = sorted(os.path.basename(d) for d in glob.glob(os.path.join(dst, key, "seats", "*"))
-                   if len(glob.glob(os.path.join(d, "*.webp"))) == FRAMES)
+                   if len(glob.glob(os.path.join(d, "[0-9][0-9].webp"))) == FRAMES)
     scale_path = os.path.join(dst, key, "scale.json")
     meter = json.load(open(scale_path))["meter"] if os.path.exists(scale_path) else None
     extras_path = os.path.join(dst, key, "extras.json")
     extras = {e: r for e, r in (json.load(open(extras_path)) if os.path.exists(extras_path) else {}).items()
-              if len(glob.glob(os.path.join(dst, key, "extras", e, "*.webp"))) == FRAMES}
+              if len(glob.glob(os.path.join(dst, key, "extras", e, "[0-9][0-9].webp"))) == FRAMES}
     if "bodyStyles" in car:  # an unbadged stand-in for every car of these body styles
         generics.append({"key": key, "styles": car["bodyStyles"], "credit": credit(car["sketchfab"]),
                          "plates": has_plates, "tint": has_tint, "wheels": wheels, "meter": meter,

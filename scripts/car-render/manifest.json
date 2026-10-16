@@ -509,23 +509,6 @@
     "paintmat": "vehicle_generic_smallspecmap_PRIMARY|vehicle_generic_smallspecmap_PRIMARY.001",
     "flip": false
   },
-  "toyota-rav4-4g": {
-    "covers": {
-      "make": "Toyota",
-      "model": "RAV4",
-      "years": [
-        2016,
-        2018
-      ],
-      "aliases": [
-        "RAV4",
-        "RAV-4"
-      ]
-    },
-    "sketchfab": "c60b2bf47c4341c59462449e069257a2",
-    "paintmat": "Material_5",
-    "flip": true
-  },
   "toyota-corolla-11g": {
     "covers": {
       "make": "Toyota",
@@ -930,24 +913,6 @@
     },
     "sketchfab": "7e2ef9be2dd74cf4b980d068d272dfff",
     "paintmat": "M_2020_Mazda_3_Sedan_Machine_Gray_Metallic",
-    "flip": true
-  },
-  "vw-golf-mk7": {
-    "covers": {
-      "make": "Volkswagen",
-      "model": "Golf",
-      "years": [
-        2015,
-        2021
-      ],
-      "aliases": [
-        "Golf GTI",
-        "GTI",
-        "Golf R"
-      ]
-    },
-    "sketchfab": "39c3aa1a2a1f43b3b225445a42c5f74c",
-    "paintmat": "CSR2_CarPaint",
     "flip": true
   },
   "vw-golf-mk8": {
