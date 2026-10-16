@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """find.py <out.jpg> "query" ["query" ...] — Sketchfab candidates for a car.
 
-Searches downloadable models, drops NonCommercial/NoDerivatives licenses (we
+Searches downloadable models, drops NonCommercial/NoDerivatives and Sketchfab "Standard" licenses (only CC BY-type ships) (we
 repaint and sell the app), and writes a numbered contact sheet of thumbnails
 plus a printed list, so each candidate can be checked by eye before it goes
 in manifest.json. A car is only added after its thumbnail is confirmed to be
@@ -17,7 +17,7 @@ for q in queries:
            + urllib.parse.quote(q))
     for m in json.load(urllib.request.urlopen(url)).get("results", []):
         lic = (m.get("license") or {}).get("label", "")
-        if m["uid"] in seen or "NonCommercial" in lic or "NoDerivs" in lic or not lic:
+        if m["uid"] in seen or "NonCommercial" in lic or "NoDerivs" in lic or "Standard" in lic or not lic:
             continue
         seen.add(m["uid"])
         thumbs = sorted(m["thumbnails"]["images"], key=lambda t: abs(t["width"] - 640))
