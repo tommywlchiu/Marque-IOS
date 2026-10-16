@@ -1943,5 +1943,33 @@
   "generic-wagon": {
     "paintmat": "grey_car_paint",
     "flip": false
+  },
+  "hyundai-elantra-5g": {
+    "paintmat": "Matte__FFAAE3FF",
+    "flip": false
+  },
+  "toyota-tundra-2g": {
+    "paintmat": "material",
+    "flip": false
+  },
+  "mazda-mx5-nb": {
+    "paintmat": "carpaint",
+    "flip": false
+  },
+  "lexus-rx-3g": {
+    "paintmat": "Paint.002",
+    "flip": false
+  },
+  "bmw-5-f10": {
+    "paintmat": "INT_HUD.001_81",
+    "flip": false
+  },
+  "chevrolet-malibu-7g": {
+    "paintmat": "black.084",
+    "flip": false
+  },
+  "hyundai-santafe-4g": {
+    "paintmat": "Default_OBJ",
+    "flip": false
   }
 }
