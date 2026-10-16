@@ -2258,5 +2258,37 @@
     "paintmat": "Base",
     "flip": true,
     "tintmat": "Material.004"
+  },
+  "hyundai-elantra-5g": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Elantra",
+      "years": [
+        2011,
+        2016
+      ]
+    },
+    "sketchfab": "da9653173c984ad3b8b60b01f1abf13b",
+    "title": "2014 Hyundai Elantra SE",
+    "author": "SanjithArivoli",
+    "license": "CC BY 4.0",
+    "paintmat": "Matte__FFAAE3FF",
+    "flip": false
+  },
+  "mazda-mx5-nb": {
+    "covers": {
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "years": [
+        1999,
+        2005
+      ]
+    },
+    "sketchfab": "25fc4c8bd4494fe0b9e456644b269c6f",
+    "title": "1998 Mazda MX 5 (Nb)",
+    "author": "Res1n",
+    "license": "CC BY 4.0",
+    "paintmat": "carpaint",
+    "flip": false
   }
 }

@@ -5512,5 +5512,68 @@
     ],
     "aliases": [],
     "verify": "autopick: Volkswagen Jetta V (1127731 faces, 13 likes)"
+  },
+  "hyundai-elantra-5g": {
+    "uid": "da9653173c984ad3b8b60b01f1abf13b",
+    "make": "Hyundai",
+    "model": "Elantra",
+    "years": [
+      2011,
+      2016
+    ]
+  },
+  "toyota-tundra-2g": {
+    "uid": "1f879c34f81b467ab9afd5ecb9b1253d",
+    "make": "Toyota",
+    "model": "Tundra",
+    "years": [
+      2014,
+      2021
+    ]
+  },
+  "mazda-mx5-nb": {
+    "uid": "25fc4c8bd4494fe0b9e456644b269c6f",
+    "make": "Mazda",
+    "model": "MX-5 Miata",
+    "years": [
+      1999,
+      2005
+    ]
+  },
+  "lexus-rx-3g": {
+    "uid": "6b9a1994b2dd445c8248270c81eead6b",
+    "make": "Lexus",
+    "model": "RX",
+    "years": [
+      2010,
+      2015
+    ]
+  },
+  "bmw-5-f10": {
+    "uid": "65003eee79fb41abb907901c39dc1a33",
+    "make": "BMW",
+    "model": "5 Series",
+    "years": [
+      2011,
+      2016
+    ]
+  },
+  "chevrolet-malibu-7g": {
+    "uid": "0f86600003804a7b9d9584e171a6731b",
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "years": [
+      2008,
+      2015
+    ]
+  },
+  "hyundai-santafe-4g": {
+    "uid": "97dedc4d430b47b7b61333c052a45495",
+    "make": "Hyundai",
+    "model": "Santa Fe",
+    "years": [
+      2019,
+      2023
+    ]
   }
 }
