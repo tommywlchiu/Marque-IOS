@@ -196,11 +196,19 @@ enum CarRenderLibrary {
     /// "Silverado EV" gets the EV, not the gas Silverado whose name it starts
     /// with. No entry of its own → the generic render of its body style.
     static func match(_ car: Car, in catalog: Catalog?) -> Match? {
+        match(make: car.make, model: car.model, year: car.year, color: car.color,
+              bodyStyle: car.bodyStyle, in: catalog)
+    }
+
+    /// The same match from loose fields, so a public car (no `Car`) can use
+    /// it too.
+    static func match(make carMake: String, model carModel: String, year carYear: String,
+                      color carColor: String, bodyStyle: String, in catalog: Catalog?) -> Match? {
         guard let catalog else { return nil }
-        let make = normalized(car.make)
-        let model = normalized(car.model)
-        let modelWords = car.model.lowercased()
-        let year = Int(car.year.trimmingCharacters(in: .whitespaces))
+        let make = normalized(carMake)
+        let model = normalized(carModel)
+        let modelWords = carModel.lowercased()
+        let year = Int(carYear.trimmingCharacters(in: .whitespaces))
         func score(_ entry: Entry) -> Int? {
             guard normalized(entry.make) == make else { return nil }
             if let year, entry.years.count == 2, !(entry.years[0]...entry.years[1]).contains(year) { return nil }
@@ -212,10 +220,10 @@ enum CarRenderLibrary {
         let entry = catalog.cars
             .compactMap { entry in score(entry).map { (entry, $0) } }
             .max { $0.1 < $1.1 }?.0
-        let style = CarModelRenderer.normalizedStyle(car.bodyStyle)
+        let style = CarModelRenderer.normalizedStyle(bodyStyle)
         let generic = entry == nil ? catalog.generics?.first(where: { $0.styles.contains(style) }) : nil
         guard let key = entry?.key ?? generic?.key else { return nil }
-        let color = CarPaint.paletteKey(for: car.color)
+        let color = CarPaint.paletteKey(for: carColor)
         guard catalog.colors.contains(color) else { return nil }
         return Match(carKey: key, colorKey: color, frameCount: catalog.frames,
                      hasPlates: (entry?.plates ?? generic?.plates) == true,
@@ -349,6 +357,19 @@ enum CarRenderLibrary {
     static func still(for car: Car) async -> UIImage? {
         guard let found = match(car, in: await catalog()) else { return nil }
         return await frame(0, of: found)
+    }
+
+    /// Same, for a public car (Explore).
+    static func still(for car: PublicCar) async -> UIImage? {
+        guard let found = match(make: car.make, model: car.model, year: car.year, color: car.color,
+                                bodyStyle: car.bodyStyle, in: await catalog()) else { return nil }
+        return await frame(0, of: found)
+    }
+
+    static func cachedStill(for car: PublicCar) -> UIImage? {
+        guard let found = match(make: car.make, model: car.model, year: car.year, color: car.color,
+                                bodyStyle: car.bodyStyle, in: cachedCatalog()) else { return nil }
+        return cachedStill(for: found)
     }
 
     static func cachedStill(for car: Car) -> UIImage? {

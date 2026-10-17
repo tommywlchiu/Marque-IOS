@@ -55,14 +55,9 @@ struct PublicCarPhotoHeader: View {
                 }
             }
         } else {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.accentColor.opacity(0.08))
-                    .frame(height: 120)
-                Image(systemName: "car.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(.accentColor.opacity(0.4))
-            }
+            ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car, iconSize: 40, showsLabel: false)
+                .frame(maxWidth: .infinity).frame(height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 }

@@ -247,7 +247,7 @@ private struct TopCarCard: View {
                 CachedRemoteImage(url: url)
                     .frame(width: Self.thumbWidth, height: Self.thumbHeight)
             } else {
-                ExploreNoPhotoPlaceholder(make: car.make, model: car.model, iconSize: 28, showsLabel: false)
+                ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car, iconSize: 28, showsLabel: false)
                     .frame(width: Self.thumbWidth, height: Self.thumbHeight)
             }
         }
