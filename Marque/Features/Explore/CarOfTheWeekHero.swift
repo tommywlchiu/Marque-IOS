@@ -58,7 +58,14 @@ struct CarOfTheWeekHero: View {
     private var photo: some View {
         Color.clear
             .aspectRatio(1, contentMode: .fit)
-            .overlay { CachedRemoteImage(url: car.galleryURLs.first) }
+            .overlay {
+                if let cover = car.galleryURLs.first {
+                    CachedRemoteImage(url: cover)
+                } else {
+                    // No photo: the studio render on charcoal, like Garage.
+                    ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car, showsLabel: true)
+                }
+            }
     }
 
     private var scrim: some View {

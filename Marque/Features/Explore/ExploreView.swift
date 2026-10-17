@@ -45,12 +45,14 @@ struct ExploreView: View {
 
     // MARK: - Car of the Week
 
-    /// Cars eligible for the hero: block-filtered, and must have at least
-    /// one photo (a photo-less hero would just show the placeholder art,
-    /// which isn't "a large, premium card"). `visibleCars` is already
+    /// Cars eligible for the hero: block-filtered, photo cars preferred (any
+    /// car when none has one: its studio render stands in). `visibleCars` is already
     /// newest-first (ExploreStore orders by `updatedAt` descending).
     private var heroCandidates: [PublicCar] {
-        visibleCars.filter { !$0.galleryURLs.isEmpty }
+        // Photo cars first; with none, any car works: a photo-less hero
+        // shows the studio render instead of placeholder art.
+        let withPhotos = visibleCars.filter { !$0.galleryURLs.isEmpty }
+        return withPhotos.isEmpty ? visibleCars : withPhotos
     }
 
     /// Most `weeklyLikeCount` among `heroCandidates`, ties broken by newest

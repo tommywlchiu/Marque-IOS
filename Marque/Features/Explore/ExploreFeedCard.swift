@@ -91,11 +91,11 @@ struct ExploreFeedCard: View {
     }
 
     /// Fixed 4:5 frame for every photo card so they line up. A car with no
-    /// photo gets a shorter 16:9 banner instead: a screen-tall placeholder
-    /// buried the real photos around it.
+    /// photo gets a shorter 4:3 studio-render panel instead: a screen-tall
+    /// placeholder buried the real photos around it.
     private var photoSection: some View {
         Color.clear
-            .aspectRatio(car.galleryURLs.isEmpty ? 16.0 / 9.0 : 4.0 / 5.0, contentMode: .fit)
+            .aspectRatio(car.galleryURLs.isEmpty ? 4.0 / 3.0 : 4.0 / 5.0, contentMode: .fit)
             .overlay { photoContent }
             .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
             .overlay(alignment: .topLeading) {
@@ -109,7 +109,7 @@ struct ExploreFeedCard: View {
     private var photoContent: some View {
         let urls = car.galleryURLs
         if urls.isEmpty {
-            ExploreNoPhotoPlaceholder(make: car.make, model: car.model)
+            ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car)
         } else if urls.count == 1 {
             singlePhoto(urls[0])
         } else {
@@ -206,20 +206,64 @@ struct ExploreNewBadge: View {
     }
 }
 
-/// Placeholder for a public car with no photos: a subtle accent-tinted
-/// gradient, a car glyph, and the make/model, so a photo-less card still
-/// looks finished. Also used (smaller) by `TopCarsSection`'s ranked cards.
+/// Cover for a public car with no photos: its studio render in the owner's
+/// paint color on the Garage's charcoal, so a photo-less card looks like the
+/// rest of the app. Falls back to the accent-tinted car glyph while the
+/// render loads, or when the catalog has nothing for the car. Pass `car`
+/// to get the render; without it (the share-card image, which renders
+/// synchronously) you get the glyph. Also used (smaller) by `TopCarsSection`.
 struct ExploreNoPhotoPlaceholder: View {
     let make: String
     let model: String
+    var car: PublicCar?
     var iconSize: CGFloat = 52
     var showsLabel: Bool = true
+
+    @State private var render: UIImage?
 
     private var label: String {
         [make, model].filter { !$0.isEmpty }.joined(separator: " ")
     }
 
     var body: some View {
+        Group {
+            if let render {
+                studio(render)
+            } else {
+                glyph
+            }
+        }
+        .task(id: renderKey) {
+            guard let car else { return }
+            if let cached = CarRenderLibrary.cachedStill(for: car) {
+                render = cached
+            } else {
+                render = await CarRenderLibrary.still(for: car)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var renderKey: String {
+        guard let car else { return "" }
+        return [car.make, car.model, car.year, car.color, car.bodyStyle].joined(separator: "|")
+    }
+
+    private func studio(_ image: UIImage) -> some View {
+        ZStack {
+            GarageTheme.background
+            RadialGradient(
+                colors: [Color.white.opacity(0.10), .clear],
+                center: .center, startRadius: 0, endRadius: 220
+            )
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .padding(showsLabel ? 18 : 6)
+        }
+    }
+
+    private var glyph: some View {
         LinearGradient(
             colors: [Color.accentColor.opacity(0.24), Color.accentColor.opacity(0.06)],
             startPoint: .topLeading,
@@ -239,6 +283,5 @@ struct ExploreNoPhotoPlaceholder: View {
                 }
             }
         }
-        .accessibilityHidden(true)
     }
 }
