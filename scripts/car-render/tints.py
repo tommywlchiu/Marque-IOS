@@ -8,6 +8,7 @@ so the masks line up with batch.py's frames. Raw PNGs go to
 and writes <car>/tint/<NN>.webp. Glass is `tintmat` when the manifest has it
 (checked by eye with maskcheck), else found by name/transparency."""
 import glob, json, os, subprocess, sys
+import renderconfig as RC
 here = os.path.dirname(os.path.abspath(__file__))
 glbdir, outdir = sys.argv[1], sys.argv[2]
 manifest = json.load(open(os.path.join(here, "manifest.json")))
@@ -18,7 +19,7 @@ for key in sys.argv[3:] or list(manifest):
         print("SKIP (already done)", key, flush=True); continue
     args = ["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--",
             f"in={os.path.join(glbdir, key + '.glb')}", f"out={raw}", "mask=glass", "colors=tint:1,1,1",
-            "frames=36", "engine=BLENDER_EEVEE", "samples=8", "res=1200x675"]
+            "frames=36", "engine=BLENDER_EEVEE", "samples=8", RC.RES_ARG]
     for opt in ("flip", "invert"):
         if car.get(opt): args.append(f"{opt}=1")
     for opt in ("roll", "hide", "keep", "styles", "tintmat"):

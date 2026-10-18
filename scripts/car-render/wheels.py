@@ -8,6 +8,7 @@ so it lines up with batch.py's frames. Raw PNGs go to
 <out-dir>/_wheels/<car>/<style>/<NN>.png; publish.py crops them like the
 frames. Manifest overrides for cars detection gets wrong: wheel_r, wheelfix."""
 import glob, json, os, subprocess, sys
+import renderconfig as RC
 here = os.path.dirname(os.path.abspath(__file__))
 glbdir, addondir, outdir = sys.argv[1], sys.argv[2], sys.argv[3]
 manifest = json.load(open(os.path.join(here, "manifest.json")))
@@ -24,7 +25,7 @@ for key in sys.argv[4:] or list(manifest):
             continue
         args = ["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--",
                 f"in={os.path.join(glbdir, key + '.glb')}", f"out={raw}", f"colors={style['id']}:1,1,1",
-                "frames=36", "engine=BLENDER_EEVEE", "samples=32", "res=1200x675"]
+                "frames=36", "engine=BLENDER_EEVEE", "samples=32", RC.RES_ARG]
         if style["id"] == "stock":
             args.append("wheelstock=1")
         else:

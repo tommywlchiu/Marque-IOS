@@ -10,6 +10,7 @@ car's own manifest options so it lines up with batch.py's frames. Raw PNGs go
 to <out-dir>/_extras/<car>/<extra>/<NN>.png; publish.py crops them. Manifest
 override when the guess is wrong: `extras` ("rack|box|spoiler")."""
 import glob, json, os, subprocess, sys
+import renderconfig as RC
 from concurrent.futures import ThreadPoolExecutor
 here = os.path.dirname(os.path.abspath(__file__))
 glbdir, outdir = sys.argv[1], sys.argv[2]
@@ -47,7 +48,7 @@ def run(key):
         finish = ["finish=carbon"] if extra == "spoiler-carbon" else []
         result = subprocess.run(base_args(key, car, raw) + [
             f"extra={base_extra}", f"colors={extra}:1,1,1", "frames=36", "engine=BLENDER_EEVEE", "samples=32",
-            "res=1200x675"] + finish, capture_output=True, text=True)
+            RC.RES_ARG] + finish, capture_output=True, text=True)
         made = len(glob.glob(os.path.join(raw, extra, "*.png")))
         lines.append(("DONE" if made == 36 else f"FAILED ({made})") + f" {key} {extra}"
                      + ("" if made == 36 else f" {(result.stdout + result.stderr).strip().splitlines()[-1:]}"))

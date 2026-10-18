@@ -16,10 +16,11 @@ from PIL import Image
 here = os.path.dirname(os.path.abspath(__file__))
 repo = os.path.dirname(os.path.dirname(here))
 src = os.path.join(sys.argv[1], "_png")
-dst = os.path.join(repo, "public", "carRenders", "v1")
+import renderconfig as RC
+dst = os.path.join(repo, "public", "carRenders", RC.OUT)
 manifest = json.load(open(os.path.join(here, "manifest.json")))
 palette = [k for k in json.load(open(os.path.join(here, "palette.json"))) if not k.startswith("_")]
-FRAMES, PAD = 36, 12
+FRAMES, PAD = 36, RC.PAD
 
 # Credits are cached on disk (outside the repo, next to the renders): publishing one car
 # re-reads every car's credit, and ~50 uncached calls in a row hit Sketchfab's rate limit
@@ -109,9 +110,9 @@ def publish_frames(key, pngs):
         json.dump({"plates": sizes, "frames": frames}, open(os.path.join(dst, key, "plates.json"), "w"))
         has_plates = True
     # One meter of height as a fraction of the cropped frame (the camera is
-    # fixed: ~208.5 px/m at 1200x675), so the app can shift the body a given
+    # fixed: ~208.5 px/m at 1200x675, times RENDER_SCALE), so the app can shift the body a given
     # height for the stance add-on.
-    json.dump({"meter": round(208.5 / (box[3] - box[1]), 4), "box": list(box)}, open(os.path.join(dst, key, "scale.json"), "w"))
+    json.dump({"meter": round(RC.PX_PER_M / (box[3] - box[1]), 4), "box": list(box)}, open(os.path.join(dst, key, "scale.json"), "w"))
     publish_extras(key, box)
     # Window masks (tints.py), cropped the same way: the app darkens through
     # them for the tint add-on. Lossless — a soft edge would halo.
@@ -166,7 +167,12 @@ extras_only = "--extras" in sys.argv
 # car keeps its published files and stays in the catalog.
 only = [a for a in sys.argv[2:] if not a.startswith("--")]
 cars, generics = [], []
+def _complete(k):
+    return sum(len(glob.glob(os.path.join(dst, k, c, "[0-9][0-9].webp"))) for c in palette) == FRAMES * len(palette)
+# A fully published `<key>-hd` (hdify.py) replaces the car it supersedes in the catalog.
+superseded = {c["supersedes"] for k, c in manifest.items() if c.get("supersedes") and _complete(k)}
 for key, car in manifest.items():
+    if key in superseded: continue
     if extras_only and (not only or key in only):
         box = car_box(key)
         if box: publish_extras(key, box)

@@ -17,6 +17,7 @@ Raw PNGs go to <out-dir>/_blackoptic/<car>/blackoptic/<NN>.png;
 publish.py crops them like tint and writes <car>/blackOptic/<NN>.webp +
 blackOptic: true."""
 import glob, json, os, subprocess, sys
+import renderconfig as RC
 here = os.path.dirname(os.path.abspath(__file__))
 glbdir, outdir = sys.argv[1], sys.argv[2]
 manifest = json.load(open(os.path.join(here, "manifest.json")))
@@ -30,7 +31,7 @@ for key in sys.argv[3:] or list(manifest):
     args = ["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--",
             f"in={os.path.join(glbdir, key + '.glb')}", f"out={raw}",
             f"styles={car['blackOpticMats']}:trim", f"isolate={car['blackOpticMats']}",
-            "colors=blackoptic:1,1,1", "frames=36", "engine=BLENDER_EEVEE", "samples=32", "res=1200x675"]
+            "colors=blackoptic:1,1,1", "frames=36", "engine=BLENDER_EEVEE", "samples=32", RC.RES_ARG]
     for opt in ("flip", "invert"):
         if car.get(opt): args.append(f"{opt}=1")
     for opt in ("roll", "hide", "keep", "paintmat"):
