@@ -2313,5 +2313,2406 @@
     "flip": true,
     "tintmat": "car_vgla_911992Carrera4S",
     "supersedes": "porsche-911-992"
+  },
+  "bmw-x3-2018-hd": {
+    "covers": {
+      "make": "BMW",
+      "model": "X3",
+      "years": [
+        2018,
+        2024
+      ],
+      "aliases": []
+    },
+    "sketchfab": "5142078aebec406688e19401985050ec",
+    "paintmat": "Carro_Pintura",
+    "flip": true,
+    "supersedes": "bmw-x3-2018"
+  },
+  "chevrolet-camaro-6g-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Camaro",
+      "years": [
+        2016,
+        2024
+      ],
+      "aliases": [
+        "Camaro SS",
+        "Camaro ZL1",
+        "Camaro 1LT"
+      ]
+    },
+    "sketchfab": "52a8e833445142eebd6e0cae8b72cfc6",
+    "paintmat": "Body",
+    "flip": true,
+    "supersedes": "chevrolet-camaro-6g"
+  },
+  "chevrolet-corvette-c8-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "Corvette Stingray",
+        "Corvette Z06",
+        "Stingray",
+        "Z06"
+      ]
+    },
+    "sketchfab": "f59b9f961c9b48c9b0f8cb59c6a345aa",
+    "paintmat": "Chevrolet_CorvetteStingrayTNR0_2020PaintTNR_Material|Chevrolet_CorvetteStingrayTNR0_2020PaintTNR_Material.001",
+    "flip": true,
+    "supersedes": "chevrolet-corvette-c8"
+  },
+  "chevrolet-silverado-4g-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Silverado",
+      "years": [
+        2019,
+        2025
+      ],
+      "aliases": [
+        "Silverado",
+        "Silverado 1500"
+      ]
+    },
+    "sketchfab": "652324cc8a974d3a9869ce2b0f3beaaa",
+    "paintmat": "Carpaint",
+    "flip": true,
+    "supersedes": "chevrolet-silverado-4g"
+  },
+  "dodge-challenger-lc-hd": {
+    "covers": {
+      "make": "Dodge",
+      "model": "Challenger",
+      "years": [
+        2015,
+        2023
+      ],
+      "aliases": [
+        "Challenger SXT",
+        "Challenger R/T",
+        "Challenger Scat Pack",
+        "Challenger Hellcat"
+      ]
+    },
+    "sketchfab": "e9349f847d5f4b95a01a6ce578e19899",
+    "paintmat": "dDodge_ChallengerSRTHellcat_2015Paint_Material1",
+    "flip": true,
+    "supersedes": "dodge-challenger-lc"
+  },
+  "dodge-charger-lx2-hd": {
+    "covers": {
+      "make": "Dodge",
+      "model": "Charger",
+      "years": [
+        2015,
+        2023
+      ],
+      "aliases": [
+        "Charger SXT",
+        "Charger R/T",
+        "Charger Scat Pack",
+        "Charger Hellcat"
+      ]
+    },
+    "sketchfab": "2ca6c1073255490ebb95060fb690bc69",
+    "paintmat": "RMCarDemo_Paint",
+    "supersedes": "dodge-charger-lx2"
+  },
+  "ford-bronco-6g-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "Bronco",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "Bronco Badlands",
+        "Bronco Wildtrak"
+      ]
+    },
+    "sketchfab": "09ebc68dcb634807a9dace7404ce5e66",
+    "paintmat": "Carbonized_Grey",
+    "flip": true,
+    "supersedes": "ford-bronco-6g"
+  },
+  "ford-explorer-6g-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "Explorer",
+      "years": [
+        2020,
+        2026
+      ]
+    },
+    "sketchfab": "ba986f9f9c44426ca7d5e91831b2c98d",
+    "paintmat": "Trim_Bumper|Trim_FrontDoor|Trim_Hood|Trim_RearDoor|Trim_RearFender|Trim_Roof|Trim_Trunk|Base_Hood|Base_FrontDoor|Base_RearDoor|Base_Roof|Base_Bumper|Base_Trunk|Base_RearFender",
+    "flip": true,
+    "styles": "Glass_FrontDoor|Glass_Roof|Glass_Tint_RearDoor|Glass_Tint_RearFender|Glass_Tint_Trunk:glass",
+    "supersedes": "ford-explorer-6g"
+  },
+  "ford-f150-13g-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "F-150",
+      "years": [
+        2015,
+        2020
+      ],
+      "aliases": [
+        "F-150",
+        "F150"
+      ]
+    },
+    "sketchfab": "014ebfab735341248431da3d6447bbb5",
+    "paintmat": "Magnetic_Metallic",
+    "flip": true,
+    "plate_rear_z": 0.58,
+    "supersedes": "ford-f150-13g"
+  },
+  "ford-mustang-s550-fl-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "Mustang",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "Mustang GT",
+        "Mustang EcoBoost"
+      ]
+    },
+    "sketchfab": "971a079b329f4607bb68873977a2ea37",
+    "paintmat": "Ford_MustangGTFastbackTNR0_2018PaintTNR_Material",
+    "supersedes": "ford-mustang-s550-fl"
+  },
+  "honda-accord-2018-r3-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "Accord",
+      "years": [
+        2018,
+        2022
+      ],
+      "aliases": []
+    },
+    "sketchfab": "f973338c77ce4618b941612241d53f6a",
+    "paintmat": "paint",
+    "flip": true,
+    "supersedes": "honda-accord-2018-r3"
+  },
+  "honda-civic-10g-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "Civic",
+      "years": [
+        2016,
+        2021
+      ]
+    },
+    "sketchfab": "ff844e296f214e709c0d0691d031c68b",
+    "paintmat": "main_material",
+    "flip": false,
+    "supersedes": "honda-civic-10g"
+  },
+  "honda-civic-11g-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "Civic",
+      "years": [
+        2022,
+        2026
+      ]
+    },
+    "sketchfab": "35cbd73adbe8411b80bdeeaa4f3cd151",
+    "paintmat": "carpaint",
+    "flip": false,
+    "styles": "darkglass|windowglass:glass;black:trim;redglass:redlight;orangeglass:amber;clearglass:lamp;chrome:chrome;rim_second|material|brakedisk:satin",
+    "supersedes": "honda-civic-11g"
+  },
+  "honda-crv-5g-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "CR-V",
+      "years": [
+        2017,
+        2022
+      ],
+      "aliases": [
+        "CR-V",
+        "CRV"
+      ]
+    },
+    "sketchfab": "cf55df17d2154cbbb157c2e1b062ac23",
+    "paintmat": "body_color2",
+    "flip": true,
+    "plate_rear_w": 0.52,
+    "supersedes": "honda-crv-5g"
+  },
+  "honda-crv-6g-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "CR-V",
+      "years": [
+        2023,
+        2026
+      ],
+      "aliases": [
+        "CR-V",
+        "CRV"
+      ]
+    },
+    "sketchfab": "91c6673859444597bf006a0ef8570005",
+    "paintmat": "paintBlue",
+    "flip": true,
+    "platemat": "none",
+    "plate_rear_z": 0.75,
+    "tintmat": "winshield",
+    "supersedes": "honda-crv-6g"
+  },
+  "hyundai-tucson-4g-hd": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Tucson",
+      "years": [
+        2022,
+        2026
+      ]
+    },
+    "sketchfab": "574deec95f094e9192b0023d3d4ad607",
+    "paintmat": "Material_2125670220",
+    "flip": false,
+    "styles": "glass:glass;Material_134|black|black_0|black222:trim;Carpaint_Simple_Onyx2:gloss;Carpaint_Simple_Onyx3|Material_2125670235|steel|steel3434|Iron_Clean_Distorted:satin;Material_34|Red_Light1:redlight;glass_light1141:lamp",
+    "plate_rear_z": 0.99,
+    "plate_rear_w": 0.52,
+    "supersedes": "hyundai-tucson-4g"
+  },
+  "jeep-grand-cherokee-wk2-hd": {
+    "covers": {
+      "make": "Jeep",
+      "model": "Grand Cherokee",
+      "years": [
+        2014,
+        2021
+      ]
+    },
+    "sketchfab": "f8024595e11c48119877c9c7cc554abc",
+    "paintmat": "Body",
+    "flip": true,
+    "supersedes": "jeep-grand-cherokee-wk2"
+  },
+  "jeep-wrangler-jl-hd": {
+    "covers": {
+      "make": "Jeep",
+      "model": "Wrangler",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "Wrangler",
+        "Wrangler Unlimited"
+      ]
+    },
+    "sketchfab": "49a2914dff81428998a76a3043487404",
+    "paintmat": "Carro_Pintura",
+    "flip": true,
+    "supersedes": "jeep-wrangler-jl"
+  },
+  "mazda-mx5-nd-hd": {
+    "covers": {
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "years": [
+        2016,
+        2026
+      ],
+      "aliases": [
+        "MX-5",
+        "Miata",
+        "MX5",
+        "MX-5 Miata RF"
+      ]
+    },
+    "sketchfab": "35bd007e1bc549d580ccc208a6038ec1",
+    "paintmat": "carpaint",
+    "flip": true,
+    "supersedes": "mazda-mx5-nd"
+  },
+  "nissan-rogue-3g-hd": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Rogue",
+      "years": [
+        2021,
+        2026
+      ]
+    },
+    "sketchfab": "48fa53c7743745949b9cb518b7b67579",
+    "paintmat": "M_2022_Nissan_Rogue_Pearl_White_Tricoat",
+    "flip": true,
+    "styles": "M_2022_Nissan_Rogue_Windows|M_2022_Nissan_Rogue_HeadLightsGlass|M_2022_Nissan_Rogue_BrakeLightsGlass:glass;M_2022_Nissan_Rogue_Black1|M_2022_Nissan_Rogue_BlackTrims1|M_2022_Nissan_Rogue_Grille2|M_2022_Nissan_Rogue_Mirrors|M_2022_Nissan_Rogue_UnderCarrier|M_2022_Nissan_Rogue_Exhausts:trim;M_2022_Nissan_Rogue_WindowsTrims|M_2022_Nissan_Rogue_Grille1:gloss;M_2022_Nissan_Rogue_BlackChrome|M_2022_Nissan_Rogue_ChromeTrims|M_2022_Nissan_Rogue_Badges:chrome;M_2022_Nissan_Rogue_Rims1|M_2022_Nissan_Rogue_Rims2|M_2022_Nissan_Rogue_SilverSkid|M_2022_Nissan_Rogue_Calipers|M_2022_Nissan_Rogue_BrakeRotors|M_2022_Nissan_Rogue_BrakeRotors1:satin;M_2022_Nissan_Rogue_BrakeLightsMain|M_2022_Nissan_Rogue_BrakeLightsBase|M_2022_Nissan_Rogue_Red1|M_2022_Nissan_Rogue_DarkRed|M_2022_Nissan_Rogue_ThirdBrakeLights:redlight;M_2022_Nissan_Rogue_SignalLights|M_2022_Nissan_Rogue_Orange_Catastrophic:amber;M_2022_Nissan_Rogue_HeadLightsBase|M_2022_Nissan_Rogue_DRLs:lamp",
+    "supersedes": "nissan-rogue-3g"
+  },
+  "ram-1500-5g-hd": {
+    "covers": {
+      "make": "Ram",
+      "model": "1500",
+      "years": [
+        2019,
+        2025
+      ],
+      "aliases": [
+        "1500",
+        "Ram 1500"
+      ]
+    },
+    "sketchfab": "1d0057b4f1c74dbdac2b78e5db7eb6ce",
+    "paintmat": "body|white",
+    "flip": true,
+    "styles": "glass|d_glass|vd_glass:glass;chrome:chrome;silver|silver_d|brakes1:satin;black|black_m|grey|material|material_4:trim;r_glass:redlight;orange|o_glass:amber;interior:interior",
+    "supersedes": "ram-1500-5g"
+  },
+  "subaru-forester-5g-hd": {
+    "covers": {
+      "make": "Subaru",
+      "model": "Forester",
+      "years": [
+        2019,
+        2024
+      ]
+    },
+    "sketchfab": "611ae23685c14134b5a4f3decde248e9",
+    "paintmat": "M_2020_Subaru_Forester_Brilliant_Bronze_Metallic",
+    "flip": true,
+    "supersedes": "subaru-forester-5g"
+  },
+  "subaru-outback-6g-hd": {
+    "covers": {
+      "make": "Subaru",
+      "model": "Outback",
+      "years": [
+        2020,
+        2025
+      ]
+    },
+    "sketchfab": "a44abee6689e429881209fc6299f505c",
+    "paintmat": "M_2022_Subaru_Outback_Autumn_Green_Metallic",
+    "flip": true,
+    "supersedes": "subaru-outback-6g"
+  },
+  "tesla-model-y-hd": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Model Y",
+      "years": [
+        2020,
+        2024
+      ]
+    },
+    "sketchfab": "59e2ead369984b1a85c800ff6cf6789d",
+    "paintmat": "Carro_Pintura",
+    "flip": true,
+    "supersedes": "tesla-model-y"
+  },
+  "tesla-model3-hd": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Model 3",
+      "years": [
+        2017,
+        2023
+      ]
+    },
+    "sketchfab": "5ef9b845aaf44203b6d04e2c677e444f",
+    "title": "Tesla 2018 Model 3",
+    "license": "CC BY 4.0",
+    "paintmat": "primary",
+    "flip": false,
+    "plate_rear_z": 0.72,
+    "plate_rear_w": 0.5,
+    "seatmat": "Seat_Leather_white.0",
+    "supersedes": "tesla-model3"
+  },
+  "toyota-camry-xv70-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Camry",
+      "years": [
+        2018,
+        2024
+      ]
+    },
+    "sketchfab": "236a5a6e2fa6420fbdf641f4800cd544",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_2",
+    "supersedes": "toyota-camry-xv70"
+  },
+  "toyota-corolla-12g-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "years": [
+        2020,
+        2026
+      ]
+    },
+    "sketchfab": "6d7d34ee42734d1ab28a6b1f1c5fc4fc",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_2",
+    "supersedes": "toyota-corolla-12g"
+  },
+  "toyota-rav4-5g-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "RAV4",
+      "years": [
+        2019,
+        2025
+      ]
+    },
+    "sketchfab": "de74fe4e98004c92b1103947597d1b53",
+    "paintmat": "Silver_Sky_Metallic",
+    "flip": true,
+    "tintmat": "Color_M09",
+    "supersedes": "toyota-rav4-5g"
+  },
+  "toyota-tacoma-3g-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Tacoma",
+      "years": [
+        2016,
+        2023
+      ]
+    },
+    "sketchfab": "8bb91f037ec64151ba72279c50ce5c20",
+    "paintmat": "Mat_rancher..012",
+    "flip": false,
+    "plate_rear_z": 0.65,
+    "supersedes": "toyota-tacoma-3g"
+  },
+  "honda-accord-7g-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "Accord",
+      "years": [
+        2003,
+        2007
+      ]
+    },
+    "sketchfab": "fb53b8bc2a74417a8a38967930da12d3",
+    "title": "Honda Accord 2007",
+    "author": "cassanelliryan",
+    "license": "CC BY 4.0",
+    "paintmat": "car_paint",
+    "flip": true,
+    "supersedes": "honda-accord-7g"
+  },
+  "bmw-m4-f82-hd": {
+    "covers": {
+      "make": "BMW",
+      "model": "M4",
+      "years": [
+        2014,
+        2020
+      ]
+    },
+    "sketchfab": "8e87379f40fd40dcac0a751e22c1a188",
+    "title": "BMW M4 f82",
+    "license": "CC BY 4.0",
+    "paintmat": "ARm4_main",
+    "flip": true,
+    "plate_rear_z": 0.77,
+    "supersedes": "bmw-m4-f82"
+  },
+  "ford-f150-lightning-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "F-150 Lightning",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": [
+        "F-150 Lightning",
+        "F150 Lightning",
+        "Lightning"
+      ]
+    },
+    "sketchfab": "6c495ecc36bd49e198b16d1dee25f90b",
+    "paintmat": "M_2023_Ford_F150_Lightning_Platinum_Iced_Blue_Silver",
+    "flip": true,
+    "tintmat": "M_2023_Ford_F150_Lightning_Platinum_Windows",
+    "supersedes": "ford-f150-lightning"
+  },
+  "gmc-sierra-2022-hd": {
+    "covers": {
+      "make": "GMC",
+      "model": "Sierra",
+      "years": [
+        2022,
+        2025
+      ],
+      "aliases": [
+        "Sierra",
+        "Sierra 1500"
+      ]
+    },
+    "sketchfab": "f1c33f582f184e50857be2e832c74c20",
+    "paintmat": "CarPaint",
+    "flip": true,
+    "supersedes": "gmc-sierra-2022"
+  },
+  "toyota-camry-xv40-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Camry",
+      "years": [
+        2007,
+        2011
+      ]
+    },
+    "sketchfab": "32fbfc7624074f1ca8cdb59f4b3b5ee3",
+    "paintmat": "Material.005",
+    "flip": true,
+    "supersedes": "toyota-camry-xv40"
+  },
+  "hyundai-tucson-3g-hd": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Tucson",
+      "years": [
+        2016,
+        2021
+      ]
+    },
+    "sketchfab": "7674a3bd168a451daf73fc0a33d39589",
+    "paintmat": "varnish",
+    "flip": true,
+    "plate_rear_w": 0.52,
+    "supersedes": "hyundai-tucson-3g"
+  },
+  "chevrolet-trax-1g-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Trax",
+      "years": [
+        2017,
+        2022
+      ]
+    },
+    "sketchfab": "76e12f46be1743c591ac01544fb97399",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_2",
+    "supersedes": "chevrolet-trax-1g"
+  },
+  "kia-sportage-5g-hd": {
+    "covers": {
+      "make": "Kia",
+      "model": "Sportage",
+      "years": [
+        2023,
+        2026
+      ]
+    },
+    "sketchfab": "98a84407998a4bc6b4dee912b289f15b",
+    "paintmat": "M_2022_Kia_Sportage__WO_Wheels__Wolf_Gray.001",
+    "flip": true,
+    "supersedes": "kia-sportage-5g"
+  },
+  "kia-sportage-4g-hd": {
+    "covers": {
+      "make": "Kia",
+      "model": "Sportage",
+      "years": [
+        2017,
+        2022
+      ]
+    },
+    "sketchfab": "8f794775950041d7a9ae867e40646a33",
+    "paintmat": "Carro_Pintura",
+    "flip": true,
+    "supersedes": "kia-sportage-4g"
+  },
+  "nissan-sentra-b18-hd": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Sentra",
+      "years": [
+        2020,
+        2026
+      ]
+    },
+    "sketchfab": "74d274c8ad8e49c1b882dca3a199383d",
+    "paintmat": "Paint",
+    "flip": true,
+    "supersedes": "nissan-sentra-b18"
+  },
+  "nissan-sentra-b17-hd": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Sentra",
+      "years": [
+        2013,
+        2019
+      ]
+    },
+    "sketchfab": "4e261bd2d93a438ebdabf8cc6b41cf58",
+    "paintmat": "wire_008008136_3",
+    "flip": false,
+    "supersedes": "nissan-sentra-b17"
+  },
+  "bmw-m3-f80-hd": {
+    "covers": {
+      "make": "BMW",
+      "model": "M3",
+      "years": [
+        2014,
+        2018
+      ]
+    },
+    "sketchfab": "3be9ac82a47e4639b7d0698e1697feb9",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "bmw-m3-f80"
+  },
+  "chevrolet-equinox-3g-b-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Equinox",
+      "years": [
+        2018,
+        2024
+      ]
+    },
+    "sketchfab": "9065adb2dcd44424b08e59cfba90c62d",
+    "paintmat": "Paint_MAT",
+    "flip": false,
+    "supersedes": "chevrolet-equinox-3g-b"
+  },
+  "subaru-crosstrek-1g-hd": {
+    "covers": {
+      "make": "Subaru",
+      "model": "Crosstrek",
+      "years": [
+        2013,
+        2017
+      ],
+      "aliases": [
+        "Crosstrek",
+        "XV Crosstrek"
+      ]
+    },
+    "sketchfab": "3d97c4d69dcf4cf8b8c774b724861cc1",
+    "paintmat": "paint",
+    "flip": false,
+    "plate_rear_z": 0.6,
+    "supersedes": "subaru-crosstrek-1g"
+  },
+  "toyota-camry-xv80-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Camry",
+      "years": [
+        2025,
+        2026
+      ]
+    },
+    "sketchfab": "1cac877105eb4188ba92e8e4991a8213",
+    "paintmat": "vehicle_generic_smallspecmap_PRIMARY|vehicle_generic_smallspecmap_PRIMARY.001",
+    "flip": false,
+    "supersedes": "toyota-camry-xv80"
+  },
+  "toyota-corolla-11g-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "years": [
+        2014,
+        2019
+      ]
+    },
+    "sketchfab": "36f95efb0585464cae43a25a3b3392e8",
+    "paintmat": "main_paint.001",
+    "flip": true,
+    "hide": "invisible_dark",
+    "roll": -90,
+    "plate_rear_z": 1.32,
+    "plate_rear_w": 0.52,
+    "supersedes": "toyota-corolla-11g"
+  },
+  "chevrolet-silverado-2g-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Silverado",
+      "years": [
+        2007,
+        2013
+      ],
+      "aliases": [
+        "Silverado",
+        "Silverado 1500"
+      ]
+    },
+    "sketchfab": "2ad964f59a774e199d9caf143f21e614",
+    "paintmat": "Meshpart2Mtl.002",
+    "flip": true,
+    "plate_rear_z": 0.6,
+    "tintmat": "Meshpart6Mtl",
+    "supersedes": "chevrolet-silverado-2g"
+  },
+  "chevrolet-silverado-ev-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Silverado EV",
+      "years": [
+        2024,
+        2026
+      ]
+    },
+    "sketchfab": "73a1f1a86dc54b97b1f658daf070460c",
+    "paintmat": "M_Body_paint.002",
+    "flip": true,
+    "supersedes": "chevrolet-silverado-ev"
+  },
+  "acura-mdx-yd1-hd": {
+    "covers": {
+      "make": "Acura",
+      "model": "MDX",
+      "years": [
+        2001,
+        2006
+      ]
+    },
+    "sketchfab": "2aa71e7fe1fa4de48b23ee335be96947",
+    "paintmat": "carpaint.010",
+    "flip": true,
+    "supersedes": "acura-mdx-yd1"
+  },
+  "porsche-911-991-v2-hd": {
+    "covers": {
+      "make": "Porsche",
+      "model": "911",
+      "years": [
+        2012,
+        2019
+      ],
+      "aliases": [
+        "911",
+        "911 Carrera",
+        "911 Carrera S",
+        "911 Carrera 4S"
+      ]
+    },
+    "sketchfab": "4cef7c1e22ab40fd937507eae9a62cd8",
+    "paintmat": "waike_t|Left_door_t|Right_door_t",
+    "hide": "Icosphere",
+    "flip": true,
+    "supersedes": "porsche-911-991-v2"
+  },
+  "audi-a5-b9-v2-hd": {
+    "covers": {
+      "make": "Audi",
+      "model": "A5",
+      "years": [
+        2020,
+        2024
+      ],
+      "aliases": [
+        "A5",
+        "A5 Sportback",
+        "A5 Coupe",
+        "S5",
+        "S5 Sportback"
+      ]
+    },
+    "sketchfab": "aa9b8d495d324fa1adfe6eab519e21a9",
+    "paintmat": "2021_Audi_A5_Sportback_S-Line_Ibis_White",
+    "flip": true,
+    "styles": "2021_Audi_A5_Sportback_S-Line_Windows|2021_Audi_A5_Sportback_S-Line_HeadLightsGlass|2021_Audi_A5_Sportback_S-Line_BrakeLightsGlass:glass;2021_Audi_A5_Sportback_S-Line_Black1|2021_Audi_A5_Sportback_S-Line_BlackTrims|2021_Audi_A5_Sportback_S-Line_UnderCarrier:trim;2021_Audi_A5_Sportback_S-Line_BlackChrome:gloss;2021_Audi_A5_Sportback_S-Line_ChromeTrims|2021_Audi_A5_Sportback_S-Line_Grille1|2021_Audi_A5_Sportback_S-Line_Mirrors|2021_Audi_A5_Sportback_S-Line_WindowsTrims:chrome;2021_Audi_A5_Sportback_S-Line_Rims1|2021_Audi_A5_Sportback_S-Line_Rims2|2021_Audi_A5_Sportback_S-Line_BrakeRotors1|2021_Audi_A5_Sportback_S-Line_BrakeRotors1_0|2021_Audi_A5_Sportback_S-Line_BrakeRotors1_1|2021_Audi_A5_Sportback_S-Line_BrakeRotors2:satin;2021_Audi_A5_Sportback_S-Line_RedMain|2021_Audi_A5_Sportback_S-Line_Red1|2021_Audi_A5_Sportback_S-Line_DarkRed:redlight;2021_Audi_A5_Sportback_S-Line_DRLs:lamp",
+    "invert": true,
+    "platemat": "material",
+    "tintmat": "2021_Audi_A5_Sportback_S-Line_Windows",
+    "blackOpticMats": "2021_Audi_A5_Sportback_S-Line_ChromeTrims|2021_Audi_A5_Sportback_S-Line_Grille1|2021_Audi_A5_Sportback_S-Line_Mirrors|2021_Audi_A5_Sportback_S-Line_WindowsTrims",
+    "supersedes": "audi-a5-b9-v2"
+  },
+  "mitsubishi-lancer-evo-9-hd": {
+    "covers": {
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution",
+      "years": [
+        2003,
+        2007
+      ],
+      "aliases": [
+        "Lancer Evo",
+        "Evo",
+        "Evolution",
+        "Evo IX",
+        "Evo VIII",
+        "Lancer Evolution IX",
+        "Lancer Evolution VIII"
+      ]
+    },
+    "sketchfab": "e0646088011743639370003738d7013c",
+    "paintmat": "mM_CarPaint_Max_002",
+    "flip": true,
+    "invert": true,
+    "supersedes": "mitsubishi-lancer-evo-9"
+  },
+  "ford-mustang-s550-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "Mustang",
+      "years": [
+        2015,
+        2017
+      ],
+      "aliases": [
+        "Mustang GT",
+        "Mustang EcoBoost"
+      ]
+    },
+    "sketchfab": "0382a22e782c4a9e8c0dc0f0dc587103",
+    "paintmat": "Meshesuntitledlodabrakecaliperrearleftmmmisc31Mtl|Meshesuntitledlodahoodmmmisc31Mtl",
+    "flip": true,
+    "tintmat": "Meshesuntitledlodaglassrearmmwindows31Mtl",
+    "supersedes": "ford-mustang-s550"
+  },
+  "chevrolet-camaro-5g-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Camaro",
+      "years": [
+        2010,
+        2015
+      ],
+      "aliases": [
+        "Camaro SS",
+        "Camaro LT"
+      ]
+    },
+    "sketchfab": "b2845536739542e1a4493a192990f91b",
+    "paintmat": "body",
+    "supersedes": "chevrolet-camaro-5g"
+  },
+  "toyota-supra-a90-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Supra",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "GR Supra",
+        "Supra GR",
+        "GR Supra 3.0"
+      ]
+    },
+    "sketchfab": "9231f2d5e71a43dd87603dc0b339d99d",
+    "paintmat": "Toyota_Supra_2020_with_Interior_noTTo3Ds_carpaint.001",
+    "flip": true,
+    "tintmat": "Toyota_Supra_2020_with_Interior_noTTo3Ds_glass_dark.001",
+    "supersedes": "toyota-supra-a90"
+  },
+  "subaru-wrx-va-hd": {
+    "covers": {
+      "make": "Subaru",
+      "model": "WRX",
+      "years": [
+        2015,
+        2021
+      ],
+      "aliases": [
+        "WRX STI",
+        "STI",
+        "WRX Premium"
+      ]
+    },
+    "sketchfab": "92ef1f865436403ab12ab4a6225127ce",
+    "paintmat": "subSubaru_WRXSTITNR0_2018PaintTNR_Material1",
+    "flip": true,
+    "supersedes": "subaru-wrx-va"
+  },
+  "mazda-3-bp-hd": {
+    "covers": {
+      "make": "Mazda",
+      "model": "Mazda3",
+      "years": [
+        2019,
+        2026
+      ],
+      "aliases": [
+        "3",
+        "Mazda 3",
+        "Mazda3 Sedan"
+      ]
+    },
+    "sketchfab": "7e2ef9be2dd74cf4b980d068d272dfff",
+    "paintmat": "M_2020_Mazda_3_Sedan_Machine_Gray_Metallic",
+    "flip": true,
+    "supersedes": "mazda-3-bp"
+  },
+  "vw-golf-mk8-hd": {
+    "covers": {
+      "make": "Volkswagen",
+      "model": "Golf",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": [
+        "Golf GTI",
+        "GTI",
+        "Golf R"
+      ]
+    },
+    "sketchfab": "de98fb98417547f4904fa24d6be3b269",
+    "paintmat": "EXT_BODY",
+    "flip": true,
+    "supersedes": "vw-golf-mk8"
+  },
+  "mercedes-c-w203-hd": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "C-Class",
+      "years": [
+        2001,
+        2007
+      ],
+      "aliases": [
+        "C230",
+        "C240",
+        "C320",
+        "C 230"
+      ]
+    },
+    "sketchfab": "6cf3d6203793450ba9e6a572fc164c77",
+    "paintmat": "carpaint",
+    "flip": true,
+    "supersedes": "mercedes-c-w203"
+  },
+  "mercedes-g-w463-hd": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "G-Class",
+      "years": [
+        2019,
+        2026
+      ],
+      "aliases": [
+        "G63",
+        "G550",
+        "G 63 AMG",
+        "G-Wagon"
+      ]
+    },
+    "sketchfab": "7d79d44005ac42598aa3fe1feef9fa0f",
+    "paintmat": "MMercedesAMG_G63SUVRewardRecycled_2020Paint_Material1",
+    "flip": true,
+    "invert": true,
+    "tintmat": "MMercedesAMG_G63SUVRewardRecycled_2020Window_Material1",
+    "supersedes": "mercedes-g-w463"
+  },
+  "toyota-prius-xw50-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Prius",
+      "years": [
+        2016,
+        2022
+      ],
+      "aliases": [
+        "Prius Prime"
+      ]
+    },
+    "sketchfab": "42470a7ce258421a89c2361225bb89eb",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "toyota-prius-xw50"
+  },
+  "nissan-altima-l34-hd": {
+    "covers": {
+      "make": "Nissan",
+      "model": "Altima",
+      "years": [
+        2019,
+        2025
+      ],
+      "aliases": [
+        "Altima SR",
+        "Altima SV"
+      ]
+    },
+    "sketchfab": "47b0627190a44d04b39b75eb2b8175cd",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "nissan-altima-l34"
+  },
+  "kia-k5-dl3-hd": {
+    "covers": {
+      "make": "Kia",
+      "model": "K5",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "K5 GT-Line"
+      ]
+    },
+    "sketchfab": "ab125f4a0b40493abdf1155aea09b626",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "kia-k5-dl3"
+  },
+  "ford-bronco-sport-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "Bronco Sport",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "Bronco Sport Badlands"
+      ]
+    },
+    "sketchfab": "8c8ecf70cd894ec0834689456c49cb70",
+    "paintmat": "Carro_Pintura",
+    "flip": true,
+    "supersedes": "ford-bronco-sport"
+  },
+  "lexus-is-xe30-fl-hd": {
+    "covers": {
+      "make": "Lexus",
+      "model": "IS",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "IS 350",
+        "IS 300",
+        "IS 500",
+        "IS 350 F Sport",
+        "IS 300 F Sport",
+        "IS 500 F Sport Performance"
+      ]
+    },
+    "sketchfab": "3f099f55bc364aac9998dd0774cfd718",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "lexus-is-xe30-fl"
+  },
+  "lincoln-navigator-4g-hd": {
+    "covers": {
+      "make": "Lincoln",
+      "model": "Navigator",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "Navigator L"
+      ]
+    },
+    "sketchfab": "1da79a33e49d4d2eabc5b5cbac578adf",
+    "paintmat": "White_Platinum_Metallic_Tri-coat",
+    "flip": true,
+    "supersedes": "lincoln-navigator-4g"
+  },
+  "mini-cooper-r56-hd": {
+    "covers": {
+      "make": "Mini",
+      "model": "Cooper",
+      "years": [
+        2007,
+        2013
+      ],
+      "aliases": [
+        "Cooper S",
+        "John Cooper Works",
+        "Cooper Hardtop"
+      ]
+    },
+    "sketchfab": "1b628ba826f04ba79823ef62dccaa0df",
+    "paintmat": "Doorrfok0011Mtl|Doorrfok0021Mtl|Doorrfok0031Mtl",
+    "supersedes": "mini-cooper-r56"
+  },
+  "aston-martin-vantage-hd": {
+    "covers": {
+      "make": "Aston Martin",
+      "model": "Vantage",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "V8 Vantage"
+      ]
+    },
+    "sketchfab": "dbdd5aadc1d64df289f65fc0f6da3c07",
+    "paintmat": "OEMPaint",
+    "flip": true,
+    "supersedes": "aston-martin-vantage"
+  },
+  "cadillac-escalade-5g-hd": {
+    "covers": {
+      "make": "Cadillac",
+      "model": "Escalade",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": [
+        "Escalade ESV",
+        "Escalade V"
+      ]
+    },
+    "sketchfab": "d215f87bfd55479fa68683e545a0785b",
+    "paintmat": "car_body",
+    "flip": true,
+    "supersedes": "cadillac-escalade-5g"
+  },
+  "chrysler-300-2g-hd": {
+    "covers": {
+      "make": "Chrysler",
+      "model": "300",
+      "years": [
+        2011,
+        2023
+      ],
+      "aliases": [
+        "300C",
+        "300S",
+        "300 Touring"
+      ]
+    },
+    "sketchfab": "82b9b3f14c1e48febfd567be2c2c26c7",
+    "paintmat": "Meshpart7Mtl",
+    "flip": true,
+    "supersedes": "chrysler-300-2g"
+  },
+  "land-rover-defender-l663-hd": {
+    "covers": {
+      "make": "Land Rover",
+      "model": "Defender",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "Defender 110",
+        "Defender 90"
+      ]
+    },
+    "sketchfab": "26f042fcf1594890a529bfb41f0fae0d",
+    "paintmat": "2021_Land_Rover_Defender_110_Land_Rover_Defender_110_2020body_1",
+    "flip": true,
+    "supersedes": "land-rover-defender-l663"
+  },
+  "jaguar-f-type-hd": {
+    "covers": {
+      "make": "Jaguar",
+      "model": "F-Type",
+      "years": [
+        2014,
+        2024
+      ],
+      "aliases": [
+        "F-Type R",
+        "F-Type S"
+      ]
+    },
+    "sketchfab": "b338091497c64d31bef9bd7de49ade81",
+    "paintmat": "carpaint_metalic_red",
+    "flip": true,
+    "supersedes": "jaguar-f-type"
+  },
+  "maserati-ghibli-hd": {
+    "covers": {
+      "make": "Maserati",
+      "model": "Ghibli",
+      "years": [
+        2014,
+        2024
+      ],
+      "aliases": [
+        "Ghibli S",
+        "Ghibli Hybrid"
+      ]
+    },
+    "sketchfab": "ef6c3f832995433a83f3938ba19a6d34",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "maserati-ghibli"
+  },
+  "ferrari-488-hd": {
+    "covers": {
+      "make": "Ferrari",
+      "model": "488",
+      "years": [
+        2016,
+        2020
+      ],
+      "aliases": [
+        "488 GTB",
+        "488 Pista",
+        "488 Spider"
+      ]
+    },
+    "sketchfab": "1d1344847d8540e9a6a7f21184ab7769",
+    "paintmat": "Ferrari_488Pista_2019_Modified__CSB_Paint1",
+    "flip": true,
+    "supersedes": "ferrari-488"
+  },
+  "bentley-continental-gt-2g-hd": {
+    "covers": {
+      "make": "Bentley",
+      "model": "Continental GT",
+      "years": [
+        2011,
+        2017
+      ],
+      "aliases": [
+        "Continental GT V8",
+        "Continental GT Speed"
+      ]
+    },
+    "sketchfab": "c4094bd0fea64777a7572f5384d9eedd",
+    "paintmat": "Paint",
+    "flip": true,
+    "supersedes": "bentley-continental-gt-2g"
+  },
+  "bentley-continental-gt-3g-hd": {
+    "covers": {
+      "make": "Bentley",
+      "model": "Continental GT",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "Continental GT Speed",
+        "Continental GT V8"
+      ]
+    },
+    "sketchfab": "8e5fa2daca234948bea87b1a55067bbc",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "bentley-continental-gt-3g"
+  },
+  "pagani-huayra-hd": {
+    "covers": {
+      "make": "Pagani",
+      "model": "Huayra",
+      "years": [
+        2012,
+        2020
+      ],
+      "aliases": [
+        "Huayra BC",
+        "Huayra Roadster"
+      ]
+    },
+    "sketchfab": "c2d61a9f53a54a229547bb76e4b71e25",
+    "paintmat": "PAG_HUAYRA_PAINT",
+    "flip": true,
+    "supersedes": "pagani-huayra"
+  },
+  "suzuki-swift-hd": {
+    "covers": {
+      "make": "Suzuki",
+      "model": "Swift",
+      "years": [
+        2017,
+        2023
+      ],
+      "aliases": [
+        "Swift Sport"
+      ]
+    },
+    "sketchfab": "218c3c0c6afd4d0eb343bd50d8868fd0",
+    "paintmat": "M_2022_Suzuki_Swift_Pearl_Ablaze_Red",
+    "flip": true,
+    "supersedes": "suzuki-swift"
+  },
+  "alfa-romeo-giulia-hd": {
+    "covers": {
+      "make": "Alfa Romeo",
+      "model": "Giulia",
+      "years": [
+        2017,
+        2026
+      ],
+      "aliases": [
+        "Giulia Quadrifoglio",
+        "Giulia Ti"
+      ]
+    },
+    "sketchfab": "6ab89536590d478598d64396ad4ac4ca",
+    "paintmat": "Giulia_QV_Paint",
+    "supersedes": "alfa-romeo-giulia"
+  },
+  "genesis-g70-hd": {
+    "covers": {
+      "make": "Genesis",
+      "model": "G70",
+      "years": [
+        2019,
+        2026
+      ],
+      "aliases": [
+        "G70 3.3T"
+      ]
+    },
+    "sketchfab": "2b1b116ab63d4990978f7bbf09815e4f",
+    "paintmat": "carpaint",
+    "supersedes": "genesis-g70"
+  },
+  "mclaren-570s-hd": {
+    "covers": {
+      "make": "McLaren",
+      "model": "570S",
+      "years": [
+        2016,
+        2021
+      ],
+      "aliases": [
+        "570S Spider",
+        "570GT"
+      ]
+    },
+    "sketchfab": "2396ca2aa3ec4f99bf29baba3d7a43cf",
+    "paintmat": "fullM_CarPaint_Max1",
+    "supersedes": "mclaren-570s"
+  },
+  "fiat-500x-hd": {
+    "covers": {
+      "make": "Fiat",
+      "model": "500X",
+      "years": [
+        2016,
+        2023
+      ],
+      "aliases": [
+        "500X Sport",
+        "500X Trekking"
+      ]
+    },
+    "sketchfab": "1de37bf6d45348c3a9a62194c1454c2d",
+    "paintmat": "body",
+    "supersedes": "fiat-500x"
+  },
+  "lotus-emira-hd": {
+    "covers": {
+      "make": "Lotus",
+      "model": "Emira",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": [
+        "Emira V6",
+        "Emira i4"
+      ]
+    },
+    "sketchfab": "353d4768b2d74a7f888567e18952bcb1",
+    "paintmat": "Paint0021Mtl|Paint0011Mtl|Coloured0041Mtl",
+    "noWheels": true,
+    "supersedes": "lotus-emira"
+  },
+  "lamborghini-aventador-hd": {
+    "covers": {
+      "make": "Lamborghini",
+      "model": "Aventador",
+      "years": [
+        2017,
+        2022
+      ],
+      "aliases": [
+        "Aventador SVJ",
+        "Aventador S"
+      ]
+    },
+    "sketchfab": "784e4656aca649cca55d6b18740a19b2",
+    "paintmat": "CARROSSERIE",
+    "flip": true,
+    "supersedes": "lamborghini-aventador"
+  },
+  "chrysler-pacifica-hd": {
+    "covers": {
+      "make": "Chrysler",
+      "model": "Pacifica",
+      "years": [
+        2017,
+        2026
+      ],
+      "aliases": [
+        "Pacifica Hybrid",
+        "Pacifica Limited"
+      ]
+    },
+    "sketchfab": "890cbc5470e344aaaff29dc2d6d8fdeb",
+    "paintmat": "022_Chrysler_Pacifica_Granite_Crystal_Metallic_Clearcoat",
+    "flip": true,
+    "supersedes": "chrysler-pacifica"
+  },
+  "peugeot-3008-hd": {
+    "covers": {
+      "make": "Peugeot",
+      "model": "3008",
+      "years": [
+        2016,
+        2023
+      ],
+      "aliases": [
+        "3008 GT"
+      ]
+    },
+    "sketchfab": "3e5e14fdb1f94f25a5b572caf518f55d",
+    "paintmat": "CarPaint_Flip1",
+    "noWheels": true,
+    "supersedes": "peugeot-3008"
+  },
+  "volvo-xc60-hd": {
+    "covers": {
+      "make": "Volvo",
+      "model": "XC60",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": [
+        "XC60 T6",
+        "XC60 Recharge"
+      ]
+    },
+    "sketchfab": "eb8ce77c64c04339983cdf30593abca3",
+    "paintmat": "auto31",
+    "flip": true,
+    "supersedes": "volvo-xc60"
+  },
+  "rolls-royce-ghost-1g-hd": {
+    "covers": {
+      "make": "Rolls-Royce",
+      "model": "Ghost",
+      "years": [
+        2010,
+        2020
+      ],
+      "aliases": [
+        "Ghost Series II"
+      ]
+    },
+    "sketchfab": "1f614e803fc24946b83bdc2dd9926d62",
+    "paintmat": "primary_paint_shad|secondary_paint_shad",
+    "flip": true,
+    "supersedes": "rolls-royce-ghost-1g"
+  },
+  "infiniti-qx50-hd": {
+    "covers": {
+      "make": "Infiniti",
+      "model": "QX50",
+      "years": [
+        2019,
+        2026
+      ],
+      "aliases": [
+        "QX50 Luxe",
+        "QX50 Essential"
+      ]
+    },
+    "sketchfab": "e7d888afb93d4e3ebc242d0e6d7d539b",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "infiniti-qx50"
+  },
+  "infiniti-g35-coupe-hd": {
+    "covers": {
+      "make": "Infiniti",
+      "model": "G35",
+      "years": [
+        2003,
+        2007
+      ],
+      "aliases": [
+        "G35 Coupe",
+        "G35x"
+      ]
+    },
+    "sketchfab": "f2e715be06494226865510aac31f716b",
+    "paintmat": "Tailrinnerbody1Mtl",
+    "supersedes": "infiniti-g35-coupe"
+  },
+  "lucid-air-hd": {
+    "covers": {
+      "make": "Lucid",
+      "model": "Air",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": [
+        "Air Dream Edition",
+        "Air Grand Touring",
+        "Air Pure"
+      ]
+    },
+    "sketchfab": "f454c421a39c483788fa1b7bec5e6a1e",
+    "paintmat": "Procedural_Car_Paint",
+    "supersedes": "lucid-air"
+  },
+  "saab-9-3-hd": {
+    "covers": {
+      "make": "Saab",
+      "model": "9-3",
+      "years": [
+        2003,
+        2012
+      ],
+      "aliases": [
+        "9-3 Aero",
+        "9-3 Turbo X"
+      ]
+    },
+    "sketchfab": "a1894b5f284044be80c5b1d340e2cf32",
+    "paintmat": "body_color_1",
+    "supersedes": "saab-9-3"
+  },
+  "citroen-c1-hd": {
+    "covers": {
+      "make": "Citro\u00ebn",
+      "model": "C1",
+      "years": [
+        2005,
+        2014
+      ],
+      "aliases": [
+        "C1 Airscape"
+      ]
+    },
+    "sketchfab": "334053c217c749c2ab12f664050c9435",
+    "paintmat": "BrightRedTricoat_840978",
+    "supersedes": "citroen-c1"
+  },
+  "acura-mdx-2014-hd": {
+    "covers": {
+      "make": "Acura",
+      "model": "MDX",
+      "years": [
+        2014,
+        2020
+      ],
+      "aliases": []
+    },
+    "sketchfab": "838937c4b12345c9a242ea620d93e89e",
+    "paintmat": "carpaint.001",
+    "flip": true,
+    "supersedes": "acura-mdx-2014"
+  },
+  "chevrolet-malibu-2016-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Malibu",
+      "years": [
+        2016,
+        2024
+      ],
+      "aliases": []
+    },
+    "sketchfab": "a155e069dbf84db0b3454ba313d0e79f",
+    "paintmat": "malibupaint",
+    "flip": true,
+    "supersedes": "chevrolet-malibu-2016"
+  },
+  "chevrolet-tahoe-2007-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Tahoe",
+      "years": [
+        2007,
+        2014
+      ],
+      "aliases": []
+    },
+    "sketchfab": "a11d407e141b4a88b2a424060075e357",
+    "paintmat": "Paint",
+    "supersedes": "chevrolet-tahoe-2007"
+  },
+  "ford-f-150-2009-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "F-150",
+      "years": [
+        2009,
+        2014
+      ],
+      "aliases": []
+    },
+    "sketchfab": "b7e63d376e59453490907cebbd44ab72",
+    "paintmat": "Paint1Mtl",
+    "supersedes": "ford-f-150-2009"
+  },
+  "ford-mustang-2005-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "Mustang",
+      "years": [
+        2005,
+        2014
+      ],
+      "aliases": []
+    },
+    "sketchfab": "b60b3a520c024fd69416d56a71900626",
+    "paintmat": "Body",
+    "flip": true,
+    "supersedes": "ford-mustang-2005"
+  },
+  "gmc-sierra-2014-hd": {
+    "covers": {
+      "make": "GMC",
+      "model": "Sierra",
+      "years": [
+        2007,
+        2013
+      ],
+      "aliases": []
+    },
+    "sketchfab": "08efe03a95634fc5ae9a8a7e716fc49e",
+    "paintmat": "body1",
+    "flip": true,
+    "supersedes": "gmc-sierra-2014"
+  },
+  "honda-accord-2013-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "Accord",
+      "years": [
+        2013,
+        2017
+      ],
+      "aliases": []
+    },
+    "sketchfab": "68892cd369e84a218e5e5dcf82365ee3",
+    "paintmat": "AccordFIR.001",
+    "flip": true,
+    "supersedes": "honda-accord-2013"
+  },
+  "honda-pilot-2009-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "Pilot",
+      "years": [
+        2009,
+        2015
+      ],
+      "aliases": []
+    },
+    "sketchfab": "08ab3f6e3d364e3092f487fbb3bfc1a5",
+    "paintmat": "carpaint",
+    "supersedes": "honda-pilot-2009"
+  },
+  "hyundai-elantra-2017-hd": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Elantra",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "673a4a83715d411ba713c0c270cdf93f",
+    "paintmat": "hHyundai_ElantraNRewardRecycled_2022Paint_Material1",
+    "flip": true,
+    "tintmat": "hHyundai_ElantraNRewardRecycled_2022Window_Material1",
+    "supersedes": "hyundai-elantra-2017"
+  },
+  "hyundai-santa-fe-2019-hd": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Santa Fe",
+      "years": [
+        2024,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "44162eff25084d74964688b1e139ede8",
+    "paintmat": "santafek_body",
+    "flip": true,
+    "tintmat": "auto_56",
+    "supersedes": "hyundai-santa-fe-2019"
+  },
+  "hyundai-sonata-2011-hd": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Sonata",
+      "years": [
+        2015,
+        2019
+      ],
+      "aliases": []
+    },
+    "sketchfab": "b483a4442fd94a31bfd771df38acf9c7",
+    "paintmat": "sonata2015_paint",
+    "flip": true,
+    "supersedes": "hyundai-sonata-2011"
+  },
+  "jeep-wrangler-2007-hd": {
+    "covers": {
+      "make": "Jeep",
+      "model": "Wrangler",
+      "years": [
+        2007,
+        2017
+      ],
+      "aliases": []
+    },
+    "sketchfab": "e8ad5a9f0489416599c50781e08bf70c",
+    "paintmat": "JMAT_Carpaint_Red1",
+    "flip": true,
+    "supersedes": "jeep-wrangler-2007"
+  },
+  "lexus-is-2006-hd": {
+    "covers": {
+      "make": "Lexus",
+      "model": "IS",
+      "years": [
+        2006,
+        2013
+      ],
+      "aliases": []
+    },
+    "sketchfab": "be1c96a927f345e59d41577f4fa16978",
+    "paintmat": "Paintmainmain1Mtl",
+    "supersedes": "lexus-is-2006"
+  },
+  "mazda-cx-5-2013-hd": {
+    "covers": {
+      "make": "Mazda",
+      "model": "CX-5",
+      "years": [
+        2013,
+        2016
+      ],
+      "aliases": []
+    },
+    "sketchfab": "0ca0354c7b2a41bbb84c835ff046e8e5",
+    "paintmat": "Main",
+    "flip": true,
+    "supersedes": "mazda-cx-5-2013"
+  },
+  "mazda-cx-5-2017-hd": {
+    "covers": {
+      "make": "Mazda",
+      "model": "CX-5",
+      "years": [
+        2017,
+        2025
+      ],
+      "aliases": []
+    },
+    "sketchfab": "ea176c6ebe814be3b06641bf038f8642",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_2",
+    "supersedes": "mazda-cx-5-2017"
+  },
+  "mercedes-benz-c-class-2015-hd": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "C-Class",
+      "years": [
+        2015,
+        2021
+      ],
+      "aliases": []
+    },
+    "sketchfab": "19d59344b7554e6ab614a6cc02e7ad0a",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_3",
+    "supersedes": "mercedes-benz-c-class-2015"
+  },
+  "mercedes-benz-e-class-2010-hd": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "E-Class",
+      "years": [
+        2010,
+        2016
+      ],
+      "aliases": []
+    },
+    "sketchfab": "51955b38019846aaa41b52044879efff",
+    "paintmat": "body",
+    "flip": true,
+    "supersedes": "mercedes-benz-e-class-2010"
+  },
+  "mercedes-benz-e-class-2017-hd": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "E-Class",
+      "years": [
+        2017,
+        2023
+      ],
+      "aliases": []
+    },
+    "sketchfab": "136ecd58732b4f88b0bcd3cb74a71e54",
+    "paintmat": "M_2022_Mercedes_Benz_E_Class_AMG_Line_Diamond_White_Metallic",
+    "flip": true,
+    "supersedes": "mercedes-benz-e-class-2017"
+  },
+  "mercedes-benz-glc-2023-hd": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "GLC",
+      "years": [
+        2016,
+        2022
+      ],
+      "aliases": []
+    },
+    "sketchfab": "6a0ef719f8d74378969b6f6095bd8981",
+    "paintmat": "carpaint",
+    "supersedes": "mercedes-benz-glc-2023"
+  },
+  "porsche-911-2005-hd": {
+    "covers": {
+      "make": "Porsche",
+      "model": "911",
+      "years": [
+        2005,
+        2011
+      ],
+      "aliases": []
+    },
+    "sketchfab": "2f39754f878b4c82ba0c0b938eeafc15",
+    "paintmat": "Paint1Mtl",
+    "supersedes": "porsche-911-2005"
+  },
+  "porsche-macan-2015-hd": {
+    "covers": {
+      "make": "Porsche",
+      "model": "Macan",
+      "years": [
+        2015,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "f0270f8ae1db4d7b909417e07492043a",
+    "paintmat": "Color1Mtl",
+    "supersedes": "porsche-macan-2015"
+  },
+  "tesla-model-x-2016-hd": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Model X",
+      "years": [
+        2016,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "c61839793eab4f31a26e261a2de750b5",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_2",
+    "supersedes": "tesla-model-x-2016"
+  },
+  "tesla-model-y-2025-hd": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Model Y",
+      "years": [
+        2025,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "a66f7673a09d4fcb84d37111433f05a9",
+    "paintmat": "carpaint",
+    "flip": true,
+    "supersedes": "tesla-model-y-2025"
+  },
+  "toyota-highlander-2008-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Highlander",
+      "years": [
+        2008,
+        2013
+      ],
+      "aliases": []
+    },
+    "sketchfab": "11413272fe244553986c1c1b1efab564",
+    "paintmat": "carpaint",
+    "supersedes": "toyota-highlander-2008"
+  },
+  "toyota-tundra-2007-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Tundra",
+      "years": [
+        2007,
+        2013
+      ],
+      "aliases": []
+    },
+    "sketchfab": "96030020a5b244afb9150b5c969feeec",
+    "paintmat": "carpaint",
+    "supersedes": "toyota-tundra-2007"
+  },
+  "audi-q5-2018-hd": {
+    "covers": {
+      "make": "Audi",
+      "model": "Q5",
+      "years": [
+        2018,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "9cf08cf1dac24654a34dbdad76cce52c",
+    "paintmat": "Carro_Pintura",
+    "flip": true,
+    "supersedes": "audi-q5-2018"
+  },
+  "bmw-3-series-2006-hd": {
+    "covers": {
+      "make": "BMW",
+      "model": "3 Series",
+      "years": [
+        2006,
+        2011
+      ],
+      "aliases": []
+    },
+    "sketchfab": "e14e0b434bfc4fa5ae28c10fe9379fb4",
+    "paintmat": "body_color",
+    "hide": "color_chart",
+    "supersedes": "bmw-3-series-2006"
+  },
+  "bmw-x5-2019-hd": {
+    "covers": {
+      "make": "BMW",
+      "model": "X5",
+      "years": [
+        2019,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "9b211d525797457e988c903f67d0b753",
+    "paintmat": "Marina_Bay_Blue_Metallic",
+    "flip": true,
+    "supersedes": "bmw-x5-2019"
+  },
+  "chevrolet-tahoe-2021-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Tahoe",
+      "years": [
+        2015,
+        2020
+      ],
+      "aliases": []
+    },
+    "sketchfab": "39b86984238941b0b6a46da6a8c31907",
+    "paintmat": "default",
+    "flip": true,
+    "tintmat": "Material__7390",
+    "supersedes": "chevrolet-tahoe-2021"
+  },
+  "kia-sorento-2021-hd": {
+    "covers": {
+      "make": "Kia",
+      "model": "Sorento",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "340ded1d34c149a095b3281a1232494a",
+    "paintmat": "template_carpaint.014",
+    "platemat": "none",
+    "supersedes": "kia-sorento-2021"
+  },
+  "lexus-rx-2023-hd": {
+    "covers": {
+      "make": "Lexus",
+      "model": "RX",
+      "years": [
+        2023,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "13ddc257995b4e3fa6be35af690251c8",
+    "paintmat": "M_2023_Lexus_RX450h__Sonic_Silver",
+    "flip": true,
+    "supersedes": "lexus-rx-2023"
+  },
+  "mercedes-benz-c-class-2022-hd": {
+    "covers": {
+      "make": "Mercedes-Benz",
+      "model": "C-Class",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "5e1a44c940234b37aa0ffddf53e5f296",
+    "paintmat": "Carro_Pintura",
+    "flip": true,
+    "supersedes": "mercedes-benz-c-class-2022"
+  },
+  "tesla-model-s-2012-hd": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Model S",
+      "years": [
+        2021,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "4092546f8f60417bb401fe5a8a39032b",
+    "paintmat": "M_2022_Tesla_Model_S_Plaid_Pearl_White_Multi_Coat",
+    "flip": true,
+    "supersedes": "tesla-model-s-2012"
+  },
+  "audi-a4-2009-b-hd": {
+    "covers": {
+      "make": "Audi",
+      "model": "A4",
+      "years": [
+        2009,
+        2016
+      ],
+      "aliases": []
+    },
+    "sketchfab": "b5861ddefcb8478b858b3150aa44cd7f",
+    "paintmat": "Car_Paint_-_All_Colors",
+    "flip": true,
+    "supersedes": "audi-a4-2009-b"
+  },
+  "chevrolet-equinox-2025-r2-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Equinox",
+      "years": [
+        2010,
+        2017
+      ],
+      "aliases": []
+    },
+    "sketchfab": "f9b935582076423790864ee5a66d0178",
+    "paintmat": "carpaint.071",
+    "flip": true,
+    "supersedes": "chevrolet-equinox-2025-r2"
+  },
+  "dodge-charger-2006-b-hd": {
+    "covers": {
+      "make": "Dodge",
+      "model": "Charger",
+      "years": [
+        2006,
+        2014
+      ],
+      "aliases": []
+    },
+    "sketchfab": "51ff44881e6e4d7bad90decadd7ea4e3",
+    "paintmat": "body__prim_env_1|body__spec_1",
+    "flip": true,
+    "supersedes": "dodge-charger-2006-b"
+  },
+  "honda-accord-2008-r2-hd": {
+    "covers": {
+      "make": "Honda",
+      "model": "Accord",
+      "years": [
+        2008,
+        2012
+      ],
+      "aliases": []
+    },
+    "sketchfab": "fb53b8bc2a74417a8a38967930da12d3",
+    "paintmat": "car_paint",
+    "flip": true,
+    "supersedes": "honda-accord-2008-r2"
+  },
+  "mazda-mx-5-miata-2006-r2-hd": {
+    "covers": {
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "years": [
+        2006,
+        2015
+      ],
+      "aliases": []
+    },
+    "sketchfab": "44f83bd458df4025b8daa7f6eeb36b1f",
+    "paintmat": "carpaint",
+    "flip": true,
+    "supersedes": "mazda-mx-5-miata-2006-r2"
+  },
+  "acura-mdx-2007-r2-hd": {
+    "covers": {
+      "make": "Acura",
+      "model": "MDX",
+      "years": [
+        2022,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "5a1ef30c43a84ebc8634bec993550abb",
+    "paintmat": "paint-glossy_tertiary-brakes",
+    "flip": true,
+    "supersedes": "acura-mdx-2007-r2"
+  },
+  "toyota-4runner-2010-b-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "4Runner",
+      "years": [
+        2010,
+        2024
+      ],
+      "aliases": []
+    },
+    "sketchfab": "d8f3f63967514a81a1dbb02c09cd6fb4",
+    "paintmat": "carpaint",
+    "supersedes": "toyota-4runner-2010-b"
+  },
+  "audi-a4-2017-r3-hd": {
+    "covers": {
+      "make": "Audi",
+      "model": "A4",
+      "years": [
+        2017,
+        2024
+      ],
+      "aliases": []
+    },
+    "sketchfab": "9f0af93c03094258bffd99f1bf5ef0cd",
+    "paintmat": "color_garage",
+    "flip": true,
+    "supersedes": "audi-a4-2017-r3"
+  },
+  "bmw-3-series-2012-r3-hd": {
+    "covers": {
+      "make": "BMW",
+      "model": "3 Series",
+      "years": [
+        2012,
+        2018
+      ],
+      "aliases": []
+    },
+    "sketchfab": "71746440f98d48ca9ea41ceeaa3504c7",
+    "paintmat": "f31_body",
+    "supersedes": "bmw-3-series-2012-r3"
+  },
+  "chevrolet-corvette-2014-r3-hd": {
+    "covers": {
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "years": [
+        2014,
+        2019
+      ],
+      "aliases": []
+    },
+    "sketchfab": "92b1b185b0d44847b0d099a787f8ed12",
+    "paintmat": "cChevrolet_CorvetteZR1SH1_2018Paint_Material1",
+    "flip": true,
+    "supersedes": "chevrolet-corvette-2014-r3"
+  },
+  "ford-explorer-2011-b-r3-hd": {
+    "covers": {
+      "make": "Ford",
+      "model": "Explorer",
+      "years": [
+        2011,
+        2019
+      ],
+      "aliases": []
+    },
+    "sketchfab": "3a65f6d3683048efa9e2f04bce565941",
+    "paintmat": "carpaint",
+    "supersedes": "ford-explorer-2011-b-r3"
+  },
+  "lexus-is-2014-r3-hd": {
+    "covers": {
+      "make": "Lexus",
+      "model": "IS",
+      "years": [
+        2014,
+        2020
+      ],
+      "aliases": []
+    },
+    "sketchfab": "613db0ae1d4c437a866d0688c5667d14",
+    "paintmat": "Paint1Mtl",
+    "flip": true,
+    "supersedes": "lexus-is-2014-r3"
+  },
+  "porsche-cayenne-2011-c-r3-hd": {
+    "covers": {
+      "make": "Porsche",
+      "model": "Cayenne",
+      "years": [
+        2011,
+        2018
+      ],
+      "aliases": []
+    },
+    "sketchfab": "bdc888633910404db4fa58e694c5ee39",
+    "paintmat": "carpaint",
+    "supersedes": "porsche-cayenne-2011-c-r3"
+  },
+  "tesla-cybertruck-2024-c-r3-hd": {
+    "covers": {
+      "make": "Tesla",
+      "model": "Cybertruck",
+      "years": [
+        2024,
+        2026
+      ],
+      "aliases": []
+    },
+    "sketchfab": "1ab0c3f248fa47019c4311abce9731a0",
+    "paintmat": "Base",
+    "flip": true,
+    "tintmat": "Material.004",
+    "supersedes": "tesla-cybertruck-2024-c-r3"
+  },
+  "hyundai-elantra-5g-hd": {
+    "covers": {
+      "make": "Hyundai",
+      "model": "Elantra",
+      "years": [
+        2011,
+        2016
+      ]
+    },
+    "sketchfab": "da9653173c984ad3b8b60b01f1abf13b",
+    "title": "2014 Hyundai Elantra SE",
+    "author": "SanjithArivoli",
+    "license": "CC BY 4.0",
+    "paintmat": "Matte__FFAAE3FF",
+    "flip": false,
+    "supersedes": "hyundai-elantra-5g"
+  },
+  "mazda-mx5-nb-hd": {
+    "covers": {
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "years": [
+        1999,
+        2005
+      ]
+    },
+    "sketchfab": "25fc4c8bd4494fe0b9e456644b269c6f",
+    "title": "1998 Mazda MX 5 (Nb)",
+    "author": "Res1n",
+    "license": "CC BY 4.0",
+    "paintmat": "carpaint",
+    "flip": false,
+    "supersedes": "mazda-mx5-nb"
+  },
+  "generic-sedan-hd": {
+    "sketchfab": "7fd6e15785fa4aa9bfd6e31eb7c97ba6",
+    "paintmat": "Kiri10_bodymat",
+    "flip": true,
+    "bodyStyles": [
+      "sedan"
+    ],
+    "tintmat": "UCB_Lights_and_Glass_Transperent",
+    "supersedes": "generic-sedan"
+  },
+  "generic-coupe-hd": {
+    "sketchfab": "20f9af9b8a404d5cb022ac6fe87f21f5",
+    "paintmat": "Body_0",
+    "flip": true,
+    "keep": "Coupe Body",
+    "bodyStyles": [
+      "coupe",
+      "convertible"
+    ],
+    "noWheels": true,
+    "supersedes": "generic-coupe"
+  },
+  "generic-hatchback-hd": {
+    "sketchfab": "2866efdfa943484391ef8313768e074d",
+    "paintmat": "Urban10_bodymat",
+    "flip": true,
+    "bodyStyles": [
+      "hatchback"
+    ],
+    "tintmat": "UCB_Lights_and_Glass_Transperent",
+    "supersedes": "generic-hatchback"
+  },
+  "generic-wagon-hd": {
+    "sketchfab": "cfaabdec76a74b68a48ba5657b6d9aee",
+    "paintmat": "grey_car_paint",
+    "flip": false,
+    "bodyStyles": [
+      "wagon"
+    ],
+    "supersedes": "generic-wagon"
+  },
+  "generic-suv-hd": {
+    "sketchfab": "5db696c6ed5d4bdc87905c1040fa072a",
+    "paintmat": "body",
+    "flip": true,
+    "bodyStyles": [
+      "suv",
+      "crossover"
+    ],
+    "supersedes": "generic-suv"
+  },
+  "generic-pickup-hd": {
+    "sketchfab": "2a3afc6780614a819fb575fee959b3ab",
+    "paintmat": "Body_4",
+    "flip": false,
+    "keep": "Pickup Body",
+    "bodyStyles": [
+      "pickup"
+    ],
+    "supersedes": "generic-pickup"
+  },
+  "generic-van-hd": {
+    "sketchfab": "20f9af9b8a404d5cb022ac6fe87f21f5",
+    "paintmat": "Body_2",
+    "flip": false,
+    "keep": "minivan body",
+    "bodyStyles": [
+      "van",
+      "minivan"
+    ],
+    "supersedes": "generic-van"
   }
 }

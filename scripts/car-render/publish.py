@@ -172,7 +172,7 @@ def _complete(k):
 # A fully published `<key>-hd` (hdify.py) replaces the car it supersedes in the catalog.
 superseded = {c["supersedes"] for k, c in manifest.items() if c.get("supersedes") and _complete(k)}
 for key, car in manifest.items():
-    if key in superseded: continue
+    if key in superseded and key not in sys.argv[2:]: continue  # (named explicitly: still convert it, just keep it out of the catalog)
     if extras_only and (not only or key in only):
         box = car_box(key)
         if box: publish_extras(key, box)
