@@ -18,14 +18,25 @@ struct ExploreFeedCard: View {
 
     @State private var pageIndex = 0
 
-    private static let cornerRadius: CGFloat = 18
+    private static let cornerRadius: CGFloat = 20
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ownerHeader
+        // One card (photo or studio render on top, then name, owner and
+        // stats) in the same rounded container the hero uses, so the feed
+        // reads as a stack of finished objects rather than loose rows.
+        VStack(alignment: .leading, spacing: 0) {
             photoAndName
-            actionRow
+            VStack(alignment: .leading, spacing: 12) {
+                ownerHeader
+                actionRow
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 14)
         }
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
+        .overlay(RoundedRectangle(cornerRadius: Self.cornerRadius).strokeBorder(Color.primary.opacity(0.06)))
     }
 
     // MARK: - Owner header
@@ -33,10 +44,10 @@ struct ExploreFeedCard: View {
     private var ownerHeader: some View {
         Button(action: onOwnerTap) {
             HStack(spacing: 10) {
-                OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 34)
+                OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 26)
                 Text("@\(car.ownerUsername)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.primary)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.secondary)
                     .lineLimit(1)
                 if ownerIsPro { ProBadge() }
                 Spacer(minLength: 0)
@@ -53,17 +64,20 @@ struct ExploreFeedCard: View {
     // separate action (per the redesign spec).
 
     private var photoAndName: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             photoSection
             HStack(spacing: 6) {
                 Text(car.displayName)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.title3.weight(.bold))
                     .foregroundColor(.primary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 if car.isModified {
                     modifiedTag
                 }
             }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(car.displayName) by @\(car.ownerUsername), \(likesAccessibilityText)\(car.isModified ? ", modified" : "")")
@@ -97,7 +111,7 @@ struct ExploreFeedCard: View {
         Color.clear
             .aspectRatio(car.galleryURLs.isEmpty ? 4.0 / 3.0 : 4.0 / 5.0, contentMode: .fit)
             .overlay { photoContent }
-            .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
+            .clipped()
             .overlay(alignment: .topLeading) {
                 if car.isNew {
                     ExploreNewBadge().padding(10)
@@ -187,8 +201,7 @@ struct ExploreFeedCard: View {
                     .accessibilityLabel("Estimated value \(range)")
             }
         }
-        .padding(.horizontal, 2)
-    }
+        }
 }
 
 /// Small accent-colored "NEW" capsule for a car made public in the last 7

@@ -430,7 +430,7 @@ struct ExploreView: View {
             Text(filters.isEmpty
                 ? (selectedCategory == .all ? "All Cars" : selectedCategory.rawValue)
                 : "\(filteredCars.count) Car\(filteredCars.count == 1 ? "" : "s")")
-                .font(.headline).fontWeight(.semibold)
+                .font(.title3.weight(.bold))
             Spacer(minLength: 0)
             if !filters.isEmpty {
                 Button("Clear Filters") {
