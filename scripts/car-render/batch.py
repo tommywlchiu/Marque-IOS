@@ -2,6 +2,7 @@
 """batch.py <glb-dir> <out-dir> [car-key ...] — renders every manifest car x palette color x 36 frames,
 raw PNGs to <out-dir>/_png/<car>/<color>/<NN>.png; publish.py crops + converts them."""
 import json, os, subprocess, sys, glob
+import renderconfig as RC
 from PIL import Image
 here = os.path.dirname(os.path.abspath(__file__))
 glbdir, outdir = sys.argv[1], sys.argv[2]
@@ -18,7 +19,7 @@ for key in only or list(manifest):  # in the order given, so the caller can prio
         print("SKIP (already rendered)", key, flush=True); continue
     raw = os.path.join(outdir, "_png", key)
     args = ["blender", "-b", "--python-exit-code", "1", "-P", os.path.join(here, "render_car.py"), "--", f"in={glb}", f"out={raw}",
-            f"paintmat={car['paintmat']}", "engine=BLENDER_EEVEE", "samples=48", "res=1200x675",
+            f"paintmat={car['paintmat']}", "engine=BLENDER_EEVEE", f"samples={RC.MAIN_SAMPLES}", RC.RES_ARG,
             f"colors={colors}", "frames=36"] + (["flip=1"] if car.get("flip") else []) \
            + ([f"styles={car['styles']}"] if car.get("styles") else []) \
            + (["invert=1"] if car.get("invert") else []) \

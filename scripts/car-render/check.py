@@ -12,7 +12,8 @@ import json, os, sys
 from PIL import Image
 
 here = os.path.dirname(os.path.abspath(__file__))
-root = os.path.join(os.path.dirname(os.path.dirname(here)), "public", "carRenders", "v1")
+import renderconfig as RC
+root = os.path.join(os.path.dirname(os.path.dirname(here)), "public", "carRenders", RC.OUT)
 catalog = json.load(open(os.path.join(root, "catalog.json")))
 FRAMES, COLORS = catalog["frames"], catalog["colors"]
 styles = [w["id"] for w in catalog.get("wheelStyles", [])]
