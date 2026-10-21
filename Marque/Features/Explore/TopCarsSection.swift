@@ -86,10 +86,10 @@ struct TopCarsSection: View {
             if !hasLoadedOnce {
                 TopCarsSkeleton()
             } else {
-                if isAutoFallback {
-                    Text(exploreStore.topCarsFailedPeriods.contains(.thisWeek)
-                         ? "Couldn't load this week — showing all-time"
-                         : "No likes this week yet — showing all-time")
+                if isAutoFallback && exploreStore.topCarsFailedPeriods.contains(.thisWeek) {
+                    // A quiet week isn't worth a caption (the control already
+                    // reads "All Time"); a failed load is.
+                    Text("Couldn't load this week — showing all-time")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 16)
@@ -102,7 +102,7 @@ struct TopCarsSection: View {
     private var loadErrorCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Top Cars")
-                .font(.headline).fontWeight(.semibold)
+                .font(.title3.weight(.bold))
                 .padding(.horizontal, 16)
             HStack(spacing: 12) {
                 Image(systemName: "wifi.exclamationmark")
@@ -128,7 +128,7 @@ struct TopCarsSection: View {
     private var header: some View {
         HStack {
             Text("Top Cars")
-                .font(.headline).fontWeight(.semibold)
+                .font(.title3.weight(.bold))
             Spacer(minLength: 0)
             periodControl
         }
@@ -146,13 +146,13 @@ struct TopCarsSection: View {
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(
-                            selectedPeriod == period ? Color(.systemBackground) : Color.clear,
+                            effectivePeriod == period ? Color(.systemBackground) : Color.clear,
                             in: Capsule()
                         )
-                        .foregroundColor(selectedPeriod == period ? .primary : .secondary)
+                        .foregroundColor(effectivePeriod == period ? .primary : .secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityAddTraits(selectedPeriod == period ? [.isSelected] : [])
+                .accessibilityAddTraits(effectivePeriod == period ? [.isSelected] : [])
             }
         }
         .padding(3)
@@ -225,7 +225,7 @@ private struct TopCarCard: View {
                     OwnerAvatar(avatarURL: car.ownerAvatarURL, username: car.ownerUsername, size: 16)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(car.displayName)
-                            .font(.caption2.weight(.semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundColor(.primary)
                             .lineLimit(1)
                         Text(countText)
@@ -251,7 +251,7 @@ private struct TopCarCard: View {
                     .frame(width: Self.thumbWidth, height: Self.thumbHeight)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var countText: String {
