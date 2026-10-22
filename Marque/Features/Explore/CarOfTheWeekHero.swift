@@ -18,6 +18,9 @@ struct CarOfTheWeekHero: View {
     private static let cornerRadius: CGFloat = 20
 
     private var likeCount: Int { likeStore.displayedLikeCount(for: car) }
+    /// Only a car with weekly likes has "won" the week; otherwise the hero is
+    /// just the newest photo car, and says so.
+    private var isWeeklyTop: Bool { car.weeklyLikeCount > 0 }
     private var likesText: String { likeCount == 1 ? "1 like" : "\(likeCount) likes" }
 
     var body: some View {
@@ -46,7 +49,7 @@ struct CarOfTheWeekHero: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Car of the Week: \(car.displayName) by @\(car.ownerUsername)\(likeCount > 0 ? ", \(likesText)" : "")")
+        .accessibilityLabel("\(isWeeklyTop ? "Car of the Week" : "Featured"): \(car.displayName) by @\(car.ownerUsername)\(likeCount > 0 ? ", \(likesText)" : "")")
         .accessibilityAddTraits(.isButton)
         .accessibilityHint("Opens car details")
     }
@@ -102,9 +105,9 @@ struct CarOfTheWeekHero: View {
 
     private var eyebrow: some View {
         HStack(spacing: 5) {
-            Image(systemName: "trophy.fill")
+            Image(systemName: isWeeklyTop ? "trophy.fill" : "star.fill")
                 .font(.caption2)
-            Text("CAR OF THE WEEK")
+            Text(isWeeklyTop ? "CAR OF THE WEEK" : "FEATURED")
                 .font(.caption2.weight(.heavy))
                 .kerning(0.6)
         }

@@ -46,30 +46,32 @@ private extension View {
 
 // MARK: - Feed card skeleton
 
-/// One grey placeholder standing in for `ExploreFeedCard`: header circle +
-/// line, a 4:5 photo block, a name line, and an action row.
+/// One grey placeholder standing in for `ExploreFeedCard`: the same rounded
+/// container, a 4:5 media block, a name line, an owner row and a stats row.
 struct ExploreFeedCardSkeleton: View {
+    private var bar: Color { Color(.systemGray5) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Circle().fill(Color(.systemGray5)).frame(width: 34, height: 34)
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color(.systemGray5))
-                    .frame(width: 110, height: 12)
-                Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 0) {
+            Rectangle().fill(bar).aspectRatio(4.0 / 5.0, contentMode: .fit)
+            RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: 190, height: 20)
+                .padding(.horizontal, 14).padding(.top, 12)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Circle().fill(bar).frame(width: 26, height: 26)
+                    RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: 110, height: 12)
+                    Spacer(minLength: 0)
+                }
+                HStack(spacing: 16) {
+                    RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: 44, height: 14)
+                    RoundedRectangle(cornerRadius: 4).fill(bar).frame(width: 44, height: 14)
+                    Spacer(minLength: 0)
+                }
             }
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color(.systemGray5))
-                .aspectRatio(4.0 / 5.0, contentMode: .fit)
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color(.systemGray5))
-                .frame(width: 160, height: 14)
-            HStack(spacing: 16) {
-                RoundedRectangle(cornerRadius: 4).fill(Color(.systemGray5)).frame(width: 44, height: 14)
-                RoundedRectangle(cornerRadius: 4).fill(Color(.systemGray5)).frame(width: 44, height: 14)
-                Spacer(minLength: 0)
-            }
+            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 14)
         }
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
         .shimmering()
         .padding(.horizontal, 16)
     }
@@ -100,7 +102,7 @@ struct TopCarsSkeleton: View {
             HStack(spacing: 12) {
                 ForEach(0..<4, id: \.self) { _ in
                     VStack(alignment: .leading, spacing: 6) {
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: 16)
                             .fill(Color(.systemGray5))
                             .frame(width: width, height: height)
                         RoundedRectangle(cornerRadius: 4).fill(Color(.systemGray5)).frame(width: width * 0.7, height: 10)
