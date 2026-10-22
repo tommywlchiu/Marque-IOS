@@ -298,3 +298,52 @@ struct ExploreNoPhotoPlaceholder: View {
         }
     }
 }
+
+/// The cover for a public car with no photos, on its detail page: the studio
+/// render on the Garage's charcoal, spinnable by dragging once its 36 frames
+/// are in (the same turntable as the Garage hero, stock wheels only: the
+/// public car doesn't carry the owner's customization). Shows the still
+/// straight away; with no render for the car (or no catalog yet) it falls
+/// back to `ExploreNoPhotoPlaceholder`'s glyph.
+struct PublicCarSpinCover: View {
+    let car: PublicCar
+
+    @State private var still: UIImage?
+    @State private var frames: [UIImage]?
+    @State private var plates: CarRenderLibrary.PlateTrack?
+
+    private var key: String {
+        [car.make, car.model, car.year, car.color, car.bodyStyle].joined(separator: "|")
+    }
+
+    var body: some View {
+        Group {
+            if let still {
+                ZStack {
+                    GarageTheme.background
+                    RadialGradient(colors: [Color.white.opacity(0.10), .clear],
+                                   center: .center, startRadius: 0, endRadius: 240)
+                    RenderedCarSpinView(still: still, frames: frames, plates: plates)
+                        .padding(.horizontal, 8)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Studio render of the \(car.displayName)")
+                .accessibilityHint(frames == nil ? "" : "Drag sideways to spin")
+            } else {
+                ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car, iconSize: 40, showsLabel: false)
+            }
+        }
+        .task(id: key) {
+            guard let match = CarRenderLibrary.match(make: car.make, model: car.model, year: car.year,
+                                                     color: car.color, bodyStyle: car.bodyStyle,
+                                                     in: await CarRenderLibrary.catalog()) else { return }
+            if let cached = CarRenderLibrary.cachedStill(for: match) {
+                still = cached
+            } else {
+                still = await CarRenderLibrary.frame(0, of: match)
+            }
+            plates = await CarRenderLibrary.plates(of: match)
+            frames = await CarRenderLibrary.allFrames(of: match)
+        }
+    }
+}
