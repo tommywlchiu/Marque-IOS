@@ -7,7 +7,8 @@ import SwiftUI
 ///
 /// If This Week has no cars (after filtering) it falls back to All Time
 /// automatically, with a caption explaining why. If both are empty, the
-/// whole section renders as nothing, unless a load failed, in which case
+/// whole section renders as nothing (as it does with fewer than
+/// `minimumCars`), unless a load failed, in which case
 /// it shows a "Couldn't load" card with Retry.
 struct TopCarsSection: View {
     var onOwnerTap: (PublicCar) -> Void
@@ -22,6 +23,9 @@ struct TopCarsSection: View {
     @State private var reloadToken = 0
 
     static let displayLimit = 10
+    /// A ranking of one or two cars reads as an unfinished carousel (a #1 and
+    /// #2 and blank space), so the section waits until there are enough.
+    static let minimumCars = 3
 
     private func ranked(_ period: TopCarsPeriod) -> [PublicCar] {
         Array(blockStore.filter(exploreStore.topCars(period), ownerUID: \.ownerUID).prefix(Self.displayLimit))
@@ -56,7 +60,7 @@ struct TopCarsSection: View {
         Group {
             if showsLoadError {
                 loadErrorCard
-            } else if hasLoadedOnce && thisWeekRanked.isEmpty && allTimeRanked.isEmpty {
+            } else if hasLoadedOnce && displayedCars.count < Self.minimumCars {
                 EmptyView()
             } else {
                 content
