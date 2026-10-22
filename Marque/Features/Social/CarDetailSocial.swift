@@ -55,7 +55,7 @@ struct PublicCarPhotoHeader: View {
                 }
             }
         } else {
-            ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car, iconSize: 40, showsLabel: false)
+            PublicCarSpinCover(car: car)
                 .frame(maxWidth: .infinity).frame(height: 200)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
