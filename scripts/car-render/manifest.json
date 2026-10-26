@@ -4714,5 +4714,23 @@
       "minivan"
     ],
     "supersedes": "generic-van"
+  },
+  "toyota-highlander-xu70-hd": {
+    "covers": {
+      "make": "Toyota",
+      "model": "Highlander",
+      "years": [
+        2020,
+        2026
+      ],
+      "aliases": [
+        "Highlander Hybrid"
+      ]
+    },
+    "sketchfab": "ff144d062f244a3ebfae71bc2a41564b",
+    "paintmat": "Paint_Color",
+    "flip": true,
+    "tintmat": "Index_0_2",
+    "supersedes": "toyota-highlander-xu70"
   }
 }
