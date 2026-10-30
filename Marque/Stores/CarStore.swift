@@ -342,7 +342,7 @@ class CarStore: ObservableObject {
 
     /// Optional public fields that must be deleted, not just omitted, when nil.
     /// (valueRange is not here: it's server-owned and never written by the client.)
-    private static let clearablePublicKeys = ["engineSoundURL", "photoStorageURL"]
+    private static let clearablePublicKeys = ["engineSoundURL", "photoStorageURL", "customization"]
 
     private func publicProjectionChanged(from old: Car, to new: Car) -> Bool {
         let encoder = Firestore.Encoder()

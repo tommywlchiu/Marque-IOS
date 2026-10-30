@@ -72,3 +72,85 @@ struct ActiveModelFilterChip: View {
         .padding(.horizontal, 16)
     }
 }
+
+// MARK: - Suggested owners
+
+/// "People to follow" for the empty Following tab: owners of public cars the
+/// user doesn't follow yet (never themselves), most-liked first. Each row opens
+/// the owner's profile; the button follows without leaving Explore.
+struct SuggestedOwnersSection: View {
+    let cars: [PublicCar]
+    var onOpenOwner: (_ uid: String, _ username: String) -> Void
+
+    @EnvironmentObject private var followStore: FollowStore
+    @EnvironmentObject private var authService: AuthService
+    @EnvironmentObject private var exploreStore: ExploreStore
+
+    private struct Suggestion: Identifiable {
+        let uid: String
+        let username: String
+        let avatarURL: String?
+        let carCount: Int
+        let likes: Int
+        let topCar: String
+        var id: String { uid }
+    }
+
+    private var myUID: String? { authService.currentUser?.id }
+
+    private var suggestions: [Suggestion] {
+        let byOwner = Dictionary(grouping: cars, by: \.ownerUID)
+        return byOwner.compactMap { uid, owned -> Suggestion? in
+            guard uid != myUID, !followStore.isFollowing(uid),
+                  let top = owned.max(by: { $0.likeCount < $1.likeCount }) else { return nil }
+            return Suggestion(uid: uid, username: top.ownerUsername, avatarURL: top.ownerAvatarURL,
+                              carCount: owned.count, likes: owned.reduce(0) { $0 + $1.likeCount },
+                              topCar: top.displayName)
+        }
+        .filter { !$0.username.isEmpty }
+        .sorted { ($0.likes, $0.carCount, $1.username) > ($1.likes, $1.carCount, $0.username) }
+        .prefix(5)
+        .map { $0 }
+    }
+
+    var body: some View {
+        let list = suggestions
+        if !list.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("People to follow").font(.title3.weight(.bold))
+                ForEach(list) { s in
+                    HStack(spacing: 12) {
+                        Button { onOpenOwner(s.uid, s.username) } label: {
+                            HStack(spacing: 12) {
+                                OwnerAvatar(avatarURL: s.avatarURL, username: s.username, size: 44)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 6) {
+                                        Text("@\(s.username)").font(.subheadline.weight(.semibold)).foregroundColor(.primary)
+                                        if exploreStore.isPro(s.uid) { ProBadge() }
+                                    }
+                                    Text(s.carCount == 1 ? s.topCar : "\(s.topCar) + \(s.carCount - 1) more")
+                                        .font(.caption).foregroundColor(.secondary).lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        FollowButton(isFollowing: false) {
+                            Task {
+                                await followStore.follow(
+                                    uid: s.uid,
+                                    actorDisplayName: authService.currentUser?.displayName ?? "",
+                                    actorUsername: authService.currentUser?.username ?? "",
+                                    actorAvatarURL: authService.currentUser?.avatarURL
+                                )
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemBackground)))
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+}

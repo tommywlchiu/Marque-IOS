@@ -401,6 +401,11 @@ struct ExploreView: View {
                         action: following && modelFilter == nil ? { withAnimation { selectedCategory = .all } } : nil
                     )
                     .padding(.vertical, 20)
+                    if following && modelFilter == nil {
+                        SuggestedOwnersSection(cars: visibleCars) { uid, username in
+                            profileTarget = ProfileTarget(uid: uid, username: username)
+                        }
+                    }
                 }
             } else {
                 LazyVStack(spacing: 28) {
