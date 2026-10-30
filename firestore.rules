@@ -220,7 +220,7 @@ service cloud.firestore {
                 'make', 'model', 'year', 'color', 'mileage', 'trim', 'bodyStyle',
                 'driveType', 'engine', 'fuelType', 'transmission', 'notes',
                 'photoStorageURL', 'photoOffsetY', 'photoURLs', 'serviceHistory',
-                'engineSoundURL', 'updatedAt', 'mods'];
+                'engineSoundURL', 'updatedAt', 'mods', 'customization'];
       }
       // Validates the fields a write touches (`keys`: every key on create,
       // the affected keys on update); a removed optional key is fine.
@@ -262,6 +262,20 @@ service cloud.firestore {
       function validMods(l) {
         return l is list && l.size() <= 30;
       }
+      // The owner's render customization (CarCustomization's encoding):
+      // cosmetic layer ids only. Shallow and size-bounded like mods: unknown
+      // keys are refused, ids are short strings, extras is at most 4.
+      function validCustomization(m) {
+        return m is map
+            && m.keys().hasOnly(['tint', 'stance', 'wheels', 'extras', 'seatColor', 'spoilerFinish', 'blackOptic'])
+            && (!('tint' in m) || m.tint in ['none', 'light', 'medium', 'limo'])
+            && (!('stance' in m) || m.stance in ['stock', 'lowered', 'lifted'])
+            && (!('wheels' in m) || (m.wheels is string && m.wheels.size() <= 40))
+            && (!('extras' in m) || (m.extras is list && m.extras.size() <= 4))
+            && (!('seatColor' in m) || m.seatColor in ['standard', 'white'])
+            && (!('spoilerFinish' in m) || m.spoilerFinish in ['gloss', 'carbon'])
+            && (!('blackOptic' in m) || m.blackOptic is bool);
+      }
       function validPublicFields(d, keys) {
         return (!touches(keys, d, 'photoStorageURL')
                   || d.photoStorageURL == '' || isCarMediaURL(d.photoStorageURL, request.auth.uid, carId))
@@ -270,7 +284,8 @@ service cloud.firestore {
             && (!touches(keys, d, 'ownerUsername')
                   || d.ownerUsername == '' || ownsUsername(d.ownerUsername, request.auth.uid))
             && (!touches(keys, d, 'ownerAvatarURL') || isAvatarURL(d.ownerAvatarURL, request.auth.uid))
-            && (!touches(keys, d, 'mods') || validMods(d.mods));
+            && (!touches(keys, d, 'mods') || validMods(d.mods))
+            && (!touches(keys, d, 'customization') || validCustomization(d.customization));
       }
 
       // The caller must hold the publicCarOwners/{carId} claim (see that rule

@@ -90,6 +90,11 @@ struct PublicCar: Identifiable, Codable {
     /// Engine sound clip download URL, present only while the car is public
     /// and has a clip.
     let engineSoundURL: String?
+    /// How the owner has dressed the car's studio render (wheels, stance,
+    /// tint, extras, black optic), so Explore shows their build, not a stock
+    /// car. nil = stock / not shared. Cosmetic only; shared with the "specs"
+    /// group (see `init(from:ownerUID:...)`).
+    let customization: CarCustomization?
 
     // Server-maintained counts (Cloud Functions). Read-only here: they are
     // NEVER encoded, and firestore.rules rejects any client write to them. 0
@@ -138,7 +143,7 @@ struct PublicCar: Identifiable, Codable {
         case make, model, year, color, mileage, trim, bodyStyle, driveType, engine
         case fuelType, transmission, notes
         case photoStorageURL, photoOffsetY, serviceHistory
-        case photoURLs, valueRange, engineSoundURL
+        case photoURLs, valueRange, engineSoundURL, customization
         case mods
         case likeCount, weeklyLikeCount, commentCount
         case publishedAt = "updatedAt"
@@ -169,6 +174,7 @@ struct PublicCar: Identifiable, Codable {
         photoURLs = try c.decodeIfPresent([String].self, forKey: .photoURLs) ?? []
         valueRange = try c.decodeIfPresent(String.self, forKey: .valueRange)
         engineSoundURL = try c.decodeIfPresent(String.self, forKey: .engineSoundURL)
+        customization = try? c.decodeIfPresent(CarCustomization.self, forKey: .customization)
         likeCount = (try? c.decodeIfPresent(Int.self, forKey: .likeCount)) ?? 0
         weeklyLikeCount = (try? c.decodeIfPresent(Int.self, forKey: .weeklyLikeCount)) ?? 0
         commentCount = (try? c.decodeIfPresent(Int.self, forKey: .commentCount)) ?? 0
@@ -210,6 +216,7 @@ struct PublicCar: Identifiable, Codable {
         try c.encode(mods, forKey: .mods)
         try c.encode(photoURLs, forKey: .photoURLs)
         try c.encodeIfPresent(engineSoundURL, forKey: .engineSoundURL)
+        try c.encodeIfPresent(customization, forKey: .customization)
     }
 }
 
@@ -271,6 +278,9 @@ extension PublicCar {
             : []
         valueRange = nil  // server-owned; see the property
         engineSoundURL = (sharing.engineSound && car.engineSoundURL?.isEmpty == false) ? car.engineSoundURL : nil
+        // A stock car publishes nothing (nil clears the field); gated with
+        // the specs group, like color.
+        customization = (sharing.specs && car.customization != CarCustomization()) ? car.customization : nil
         likeCount = 0
         weeklyLikeCount = 0
         commentCount = 0

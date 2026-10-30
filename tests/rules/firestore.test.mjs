@@ -330,6 +330,17 @@ await check("MODS owner writes mods (merge)", true, () => setDoc(doc(as("owner1"
 await check("MODS owner writes 30 mods", true, () => setDoc(doc(as("owner1"), "publicCars/car1"), { mods: mods(30) }, { merge: true }));
 await check("MODS owner writes 31 mods (over cap)", false, () => setDoc(doc(as("owner1"), "publicCars/car1"), { mods: mods(31) }, { merge: true }));
 await check("MODS owner writes mods as a non-list", false, () => setDoc(doc(as("owner1"), "publicCars/car1"), { mods: "exhaust" }, { merge: true }));
+const custom = (c) => setDoc(doc(as("owner1"), "publicCars/car1"), { customization: c }, { merge: true });
+await check("CUSTOM owner writes a full build", true, () => custom({ tint: "medium", stance: "lowered", wheels: "multi-gold", extras: ["spoiler", "rack"], blackOptic: true }));
+await check("CUSTOM owner writes a minimal build", true, () => custom({ tint: "none", stance: "stock" }));
+await check("CUSTOM owner clears the build", true, () => setDoc(doc(as("owner1"), "publicCars/car1"), { customization: deleteField() }, { merge: true }));
+await check("CUSTOM unknown tint", false, () => custom({ tint: "mirror" }));
+await check("CUSTOM unknown key", false, () => custom({ tint: "none", plate: "ABC123" }));
+await check("CUSTOM wheels over 40 chars", false, () => custom({ wheels: "x".repeat(41) }));
+await check("CUSTOM five extras", false, () => custom({ extras: ["a", "b", "c", "d", "e"] }));
+await check("CUSTOM non-map", false, () => custom("limo"));
+await check("CUSTOM blackOptic non-bool", false, () => custom({ blackOptic: "yes" }));
+await check("CUSTOM stranger writes a build", false, () => setDoc(doc(as("stranger"), "publicCars/car1"), { customization: { tint: "none" } }, { merge: true }));
 await check("MODS stranger writes mods on someone else's car", false, () => setDoc(doc(as("stranger"), "publicCars/car1"), { mods: mods(1) }, { merge: true }));
 
 // ================= worst-case legitimate writes (expression budget) =================

@@ -2,8 +2,9 @@ import Foundation
 
 /// How the owner has dressed their car's studio render in the Garage — layers
 /// the app draws over the pre-rendered frames (`RenderedCarSpinView`), never
-/// re-rendered per user. Private: stored on the owner's `Car`, never copied
-/// to `PublicCar`.
+/// re-rendered per user. Stored on the owner's `Car`; a non-stock build is
+/// also published on `PublicCar.customization` (with the "specs" sharing
+/// group) so Explore can show the car as built.
 ///
 /// Decoding is lenient: a value written by a newer app (a tint level this
 /// build doesn't know) falls back to the default instead of failing the

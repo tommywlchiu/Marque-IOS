@@ -119,25 +119,34 @@ struct ExploreFeedCard: View {
             }
     }
 
+    /// Whether the catalog has a studio render for this car: the last page of
+    /// a photo card, so a swipe goes from the owner's photo to the render.
+    /// Looked up off the render path (the catalog is a sizeable JSON).
+    @State private var hasRender = false
+
     @ViewBuilder
     private var photoContent: some View {
         let urls = car.galleryURLs
+        let pageCount = urls.count + (hasRender ? 1 : 0)
         if urls.isEmpty {
             ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car)
-        } else if urls.count == 1 {
+        } else if pageCount == 1 {
             singlePhoto(urls[0])
+                .task(id: renderKey) { await checkRender() }
         } else {
             ZStack(alignment: .bottom) {
                 TabView(selection: $pageIndex) {
-                    ForEach(Array(urls.enumerated()), id: \.offset) { index, url in
+                    ForEach(0..<pageCount, id: \.self) { index in
                         // A paged TabView builds every page, so only load the
                         // photo on screen and its neighbours; the rest stay a
                         // cheap placeholder until swiped near.
                         Group {
-                            if abs(index - pageIndex) <= 1 {
-                                singlePhoto(url)
-                            } else {
+                            if abs(index - pageIndex) > 1 {
                                 Color(.systemGray6)
+                            } else if index < urls.count {
+                                singlePhoto(urls[index])
+                            } else {
+                                ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car)
                             }
                         }
                         .tag(index)
@@ -145,9 +154,21 @@ struct ExploreFeedCard: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
 
-                pageIndicator(count: urls.count)
+                pageIndicator(count: pageCount)
             }
+            .task(id: renderKey) { await checkRender() }
         }
+    }
+
+    private var renderKey: String {
+        [car.make, car.model, car.year, car.color, car.bodyStyle].joined(separator: "|")
+    }
+
+    private func checkRender() async {
+        let found = CarRenderLibrary.match(make: car.make, model: car.model, year: car.year,
+                                           color: car.color, bodyStyle: car.bodyStyle,
+                                           in: await CarRenderLibrary.catalog()) != nil
+        if found != hasRender { hasRender = found }
     }
 
     /// Center-cropped. `photoOffsetY` is a point offset tuned in the editor's
@@ -301,19 +322,33 @@ struct ExploreNoPhotoPlaceholder: View {
 
 /// The cover for a public car with no photos, on its detail page: the studio
 /// render on the Garage's charcoal, spinnable by dragging once its 36 frames
-/// are in (the same turntable as the Garage hero, stock wheels only: the
-/// public car doesn't carry the owner's customization). Shows the still
-/// straight away; with no render for the car (or no catalog yet) it falls
-/// back to `ExploreNoPhotoPlaceholder`'s glyph.
+/// are in (the same turntable as the Garage hero), dressed the way the owner
+/// built it (`PublicCar.customization`: wheels, stance, tint, extras, seats,
+/// black optic). Shows the still straight away; with no render for the car
+/// (or no catalog yet) it falls back to `ExploreNoPhotoPlaceholder`'s glyph.
 struct PublicCarSpinCover: View {
     let car: PublicCar
 
     @State private var still: UIImage?
     @State private var frames: [UIImage]?
     @State private var plates: CarRenderLibrary.PlateTrack?
+    @State private var tintMasks: [UIImage]?
+    @State private var wheelLayers: [UIImage]?
+    @State private var stockWheels: [UIImage]?
+    @State private var extras: [RenderedCarSpinView.ExtraLayer] = []
+    @State private var seatLayer: [UIImage]?
+    @State private var blackOptic: [UIImage]?
+    @State private var meter: Double?
+
+    private var build: CarCustomization { car.customization ?? CarCustomization() }
 
     private var key: String {
         [car.make, car.model, car.year, car.color, car.bodyStyle].joined(separator: "|")
+    }
+
+    private var stanceLift: CGFloat {
+        guard let meter, stockWheels != nil else { return 0 }
+        return CGFloat(build.stance.lift * meter)
     }
 
     var body: some View {
@@ -323,7 +358,11 @@ struct PublicCarSpinCover: View {
                     GarageTheme.background
                     RadialGradient(colors: [Color.white.opacity(0.10), .clear],
                                    center: .center, startRadius: 0, endRadius: 240)
-                    RenderedCarSpinView(still: still, frames: frames, plates: plates)
+                    RenderedCarSpinView(still: still, frames: frames, plates: plates,
+                                        tintMasks: tintMasks, tint: build.tint,
+                                        wheelLayers: wheelLayers, stockWheels: stockWheels,
+                                        stanceLift: stanceLift, extras: extras,
+                                        seatLayer: seatLayer, blackOpticLayer: blackOptic)
                         .padding(.horizontal, 8)
                 }
                 .accessibilityElement(children: .ignore)
@@ -333,17 +372,45 @@ struct PublicCarSpinCover: View {
                 ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car, iconSize: 40, showsLabel: false)
             }
         }
-        .task(id: key) {
-            guard let match = CarRenderLibrary.match(make: car.make, model: car.model, year: car.year,
-                                                     color: car.color, bodyStyle: car.bodyStyle,
-                                                     in: await CarRenderLibrary.catalog()) else { return }
-            if let cached = CarRenderLibrary.cachedStill(for: match) {
-                still = cached
-            } else {
-                still = await CarRenderLibrary.frame(0, of: match)
-            }
-            plates = await CarRenderLibrary.plates(of: match)
-            frames = await CarRenderLibrary.allFrames(of: match)
+        .task(id: key + "|" + String(describing: build)) { await load() }
+    }
+
+    /// Loads the still first, then each layer the owner's build asks for.
+    /// Every layer is optional: one that fails to load just isn't drawn.
+    private func load() async {
+        guard let match = CarRenderLibrary.match(make: car.make, model: car.model, year: car.year,
+                                                 color: car.color, bodyStyle: car.bodyStyle,
+                                                 in: await CarRenderLibrary.catalog()) else { return }
+        if let cached = CarRenderLibrary.cachedStill(for: match) {
+            still = cached
+        } else {
+            still = await CarRenderLibrary.frame(0, of: match)
         }
+        meter = match.meter
+        plates = await CarRenderLibrary.plates(of: match)
+        if build.tint != .none, match.hasTint {
+            tintMasks = await CarRenderLibrary.tintMasks(of: match)
+        }
+        if let style = build.wheels, match.wheelStyles.contains(style) {
+            wheelLayers = await CarRenderLibrary.wheelLayers(of: match, style: style)
+        }
+        if build.stance != .stock, match.canChangeStance {
+            stockWheels = await CarRenderLibrary.wheelLayers(of: match, style: "stock")
+        }
+        var layers: [RenderedCarSpinView.ExtraLayer] = []
+        for extra in build.extras {
+            let wantsCarbon = extra == .spoiler && build.spoilerFinish == .carbon && match.extras["spoiler-carbon"] != nil
+            let id = wantsCarbon ? "spoiler-carbon" : extra.rawValue
+            guard let rect = match.extras[id], let frames = await CarRenderLibrary.extraLayers(of: match, extra: id) else { continue }
+            layers.append(.init(rect: rect, frames: frames))
+        }
+        extras = layers
+        if build.seatColor == .standard, match.seats.contains(CarRenderLibrary.blackSeatsLayer) {
+            seatLayer = await CarRenderLibrary.seatLayers(of: match, option: CarRenderLibrary.blackSeatsLayer)
+        }
+        if build.blackOptic, match.hasBlackOptic {
+            blackOptic = await CarRenderLibrary.blackOpticLayers(of: match)
+        }
+        frames = await CarRenderLibrary.allFrames(of: match)
     }
 }
