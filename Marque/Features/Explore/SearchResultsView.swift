@@ -89,12 +89,16 @@ struct SearchResultsView: View {
         // autocorrect turning "kdn" into a word.
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
+        .onSubmit(of: .search) { remember(query) }
         .searchScopes($selectedScope) {
             ForEach(SearchScope.allCases, id: \.self) { scope in
                 Text(scope.rawValue).tag(scope)
             }
         }
-        .onAppear { isSearchFocused = true }
+        .onAppear {
+            isSearchFocused = true
+            recents = Self.loadRecents()
+        }
     }
 
     // MARK: - Subviews
@@ -103,16 +107,102 @@ struct SearchResultsView: View {
         EmptyView() // Handled by searchScopes modifier above
     }
 
+    // MARK: - Suggestions (empty query)
+
+    private static let recentsKey = "marque_recent_searches"
+    private static let maxRecents = 6
+    @State private var recents: [String] = []
+
+    private static func loadRecents() -> [String] {
+        UserDefaults.standard.stringArray(forKey: recentsKey) ?? []
+    }
+
+    private func remember(_ term: String) {
+        let t = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard t.count >= 2 else { return }
+        recents.removeAll { $0.caseInsensitiveCompare(t) == .orderedSame }
+        recents.insert(t, at: 0)
+        recents = Array(recents.prefix(Self.maxRecents))
+        UserDefaults.standard.set(recents, forKey: Self.recentsKey)
+    }
+
+    private func clearRecents() {
+        recents = []
+        UserDefaults.standard.removeObject(forKey: Self.recentsKey)
+    }
+
+    /// Makes with public cars, most cars first.
+    private var popularMakes: [String] {
+        var counts: [String: (name: String, n: Int)] = [:]
+        for car in visibleCars where !car.make.isEmpty {
+            let key = CarTaxonomy.squash(car.make)
+            counts[key, default: (car.make, 0)].n += 1
+        }
+        return counts.values.sorted { ($0.n, $1.name) > ($1.n, $0.name) }.prefix(8).map(\.name)
+    }
+
+    private var popularModels: [String] {
+        CarTaxonomy.popularModelGroups(from: visibleCars, minCount: 1, limit: 6).map { "\($0.make) \($0.model)" }
+    }
+
     private var recentSearchesPlaceholder: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary.opacity(0.4))
-            Text("Search for cars, makes, or people")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            Spacer()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                if !recents.isEmpty && selectedScope == .cars {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Recent").font(.title3.weight(.bold))
+                            Spacer()
+                            Button("Clear", action: clearRecents).font(.subheadline)
+                        }
+                        ForEach(recents, id: \.self) { term in
+                            Button { query = term } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "clock.arrow.circlepath").foregroundColor(.secondary)
+                                    Text(term).foregroundColor(.primary)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 6)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                if selectedScope == .cars {
+                    if !popularMakes.isEmpty { chipSection("Makes", terms: popularMakes) }
+                    if !popularModels.isEmpty { chipSection("Models", terms: popularModels) }
+                } else {
+                    Text("Search for a username")
+                        .font(.subheadline).foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity).padding(.top, 60)
+                }
+                if selectedScope == .cars && popularMakes.isEmpty && recents.isEmpty {
+                    Text("Search for cars, makes, or people")
+                        .font(.subheadline).foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity).padding(.top, 60)
+                }
+            }
+            .padding(16)
+        }
+    }
+
+    private func chipSection(_ title: String, terms: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.title3.weight(.bold))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(terms, id: \.self) { term in
+                        Button { query = term; remember(term) } label: {
+                            Text(term)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .background(Capsule().fill(Color(.secondarySystemBackground)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
         }
     }
 
@@ -186,7 +276,7 @@ private struct PublicCarSearchRow: View {
                         }
                     }
                 } else {
-                    placeholder
+                    ExploreNoPhotoPlaceholder(make: car.make, model: car.model, car: car, iconSize: 20, showsLabel: false)
                 }
             }
             .frame(width: 48, height: 48)
