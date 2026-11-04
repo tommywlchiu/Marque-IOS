@@ -260,6 +260,8 @@ class CarStore: ObservableObject {
     func toggleFavorite(_ car: Car) {
         var updated = car
         updated.isFavorite.toggle()
+        // A favorite leads the Wallet stack even once the owner has arranged it.
+        if updated.isFavorite { WalletOrder.moveToFront(car.id.uuidString) }
         updateCar(updated)
     }
 

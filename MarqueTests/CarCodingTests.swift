@@ -86,6 +86,34 @@ final class CarCodingTests: XCTestCase {
     }
 }
 
+final class WalletOrderTests: XCTestCase {
+    private let suite = "marque_wallet_order"
+    override func setUp() { UserDefaults.standard.removeObject(forKey: suite) }
+    override func tearDown() { UserDefaults.standard.removeObject(forKey: suite) }
+
+    func testNoSavedOrderKeepsTheDefault() {
+        XCTAssertEqual(WalletOrder.apply(base: ["b", "a", "license"], saved: []), ["b", "a", "license"])
+    }
+
+    func testSavedOrderWinsDeletedCarsDropAndNewCarsLead() {
+        // saved: license, a, gone, b. "gone" no longer exists, "n" is new.
+        let result = WalletOrder.apply(base: ["n", "a", "b", "license"], saved: ["license", "a", "gone", "b"])
+        XCTAssertEqual(result, ["n", "license", "a", "b"])
+    }
+
+    func testDuplicatesInASavedOrderCollapse() {
+        XCTAssertEqual(WalletOrder.apply(base: ["a", "b"], saved: ["b", "b", "a"]), ["b", "a"])
+    }
+
+    func testFavoritingMovesToFrontOnlyOnceArranged() {
+        WalletOrder.moveToFront("a")
+        XCTAssertEqual(WalletOrder.load(), [], "no saved order yet: favorites already lead by default")
+        WalletOrder.save(["x", "y", "a"])
+        WalletOrder.moveToFront("a")
+        XCTAssertEqual(WalletOrder.load(), ["a", "x", "y"])
+    }
+}
+
 final class CarRangeTests: XCTestCase {
     func testRangeKindByFuelType() {
         XCTAssertEqual(Car(fuelType: "Electric").rangeKind, .charge)

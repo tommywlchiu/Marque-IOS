@@ -5,6 +5,7 @@
 #   sim.sh shot <file.png> [delay]   screenshot at 2× points (wait `delay` s first, default 1)
 #   sim.sh tap X Y                   tap at pixel X,Y of a `shot` image
 #   sim.sh drag X1 Y1 X2 Y2          drag, same coordinates (spin a hero, scroll a list)
+#   sim.sh holddrag X1 Y1 X2 Y2      press and hold, then drag (long-press gestures, drag-to-reorder)
 #   sim.sh scroll [N]                N swipes up (content moves up), default 1
 #
 # Coordinates are pixels of the image `shot` writes, so read a position off a
@@ -71,6 +72,11 @@ drag)
   activate; read -r AX AY < <(to_screen "$2" "$3"); read -r BX BY < <(to_screen "$4" "$5")
   "$BIN" drag "$AX" "$AY" "$BX" "$BY"
   ;;
+holddrag)
+  [ $# -eq 5 ] || die "usage: sim.sh holddrag X1 Y1 X2 Y2"
+  activate; read -r AX AY < <(to_screen "$2" "$3"); read -r BX BY < <(to_screen "$4" "$5")
+  "$BIN" holddrag "$AX" "$AY" "$BX" "$BY"
+  ;;
 scroll)
   activate
   read -r AX AY < <(to_screen 400 1100); read -r BX BY < <(to_screen 400 400)
@@ -79,5 +85,5 @@ scroll)
 window)
   "$BIN" window
   ;;
-*) die "usage: sim.sh shot <file> [delay] | tap X Y | drag X1 Y1 X2 Y2 | scroll [N] | window" ;;
+*) die "usage: sim.sh shot <file> [delay] | tap X Y | drag X1 Y1 X2 Y2 | holddrag X1 Y1 X2 Y2 | scroll [N] | window" ;;
 esac

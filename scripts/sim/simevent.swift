@@ -4,6 +4,7 @@
 //   simevent window              Simulator's device window: x y w h (screen points)
 //   simevent click X Y           click at screen point X,Y
 //   simevent drag X1 Y1 X2 Y2    press, move in 20 steps, release
+//   simevent holddrag X1 Y1 X2 Y2  press, hold 0.6 s (long press), then drag and release
 // Posting events needs Accessibility permission for the terminal app.
 import CoreGraphics
 import Foundation
@@ -36,6 +37,14 @@ case ("drag", 4):
         post(.leftMouseDragged, CGPoint(x: s.x + (e.x - s.x) * f, y: s.y + (e.y - s.y) * f)); usleep(15_000)
     }
     usleep(100_000); post(.leftMouseUp, e)
+case ("holddrag", 4):
+    let s = CGPoint(x: nums[0], y: nums[1]), e = CGPoint(x: nums[2], y: nums[3])
+    post(.mouseMoved, s); usleep(50_000); post(.leftMouseDown, s); usleep(600_000)
+    for i in 1...40 {
+        let f = Double(i) / 40
+        post(.leftMouseDragged, CGPoint(x: s.x + (e.x - s.x) * f, y: s.y + (e.y - s.y) * f)); usleep(20_000)
+    }
+    usleep(150_000); post(.leftMouseUp, e)
 default:
-    FileHandle.standardError.write("usage: simevent window | click X Y | drag X1 Y1 X2 Y2\n".data(using: .utf8)!); exit(2)
+    FileHandle.standardError.write("usage: simevent window | click X Y | drag X1 Y1 X2 Y2 | holddrag X1 Y1 X2 Y2\n".data(using: .utf8)!); exit(2)
 }

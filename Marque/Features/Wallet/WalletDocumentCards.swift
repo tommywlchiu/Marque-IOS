@@ -172,6 +172,7 @@ struct WalletStackCard: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 8)
                 .padding(.top, Self.height - 112 - 6)
+                .transition(.opacity)
                 .accessibilityHidden(true)
         }
     }
@@ -198,6 +199,7 @@ struct WalletStackCard: View {
                     onToggleFavorite?()
                 } label: {
                     Image(systemName: car.isFavorite ? "star.fill" : "star")
+                        .symbolEffect(.bounce, value: car.isFavorite)
                         .font(.title3)
                         .foregroundStyle(car.isFavorite ? Color.yellow : Color.white.opacity(0.6))
                         .frame(width: 44, height: 44)
@@ -261,7 +263,8 @@ struct WalletStackCard: View {
         if let cached = CarRenderLibrary.cachedStill(for: car) {
             render = cached
         } else {
-            render = await CarRenderLibrary.still(for: car)
+            let fetched = await CarRenderLibrary.still(for: car)
+            withAnimation(.easeOut(duration: 0.3)) { render = fetched }
         }
     }
 }

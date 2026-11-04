@@ -15,6 +15,45 @@ import SwiftUI
 enum WalletTab: Hashable {
     case license
     case car(UUID)
+
+    /// Stable string id for persisting the order ("license" or the car's UUID).
+    var storageID: String {
+        switch self {
+        case .license: return WalletOrder.licenseID
+        case .car(let id): return id.uuidString
+        }
+    }
+}
+
+/// The owner's drag-arranged order of Wallet cards, kept on the device. Cars
+/// and the license are ids; anything not in the saved list yet (a new car) goes
+/// on top, anything no longer present (a deleted car) is ignored. Favoriting a
+/// car moves it to the front (`CarStore.toggleFavorite`).
+enum WalletOrder {
+    static let key = "marque_wallet_order"
+    static let licenseID = "license"
+
+    static func load() -> [String] { UserDefaults.standard.stringArray(forKey: key) ?? [] }
+    static func save(_ ids: [String]) { UserDefaults.standard.set(ids, forKey: key) }
+
+    /// `base` is the default order (favorites first, license last); `saved`
+    /// the owner's arrangement. Unknown ids drop out, new ones lead.
+    static func apply(base: [String], saved: [String]) -> [String] {
+        let known = Set(base)
+        var seen = Set<String>()
+        let kept = saved.filter { known.contains($0) && seen.insert($0).inserted }
+        return base.filter { !seen.contains($0) } + kept
+    }
+
+    /// Puts `id` first, but only once the owner has arranged the cards (with no
+    /// saved order, favorites already lead by default).
+    static func moveToFront(_ id: String) {
+        var ids = load()
+        guard !ids.isEmpty else { return }
+        ids.removeAll { $0 == id }
+        ids.insert(id, at: 0)
+        save(ids)
+    }
 }
 
 struct WalletView: View {
@@ -33,6 +72,15 @@ struct WalletView: View {
     /// The card brought forward, or nil for the stack.
     @State private var openCard: WalletTab?
     @Namespace private var cardNamespace
+    /// The owner's saved arrangement (see `WalletOrder`).
+    @State private var savedOrder: [String] = WalletOrder.load()
+    // Drag-to-reorder: the card being moved, how far it has been dragged, the
+    // index it started from, and the order as it would be if dropped now.
+    @State private var dragging: WalletTab?
+    @State private var dragOffset: CGFloat = 0
+    @State private var dragStartIndex = 0
+    @State private var liveOrder: [WalletTab]?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
@@ -40,7 +88,9 @@ struct WalletView: View {
     /// order), then the license. In Apple Wallet the last card sits in front,
     /// fully visible, with the earlier ones peeking out above it.
     private var tabs: [WalletTab] {
-        carStore.orderedCars.map { .car($0.id) } + [.license]
+        let base: [WalletTab] = carStore.orderedCars.map { .car($0.id) } + [.license]
+        let byID = Dictionary(base.map { ($0.storageID, $0) }, uniquingKeysWith: { first, _ in first })
+        return WalletOrder.apply(base: base.map(\.storageID), saved: savedOrder).compactMap { byID[$0] }
     }
 
     /// The open card, unless it has since disappeared (a deleted car).
@@ -66,10 +116,10 @@ struct WalletView: View {
                 if hasAnyDocumentSurface {
                     if let open = currentOpen {
                         openCardView(open)
-                            .transition(.opacity)
+                            .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                     } else {
                         cardStack
-                            .transition(.opacity)
+                            .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                     }
                 } else {
                     MarqueEmptyState(
@@ -208,22 +258,98 @@ struct WalletView: View {
     // MARK: - Card stack (Apple Wallet style)
 
     private static let peek: CGFloat = 78
+    private var spring: Animation { reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.82) }
 
     private var cardStack: some View {
-        ScrollView {
-            VStack(spacing: -(WalletStackCard.height - Self.peek)) {
-                ForEach(Array(tabs.enumerated()), id: \.element) { index, tab in
+        let order = liveOrder ?? tabs
+        return ScrollView {
+            // Cards are placed by index (each one `peek` below the last), not
+            // stacked in a VStack, so a dragged card can follow the finger
+            // while its neighbours slide to make room.
+            ZStack(alignment: .top) {
+                ForEach(Array(order.enumerated()), id: \.element) { index, tab in
+                    let isDragging = dragging == tab
                     stackCard(for: tab)
                         .matchedGeometryEffect(id: tab, in: cardNamespace)
-                        .zIndex(Double(index))
+                        .scaleEffect(isDragging ? 1.03 : 1)
+                        .shadow(color: .black.opacity(isDragging ? 0.45 : 0), radius: 18, y: 8)
+                        .offset(y: isDragging
+                            ? CGFloat(dragStartIndex) * Self.peek + dragOffset
+                            : CGFloat(index) * Self.peek)
+                        .zIndex(isDragging ? 100 : Double(index))
                         .onTapGesture { open(tab) }
+                        .gesture(reorderGesture(for: tab))
                         .accessibilityAddTraits(.isButton)
+                        .accessibilityAction(named: "Move up") { move(tab, by: -1) }
+                        .accessibilityAction(named: "Move down") { move(tab, by: 1) }
                 }
             }
+            .frame(height: CGFloat(max(order.count - 1, 0)) * Self.peek + WalletStackCard.height, alignment: .top)
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 32)
+            .animation(spring, value: order)
         }
+        .scrollDisabled(dragging != nil)
+        .onChange(of: carStore.cars) { _, _ in savedOrder = WalletOrder.load() }
+    }
+
+    /// Press and hold a card, then drag it up or down: the others make room,
+    /// and the new order is saved when you let go.
+    private func reorderGesture(for tab: WalletTab) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.3)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .onChanged { value in
+                guard case .second(true, let drag?) = value else { return }
+                if dragging == nil { beginDrag(tab) }
+                guard dragging == tab else { return }
+                dragOffset = drag.translation.height
+                updateLiveOrder(for: tab)
+            }
+            .onEnded { _ in endDrag() }
+    }
+
+    private func beginDrag(_ tab: WalletTab) {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        dragStartIndex = tabs.firstIndex(of: tab) ?? 0
+        liveOrder = tabs
+        withAnimation(spring) { dragging = tab }
+    }
+
+    private func updateLiveOrder(for tab: WalletTab) {
+        guard var order = liveOrder, let current = order.firstIndex(of: tab) else { return }
+        let y = CGFloat(dragStartIndex) * Self.peek + dragOffset
+        let target = min(max(Int((y / Self.peek).rounded()), 0), order.count - 1)
+        guard target != current else { return }
+        order.move(fromOffsets: IndexSet(integer: current), toOffset: target > current ? target + 1 : target)
+        UISelectionFeedbackGenerator().selectionChanged()
+        withAnimation(spring) { liveOrder = order }
+    }
+
+    private func endDrag() {
+        if let order = liveOrder {
+            let ids = order.map(\.storageID)
+            WalletOrder.save(ids)
+            savedOrder = ids
+        }
+        withAnimation(spring) {
+            dragging = nil
+            dragOffset = 0
+        }
+        // Drop the live order once the card has settled into its slot.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { liveOrder = nil }
+    }
+
+    /// VoiceOver / non-drag way to rearrange: "Move up" / "Move down".
+    private func move(_ tab: WalletTab, by delta: Int) {
+        var order = tabs
+        guard let i = order.firstIndex(of: tab) else { return }
+        let j = min(max(i + delta, 0), order.count - 1)
+        guard j != i else { return }
+        order.move(fromOffsets: IndexSet(integer: i), toOffset: j > i ? j + 1 : j)
+        let ids = order.map(\.storageID)
+        WalletOrder.save(ids)
+        withAnimation(spring) { savedOrder = ids }
     }
 
     private func open(_ tab: WalletTab) {
