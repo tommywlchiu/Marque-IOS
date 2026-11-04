@@ -30,21 +30,28 @@ struct WalletView: View {
     @State private var editingInsuranceCar: Car?
     @State private var editingRegistrationCar: Car?
     @State private var editingWarrantyCar: Car?
-    @State private var selectedTab: WalletTab?
+    /// The card brought forward, or nil for the stack.
+    @State private var openCard: WalletTab?
+    @Namespace private var cardNamespace
 
     private var user: AppUser { authService.currentUser ?? .preview }
 
-    /// License first (always present, filled or an "Add" prompt — the one
-    /// entry point into it), then one tab per car in garage order.
+    /// The stack, top to bottom: favorite cars, the other cars (garage
+    /// order), then the license. In Apple Wallet the last card sits in front,
+    /// fully visible, with the earlier ones peeking out above it.
     private var tabs: [WalletTab] {
-        [.license] + carStore.cars.map { .car($0.id) }
+        carStore.orderedCars.map { .car($0.id) } + [.license]
     }
 
-    /// Falls back to the first tab if nothing's been picked yet, or the
-    /// selected car was deleted out from under the open tab.
-    private var currentTab: WalletTab {
-        if let selectedTab, tabs.contains(selectedTab) { return selectedTab }
-        return tabs.first ?? .license
+    /// The open card, unless it has since disappeared (a deleted car).
+    private var currentOpen: WalletTab? {
+        guard let openCard, tabs.contains(openCard) else { return nil }
+        return openCard
+    }
+
+    private func car(for tab: WalletTab) -> Car? {
+        guard case .car(let id) = tab else { return nil }
+        return carStore.cars.first { $0.id == id }
     }
 
     var body: some View {
@@ -55,28 +62,14 @@ struct WalletView: View {
                 // strip below is always reachable without scrolling back up
                 // — part of "more compact and easier to navigate."
                 profileHeader
-                Divider().padding(.top, 8)
 
                 if hasAnyDocumentSurface {
-                    WalletTabStrip(tabs: tabs, selected: currentTab, title: tabTitle, icon: tabIcon) { tab in
-                        withAnimation(.spring(response: 0.42, dampingFraction: 0.84)) {
-                            selectedTab = tab
-                        }
-                    }
-                    ScrollView {
-                        tabContent(for: currentTab)
-                            // A fresh identity per tab, so SwiftUI treats a
-                            // switch as the old content leaving and the new
-                            // one entering — not a diff of two card stacks —
-                            // which is what makes the transition read as one
-                            // card pulling up to replace another rather than
-                            // everything just fading.
-                            .id(currentTab)
-                            .padding(16)
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .move(edge: .top).combined(with: .opacity)
-                            ))
+                    if let open = currentOpen {
+                        openCardView(open)
+                            .transition(.opacity)
+                    } else {
+                        cardStack
+                            .transition(.opacity)
                     }
                 } else {
                     MarqueEmptyState(
@@ -93,6 +86,16 @@ struct WalletView: View {
             .navigationTitle("Wallet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if currentOpen != nil {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { openCard = nil }
+                        } label: {
+                            Label("All Cards", systemImage: "chevron.down")
+                                .labelStyle(.titleAndIcon)
+                        }
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button { showingSettings = true } label: {
                         Image(systemName: "gearshape")
@@ -133,14 +136,15 @@ struct WalletView: View {
     // `profileHeader`/`statsRow`.
 
     private var profileHeader: some View {
-        VStack(spacing: 14) {
-            HStack(alignment: .top, spacing: 16) {
-                UserAvatar(user: user, size: 76)
+        VStack(spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
+                UserAvatar(user: user, size: 52)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(user.displayName)
                             .font(.headline)
+                            .lineLimit(1)
                         if user.isVerified {
                             Image(systemName: "checkmark.seal.fill")
                                 .foregroundColor(.blue).font(.subheadline)
@@ -151,30 +155,26 @@ struct WalletView: View {
                     }
                     Text("@\(user.username)")
                         .font(.subheadline).foregroundColor(.secondary)
-                    if !user.location.isEmpty {
-                        Label(user.location, systemImage: "mappin.circle")
+                    if !user.bio.isEmpty {
+                        Text(user.bio)
                             .font(.caption).foregroundColor(.secondary)
+                            .lineLimit(1)
                     }
                 }
 
-                Spacer()
-            }
+                Spacer(minLength: 0)
 
-            if !user.bio.isEmpty {
-                Text(user.bio)
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button("Edit") { showingEditProfile = true }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityLabel("Edit Profile")
             }
 
             statsRow
-
-            Button("Edit Profile") { showingEditProfile = true }
-                .buttonStyle(.bordered)
-                .frame(maxWidth: .infinity)
-                .controlSize(.regular)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+        .padding(.bottom, 10)
     }
 
     private var statsRow: some View {
@@ -190,7 +190,7 @@ struct WalletView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
@@ -205,17 +205,55 @@ struct WalletView: View {
         !user.driverLicenseNumber.isEmpty || !carStore.cars.isEmpty
     }
 
-    private func tabTitle(_ tab: WalletTab) -> String {
-        switch tab {
-        case .license: return "License"
-        case .car(let id): return carStore.cars.first { $0.id == id }?.displayName ?? "Car"
+    // MARK: - Card stack (Apple Wallet style)
+
+    private static let peek: CGFloat = 78
+
+    private var cardStack: some View {
+        ScrollView {
+            VStack(spacing: -(WalletStackCard.height - Self.peek)) {
+                ForEach(Array(tabs.enumerated()), id: \.element) { index, tab in
+                    stackCard(for: tab)
+                        .matchedGeometryEffect(id: tab, in: cardNamespace)
+                        .zIndex(Double(index))
+                        .onTapGesture { open(tab) }
+                        .accessibilityAddTraits(.isButton)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 32)
         }
     }
 
-    private func tabIcon(_ tab: WalletTab) -> String {
-        switch tab {
-        case .license: return "person.text.rectangle.fill"
-        case .car: return "car.fill"
+    private func open(_ tab: WalletTab) {
+        Haptics.tap()
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { openCard = tab }
+    }
+
+    @ViewBuilder
+    private func stackCard(for tab: WalletTab) -> some View {
+        if let car = car(for: tab) {
+            WalletStackCard(kind: .car(car)) {
+                Haptics.tap()
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { carStore.toggleFavorite(car) }
+            }
+        } else {
+            WalletStackCard(kind: .license(user))
+        }
+    }
+
+    /// The tapped card at the top, its documents below (the old per-tab
+    /// content, unchanged).
+    private func openCardView(_ tab: WalletTab) -> some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                stackCard(for: tab)
+                    .matchedGeometryEffect(id: tab, in: cardNamespace)
+                tabContent(for: tab)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+            .padding(16)
         }
     }
 

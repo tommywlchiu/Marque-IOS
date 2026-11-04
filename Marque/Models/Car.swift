@@ -82,6 +82,10 @@ struct Car: Identifiable, Codable, Equatable {
     /// How the Garage's studio render is dressed (tint, wheels, stance,
     /// extras). Private: only the owner's own Garage hero uses it.
     var customization: CarCustomization
+    /// The owner's favorite: listed first in the Wallet's card stack, the
+    /// Garage car switcher, and picked as the Garage's default car. Private
+    /// to the owner (never in `PublicCar`).
+    var isFavorite: Bool = false
 
     /// "Missing info" attention-card suggestions (`GarageSummary.MissingInfo`
     /// raw values, e.g. "vin") the owner has closed out. A dismissal only
@@ -150,6 +154,7 @@ struct Car: Identifiable, Codable, Equatable {
         serviceReminders: [ServiceReminder] = [],
         mods: [CarMod] = [],
         customization: CarCustomization = CarCustomization(),
+        isFavorite: Bool = false,
         dismissedMissingInfo: Set<String> = [],
         resolvedRecalls: Set<String> = []
     ) {
@@ -195,6 +200,7 @@ struct Car: Identifiable, Codable, Equatable {
         self.serviceReminders = serviceReminders
         self.mods = mods
         self.customization = customization
+        self.isFavorite = isFavorite
         self.dismissedMissingInfo = dismissedMissingInfo
         self.resolvedRecalls = resolvedRecalls
     }
@@ -219,6 +225,7 @@ struct Car: Identifiable, Codable, Equatable {
         case maintenanceRecords, serviceReminders
         case mods
         case customization
+        case isFavorite
         case dismissedMissingInfo
         case resolvedRecalls
     }
@@ -287,6 +294,7 @@ struct Car: Identifiable, Codable, Equatable {
         serviceReminders = try c.decodeIfPresent([ServiceReminder].self, forKey: .serviceReminders) ?? []
         mods = try c.decodeIfPresent([CarMod].self, forKey: .mods) ?? []
         customization = try c.decodeIfPresent(CarCustomization.self, forKey: .customization) ?? CarCustomization()
+        isFavorite = (try? c.decodeIfPresent(Bool.self, forKey: .isFavorite)) ?? false
         dismissedMissingInfo = (try? c.decodeIfPresent(Set<String>.self, forKey: .dismissedMissingInfo)) ?? []
         resolvedRecalls = (try? c.decodeIfPresent(Set<String>.self, forKey: .resolvedRecalls)) ?? []
     }
@@ -336,6 +344,7 @@ struct Car: Identifiable, Codable, Equatable {
         try c.encode(serviceReminders, forKey: .serviceReminders)
         try c.encode(mods, forKey: .mods)
         try c.encode(customization, forKey: .customization)
+        if isFavorite { try c.encode(isFavorite, forKey: .isFavorite) }
         if !dismissedMissingInfo.isEmpty { try c.encode(dismissedMissingInfo, forKey: .dismissedMissingInfo) }
         if !resolvedRecalls.isEmpty { try c.encode(resolvedRecalls, forKey: .resolvedRecalls) }
     }

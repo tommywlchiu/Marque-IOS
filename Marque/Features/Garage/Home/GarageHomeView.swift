@@ -38,7 +38,7 @@ struct GarageHomeView: View {
 
     /// The persisted selection, falling back to the first car if it's gone.
     private var selectedCar: Car? {
-        carStore.cars.first(where: { $0.id.uuidString == selectedCarIDString }) ?? carStore.cars.first
+        carStore.cars.first(where: { $0.id.uuidString == selectedCarIDString }) ?? carStore.orderedCars.first
     }
 
     private var atCarLimit: Bool {
