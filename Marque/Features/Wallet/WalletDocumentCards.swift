@@ -110,73 +110,159 @@ private struct RevealButton: View {
     }
 }
 
-// MARK: - Binder tab strip
+// MARK: - Stack card
 
-/// The row of folder-style dividers across the top of the documents area —
-/// License, then one per car. The selected tab reads as the front folder
-/// (full brand-color fill, full height); the rest sit a little shorter and
-/// muted, like dividers peeking out behind it, until tapped.
-struct WalletTabStrip: View {
-    let tabs: [WalletTab]
-    let selected: WalletTab
-    let title: (WalletTab) -> String
-    let icon: (WalletTab) -> String
-    let onSelect: (WalletTab) -> Void
-
-    var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .bottom, spacing: 4) {
-                    ForEach(tabs, id: \.self) { tab in
-                        FolderTab(
-                            title: title(tab),
-                            icon: icon(tab),
-                            isSelected: tab == selected
-                        ) {
-                            onSelect(tab)
-                        }
-                        .id(tab)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-            }
-            .onChange(of: selected) { _, newValue in
-                withAnimation { proxy.scrollTo(newValue, anchor: .center) }
-            }
-        }
-        .background(Color(.systemGray6))
+/// One card in the Wallet's stack: a car (its studio render, name, plate, and
+/// a favorite star) or the driver's license. Only its top strip shows while
+/// other cards sit in front of it, so the title row carries everything that
+/// matters; the lower part shows on the front card and when opened.
+struct WalletStackCard: View {
+    enum Kind {
+        case car(Car)
+        case license(AppUser)
     }
-}
 
-private struct FolderTab: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-    let onTap: () -> Void
+    static let height: CGFloat = 196
+
+    let kind: Kind
+    var onToggleFavorite: (() -> Void)? = nil
+
+    @State private var render: UIImage?
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.subheadline)
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
+        ZStack(alignment: .topLeading) {
+            background
+            if case .car = kind { renderArt }
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                Spacer(minLength: 0)
+                footer
             }
-            .padding(.horizontal, 14)
-            .frame(height: isSelected ? 52 : 40, alignment: .top)
-            .padding(.top, isSelected ? 8 : 14)
-            .frame(minWidth: 64)
-            .foregroundStyle(isSelected ? .white : Color.secondary)
-            .background(
-                UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 12, style: .continuous)
-                    .fill(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.systemGray4)))
-            )
+            .padding(18)
         }
-        .buttonStyle(.plain)
-        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: isSelected)
-        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .frame(height: Self.height)
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Color.white.opacity(0.10)))
+        .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: -3)
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .task(id: renderKey) { await loadRender() }
+    }
+
+    // MARK: Pieces
+
+    @ViewBuilder
+    private var background: some View {
+        switch kind {
+        case .car:
+            LinearGradient(colors: [Color(red: 0.16, green: 0.17, blue: 0.20), Color(red: 0.08, green: 0.09, blue: 0.11)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        case .license:
+            LinearGradient(colors: [.indigo, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+    }
+
+    @ViewBuilder
+    private var renderArt: some View {
+        if let render {
+            Image(uiImage: render)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 112)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 8)
+                .padding(.top, Self.height - 112 - 6)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+            switch kind {
+            case .car(let car):
+                Button {
+                    onToggleFavorite?()
+                } label: {
+                    Image(systemName: car.isFavorite ? "star.fill" : "star")
+                        .font(.title3)
+                        .foregroundStyle(car.isFavorite ? Color.yellow : Color.white.opacity(0.6))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, -10).padding(.trailing, -10)
+                .accessibilityLabel(car.isFavorite ? "Remove \(car.displayName) from favorites" : "Favorite \(car.displayName)")
+            case .license:
+                Image(systemName: "person.text.rectangle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        switch kind {
+        case .car:
+            EmptyView()
+        case .license(let user):
+            HStack {
+                if !user.driverLicenseState.isEmpty {
+                    Text(user.driverLicenseState)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+                Spacer()
+                if user.driverLicenseExpiryDate != nil {
+                    ExpiryBadge(status: DocumentExpiryStatus(user.driverLicenseExpiryDate))
+                }
+            }
+        }
+    }
+
+    private var title: String {
+        switch kind {
+        case .car(let car): return car.displayName.isEmpty ? "Car" : car.displayName
+        case .license: return "Driver's License"
+        }
+    }
+
+    private var subtitle: String? {
+        switch kind {
+        case .car(let car):
+            let parts = [car.licensePlate, car.color].filter { !$0.isEmpty }
+            return parts.isEmpty ? nil : parts.joined(separator: " · ")
+        case .license(let user):
+            return user.driverLicenseNumber.isEmpty ? "Tap to add" : "Private to you"
+        }
+    }
+
+    private var renderKey: String {
+        guard case .car(let car) = kind else { return "" }
+        return [car.make, car.model, car.year, car.color, car.bodyStyle].joined(separator: "|")
+    }
+
+    private func loadRender() async {
+        guard case .car(let car) = kind else { return }
+        if let cached = CarRenderLibrary.cachedStill(for: car) {
+            render = cached
+        } else {
+            render = await CarRenderLibrary.still(for: car)
+        }
     }
 }
 

@@ -252,6 +252,17 @@ class CarStore: ObservableObject {
         return Int(elapsed)
     }
 
+    /// Cars in display order: favorites first, otherwise garage order (stable).
+    var orderedCars: [Car] {
+        cars.filter(\.isFavorite) + cars.filter { !$0.isFavorite }
+    }
+
+    func toggleFavorite(_ car: Car) {
+        var updated = car
+        updated.isFavorite.toggle()
+        updateCar(updated)
+    }
+
     func updateCar(_ car: Car) {
         var car = car
         // Drop any dismissal whose field has since been filled in, so a

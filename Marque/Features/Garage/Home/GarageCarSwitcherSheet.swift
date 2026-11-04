@@ -18,7 +18,7 @@ struct GarageCarSwitcherSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(carStore.cars) { car in
+                    ForEach(carStore.orderedCars) { car in
                         Button {
                             onSelect(car.id)
                             dismiss()
@@ -27,6 +27,15 @@ struct GarageCarSwitcherSheet: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityAddTraits(car.id == selectedCarID ? .isSelected : [])
+                        .contextMenu {
+                            Button {
+                                Haptics.tap()
+                                withAnimation { carStore.toggleFavorite(car) }
+                            } label: {
+                                Label(car.isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                                      systemImage: car.isFavorite ? "star.slash" : "star")
+                            }
+                        }
                     }
 
                     Button {
@@ -86,9 +95,17 @@ private struct CarSwitcherRow: View {
         HStack(spacing: 16) {
             thumbnail
             VStack(alignment: .leading, spacing: 3) {
-                Text(car.displayName)
-                    .font(.headline)
-                    .foregroundColor(GarageTheme.primaryText)
+                HStack(spacing: 6) {
+                    Text(car.displayName)
+                        .font(.headline)
+                        .foregroundColor(GarageTheme.primaryText)
+                    if car.isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                            .accessibilityLabel("Favorite")
+                    }
+                }
                 if !subtitle.isEmpty {
                     Text(subtitle)
                         .font(.subheadline)

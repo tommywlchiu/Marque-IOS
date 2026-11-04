@@ -57,6 +57,33 @@ final class CarCodingTests: XCTestCase {
         object["fullRange"] = "not a number"
         XCTAssertNil(try decode(object).fullRange)
     }
+
+    // MARK: Favorite
+
+    func testFavoriteRoundTripsAndOldCarsAreNotFavorites() throws {
+        var car = Car(make: "Porsche", model: "911", year: "2021")
+        XCTAssertFalse(car.isFavorite)
+        XCTAssertNil(try json(of: car)["isFavorite"], "a non-favorite writes nothing, so existing docs stay unchanged")
+        car.isFavorite = true
+        XCTAssertEqual(try json(of: car)["isFavorite"] as? Bool, true)
+        XCTAssertTrue(try decode(try json(of: car)).isFavorite)
+        var legacy = try json(of: Car(make: "Honda", model: "Accord", year: "2007"))
+        legacy["isFavorite"] = nil
+        XCTAssertFalse(try decode(legacy).isFavorite)
+        legacy["isFavorite"] = "yes"   // garbage from a newer/older writer must not drop the car
+        XCTAssertFalse(try decode(legacy).isFavorite)
+    }
+
+    @MainActor
+    func testOrderedCarsPutFavoritesFirstAndKeepGarageOrder() {
+        let store = CarStore()
+        var a = Car(make: "A", model: "1", year: "2020"), b = Car(make: "B", model: "2", year: "2020")
+        var c = Car(make: "C", model: "3", year: "2020"), d = Car(make: "D", model: "4", year: "2020")
+        c.isFavorite = true; d.isFavorite = true
+        a.isFavorite = false; b.isFavorite = false
+        store.cars = [a, b, c, d]
+        XCTAssertEqual(store.orderedCars.map(\.make), ["C", "D", "A", "B"])
+    }
 }
 
 final class CarRangeTests: XCTestCase {
