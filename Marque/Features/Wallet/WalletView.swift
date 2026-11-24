@@ -385,8 +385,13 @@ struct WalletView: View {
         ScrollView {
             profileHeader
             VStack(spacing: 16) {
-                stackCard(for: tab)
-                    .matchedGeometryEffect(id: tab, in: cardNamespace)
+                // The license's own document card IS its full card; showing
+                // the stack card above it too drew two driver's licenses.
+                // (A car keeps its stack card on top, then its documents.)
+                if tab != .license {
+                    stackCard(for: tab)
+                        .matchedGeometryEffect(id: tab, in: cardNamespace)
+                }
                 tabContent(for: tab)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
