@@ -107,12 +107,9 @@ struct WalletView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Fixed, not scrolled away: short and bounded (avatar, name,
-                // one-line bio, stats), and keeping it in view means the tab
-                // strip below is always reachable without scrolling back up
-                // — part of "more compact and easier to navigate."
-                profileHeader
-
+                // The profile header scrolls with the cards (inside each
+                // ScrollView below), so a small phone or a tall stack never
+                // loses scroll room to a pinned header.
                 if hasAnyDocumentSurface {
                     if let open = currentOpen {
                         openCardView(open)
@@ -122,6 +119,7 @@ struct WalletView: View {
                             .transition(.opacity.animation(.easeInOut(duration: 0.2)))
                     }
                 } else {
+                    profileHeader
                     MarqueEmptyState(
                         icon: "wallet.pass.fill",
                         title: "No Documents Yet",
@@ -258,11 +256,15 @@ struct WalletView: View {
     // MARK: - Card stack (Apple Wallet style)
 
     private static let peek: CGFloat = 78
+    /// Room under the last card for the floating tab bar.
+    private static let tabBarClearance: CGFloat = 120
+    @GestureState private var gestureActive = false
     private var spring: Animation { reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.82) }
 
     private var cardStack: some View {
         let order = liveOrder ?? tabs
         return ScrollView {
+            profileHeader
             // Cards are placed by index (each one `peek` below the last), not
             // stacked in a VStack, so a dragged card can follow the finger
             // while its neighbours slide to make room.
@@ -287,10 +289,17 @@ struct WalletView: View {
             .frame(height: CGFloat(max(order.count - 1, 0)) * Self.peek + WalletStackCard.height, alignment: .top)
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 32)
+            .padding(.bottom, Self.tabBarClearance)
             .animation(spring, value: order)
         }
         .scrollDisabled(dragging != nil)
+        // A drag the system cancels (an interruption, a scroll that wins)
+        // never reaches onEnded; without this the card stays "picked up" and
+        // scrolling stays off.
+        .onChange(of: gestureActive) { _, active in
+            if !active, dragging != nil { endDrag() }
+        }
+        .onDisappear { if dragging != nil { endDrag() } }
         .onChange(of: carStore.cars) { _, _ in savedOrder = WalletOrder.load() }
     }
 
@@ -299,6 +308,7 @@ struct WalletView: View {
     private func reorderGesture(for tab: WalletTab) -> some Gesture {
         LongPressGesture(minimumDuration: 0.3)
             .sequenced(before: DragGesture(minimumDistance: 0))
+            .updating($gestureActive) { _, state, _ in state = true }
             .onChanged { value in
                 guard case .second(true, let drag?) = value else { return }
                 if dragging == nil { beginDrag(tab) }
@@ -373,13 +383,16 @@ struct WalletView: View {
     /// content, unchanged).
     private func openCardView(_ tab: WalletTab) -> some View {
         ScrollView {
+            profileHeader
             VStack(spacing: 16) {
                 stackCard(for: tab)
                     .matchedGeometryEffect(id: tab, in: cardNamespace)
                 tabContent(for: tab)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, Self.tabBarClearance)
         }
     }
 
