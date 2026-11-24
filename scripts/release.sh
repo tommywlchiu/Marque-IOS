@@ -91,6 +91,23 @@ PLIST
   git tag -a "v$VERSION-$BUILD" -m "TestFlight $VERSION ($BUILD)" "$SHA"
   git push -q origin "v$VERSION-$BUILD"
   echo "release: uploaded $VERSION ($BUILD), tagged v$VERSION-$BUILD. Apple processes it in minutes to ~1 h; then add it to the TestFlight groups."
+
+  # Crashlytics dSYMs. The archive's own upload-symbols build phase hangs on
+  # this Mac (it left helpers running for weeks, and builds 8-11 may have no
+  # symbols), so upload them here with a deadline. Never fails the release: the
+  # build is already uploaded and tagged.
+  pkill -f "$OUT/DerivedData.*Crashlytics" 2>/dev/null || true
+  UPLOADER=$(find "$OUT/DerivedData/SourcePackages/checkouts" -path '*Crashlytics/upload-symbols' 2>/dev/null | head -1)
+  if [ -n "$UPLOADER" ] && [ -d "$OUT/Marque.xcarchive/dSYMs" ]; then
+    if perl -e 'alarm shift; exec @ARGV' 240 "$UPLOADER" -gsp Marque/GoogleService-Info.plist -p ios \
+         "$OUT/Marque.xcarchive/dSYMs" > "$OUT/symbols.log" 2>&1 && grep -q "Successfully uploaded" "$OUT/symbols.log"; then
+      echo "release: Crashlytics symbols uploaded"
+    else
+      echo "release: WARNING Crashlytics symbol upload failed or timed out (see $OUT/symbols.log): re-run: $UPLOADER -gsp Marque/GoogleService-Info.plist -p ios $OUT/Marque.xcarchive/dSYMs"
+    fi
+  else
+    echo "release: WARNING no Crashlytics uploader or dSYMs found; symbols not uploaded"
+  fi
   ;;
 
 *) die "usage: scripts/release.sh prepare | ship" ;;
